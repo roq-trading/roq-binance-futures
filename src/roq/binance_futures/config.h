@@ -16,9 +16,8 @@
 namespace roq {
 namespace binance_futures {
 
-class Config final : public server::Config,
-                     public server::ConfigReader::Handler {
-public:
+class Config final : public server::Config, public server::ConfigReader::Handler {
+ public:
   explicit Config(const std::string_view &path);
 
   std::string get_master_account() const;
@@ -26,7 +25,7 @@ public:
   std::string get_api_key(const std::string_view &account) const;
   std::string get_secret(const std::string_view &account) const;
 
-protected:
+ protected:
   // server::Config
   void dispatch(server::Config::Handler &handler) const override;
 
@@ -36,7 +35,7 @@ protected:
   void operator()(server::User &&user) override;
   void operator()(const std::string_view &key, cpptoml::base &base) override;
 
-public:
+ public:
   std::vector<server::User> users;
   server::Symbols symbols;
   absl::flat_hash_map<std::string, server::Account> accounts;
@@ -54,8 +53,8 @@ public:
  * tcp+ssl://fix-public.sandbox.pro.binance.com:4198
  */
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq
 
 template <>
 struct fmt::formatter<roq::binance_futures::Config> : public roq::formatter {
@@ -63,12 +62,13 @@ struct fmt::formatter<roq::binance_futures::Config> : public roq::formatter {
   auto format(const roq::binance_futures::Config &value, C &ctx) {
     using namespace roq::literals;
     // FIXME(thraneh): proper
-    return roq::format_to(ctx.out(),
-                          "{{"
-                          "users=[{}], "
-                          "accounts=..."
-                          "}}"_fmt,
-                          roq::join(value.users, ", "_sv));
+    return roq::format_to(
+        ctx.out(),
+        "{{"
+        "users=[{}], "
+        "accounts=..."
+        "}}"_fmt,
+        roq::join(value.users, ", "_sv));
     // roq::join(value.accounts, ", "_sv));
   }
 };

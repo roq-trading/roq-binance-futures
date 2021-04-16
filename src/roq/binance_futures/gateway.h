@@ -27,25 +27,28 @@ class Gateway final : public server::Handler,
                       public OrderEntry::Handler,
                       public DropCopy::Handler,
                       public MarketData::Handler {
-public:
+ public:
   Gateway(server::Dispatcher &, const Config &);
 
-protected:
+ protected:
   void operator()(const Event<Start> &) override;
   void operator()(const Event<Stop> &) override;
   void operator()(const Event<Timer> &) override;
   void operator()(const Event<Connected> &) override;
   void operator()(const Event<Disconnected> &) override;
 
-  void operator()(const Event<CreateOrder> &,
-                  const std::string_view &request_id,
-                  uint32_t gateway_order_id) override;
-  void operator()(const Event<ModifyOrder> &,
-                  const std::string_view &request_id,
-                  const server::OMS_Order &) override;
-  void operator()(const Event<CancelOrder> &,
-                  const std::string_view &request_id,
-                  const server::OMS_Order &) override;
+  void operator()(
+      const Event<CreateOrder> &,
+      const std::string_view &request_id,
+      uint32_t gateway_order_id) override;
+  void operator()(
+      const Event<ModifyOrder> &,
+      const std::string_view &request_id,
+      const server::OMS_Order &) override;
+  void operator()(
+      const Event<CancelOrder> &,
+      const std::string_view &request_id,
+      const server::OMS_Order &) override;
 
   void operator()(metrics::Writer &) override;
 
@@ -56,11 +59,9 @@ protected:
   void operator()(const server::Trace<ReferenceData> &, bool is_last) override;
   void operator()(const server::Trace<MarketStatus> &, bool is_last) override;
   void operator()(const server::Trace<TopOfBook> &, bool is_last) override;
-  void operator()(const server::Trace<MarketByPriceUpdate> &,
-                  bool is_last) override;
+  void operator()(const server::Trace<MarketByPriceUpdate> &, bool is_last) override;
   void operator()(const server::Trace<TradeSummary> &, bool is_last) override;
-  void operator()(const server::Trace<StatisticsUpdate> &,
-                  bool is_last) override;
+  void operator()(const server::Trace<StatisticsUpdate> &, bool is_last) override;
   void operator()(const server::Trace<FundsUpdate> &, bool is_last) override;
 
   void operator()(const OrderEntry::ListenKeyUpdate &) override;
@@ -70,7 +71,7 @@ protected:
 
   OrderEntry &get_order_entry(const std::string_view &account);
 
-private:
+ private:
   server::Dispatcher &dispatcher_;
   // config
   const std::string master_account_;
@@ -88,5 +89,5 @@ private:
   std::vector<std::unique_ptr<MarketData>> market_data_;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

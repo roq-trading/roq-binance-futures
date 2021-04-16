@@ -37,18 +37,22 @@ struct MarketStreamParser final {
     virtual void operator()(const MiniTicker &, const server::TraceInfo &) = 0;
     virtual void operator()(const BookTicker &, const server::TraceInfo &) = 0;
 
-    virtual void operator()(const std::string_view &symbol, const Depth &depth,
-                            const server::TraceInfo &) = 0;
+    virtual void operator()(
+        const std::string_view &symbol, const Depth &depth, const server::TraceInfo &) = 0;
 
-    virtual void operator()(const std::string_view &symbol,
-                            const DepthUpdate &depth_update,
-                            const server::TraceInfo &) = 0;
+    virtual void operator()(
+        const std::string_view &symbol,
+        const DepthUpdate &depth_update,
+        const server::TraceInfo &) = 0;
   };
 
-  static void dispatch(Handler &handler, const std::string_view &message,
-                       core::json::Buffer &buffer, const server::TraceInfo &);
+  static void dispatch(
+      Handler &handler,
+      const std::string_view &message,
+      core::json::Buffer &buffer,
+      const server::TraceInfo &);
 };
 
-} // namespace json
-} // namespace binance_futures
-} // namespace roq
+}  // namespace json
+}  // namespace binance_futures
+}  // namespace roq

@@ -37,7 +37,7 @@ namespace roq {
 namespace binance_futures {
 
 class OrderEntry final : public core::web::Client::Handler {
-public:
+ public:
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -50,19 +50,15 @@ public:
   struct Handler {
     virtual void operator()(const server::Trace<StreamStatus> &) = 0;
     virtual void operator()(const server::Trace<ExternalLatency> &) = 0;
-    virtual void operator()(const server::Trace<ReferenceData> &,
-                            bool is_last) = 0;
-    virtual void operator()(const server::Trace<MarketStatus> &,
-                            bool is_last) = 0;
-    virtual void operator()(const server::Trace<FundsUpdate> &,
-                            bool is_last) = 0;
+    virtual void operator()(const server::Trace<ReferenceData> &, bool is_last) = 0;
+    virtual void operator()(const server::Trace<MarketStatus> &, bool is_last) = 0;
+    virtual void operator()(const server::Trace<FundsUpdate> &, bool is_last) = 0;
     // cross-communication
     virtual void operator()(const ListenKeyUpdate &) = 0;
     virtual void operator()(SymbolsUpdate &) = 0;
   };
 
-  OrderEntry(Handler &, core::io::Context &, uint16_t stream_id, Security &,
-             Shared &);
+  OrderEntry(Handler &, core::io::Context &, uint16_t stream_id, Security &, Shared &);
 
   OrderEntry(OrderEntry &&) = delete;
   OrderEntry(const OrderEntry &) = delete;
@@ -75,17 +71,14 @@ public:
 
   void operator()(metrics::Writer &);
 
-  void operator()(const Event<CreateOrder> &,
-                  const std::string_view &request_id,
-                  uint32_t gateway_order_id);
-  void operator()(const Event<ModifyOrder> &,
-                  const std::string_view &request_id,
-                  const server::OMS_Order &);
-  void operator()(const Event<CancelOrder> &,
-                  const std::string_view &request_id,
-                  const server::OMS_Order &);
+  void operator()(
+      const Event<CreateOrder> &, const std::string_view &request_id, uint32_t gateway_order_id);
+  void operator()(
+      const Event<ModifyOrder> &, const std::string_view &request_id, const server::OMS_Order &);
+  void operator()(
+      const Event<CancelOrder> &, const std::string_view &request_id, const server::OMS_Order &);
 
-protected:
+ protected:
   void operator()(const core::web::Client::Connected &);
   void operator()(const core::web::Client::Disconnected &);
   void operator()(const core::web::Client::Latency &);
@@ -103,12 +96,14 @@ protected:
 
   void refresh_listen_key();
 
-  void
-  create_order(const CreateOrder &, const std::string_view &cl_ord_id,
-               std::function<void(const core::Promise<json::NewOrder> &)> &&);
+  void create_order(
+      const CreateOrder &,
+      const std::string_view &cl_ord_id,
+      std::function<void(const core::Promise<json::NewOrder> &)> &&);
 
   void cancel_order(
-      const CancelOrder &, const std::string_view &request_id,
+      const CancelOrder &,
+      const std::string_view &request_id,
       const server::OMS_Order &,
       std::function<void(const core::Promise<json::CancelOrder> &)> &&);
 
@@ -119,7 +114,7 @@ protected:
   void operator()(const json::Account &);
   void operator()(const json::ExchangeInfo &);
 
-private:
+ private:
   Handler &handler_;
   // config
   const uint16_t stream_id_;
@@ -133,8 +128,7 @@ private:
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile exchange_info, account, listen_key, depth, new_order,
-        cancel_order;
+    core::metrics::Profile exchange_info, account, listen_key, depth, new_order, cancel_order;
   } profile_;
   struct {
     core::metrics::Latency ping;
@@ -152,5 +146,5 @@ private:
   server::Download<OrderEntryState> download_;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

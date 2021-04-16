@@ -16,11 +16,10 @@ int Application::main(int, char **) {
   Config config(Flags::config_file());
   log::trace_1("config={}"_fmt, config);
   log::info("Starting the gateway"_sv);
-  roq::server::Trading<Gateway>(ROQ_PACKAGE_NAME, config,
-                                server::RequestIdType::SEQUENTIAL, config)
+  roq::server::Trading<Gateway>(ROQ_PACKAGE_NAME, config, server::RequestIdType::SEQUENTIAL, config)
       .dispatch();
   return EXIT_SUCCESS;
 }
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

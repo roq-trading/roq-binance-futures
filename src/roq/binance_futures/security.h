@@ -19,7 +19,7 @@ namespace roq {
 namespace binance_futures {
 
 class Security final {
-public:
+ public:
   Security(const Config &, const std::string_view &account);
 
   Security(Security &&) = delete;
@@ -29,14 +29,13 @@ public:
 
   std::string_view get_api_key() const { return key_; }
 
-  std::pair<std::string, std::string>
-  create_signature(const std::chrono::nanoseconds &now);
+  std::pair<std::string, std::string> create_signature(const std::chrono::nanoseconds &now);
 
-private:
+ private:
   const std::string account_;
   const std::string key_;
   core::crypto::HMAC_SHA256 hmac_;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

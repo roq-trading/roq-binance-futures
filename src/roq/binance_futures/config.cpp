@@ -17,7 +17,9 @@ Config::Config(const std::string_view &path) {
   server::ConfigReader::parse(*this, path);
 }
 
-std::string Config::get_master_account() const { return master_account_; }
+std::string Config::get_master_account() const {
+  return master_account_;
+}
 
 std::string Config::get_api_key(const std::string_view &account) const {
   auto iter = accounts.find(account);
@@ -66,5 +68,5 @@ void Config::operator()(const std::string_view &key, cpptoml::base &) {
   log::warn(R"(UNKNOWN KEY="{}")"_fmt, key);
 }
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

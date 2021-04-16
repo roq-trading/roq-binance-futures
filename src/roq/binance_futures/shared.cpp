@@ -10,8 +10,9 @@ namespace roq {
 namespace binance_futures {
 
 Shared::Shared(server::Dispatcher &dispatcher)
-    : bids(server::Flags::cache_mbp_max_depth()),
-      asks(server::Flags::cache_mbp_max_depth()), dispatcher_(dispatcher) {}
+    : bids(server::Flags::cache_mbp_max_depth()), asks(server::Flags::cache_mbp_max_depth()),
+      dispatcher_(dispatcher) {
+}
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

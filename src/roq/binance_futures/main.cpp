@@ -8,11 +8,10 @@ using namespace roq::literals;
 
 namespace {
 static const auto DESCRIPTION = "Roq Binance Gateway"_sv;
-} // namespace
+}  // namespace
 
 int main(int argc, char **argv) {
-  return roq::binance_futures::Application(argc, argv, DESCRIPTION,
-                                           ROQ_BUILD_VERSION, ROQ_BUILD_TYPE,
-                                           ROQ_GIT_DESCRIBE_HASH)
+  return roq::binance_futures::Application(
+             argc, argv, DESCRIPTION, ROQ_BUILD_VERSION, ROQ_BUILD_TYPE, ROQ_GIT_DESCRIBE_HASH)
       .run();
 }

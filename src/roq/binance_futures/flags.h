@@ -9,5 +9,5 @@ namespace binance_futures {
 
 using flags::Flags;
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

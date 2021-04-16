@@ -25,18 +25,21 @@
 namespace roq {
 namespace binance_futures {
 
-class DropCopy final : public core::web::Socket::Handler,
-                       public json::UserStreamParser::Handler {
-public:
+class DropCopy final : public core::web::Socket::Handler, public json::UserStreamParser::Handler {
+ public:
   struct Handler {
     virtual void operator()(const server::Trace<StreamStatus> &) = 0;
     virtual void operator()(const server::Trace<ExternalLatency> &) = 0;
-    virtual void operator()(const server::Trace<FundsUpdate> &,
-                            bool is_last) = 0;
+    virtual void operator()(const server::Trace<FundsUpdate> &, bool is_last) = 0;
   };
 
-  DropCopy(Handler &, core::io::Context &, uint16_t stream_id, Security &,
-           Shared &, const std::string_view &listen_key);
+  DropCopy(
+      Handler &,
+      core::io::Context &,
+      uint16_t stream_id,
+      Security &,
+      Shared &,
+      const std::string_view &listen_key);
 
   DropCopy(DropCopy &&) = delete;
   DropCopy(const DropCopy &) = delete;
@@ -49,7 +52,7 @@ public:
 
   void operator()(metrics::Writer &);
 
-protected:
+ protected:
   void operator()(const core::web::Socket::Connected &) override;
   void operator()(const core::web::Socket::Disconnected &) override;
   void operator()(const core::web::Socket::Ready &) override;
@@ -57,23 +60,19 @@ protected:
   void operator()(const core::web::Socket::Latency &) override;
   void operator()(const core::web::Socket::Text &) override;
 
-private:
+ private:
   void operator()(ConnectionStatus);
 
   uint32_t download(DropCopyState);
 
   void parse(const std::string_view &message);
 
-  void operator()(const json::OutboundAccountInfo &,
-                  const server::TraceInfo &) override;
-  void operator()(const json::OutboundAccountPosition &,
-                  const server::TraceInfo &) override;
-  void operator()(const json::BalanceUpdate &,
-                  const server::TraceInfo &) override;
-  void operator()(const json::ExecutionReport &,
-                  const server::TraceInfo &) override;
+  void operator()(const json::OutboundAccountInfo &, const server::TraceInfo &) override;
+  void operator()(const json::OutboundAccountPosition &, const server::TraceInfo &) override;
+  void operator()(const json::BalanceUpdate &, const server::TraceInfo &) override;
+  void operator()(const json::ExecutionReport &, const server::TraceInfo &) override;
 
-private:
+ private:
   Handler &handler_;
   // config
   const uint16_t stream_id_;
@@ -87,8 +86,8 @@ private:
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, outbound_account_info,
-        outbound_account_position, balance_update, execution_report;
+    core::metrics::Profile parse, outbound_account_info, outbound_account_position, balance_update,
+        execution_report;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;
@@ -104,5 +103,5 @@ private:
   server::Download<DropCopyState> download_;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

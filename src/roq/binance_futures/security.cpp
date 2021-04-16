@@ -12,14 +12,13 @@ namespace roq {
 namespace binance_futures {
 
 Security::Security(const Config &config, const std::string_view &account)
-    : account_(account), key_(config.get_api_key(account_)),
-      hmac_(config.get_secret(account_)) {}
+    : account_(account), key_(config.get_api_key(account_)), hmac_(config.get_secret(account_)) {
+}
 
-std::pair<std::string, std::string>
-Security::create_signature(const std::chrono::nanoseconds &now) {
+std::pair<std::string, std::string> Security::create_signature(
+    const std::chrono::nanoseconds &now) {
   auto timestamp = roq::format(
-      "timestamp={}"_fmt,
-      std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
+      "timestamp={}"_fmt, std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
   hmac_.clear();
   hmac_.update(timestamp);
   std::array<char, 32u> buffer;
@@ -29,5 +28,5 @@ Security::create_signature(const std::chrono::nanoseconds &now) {
   return std::make_pair(timestamp, signature);
 }
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

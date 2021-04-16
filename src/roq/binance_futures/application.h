@@ -8,12 +8,12 @@ namespace roq {
 namespace binance_futures {
 
 class Application final : public roq::Service {
-public:
+ public:
   using roq::Service::Service;
 
-protected:
+ protected:
   int main(int, char **) override;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

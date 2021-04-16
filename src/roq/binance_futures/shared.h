@@ -26,16 +26,17 @@ struct Shared final {
     return dispatcher_.discard_symbol(name);
   }
 
-  template <typename... Args> auto find_order(Args &&...args) {
+  template <typename... Args>
+  auto find_order(Args &&...args) {
     return dispatcher_.find_order(std::forward<Args>(args)...);
   }
 
-public:
+ public:
   core::page_aligned_vector<MBPUpdate> bids, asks;
 
-private:
+ private:
   server::Dispatcher &dispatcher_;
 };
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

@@ -33,30 +33,33 @@ static const auto SUPPORTS = utils::Mask{
 };
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(const std::string_view &group,
-                          const std::string_view &function)
+  explicit create_metrics(const std::string_view &group, const std::string_view &function)
       : core::metrics::Factory(server::Flags::name(), group, function) {}
 };
 
-template <typename T> void emplace(MBPUpdate &result, const T &value) {
+template <typename T>
+void emplace(MBPUpdate &result, const T &value) {
   new (&result) MBPUpdate{
       .price = value.price,
       .quantity = value.qty,
   };
 }
-} // namespace
+}  // namespace
 
-MarketData::MarketData(Handler &handler, core::io::Context &context,
-                       uint32_t stream_id, Shared &shared)
-    : handler_(handler), stream_id_(stream_id),
-      name_(roq::format("{}:{}"_fmt, stream_id_, NAME)),
-      connection_(*this, context, core::URI(Flags::ws_uri()),
-                  std::string_view{}, // query
-                  Flags::ws_ping_freq(), Flags::decode_buffer_size(),
-                  Flags::encode_buffer_size(), []() { return std::string(); }),
+MarketData::MarketData(
+    Handler &handler, core::io::Context &context, uint32_t stream_id, Shared &shared)
+    : handler_(handler), stream_id_(stream_id), name_(roq::format("{}:{}"_fmt, stream_id_, NAME)),
+      connection_(
+          *this,
+          context,
+          core::URI(Flags::ws_uri()),
+          std::string_view{},  // query
+          Flags::ws_ping_freq(),
+          Flags::decode_buffer_size(),
+          Flags::encode_buffer_size(),
+          []() { return std::string(); }),
       decode_buffer_(Flags::decode_buffer_size()),
-      request_id_(static_cast<uint64_t>(stream_id_) *
-                  1000000u), // scale (debugging)
+      request_id_(static_cast<uint64_t>(stream_id_) * 1000000u),  // scale (debugging)
       counter_{
           .disconnect = create_metrics(name_, "disconnect"_sv),
       },
@@ -75,14 +78,20 @@ MarketData::MarketData(Handler &handler, core::io::Context &context,
           .ping = create_metrics(name_, "ping"_sv),
           .heartbeat = create_metrics(name_, "heartbeat"_sv),
       },
-      shared_(shared),
-      download_({}, [this](auto state) { return download(state); }) {}
+      shared_(shared), download_({}, [this](auto state) { return download(state); }) {
+}
 
-bool MarketData::ready() const { return connection_.ready(); }
+bool MarketData::ready() const {
+  return connection_.ready();
+}
 
-void MarketData::operator()(const Event<Start> &) { connection_.start(); }
+void MarketData::operator()(const Event<Start> &) {
+  connection_.start();
+}
 
-void MarketData::operator()(const Event<Stop> &) { connection_.stop(); }
+void MarketData::operator()(const Event<Stop> &) {
+  connection_.stop();
+}
 
 void MarketData::operator()(const Event<Timer> &event) {
   connection_.refresh(event.value.now);
@@ -127,7 +136,8 @@ void MarketData::update_subscriptions(std::vector<std::string> &symbols) {
     subscribe({&symbols_[offset], length});
 }
 
-void MarketData::operator()(const core::web::Socket::Connected &) {}
+void MarketData::operator()(const core::web::Socket::Connected &) {
+}
 
 void MarketData::operator()(const core::web::Socket::Disconnected &) {
   ++counter_.disconnect;
@@ -141,7 +151,8 @@ void MarketData::operator()(const core::web::Socket::Ready &) {
   download_.begin();
 }
 
-void MarketData::operator()(const core::web::Socket::Close &) {}
+void MarketData::operator()(const core::web::Socket::Close &) {
+}
 
 void MarketData::operator()(const core::web::Socket::Latency &latency) {
   server::TraceInfo trace_info;
@@ -175,17 +186,17 @@ void MarketData::operator()(ConnectionStatus status) {
 
 uint32_t MarketData::download(MarketDataState state) {
   switch (state) {
-  case MarketDataState::UNDEFINED:
-    assert(false);
-    break;
-  case MarketDataState::SUBSCRIBE:
-    subscribe(symbols_);
-    return {};
-  case MarketDataState::DONE:
-    (*this)(ConnectionStatus::READY);
-    assert(!ready_);
-    ready_ = true;
-    return {};
+    case MarketDataState::UNDEFINED:
+      assert(false);
+      break;
+    case MarketDataState::SUBSCRIBE:
+      subscribe(symbols_);
+      return {};
+    case MarketDataState::DONE:
+      (*this)(ConnectionStatus::READY);
+      assert(!ready_);
+      ready_ = true;
+      return {};
   }
   assert(false);
   return {};
@@ -205,64 +216,76 @@ void MarketData::subscribe(const roq::span<std::string> &symbols) {
 void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(R"({{)"
-                             R"("method":"SUBSCRIBE",)"
-                             R"("params":["{}@aggTrade"],)"
-                             R"("id":{})"
-                             R"(}})"_fmt,
-                             roq::join(symbols, R"(@aggTrade",")"_sv), id);
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@aggTrade"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, R"(@aggTrade",")"_sv),
+      id);
   connection_.send_text(message);
 }
 
 void MarketData::subscribe_trade(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(R"({{)"
-                             R"("method":"SUBSCRIBE",)"
-                             R"("params":["{}@trade"],)"
-                             R"("id":{})"
-                             R"(}})"_fmt,
-                             roq::join(symbols, R"(@trade",")"_sv), id);
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@trade"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, R"(@trade",")"_sv),
+      id);
   connection_.send_text(message);
 }
 
 void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(R"({{)"
-                             R"("method":"SUBSCRIBE",)"
-                             R"("params":["{}@miniTicker"],)"
-                             R"("id":{})"
-                             R"(}})"_fmt,
-                             roq::join(symbols, R"(@miniTicker",")"_sv), id);
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@miniTicker"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, R"(@miniTicker",")"_sv),
+      id);
   connection_.send_text(message);
 }
 
 void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(R"({{)"
-                             R"("method":"SUBSCRIBE",)"
-                             R"("params":["{}@bookTicker"],)"
-                             R"("id":{})"
-                             R"(}})"_fmt,
-                             roq::join(symbols, R"(@bookTicker",")"_sv), id);
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@bookTicker"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, R"(@bookTicker",")"_sv),
+      id);
   connection_.send_text(message);
 }
 
 void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
-  auto stream =
-      roq::format(R"(@depth{}@{}ms)"_fmt, Flags::ws_subscribe_depth_levels(),
-                  Flags::ws_subscribe_depth_freq().count());
+  auto stream = roq::format(
+      R"(@depth{}@{}ms)"_fmt,
+      Flags::ws_subscribe_depth_levels(),
+      Flags::ws_subscribe_depth_freq().count());
   auto id = ++request_id_;
   auto separator = roq::format(R"({}",")"_fmt, stream);
-  auto message = roq::format(R"({{)"
-                             R"("method":"SUBSCRIBE",)"
-                             R"("params":["{}{}"],)"
-                             R"("id":{})"
-                             R"(}})"_fmt,
-                             roq::join(symbols, separator), stream, id);
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}{}"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, separator),
+      stream,
+      id);
   connection_.send_text(message);
 }
 
@@ -287,8 +310,7 @@ void MarketData::operator()(int32_t id, const json::Result &result) {
   profile_.result([&]() { log::info("id={}, result={}"_fmt, id, result); });
 }
 
-void MarketData::operator()(const json::AggTrade &agg_trade,
-                            const server::TraceInfo &trace_info) {
+void MarketData::operator()(const json::AggTrade &agg_trade, const server::TraceInfo &trace_info) {
   profile_.agg_trade([&]() {
     log::trace_3("agg_trade={}"_fmt, agg_trade);
     auto side = agg_trade.buyer_is_maker ? Side::BUY : Side::SELL;
@@ -299,8 +321,7 @@ void MarketData::operator()(const json::AggTrade &agg_trade,
         .trade_id = {},
     };
     core::charconv::to_string(
-        core::string_utils::string_builder(trade.trade_id),
-        agg_trade.agg_trade_id);
+        core::string_utils::string_builder(trade.trade_id), agg_trade.agg_trade_id);
     TradeSummary trade_summary{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
@@ -312,8 +333,7 @@ void MarketData::operator()(const json::AggTrade &agg_trade,
   });
 }
 
-void MarketData::operator()(const json::Trade &trade,
-                            const server::TraceInfo &trace_info) {
+void MarketData::operator()(const json::Trade &trade, const server::TraceInfo &trace_info) {
   profile_.trade([&]() {
     log::trace_3("trade={}"_fmt, trade);
     auto side = trade.buyer_is_maker ? Side::BUY : Side::SELL;
@@ -323,8 +343,7 @@ void MarketData::operator()(const json::Trade &trade,
         .quantity = trade.quantity,
         .trade_id = {},
     };
-    core::charconv::to_string(
-        core::string_utils::string_builder(trade_.trade_id), trade.trade_id);
+    core::charconv::to_string(core::string_utils::string_builder(trade_.trade_id), trade.trade_id);
     TradeSummary trade_summary{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
@@ -336,15 +355,13 @@ void MarketData::operator()(const json::Trade &trade,
   });
 }
 
-void MarketData::operator()(const json::MiniTicker &mini_ticker,
-                            const server::TraceInfo &trace_info) {
+void MarketData::operator()(
+    const json::MiniTicker &mini_ticker, const server::TraceInfo &trace_info) {
   profile_.mini_ticker([&]() {
     log::trace_3("mini_ticker={}"_fmt, mini_ticker);
     Statistics statistics[] = {
-        {.type = StatisticsType::HIGHEST_TRADED_PRICE,
-         .value = mini_ticker.high_price},
-        {.type = StatisticsType::LOWEST_TRADED_PRICE,
-         .value = mini_ticker.low_price},
+        {.type = StatisticsType::HIGHEST_TRADED_PRICE, .value = mini_ticker.high_price},
+        {.type = StatisticsType::LOWEST_TRADED_PRICE, .value = mini_ticker.low_price},
         {.type = StatisticsType::OPEN_PRICE, .value = mini_ticker.open_price},
         {.type = StatisticsType::CLOSE_PRICE, .value = mini_ticker.close_price},
     };
@@ -360,8 +377,8 @@ void MarketData::operator()(const json::MiniTicker &mini_ticker,
   });
 }
 
-void MarketData::operator()(const json::BookTicker &book_ticker,
-                            const server::TraceInfo &trace_info) {
+void MarketData::operator()(
+    const json::BookTicker &book_ticker, const server::TraceInfo &trace_info) {
   profile_.book_ticker([&]() {
     log::trace_3("book_ticker={}"_fmt, book_ticker);
     TopOfBook top_of_book{
@@ -381,9 +398,8 @@ void MarketData::operator()(const json::BookTicker &book_ticker,
   });
 }
 
-void MarketData::operator()(const std::string_view &symbol,
-                            const json::Depth &depth,
-                            const server::TraceInfo &trace_info) {
+void MarketData::operator()(
+    const std::string_view &symbol, const json::Depth &depth, const server::TraceInfo &trace_info) {
   profile_.depth([&]() {
     log::trace_3(R"(symbol="{}", depth={})"_fmt, symbol, depth);
     core::back_emplacer bids(shared_.bids), asks(shared_.asks);
@@ -401,15 +417,15 @@ void MarketData::operator()(const std::string_view &symbol,
           .snapshot = true,
           .exchange_time_utc = {},
       };
-      create_trace_and_dispatch(trace_info, market_by_price_update, handler_,
-                                true);
+      create_trace_and_dispatch(trace_info, market_by_price_update, handler_, true);
     }
   });
 }
 
-void MarketData::operator()(const std::string_view &symbol,
-                            const json::DepthUpdate &depth_update,
-                            const server::TraceInfo &) {
+void MarketData::operator()(
+    const std::string_view &symbol,
+    const json::DepthUpdate &depth_update,
+    const server::TraceInfo &) {
   profile_.depth_update([&]() {
     log::trace_3(R"(symbol="{}", depth_update={})"_fmt, symbol, depth_update);
     // do nothing
@@ -417,5 +433,5 @@ void MarketData::operator()(const std::string_view &symbol,
   });
 }
 
-} // namespace binance_futures
-} // namespace roq
+}  // namespace binance_futures
+}  // namespace roq

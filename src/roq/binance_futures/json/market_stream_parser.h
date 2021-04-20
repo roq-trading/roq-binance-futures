@@ -13,10 +13,8 @@
 
 #include "roq/binance_futures/json/agg_trade.h"
 #include "roq/binance_futures/json/book_ticker.h"
-#include "roq/binance_futures/json/depth.h"
 #include "roq/binance_futures/json/depth_update.h"
 #include "roq/binance_futures/json/mini_ticker.h"
-#include "roq/binance_futures/json/trade.h"
 
 namespace roq {
 namespace binance_futures {
@@ -31,19 +29,10 @@ struct MarketStreamParser final {
 
     // update
 
-    virtual void operator()(const AggTrade &, const server::TraceInfo &) = 0;
-    virtual void operator()(const Trade &, const server::TraceInfo &) = 0;
-
-    virtual void operator()(const MiniTicker &, const server::TraceInfo &) = 0;
-    virtual void operator()(const BookTicker &, const server::TraceInfo &) = 0;
-
-    virtual void operator()(
-        const std::string_view &symbol, const Depth &depth, const server::TraceInfo &) = 0;
-
-    virtual void operator()(
-        const std::string_view &symbol,
-        const DepthUpdate &depth_update,
-        const server::TraceInfo &) = 0;
+    virtual void operator()(const server::Trace<AggTrade> &) = 0;
+    virtual void operator()(const server::Trace<MiniTicker> &) = 0;
+    virtual void operator()(const server::Trace<BookTicker> &) = 0;
+    virtual void operator()(const server::Trace<DepthUpdate> &) = 0;
   };
 
   static void dispatch(

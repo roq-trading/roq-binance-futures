@@ -1,0 +1,8 @@
+{
+"name": "ContractType",
+"type": "enum",
+"values": [
+	{ "name": "PERPETUAL" },
+	{ "name": "CURRENT_QUARTER" }
+]
+}

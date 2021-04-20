@@ -10,6 +10,7 @@
 
 #include "roq/core/charconv/datetime.h"
 
+#include "roq/binance_futures/json/contract_type.h"
 #include "roq/binance_futures/json/event_type.h"
 #include "roq/binance_futures/json/execution_type.h"
 #include "roq/binance_futures/json/order_status.h"
@@ -25,6 +26,12 @@ namespace json {
 template <typename T>
 inline void update(T &result, const core::json::value_t &value) {
   result = core::json::get<T>(value);
+}
+
+template <>
+inline void update(ContractType &result, const core::json::value_t &value) {
+  using result_type = std::remove_reference<decltype(result)>::type;
+  result = result_type(core::json::get<std::string_view>(value));
 }
 
 template <>

@@ -15,6 +15,15 @@ Security::Security(const Config &config, const std::string_view &account)
     : account_(account), key_(config.get_api_key(account_)), hmac_(config.get_secret(account_)) {
 }
 
+std::string Security::create_signature() {
+  hmac_.clear();
+  std::array<char, 32u> buffer;
+  auto length = hmac_.digest(buffer);
+  assert(length == buffer.size());
+  auto signature = core::binascii::Hex::encode(buffer);
+  return signature;
+}
+
 std::pair<std::string, std::string> Security::create_signature(
     const std::chrono::nanoseconds &now) {
   auto timestamp = roq::format(

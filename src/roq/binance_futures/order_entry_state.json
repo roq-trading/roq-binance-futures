@@ -2,9 +2,9 @@
 "name": "OrderEntryState",
 "type": "enum",
 "values": [
+	{ "name": "exchange_info" },
 	{ "name": "listen_key" },
 	{ "name": "account" },
-	{ "name": "exchange_info" },
 	{ "name": "done" }
 ]
 }

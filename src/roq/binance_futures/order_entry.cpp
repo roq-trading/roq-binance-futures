@@ -194,7 +194,7 @@ void OrderEntry::operator()(ConnectionStatus status) {
 template <>
 void OrderEntry::get(std::function<void(const core::Promise<json::ExchangeInfo> &)> &&callback) {
   constexpr auto method = core::http::Method::GET;
-  constexpr std::string_view path = "/api/v3/exchangeInfo"_sv;
+  constexpr std::string_view path = "/fapi/v1/exchangeInfo"_sv;
   connection_.request(
       method,
       path,
@@ -226,7 +226,7 @@ void OrderEntry::get(std::function<void(const core::Promise<json::ExchangeInfo> 
 template <>
 void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &&callback) {
   constexpr auto method = core::http::Method::GET;
-  constexpr std::string_view path = "/api/v3/account"_sv;
+  constexpr std::string_view path = "/fapi/v2/account"_sv;
   auto now = core::get_realtime_clock();
   auto [timestamp, signature] = security_.create_signature(now);
   auto query = roq::format("?{}&signature={}"_fmt, timestamp, signature);
@@ -261,7 +261,7 @@ void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &
 template <>
 void OrderEntry::get(std::function<void(const core::Promise<json::ListenKey> &)> &&callback) {
   constexpr auto method = core::http::Method::POST;
-  constexpr std::string_view path = "/api/v3/userDataStream"_sv;
+  constexpr std::string_view path = "/fapi/v1/listenKey"_sv;
   auto headers = roq::format("X-MBX-APIKEY: {}\r\n"_fmt, security_.get_api_key());
   connection_.request(
       method,
@@ -294,14 +294,14 @@ uint32_t OrderEntry::download(OrderEntryState state) {
     case OrderEntryState::UNDEFINED:
       assert(false);
       break;
+    case OrderEntryState::EXCHANGE_INFO:
+      download_exchange_info();
+      return 1u;
     case OrderEntryState::LISTEN_KEY:
       download_listen_key();
       return 1u;
     case OrderEntryState::ACCOUNT:
       download_account();
-      return 1u;
-    case OrderEntryState::EXCHANGE_INFO:
-      download_exchange_info();
       return 1u;
     case OrderEntryState::DONE:
       (*this)(ConnectionStatus::READY);
@@ -311,6 +311,21 @@ uint32_t OrderEntry::download(OrderEntryState state) {
   }
   assert(false);
   return {};
+}
+
+void OrderEntry::download_exchange_info() {
+  constexpr auto state = OrderEntryState::EXCHANGE_INFO;
+  auto sequence = download_.sequence();
+  get<json::ExchangeInfo>([this, sequence](auto &promise) {
+    try {
+      if (download_.skip(sequence, state))
+        return;
+      (*this)(promise.get());
+      download_.check(state);
+    } catch (NetworkError &) {
+      download_.retry(state);
+    }
+  });
 }
 
 void OrderEntry::download_listen_key() {
@@ -332,21 +347,6 @@ void OrderEntry::download_account() {
   constexpr auto state = OrderEntryState::ACCOUNT;
   auto sequence = download_.sequence();
   get<json::Account>([this, sequence](auto &promise) {
-    try {
-      if (download_.skip(sequence, state))
-        return;
-      (*this)(promise.get());
-      download_.check(state);
-    } catch (NetworkError &) {
-      download_.retry(state);
-    }
-  });
-}
-
-void OrderEntry::download_exchange_info() {
-  constexpr auto state = OrderEntryState::EXCHANGE_INFO;
-  auto sequence = download_.sequence();
-  get<json::ExchangeInfo>([this, sequence](auto &promise) {
     try {
       if (download_.skip(sequence, state))
         return;
@@ -382,7 +382,7 @@ void OrderEntry::create_order(
     const std::string_view &cl_ord_id,
     std::function<void(const core::Promise<json::NewOrder> &)> &&callback) {
   auto method = core::http::Method::POST;
-  auto path = "/api/v3/order"_sv;
+  auto path = "/fapi/v1/order"_sv;
   auto timestamp = core::get_realtime_clock();
   auto side = json::map(create_order.side).as_raw_text();
   auto type = json::map(create_order.order_type).as_raw_text();
@@ -450,7 +450,7 @@ void OrderEntry::cancel_order(
     const server::OMS_Order &order,
     std::function<void(const core::Promise<json::CancelOrder> &)> &&callback) {
   auto method = core::http::Method::DELETE;
-  auto path = "/api/v3/order"_sv;
+  auto path = "/fapi/v1/order"_sv;
   auto timestamp = core::get_realtime_clock();
   // XXX use encode buffer
   auto message = roq::format(
@@ -488,6 +488,41 @@ void OrderEntry::cancel_order(
           } catch (NetworkError &e) {
             log::warn(R"(Exception type={}, what="{}")"_fmt, typeid(e).name(), e.what());
             core::Promise<json::CancelOrder> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
+}
+
+void OrderEntry::get_depth(
+    const std::string_view &symbol,
+    std::function<void(const core::Promise<json::Depth> &)> &&callback) {
+  auto method = core::http::Method::GET;
+  auto path = "/fapi/v1/depth"_sv;
+  auto query = roq::format("?symbol={}&limit={}"_fmt, symbol, Flags::ws_subscribe_depth_levels());
+  connection_.request(
+      method,
+      path,
+      query,
+      ACCEPT_JSON,
+      CONTENT_TYPE_JSON,
+      {},  // headers
+      {},  // body
+      {},  // QoS
+      [this, callback{std::move(callback)}](auto &response) {
+        profile_.cancel_order([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            core::json::Parser parser(response.body());
+            auto root = parser.root();
+            core::json::Buffer buffer(decode_buffer_);
+            json::Depth depth(root, buffer);
+            log::trace_1("depth={}"_fmt, depth);
+            core::Promise<json::Depth> promise(depth);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_fmt, typeid(e).name(), e.what());
+            core::Promise<json::Depth> promise(std::current_exception());
             callback(promise);
           }
         });
@@ -587,6 +622,8 @@ void OrderEntry::operator()(const json::ExchangeInfo &exchange_info) {
         .trading_status = trading_status,
     };
     create_trace_and_dispatch(trace_info, market_status, handler_, true);
+    // XXX EXPERIMENTAL
+    shared_.refdata[item.symbol] = std::make_pair(tick_size, min_trade_vol);
   }
   log::info("Exchange info: including symbols {}/{}"_fmt, counter, exchange_info.symbols.size());
   if (!symbols.empty()) {

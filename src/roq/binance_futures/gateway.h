@@ -67,6 +67,8 @@ class Gateway final : public server::Handler,
   void operator()(const OrderEntry::ListenKeyUpdate &) override;
   void operator()(OrderEntry::SymbolsUpdate &) override;
 
+  void operator()(const MarketData::GetDepth &) override;
+
   // utilities
 
   OrderEntry &get_order_entry(const std::string_view &account);
@@ -86,7 +88,7 @@ class Gateway final : public server::Handler,
   // streams
   absl::flat_hash_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   absl::flat_hash_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
-  std::vector<std::unique_ptr<MarketData>> market_data_;
+  absl::flat_hash_map<uint16_t, std::unique_ptr<MarketData>> market_data_;
 };
 
 }  // namespace binance_futures

@@ -1,0 +1,23 @@
+symbols = ".*"
+
+[accounts]
+
+  [accounts.A1]
+  master = true
+  login = "Zp3PmbT76PR7S6a5rqkJqGso8mHeVawGqa1C6rIRSQpT6F1kJ3FA8SK8lMEZvrC4"
+  secret = "3VysRhbPiFtvQBvUhdw5c5thRrWvcD3PrttM4PpcXi9nKrOOrm7qEVkUFL1HEftj"
+  symbols = ".*"
+
+[users]
+
+  [users.test]
+  password = "1234"
+  symbols = ".*"
+
+  [users.trader]
+  password = "secret"
+  accounts = [ "A1" ]
+  symbols = [ "BTCUSDT" ]
+  monitor_period_secs = 60
+  ban_period_secs = 300
+  request_limit = 10

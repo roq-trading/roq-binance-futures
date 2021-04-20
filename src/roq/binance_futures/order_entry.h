@@ -29,6 +29,7 @@
 
 #include "roq/binance_futures/json/account.h"
 #include "roq/binance_futures/json/cancel_order.h"
+#include "roq/binance_futures/json/depth.h"
 #include "roq/binance_futures/json/exchange_info.h"
 #include "roq/binance_futures/json/listen_key.h"
 #include "roq/binance_futures/json/new_order.h"
@@ -78,6 +79,9 @@ class OrderEntry final : public core::web::Client::Handler {
   void operator()(
       const Event<CancelOrder> &, const std::string_view &request_id, const server::OMS_Order &);
 
+  void get_depth(
+      const std::string_view &symbol, std::function<void(const core::Promise<json::Depth> &)> &&);
+
  protected:
   void operator()(const core::web::Client::Connected &);
   void operator()(const core::web::Client::Disconnected &);
@@ -90,9 +94,9 @@ class OrderEntry final : public core::web::Client::Handler {
 
   uint32_t download(OrderEntryState state);
 
+  void download_exchange_info();
   void download_listen_key();
   void download_account();
-  void download_exchange_info();
 
   void refresh_listen_key();
 

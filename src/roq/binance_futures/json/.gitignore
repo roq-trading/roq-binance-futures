@@ -12,6 +12,8 @@ book_ticker.h
 book_ticker.cpp
 cancel_order.h
 cancel_order.cpp
+contract_type.h
+contract_type.cpp
 depth.h
 depth.cpp
 depth_item.h
@@ -62,5 +64,3 @@ ticker.h
 ticker.cpp
 time_in_force.h
 time_in_force.cpp
-trade.h
-trade.cpp

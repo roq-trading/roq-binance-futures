@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <absl/container/flat_hash_map.h>
+
 #include <utility>
 
 #include "roq/api.h"
@@ -33,6 +35,7 @@ struct Shared final {
 
  public:
   core::page_aligned_vector<MBPUpdate> bids, asks;
+  absl::flat_hash_map<std::string, std::pair<double, double> > refdata;
 
  private:
   server::Dispatcher &dispatcher_;

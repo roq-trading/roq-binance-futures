@@ -41,7 +41,6 @@ bool UserStreamParser::try_dispatch(
     case EventType::UNDEFINED:
     case EventType::UNKNOWN:
     case EventType::AGG_TRADE:
-    case EventType::TRADE:
     case EventType::_24HR_MINI_TICKER:
     case EventType::BOOK_TICKER:
     case EventType::DEPTH_UPDATE:

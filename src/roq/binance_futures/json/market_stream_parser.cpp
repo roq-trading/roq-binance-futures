@@ -18,6 +18,20 @@ namespace roq {
 namespace binance_futures {
 namespace json {
 
+namespace {
+template <typename T>
+static void dispatch_helper(
+    MarketStreamParser::Handler &handler,
+    const std::string_view &message,
+    core::json::Buffer &buffer,
+    const server::TraceInfo &trace_info) {
+  core::json::Parser parser(message);
+  auto root = parser.root();
+  T value(root, buffer);
+  server::create_trace_and_dispatch(trace_info, value, handler);
+}
+}  // namespace
+
 void MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     const std::string_view &message,
@@ -40,7 +54,10 @@ void MarketStreamParser::dispatch(
 #if !defined(NDEBUG)
           log::fatal(R"(Unknown key="{}")"_fmt, key);
 #endif
-          // XXX CALLBACK ?????????????
+          break;
+        case Field::ID:
+          // note! assuming id is the first field
+          id = std::get<decltype(id)>(value);
           break;
         case Field::ERROR:
           if (id >= 0) {
@@ -56,78 +73,42 @@ void MarketStreamParser::dispatch(
             handler(id, result);
           }
           break;
-        case Field::ID:
-          id = std::get<decltype(id)>(value);
-          break;
-        case Field::STREAM: {
-          // <symbol>@<stream>[@<freq>]
-          auto full_name = std::get<std::string_view>(value);
-          auto idx0 = full_name.find('@');  // <symbol>@<stream>
-          if (ROQ_UNLIKELY(idx0 == full_name.npos))
-            log::fatal(R"(Unexpected: name="{}")"_fmt, full_name);
-          symbol = std::string_view(full_name.begin(), idx0);
-          // note! convert to uppercase
-          std::transform(
-              symbol.begin(), symbol.end(), symbol.begin(), [](auto c) { return std::toupper(c); });
-          auto idx1 = full_name.find('@', idx0 + 1);
-          auto name = std::string_view(
-              full_name.begin() + idx0 + 1,
-              (idx1 == full_name.npos) ? full_name.size() - idx0 - 1 : idx1 - idx0 - 1);
-          stream = Stream(name);
+        case Field::EVENT_TYPE: {
+          // note! assuming event_type is the first field
+          EventType event_type(value);
+          switch (event_type) {
+            case EventType::AGG_TRADE:
+              dispatch_helper<AggTrade>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
+            case EventType::_24HR_MINI_TICKER:
+              dispatch_helper<MiniTicker>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
+            case EventType::BOOK_TICKER:
+              dispatch_helper<BookTicker>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
+            case EventType::DEPTH_UPDATE:
+              dispatch_helper<DepthUpdate>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
+            case EventType::UNDEFINED:
+            case EventType::UNKNOWN:
+            case EventType::OUTBOUND_ACCOUNT_INFO:
+            case EventType::OUTBOUND_ACCOUNT_POSITION:
+            case EventType::BALANCE_UPDATE:
+            case EventType::EXECUTION_REPORT:
+            case EventType::LIST_STATUS:
+              log::fatal("Unexpected"_sv);
+              break;
+          }
+          assert(dispatched);
           break;
         }
-        case Field::DATA:
-          switch (stream) {
-            case Stream::UNDEFINED:
-              break;  // wait
-            case Stream::UNKNOWN:
-#if !defined(NDEBUG)
-              log::fatal("Unexpected (unknown stream)"_sv);
-#endif
-              return;
-            case Stream::AGG_TRADE: {
-              AggTrade agg_trade(value);
-              dispatched = true;
-              handler(agg_trade, trace_info);
-              break;
-            }
-            case Stream::TRADE: {
-              Trade trade(value);
-              dispatched = true;
-              handler(trade, trace_info);
-              break;
-            }
-            case Stream::MINI_TICKER: {
-              MiniTicker mini_ticker(value);
-              dispatched = true;
-              handler(mini_ticker, trace_info);
-              break;
-            }
-            case Stream::BOOK_TICKER: {
-              BookTicker book_ticker(value);
-              dispatched = true;
-              handler(book_ticker, trace_info);
-              break;
-            }
-            case Stream::DEPTH5:
-            case Stream::DEPTH10:
-            case Stream::DEPTH20: {
-              assert(!symbol.empty());
-              Depth depth(value, buffer);
-              dispatched = true;
-              handler(symbol, depth, trace_info);
-              break;
-            }
-            case Stream::DEPTH: {
-              assert(!symbol.empty());
-              DepthUpdate depth_update(value, buffer);
-              dispatched = true;
-              handler(symbol, depth_update, trace_info);
-              break;
-            }
-          }
-          break;
       }
+      if (dispatched)
+        break;
     }
   }
   if (dispatched)

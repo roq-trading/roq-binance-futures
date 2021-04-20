@@ -80,8 +80,8 @@ void Gateway::operator()(const Event<Start> &event) {
 
 void Gateway::operator()(const Event<Stop> &event) {
   log::info("Stopping the gateway..."_sv);
-  for (auto &iter : market_data_)
-    (*iter)(event);
+  for (auto &[_, market_data] : market_data_)
+    (*market_data)(event);
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(event);
@@ -95,8 +95,8 @@ void Gateway::operator()(const Event<Timer> &event) {
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(event);
-  for (auto &iter : market_data_)
-    (*iter)(event);
+  for (auto &[_, market_data] : market_data_)
+    (*market_data)(event);
   context_.dispatch(true);
 }
 
@@ -161,22 +161,39 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
 
 void Gateway::operator()(OrderEntry::SymbolsUpdate &symbols_update) {
   auto &symbols = symbols_update.symbols;
-  for (auto &iter : market_data_) {
+  for (auto &[_, market_data] : market_data_) {
     if (symbols.empty())
       break;
-    (*iter).update_subscriptions(symbols);
+    (*market_data).update_subscriptions(symbols);
   }
   for (;;) {
     if (symbols.empty())
       break;
     log::info("Create market-data (user-stream)"_sv);
-    auto market_data = std::make_unique<MarketData>(*this, context_, ++stream_id_, shared_);
+    auto stream_id = ++stream_id_;
+    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id, shared_);
     (*market_data).update_subscriptions(symbols);
     MessageInfo message_info;  // XXX something sensible
     Start start;
     create_event_and_dispatch(*market_data, message_info, start);
-    market_data_.emplace_back(std::move(market_data));
+    market_data_.emplace(stream_id, std::move(market_data));
   }
+}
+
+void Gateway::operator()(const MarketData::GetDepth &get_depth) {
+  auto stream_id = get_depth.stream_id;
+  std::string symbol(get_depth.symbol);  // need a copy for the callback
+  get_order_entry(master_account_).get_depth(symbol, [this, stream_id, symbol](auto &promise) {
+    try {
+      auto &depth = promise.get();
+      auto iter = market_data_.find(stream_id);
+      if (ROQ_UNLIKELY(iter == market_data_.end()))
+        log::fatal("Unexpected: stream_id={}"_fmt, stream_id);
+      (*(*iter).second)(symbol, depth);
+    } catch (NetworkError &e) {
+      log::fatal(R"(Unexpected what="{}")"_fmt, e.what());
+    }
+  });
 }
 
 void Gateway::operator()(
@@ -211,8 +228,8 @@ void Gateway::operator()(metrics::Writer &writer) {
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(writer);
-  for (auto &iter : market_data_)
-    (*iter)(writer);
+  for (auto &[_, market_data] : market_data_)
+    (*market_data)(writer);
 }
 
 OrderEntry &Gateway::get_order_entry(const std::string_view &account) {

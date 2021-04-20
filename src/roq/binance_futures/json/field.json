@@ -2,10 +2,9 @@
 "name": "Field",
 "type": "enum",
 "values": [
+	{ "name": "id" },
 	{ "name": "error" },
 	{ "name": "result" },
-	{ "name": "id" },
-	{ "name": "stream" },
-	{ "name": "data" }
+	{ "raw": "e", "name": "event_type", "type": "std::string_view" }
 ]
 }

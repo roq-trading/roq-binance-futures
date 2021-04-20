@@ -29,6 +29,7 @@ class Security final {
 
   std::string_view get_api_key() const { return key_; }
 
+  std::string create_signature();
   std::pair<std::string, std::string> create_signature(const std::chrono::nanoseconds &now);
 
  private:

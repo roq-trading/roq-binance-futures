@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <absl/container/flat_hash_map.h>
+
 #include <string>
 #include <string_view>
 #include <vector>
@@ -17,9 +19,11 @@
 #include "roq/download.h"
 #include "roq/server.h"
 
+#include "roq/binance_futures/depth_buffer.h"
 #include "roq/binance_futures/market_data_state.h"
 #include "roq/binance_futures/shared.h"
 
+#include "roq/binance_futures/json/depth.h"
 #include "roq/binance_futures/json/market_stream_parser.h"
 
 namespace roq {
@@ -28,6 +32,11 @@ namespace binance_futures {
 class MarketData final : public core::web::Socket::Handler,
                          public json::MarketStreamParser::Handler {
  public:
+  struct GetDepth final {
+    uint16_t stream_id;
+    std::string_view symbol;
+  };
+
   struct Handler {
     virtual void operator()(const server::Trace<StreamStatus> &) = 0;
     virtual void operator()(const server::Trace<ExternalLatency> &) = 0;
@@ -35,6 +44,8 @@ class MarketData final : public core::web::Socket::Handler,
     virtual void operator()(const server::Trace<MarketByPriceUpdate> &, bool is_last) = 0;
     virtual void operator()(const server::Trace<TradeSummary> &, bool is_last) = 0;
     virtual void operator()(const server::Trace<StatisticsUpdate> &, bool is_last) = 0;
+    // cross-communication
+    virtual void operator()(const GetDepth &) = 0;
   };
 
   MarketData(Handler &, core::io::Context &, uint32_t stream_id, Shared &);
@@ -51,6 +62,8 @@ class MarketData final : public core::web::Socket::Handler,
   void operator()(metrics::Writer &);
 
   void update_subscriptions(std::vector<std::string> &symbols);
+
+  void operator()(const std::string_view &symbol, const json::Depth &);
 
  protected:
   void operator()(const core::web::Socket::Connected &) override;
@@ -80,16 +93,10 @@ class MarketData final : public core::web::Socket::Handler,
   void operator()(int32_t, const json::Result &) override;
 
   // update
-  void operator()(const json::AggTrade &, const server::TraceInfo &) override;
-  void operator()(const json::Trade &, const server::TraceInfo &) override;
-  void operator()(const json::MiniTicker &, const server::TraceInfo &) override;
-  void operator()(const json::BookTicker &, const server::TraceInfo &) override;
-  void operator()(
-      const std::string_view &symbol, const json::Depth &depth, const server::TraceInfo &) override;
-  void operator()(
-      const std::string_view &symbol,
-      const json::DepthUpdate &,
-      const server::TraceInfo &) override;
+  void operator()(const server::Trace<json::AggTrade> &) override;
+  void operator()(const server::Trace<json::MiniTicker> &) override;
+  void operator()(const server::Trace<json::BookTicker> &) override;
+  void operator()(const server::Trace<json::DepthUpdate> &) override;
 
  private:
   Handler &handler_;
@@ -107,8 +114,7 @@ class MarketData final : public core::web::Socket::Handler,
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, error, result, agg_trade, trade, mini_ticker, book_ticker, depth,
-        depth_update;
+    core::metrics::Profile parse, error, result, agg_trade, mini_ticker, book_ticker, depth_update;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;
@@ -120,6 +126,7 @@ class MarketData final : public core::web::Socket::Handler,
   bool ready_ = false;
   ConnectionStatus status_ = {};
   server::Download<MarketDataState> download_;
+  absl::flat_hash_map<std::string, std::unique_ptr<DepthBuffer>> depth_buffer_;
 };
 
 }  // namespace binance_futures

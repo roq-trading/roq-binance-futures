@@ -12,6 +12,7 @@ set(AUTOGEN_SCHEMAS
     balances_item.json
     book_ticker.json
     cancel_order.json
+    contract_type.json
     depth.json
     depth_item.json
     depth_update.json
@@ -36,8 +37,7 @@ set(AUTOGEN_SCHEMAS
     symbol.json
     symbol_status.json
     ticker.json
-    time_in_force.json
-    trade.json)
+    time_in_force.json)
 
 roq_autogen(
   OUTPUT

@@ -6,6 +6,8 @@
 	{ "name": "serverTime", "type": "std::chrono::milliseconds" },
 	{ "name": "rateLimits" },
 	{ "name": "exchangeFilters" },
-	{ "name": "symbols", "type": "roq::span<Symbol>" }
+	{ "name": "symbols", "type": "roq::span<Symbol>" },
+	{ "name": "futuresType", "type": "std::string_view", "comment": "undoc" },
+	{ "name": "assets", "comment": "undoc" }
 ]
 }

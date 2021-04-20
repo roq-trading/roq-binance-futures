@@ -1,6 +1,6 @@
 {
 "name": "MiniTicker",
-"type": "item",
+"type": "comp",
 "values": [
 	{ "raw": "e", "name": "event_type", "type": "EventType" },
 	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },

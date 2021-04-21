@@ -64,6 +64,7 @@ MarketData::MarketData(
           .mini_ticker = create_metrics(name_, "mini_ticker"_sv),
           .book_ticker = create_metrics(name_, "book_ticker"_sv),
           .depth_update = create_metrics(name_, "depth_update"_sv),
+          .mark_price_update = create_metrics(name_, "mark_price_update"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -100,6 +101,7 @@ void MarketData::operator()(metrics::Writer &writer) {
       .write(profile_.mini_ticker, metrics::PROFILE)
       .write(profile_.book_ticker, metrics::PROFILE)
       .write(profile_.depth_update, metrics::PROFILE)
+      .write(profile_.mark_price_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -192,14 +194,11 @@ uint32_t MarketData::download(MarketDataState state) {
 }
 
 void MarketData::subscribe(const roq::span<std::string> &symbols) {
-  if (Flags::ws_subscribe_trade_details()) {
-    subscribe_trade(symbols);
-  } else {
-    subscribe_agg_trade(symbols);
-  }
+  subscribe_agg_trade(symbols);
   subscribe_mini_ticker(symbols);
   subscribe_book_ticker(symbols);
   subscribe_depth(symbols);
+  subscribe_mark_price(symbols);
 }
 
 void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
@@ -212,20 +211,6 @@ void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
       R"("id":{})"
       R"(}})"_fmt,
       roq::join(symbols, R"(@aggTrade",")"_sv),
-      id);
-  connection_.send_text(message);
-}
-
-void MarketData::subscribe_trade(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
-  auto id = ++request_id_;
-  auto message = roq::format(
-      R"({{)"
-      R"("method":"SUBSCRIBE",)"
-      R"("params":["{}@trade"],)"
-      R"("id":{})"
-      R"(}})"_fmt,
-      roq::join(symbols, R"(@trade",")"_sv),
       id);
   connection_.send_text(message);
 }
@@ -271,6 +256,20 @@ void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
       R"(}})"_fmt,
       roq::join(symbols, separator),
       stream,
+      id);
+  connection_.send_text(message);
+}
+
+void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
+  assert(!symbols.empty());
+  auto id = ++request_id_;
+  auto message = roq::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@markPrice"],)"
+      R"("id":{})"
+      R"(}})"_fmt,
+      roq::join(symbols, R"(@markPrice",")"_sv),
       id);
   connection_.send_text(message);
 }
@@ -386,6 +385,13 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
         server::create_trace_and_dispatch(event.trace_info, market_by_price_update, handler_, true);
       });
     }
+  });
+}
+
+void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
+  profile_.mark_price_update([&]() {
+    auto &mark_price_update = event.value;
+    log::trace_3(R"(mark_price_update={})"_fmt, mark_price_update);
   });
 }
 

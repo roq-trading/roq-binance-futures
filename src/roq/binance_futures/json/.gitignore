@@ -38,6 +38,8 @@ filter_type.h
 filter_type.cpp
 listen_key.h
 listen_key.cpp
+mark_price_update.h
+mark_price_update.cpp
 mini_ticker.h
 mini_ticker.cpp
 new_order.h

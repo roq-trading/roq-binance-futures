@@ -101,7 +101,7 @@
       "name": "ws_max_subscriptions_per_stream",
       "type": "uint32_t",
       "validator": "roq::core::flags::NonZero<uint32_t>",
-      "default": 20,
+      "default": 40,
       "description": "max symbols per connection (count)"
     },
     {
@@ -117,12 +117,6 @@
       "validator": "roq::core::flags::NonZero<uint32_t>",
       "default": 100,
       "description": "depth update frequency (milliseconds)"
-    },
-    {
-      "name": "ws_subscribe_trade_details",
-      "type": "bool",
-      "default": false,
-      "description": "report individual matches for trade summary? (bool)"
     },
     {
       "name": "encode_buffer_size",

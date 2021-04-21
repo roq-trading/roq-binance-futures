@@ -93,6 +93,10 @@ void MarketStreamParser::dispatch(
               dispatch_helper<DepthUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
+            case EventType::MARK_PRICE_UPDATE:
+              dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
             case EventType::UNDEFINED:
             case EventType::UNKNOWN:
             case EventType::OUTBOUND_ACCOUNT_INFO:

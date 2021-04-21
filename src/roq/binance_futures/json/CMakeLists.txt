@@ -25,6 +25,7 @@ set(AUTOGEN_SCHEMAS
     fill.json
     filter_type.json
     listen_key.json
+    mark_price_update.json
     mini_ticker.json
     new_order.json
     order_status.json

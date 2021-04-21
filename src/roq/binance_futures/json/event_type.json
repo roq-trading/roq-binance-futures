@@ -6,6 +6,7 @@
 	{ "name": "24hrMiniTicker" },
 	{ "name": "bookTicker" },
 	{ "name": "depthUpdate" },
+	{ "name": "markPriceUpdate" },
 	{ "name": "outboundAccountInfo" },
 	{ "name": "outboundAccountPosition" },
 	{ "name": "balanceUpdate" },

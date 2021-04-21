@@ -22,7 +22,6 @@
 	{ "name": "settlePlan", "type": "uint32_t" },
 	{ "name": "triggerProtect", "type": "double" },
 	{ "name": "filters" },
-	{ "name": "permissions" },
 	{ "name": "orderTypes" },
 	{ "name": "timeInForce" }
 ]

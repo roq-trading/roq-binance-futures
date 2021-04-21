@@ -44,6 +44,7 @@ bool UserStreamParser::try_dispatch(
     case EventType::_24HR_MINI_TICKER:
     case EventType::BOOK_TICKER:
     case EventType::DEPTH_UPDATE:
+    case EventType::MARK_PRICE_UPDATE:
       log::fatal("Unexpected"_sv);
       break;
     case EventType::OUTBOUND_ACCOUNT_INFO: {

@@ -4,6 +4,7 @@
 
 #include <absl/container/flat_hash_map.h>
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -81,10 +82,10 @@ class MarketData final : public core::web::Socket::Handler,
   void subscribe(const roq::span<std::string> &symbols);
 
   void subscribe_agg_trade(const roq::span<std::string> &symbols);
-  void subscribe_trade(const roq::span<std::string> &symbols);
   void subscribe_mini_ticker(const roq::span<std::string> &symbols);
   void subscribe_book_ticker(const roq::span<std::string> &symbols);
   void subscribe_depth(const roq::span<std::string> &symbols);
+  void subscribe_mark_price(const roq::span<std::string> &symbols);
 
   void parse(const std::string_view &message);
 
@@ -97,6 +98,7 @@ class MarketData final : public core::web::Socket::Handler,
   void operator()(const server::Trace<json::MiniTicker> &) override;
   void operator()(const server::Trace<json::BookTicker> &) override;
   void operator()(const server::Trace<json::DepthUpdate> &) override;
+  void operator()(const server::Trace<json::MarkPriceUpdate> &) override;
 
  private:
   Handler &handler_;
@@ -114,7 +116,8 @@ class MarketData final : public core::web::Socket::Handler,
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, error, result, agg_trade, mini_ticker, book_ticker, depth_update;
+    core::metrics::Profile parse, error, result, agg_trade, mini_ticker, book_ticker, depth_update,
+        mark_price_update;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;

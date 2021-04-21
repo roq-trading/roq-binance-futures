@@ -1,0 +1,14 @@
+{
+"name": "MarkPriceUpdate",
+"type": "comp",
+"values": [
+	{ "raw": "e", "name": "event_type", "type": "std::string_view" },
+	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
+	{ "raw": "s", "name": "symbol", "type": "std::string_view" },
+	{ "raw": "p", "name": "mark_price", "type": "double" },
+	{ "raw": "i", "name": "index_price", "type": "double" },
+	{ "raw": "P", "name": "est_settle_price", "type": "double" },
+	{ "raw": "r", "name": "funding_rate", "type": "double" },
+	{ "raw": "T", "name": "next_funding_time", "type": "std::chrono::milliseconds" }
+]
+}

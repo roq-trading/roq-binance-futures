@@ -83,9 +83,10 @@ class OrderEntry final : public core::web::Client::Handler {
       const std::string_view &symbol, std::function<void(const core::Promise<json::Depth> &)> &&);
 
  protected:
-  void operator()(const core::web::Client::Connected &);
-  void operator()(const core::web::Client::Disconnected &);
-  void operator()(const core::web::Client::Latency &);
+  void operator()(const core::web::Client::Connected &) override;
+  void operator()(const core::web::Client::Disconnected &) override;
+  void operator()(const core::web::Client::Header &) override;
+  void operator()(const core::web::Client::Latency &) override;
 
   void operator()(ConnectionStatus);
 

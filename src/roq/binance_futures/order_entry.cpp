@@ -7,6 +7,8 @@
 #include "roq/utils/mask.h"
 #include "roq/utils/update.h"
 
+#include "roq/core/charconv.h"
+
 #include "roq/core/metrics/factory.h"
 
 #include "roq/binance_futures/flags.h"
@@ -30,11 +32,13 @@ static const auto SUPPORTS = utils::Mask{
 };
 
 static const auto KEEP_ALIVE = true;
-static const auto ALLOW_PIPELINING = true;
+static const auto ALLOW_PIPELINING = false;
 
 static const auto ACCEPT_ALL = "*/*"_sv;
 static const auto ACCEPT_JSON = "application/json"_sv;
 static const auto CONTENT_TYPE_JSON = "application/json"_sv;
+
+static const auto X_MBX_USED_WEIGHT = "X-MBX-USED-WEIGHT-1M"_sv;
 
 struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)
@@ -163,6 +167,17 @@ void OrderEntry::operator()(const core::web::Client::Disconnected &) {
   (*this)(ConnectionStatus::DISCONNECTED);
   if (!download_.downloading())
     download_.reset();
+}
+
+void OrderEntry::operator()(const core::web::Client::Header &header) {
+  if (header.name.compare(X_MBX_USED_WEIGHT) != 0)  // c++20: starts_with
+    return;
+  try {
+    auto value = core::from_chars<uint32_t>(header.value);
+    connection_.update_rate_limit_usage(value);
+  } catch (std::exception &) {
+    // XXX maybe warn?
+  }
 }
 
 void OrderEntry::operator()(const core::web::Client::Latency &latency) {

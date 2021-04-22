@@ -57,7 +57,7 @@
       "name": "rest_rate_limit_max_requests",
       "type": "uint32_t",
       "validator": "roq::core::flags::NonZero<uint32_t>",
-      "default": 1200,
+      "default": 3000,
       "description": "rate limit: max requests (per interval)"
     },
     {

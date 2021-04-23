@@ -30,7 +30,14 @@ DepthBuffer::DepthBuffer(
     double tick_size,
     double min_trade_vol)
     : shared_(shared), stream_id_(stream_id), symbol_(symbol),
-      market_by_price_(symbol, core::market::Type::NORMAL, server::Flags::cache_mbp_max_depth()) {
+      market_by_price_(
+          core::market::MarketByPrice::Config{
+              .type = {},
+              .max_depth = server::Flags::cache_mbp_max_depth(),
+              .allow_fractional_tick_size = {},
+              .allow_remove_non_existing = true,  // note! documented on website
+          },
+          symbol) {
   // XXX should be constructor
   ReferenceData reference_data{
       .tick_size = tick_size,

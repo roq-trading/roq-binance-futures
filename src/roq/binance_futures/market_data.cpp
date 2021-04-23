@@ -52,7 +52,7 @@ MarketData::MarketData(
           Flags::encode_buffer_size(),
           []() { return std::string(); }),
       decode_buffer_(Flags::decode_buffer_size()),
-      request_id_(static_cast<uint64_t>(stream_id_) * 1000000u),  // scale (debugging)
+      request_id_(static_cast<uint64_t>(stream_id_) * 1000000),  // scale (debugging)
       counter_{
           .disconnect = create_metrics(name_, "disconnect"_sv),
       },
@@ -117,7 +117,7 @@ void MarketData::update_subscriptions(std::vector<std::string> &symbols) {
     return;
   symbols_.reserve(max_size);
   auto length = std::min(max_size - offset, symbols.size());
-  assert(length > 0u);
+  assert(length > 0);
   for (size_t i = {}; i < length; ++i) {
     symbols_.emplace_back(symbols.back());
     symbols.pop_back();
@@ -312,7 +312,7 @@ void MarketData::operator()(const server::Trace<json::AggTrade> &event) {
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
         .symbol = agg_trade.symbol,
-        .trades = {&trade, 1u},
+        .trades = {&trade, 1},
         .exchange_time_utc = agg_trade.event_time,
     };
     create_trace_and_dispatch(event.trace_info, trade_summary, handler_, true);

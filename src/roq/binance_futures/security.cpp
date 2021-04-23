@@ -17,7 +17,7 @@ Security::Security(const Config &config, const std::string_view &account)
 
 std::string Security::create_signature() {
   hmac_.clear();
-  std::array<char, 32u> buffer;
+  std::array<char, 32> buffer;
   auto length = hmac_.digest(buffer);
   assert(length == buffer.size());
   auto signature = core::binascii::Hex::encode(buffer);
@@ -30,7 +30,7 @@ std::pair<std::string, std::string> Security::create_signature(
       "timestamp={}"_fmt, std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
   hmac_.clear();
   hmac_.update(timestamp);
-  std::array<char, 32u> buffer;
+  std::array<char, 32> buffer;
   auto length = hmac_.digest(buffer);
   assert(length == buffer.size());
   auto signature = core::binascii::Hex::encode(buffer);

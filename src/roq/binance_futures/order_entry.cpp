@@ -4,6 +4,7 @@
 
 #include <utility>
 
+#include "roq/utils/compare.h"
 #include "roq/utils/mask.h"
 #include "roq/utils/update.h"
 
@@ -175,7 +176,7 @@ void OrderEntry::operator()(const core::web::Client::Disconnected &) {
 }
 
 void OrderEntry::operator()(const core::web::Client::Header &header) {
-  if (header.name.compare(X_MBX_USED_WEIGHT) != 0)  // c++20: starts_with
+  if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT) != 0)
     return;
   try {
     auto value = core::from_chars<uint32_t>(header.value);

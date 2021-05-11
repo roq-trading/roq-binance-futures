@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "roq/utils/mask.h"
+#include "roq/utils/safe_cast.h"
 #include "roq/utils/update.h"
 
 #include "roq/core/back_emplacer.h"
@@ -324,10 +325,30 @@ void MarketData::operator()(const server::Trace<json::MiniTicker> &event) {
     auto &mini_ticker = event.value;
     log::trace_3("mini_ticker={}"_fmt, mini_ticker);
     Statistics statistics[] = {
-        {.type = StatisticsType::HIGHEST_TRADED_PRICE, .value = mini_ticker.high_price},
-        {.type = StatisticsType::LOWEST_TRADED_PRICE, .value = mini_ticker.low_price},
-        {.type = StatisticsType::OPEN_PRICE, .value = mini_ticker.open_price},
-        {.type = StatisticsType::CLOSE_PRICE, .value = mini_ticker.close_price},
+        {
+            .type = StatisticsType::HIGHEST_TRADED_PRICE,
+            .value = mini_ticker.high_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::LOWEST_TRADED_PRICE,
+            .value = mini_ticker.low_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::OPEN_PRICE,
+            .value = mini_ticker.open_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::CLOSE_PRICE,
+            .value = mini_ticker.close_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
     };
     StatisticsUpdate statistics_update{
         .stream_id = stream_id_,
@@ -392,6 +413,42 @@ void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
   profile_.mark_price_update([&]() {
     auto &mark_price_update = event.value;
     log::trace_3(R"(mark_price_update={})"_fmt, mark_price_update);
+    auto &mark_price = event.value;
+    Statistics statistics[] = {
+        {
+            .type = StatisticsType::SETTLEMENT_PRICE,
+            .value = mark_price.mark_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::PRE_SETTLEMENT_PRICE,
+            .value = mark_price.est_settle_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::INDEX_VALUE,
+            .value = mark_price.index_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::FUNDING_RATE,
+            .value = mark_price.funding_rate,
+            .begin_time_utc = utils::safe_cast(mark_price.event_time),
+            .end_time_utc = utils::safe_cast(mark_price.next_funding_time),
+        },
+    };
+    StatisticsUpdate statistics_update{
+        .stream_id = stream_id_,
+        .exchange = Flags::exchange(),
+        .symbol = mark_price.symbol,
+        .statistics = statistics,
+        .snapshot = false,
+        .exchange_time_utc = mark_price.event_time,
+    };
+    create_trace_and_dispatch(event.trace_info, statistics_update, handler_, true);
   });
 }
 

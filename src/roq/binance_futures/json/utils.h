@@ -221,6 +221,10 @@ inline roq::TradingStatus map(json::SymbolStatus symbol_status) {
       return roq::TradingStatus::CLOSED;
     case json::SymbolStatus::BREAK:
       return roq::TradingStatus::CLOSED;
+    case json::SymbolStatus::SETTLING:
+      return roq::TradingStatus::CLOSED;  // XXX REVIEW
+    case json::SymbolStatus::PENDING_TRADING:
+      return roq::TradingStatus::CLOSED;  // XXX REVIEW
   }
   return roq::TradingStatus::UNDEFINED;
 }

@@ -9,7 +9,7 @@ target_link_libraries(
   "${PROJECT_NAME}-json"
   roq-server::roq-server
   roq-core::roq-core
-  fmt::fmt
+  roq-logging::roq-logging
   gtest_main
   ${RT_LIBRARIES})
 

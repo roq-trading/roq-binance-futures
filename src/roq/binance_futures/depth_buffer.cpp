@@ -40,8 +40,26 @@ DepthBuffer::DepthBuffer(
           symbol) {
   // XXX should be constructor
   ReferenceData reference_data{
+      .stream_id = stream_id,
+      .exchange = {},
+      .symbol = {},
+      .description = {},
+      .security_type = {},
+      .currency = {},
+      .settlement_currency = {},
+      .commission_currency = {},
       .tick_size = tick_size,
+      .multiplier = NaN,
       .min_trade_vol = min_trade_vol,
+      .option_type = {},
+      .strike_currency = {},
+      .strike_price = NaN,
+      .underlying = {},
+      .time_zone = {},
+      .issue_date = {},
+      .settlement_date = {},
+      .expiry_datetime = {},
+      .expiry_datetime_utc = {},
   };
   market_by_price_(reference_data);
 }

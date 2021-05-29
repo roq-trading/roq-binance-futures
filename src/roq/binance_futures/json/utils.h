@@ -205,26 +205,29 @@ inline roq::TradingStatus map(json::SymbolStatus symbol_status) {
       break;
     case json::SymbolStatus::UNKNOWN:
       break;
-    case json::SymbolStatus::PRE_TRADING:
-      return roq::TradingStatus::CLOSED;
     case json::SymbolStatus::TRADING:
       return roq::TradingStatus::OPEN;
-    case json::SymbolStatus::POST_TRADING:
-      return roq::TradingStatus::CLOSED;
-    case json::SymbolStatus::END_OF_DAY:
-      return roq::TradingStatus::CLOSED;
     case json::SymbolStatus::HALT:
-      return roq::TradingStatus::CLOSED;
-    case json::SymbolStatus::AUCTION_MATCH:
-      return roq::TradingStatus::CLOSED;
+      return roq::TradingStatus::HALT;
     case json::SymbolStatus::BREAK:
-      return roq::TradingStatus::CLOSED;
-    case json::SymbolStatus::SETTLING:
-      return roq::TradingStatus::CLOSED;  // XXX REVIEW
-    case json::SymbolStatus::PENDING_TRADING:
-      return roq::TradingStatus::CLOSED;  // XXX REVIEW
+      return roq::TradingStatus::CLOSE;
+    case json::SymbolStatus::END_OF_DAY:
+      return roq::TradingStatus::END_OF_DAY;
+      // note! following probably not used (not sure if also applies to futures)
+      // - https://dev.binance.vision/t/explanation-on-symbol-status/118
+    case json::SymbolStatus::PRE_TRADING:
+      return roq::TradingStatus::PRE_OPEN;
+    case json::SymbolStatus::AUCTION_MATCH:
+      return roq::TradingStatus::PRE_OPEN;
+    case json::SymbolStatus::POST_TRADING:
+      return roq::TradingStatus::CLOSE;
+      // note! have found no documentation
+    case json::SymbolStatus::SETTLING:         // note! no idea what this is for
+      return roq::TradingStatus::PRE_CLOSE;    // XXX REVIEW
+    case json::SymbolStatus::PENDING_TRADING:  // note! no idea what this is for
+      return roq::TradingStatus::PRE_OPEN;     // XXX REVIEW
   }
-  return roq::TradingStatus::UNDEFINED;
+  return {};
 }
 
 inline roq::TimeInForce map(json::TimeInForce time_in_force) {

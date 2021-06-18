@@ -19,6 +19,9 @@ void emplace(MBPUpdate &result, const T &value) {
   new (&result) MBPUpdate{
       .price = value.price,
       .quantity = value.qty,
+      .implied_quantity = NaN,
+      .price_level = {},
+      .number_of_orders = {},
   };
 }
 }  // namespace
@@ -146,9 +149,21 @@ std::pair<size_t, size_t> DepthBuffer::update_helper(const json::DepthUpdate &de
   } else {
     offsets_.emplace_back(depth_update.final_update_id, bids_.size(), asks_.size());
     for (auto &item : depth_update.bids)
-      bids_.emplace_back(MBPUpdate{.price = item.price, .quantity = item.qty});
+      bids_.emplace_back(MBPUpdate{
+          .price = item.price,
+          .quantity = item.qty,
+          .implied_quantity = NaN,
+          .price_level = {},
+          .number_of_orders = {},
+      });
     for (auto &item : depth_update.asks)
-      asks_.emplace_back(MBPUpdate{.price = item.price, .quantity = item.qty});
+      asks_.emplace_back(MBPUpdate{
+          .price = item.price,
+          .quantity = item.qty,
+          .implied_quantity = NaN,
+          .price_level = {},
+          .number_of_orders = {},
+      });
     return std::make_pair(bids_.size(), asks_.size());
   }
 }

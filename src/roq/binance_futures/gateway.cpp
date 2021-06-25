@@ -151,9 +151,9 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
   assert(!account.empty());
   auto iter = drop_copy_.find(account);
   if (iter == drop_copy_.end()) {
-    log::fatal(R"(Unexpected: account="{}")"_fmt, account);
+    log::fatal(R"(Unexpected: account="{}")"_sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create drop-copy (user-stream) for account="{}")"_fmt, account);
+    log::info(R"(Create drop-copy (user-stream) for account="{}")"_sv, account);
     auto drop_copy = std::make_unique<DropCopy>(
         *this, context_, ++stream_id_, *security_[account], shared_, listen_key_update.listen_key);
     MessageInfo message_info;  // XXX something sensible
@@ -192,10 +192,10 @@ void Gateway::operator()(const MarketData::GetDepth &get_depth) {
       auto &depth = promise.get();
       auto iter = market_data_.find(stream_id);
       if (ROQ_UNLIKELY(iter == market_data_.end()))
-        log::fatal("Unexpected: stream_id={}"_fmt, stream_id);
+        log::fatal("Unexpected: stream_id={}"_sv, stream_id);
       (*(*iter).second)(symbol, depth);
     } catch (NetworkError &e) {
-      log::fatal(R"(Unexpected what="{}")"_fmt, e.what());
+      log::fatal(R"(Unexpected what="{}")"_sv, e.what());
     }
   });
 }
@@ -244,7 +244,7 @@ OrderEntry &Gateway::get_order_entry(const std::string_view &account) {
   auto iter = order_entry_.find(account);
   if (iter != order_entry_.end())
     return *(*iter).second;
-  throw RuntimeErrorException(R"(Unknown account="{}")"_fmt, account);
+  throw RuntimeErrorException(R"(Unknown account="{}")"_sv, account);
 }
 
 }  // namespace binance_futures

@@ -68,10 +68,10 @@ DepthBuffer::DepthBuffer(
 }
 
 bool DepthBuffer::update_helper(const json::Depth &depth) {
-  log::debug("got snapshot, symbol={}, last_update_id={}"_fmt, symbol_, depth.last_update_id);
+  log::debug("got snapshot, symbol={}, last_update_id={}"_sv, symbol_, depth.last_update_id);
   // snapshot
   core::back_emplacer bids(shared_.bids), asks(shared_.asks);
-  log::debug("depth={}"_fmt, depth);
+  log::debug("depth={}"_sv, depth);
   for (auto &item : depth.bids)
     bids.emplace_back([&item](auto &result) { emplace(result, item); });
   for (auto &item : depth.asks)
@@ -86,16 +86,16 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
       .exchange_time_utc = {},
   };
   market_by_price_(market_by_price_update);
-  log::debug("market_by_price_update={}"_fmt, market_by_price_update);
+  log::debug("market_by_price_update={}"_sv, market_by_price_update);
   for (auto &iter : offsets_)
-    log::debug("have symbol={} last_update_id={}"_fmt, symbol_, std::get<0>(iter));
+    log::debug("have symbol={} last_update_id={}"_sv, symbol_, std::get<0>(iter));
   // apply updates
   std::tuple<uint64_t, size_t, size_t> value{depth.last_update_id, 0, 0};
   auto begin = std::upper_bound(offsets_.begin(), offsets_.end(), value, [](auto &lhs, auto &rhs) {
     return std::get<0>(lhs) < std::get<0>(rhs);
   });
   if (begin != offsets_.end()) {
-    log::debug("symbol={}, last_update_id={}"_fmt, symbol_, std::get<0>(*begin));
+    log::debug("symbol={}, last_update_id={}"_sv, symbol_, std::get<0>(*begin));
     auto &previous = *begin;
     while (++begin != offsets_.end()) {
       auto &current = *begin;
@@ -110,7 +110,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
           .snapshot = false,
           .exchange_time_utc = {},
       };
-      log::debug("apply: market_by_price_update={}"_fmt, market_by_price_update);
+      log::debug("apply: market_by_price_update={}"_sv, market_by_price_update);
       market_by_price_(market_by_price_update);
       previous = current;
     }
@@ -125,16 +125,16 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
         .snapshot = false,
         .exchange_time_utc = {},
     };
-    log::debug("apply: market_by_price_update={}"_fmt, market_by_price_update);
+    log::debug("apply: market_by_price_update={}"_sv, market_by_price_update);
     market_by_price_(market_by_price_update);
   } else {
-    log::debug("found nothing symbol={}"_fmt, symbol_);
+    log::debug("found nothing symbol={}"_sv, symbol_);
   }
   bids_.clear();
   asks_.clear();
   offsets_.clear();
   ready_ = true;
-  log::debug("READY symbol={}"_fmt, symbol_);
+  log::debug("READY symbol={}"_sv, symbol_);
   return ready_;
 }
 

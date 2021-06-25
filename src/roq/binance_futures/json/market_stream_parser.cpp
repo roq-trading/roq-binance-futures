@@ -52,7 +52,7 @@ void MarketStreamParser::dispatch(
           break;
         case Field::UNKNOWN:
 #if !defined(NDEBUG)
-          log::fatal(R"(Unknown key="{}")"_fmt, key);
+          log::fatal(R"(Unknown key="{}")"_sv, key);
 #endif
           break;
         case Field::ID:
@@ -117,7 +117,7 @@ void MarketStreamParser::dispatch(
   }
   if (dispatched)
     return;
-  log::warn(R"(message="{}")"_fmt, message);
+  log::warn(R"(message="{}")"_sv, message);
   log::fatal("Unexpected"_sv);
 }
 

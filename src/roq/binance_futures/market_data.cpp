@@ -42,7 +42,7 @@ struct create_metrics final : public core::metrics::Factory {
 
 MarketData::MarketData(
     Handler &handler, core::io::Context &context, uint32_t stream_id, Shared &shared)
-    : handler_(handler), stream_id_(stream_id), name_(roq::format("{}:{}"_fmt, stream_id_, NAME)),
+    : handler_(handler), stream_id_(stream_id), name_(roq::format("{}:{}"_sv, stream_id_, NAME)),
       connection_(
           *this,
           context,
@@ -171,7 +171,7 @@ void MarketData::operator()(ConnectionStatus status) {
         .type = StreamType::WEB_SOCKET,
         .priority = Priority::PRIMARY,
     };
-    log::info("stream_status={}"_fmt, stream_status);
+    log::info("stream_status={}"_sv, stream_status);
     server::create_trace_and_dispatch(trace_info, stream_status, handler_);
   }
 }
@@ -210,7 +210,7 @@ void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@aggTrade"],)"
       R"("id":{})"
-      R"(}})"_fmt,
+      R"(}})"_sv,
       roq::join(symbols, R"(@aggTrade",")"_sv),
       id);
   connection_.send_text(message);
@@ -224,7 +224,7 @@ void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@miniTicker"],)"
       R"("id":{})"
-      R"(}})"_fmt,
+      R"(}})"_sv,
       roq::join(symbols, R"(@miniTicker",")"_sv),
       id);
   connection_.send_text(message);
@@ -238,7 +238,7 @@ void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@bookTicker"],)"
       R"("id":{})"
-      R"(}})"_fmt,
+      R"(}})"_sv,
       roq::join(symbols, R"(@bookTicker",")"_sv),
       id);
   connection_.send_text(message);
@@ -246,15 +246,15 @@ void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
 
 void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
-  auto stream = roq::format(R"(@depth@{}ms)"_fmt, Flags::ws_subscribe_depth_freq().count());
+  auto stream = roq::format(R"(@depth@{}ms)"_sv, Flags::ws_subscribe_depth_freq().count());
   auto id = ++request_id_;
-  auto separator = roq::format(R"({}",")"_fmt, stream);
+  auto separator = roq::format(R"({}",")"_sv, stream);
   auto message = roq::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}{}"],)"
       R"("id":{})"
-      R"(}})"_fmt,
+      R"(}})"_sv,
       roq::join(symbols, separator),
       stream,
       id);
@@ -269,7 +269,7 @@ void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@markPrice"],)"
       R"("id":{})"
-      R"(}})"_fmt,
+      R"(}})"_sv,
       roq::join(symbols, R"(@markPrice",")"_sv),
       id);
   connection_.send_text(message);
@@ -282,24 +282,24 @@ void MarketData::parse(const std::string_view &message) {
       core::json::Buffer buffer(decode_buffer_);
       json::MarketStreamParser::dispatch(*this, message, buffer, trace_info);
     } catch (...) {
-      log::warn(R"(message="{}")"_fmt, message);
+      log::warn(R"(message="{}")"_sv, message);
       core::tools::UnhandledException::terminate();
     }
   });
 }
 
 void MarketData::operator()(int32_t id, const json::Error &error) {
-  profile_.error([&]() { log::warn("id={}, error={}"_fmt, id, error); });
+  profile_.error([&]() { log::warn("id={}, error={}"_sv, id, error); });
 }
 
 void MarketData::operator()(int32_t id, const json::Result &result) {
-  profile_.result([&]() { log::info("id={}, result={}"_fmt, id, result); });
+  profile_.result([&]() { log::info("id={}, result={}"_sv, id, result); });
 }
 
 void MarketData::operator()(const server::Trace<json::AggTrade> &event) {
   profile_.agg_trade([&]() {
     auto &agg_trade = event.value;
-    log::trace_3("agg_trade={}"_fmt, agg_trade);
+    log::info<3>("agg_trade={}"_sv, agg_trade);
     auto side = agg_trade.buyer_is_maker ? Side::BUY : Side::SELL;
     Trade trade{
         .side = side,
@@ -323,7 +323,7 @@ void MarketData::operator()(const server::Trace<json::AggTrade> &event) {
 void MarketData::operator()(const server::Trace<json::MiniTicker> &event) {
   profile_.mini_ticker([&]() {
     auto &mini_ticker = event.value;
-    log::trace_3("mini_ticker={}"_fmt, mini_ticker);
+    log::info<3>("mini_ticker={}"_sv, mini_ticker);
     Statistics statistics[] = {
         {
             .type = StatisticsType::HIGHEST_TRADED_PRICE,
@@ -365,7 +365,7 @@ void MarketData::operator()(const server::Trace<json::MiniTicker> &event) {
 void MarketData::operator()(const server::Trace<json::BookTicker> &event) {
   profile_.book_ticker([&]() {
     auto &book_ticker = event.value;
-    log::trace_3("book_ticker={}"_fmt, book_ticker);
+    log::info<3>("book_ticker={}"_sv, book_ticker);
     TopOfBook top_of_book{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
@@ -386,11 +386,11 @@ void MarketData::operator()(const server::Trace<json::BookTicker> &event) {
 void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
   profile_.depth_update([&]() {
     auto &depth_update = event.value;
-    log::trace_3(R"(depth_update={})"_fmt, depth_update);
+    log::info<3>(R"(depth_update={})"_sv, depth_update);
     auto symbol = depth_update.symbol;
     auto iter = depth_buffer_.find(symbol);
     if (ROQ_UNLIKELY(iter == depth_buffer_.end())) {
-      log::debug(R"(CREATE symbol="{}")"_fmt, symbol);
+      log::debug(R"(CREATE symbol="{}")"_sv, symbol);
       auto [tick_size, min_trade_vol] = shared_.refdata[symbol];
       depth_buffer_.emplace(
           symbol,
@@ -412,7 +412,7 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
 void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
   profile_.mark_price_update([&]() {
     auto &mark_price_update = event.value;
-    log::trace_3(R"(mark_price_update={})"_fmt, mark_price_update);
+    log::info<3>(R"(mark_price_update={})"_sv, mark_price_update);
     auto &mark_price = event.value;
     Statistics statistics[] = {
         {
@@ -453,10 +453,10 @@ void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
 }
 
 void MarketData::operator()(const std::string_view &symbol, const json::Depth &depth) {
-  log::trace_3("symbol={} depth={}"_fmt, symbol, depth);
+  log::info<3>("symbol={} depth={}"_sv, symbol, depth);
   auto iter = depth_buffer_.find(symbol);
   if (ROQ_UNLIKELY(iter == depth_buffer_.end())) {
-    log::warn(R"(Unexpected: symbol="{}", depth={})"_fmt, symbol, depth);
+    log::warn(R"(Unexpected: symbol="{}", depth={})"_sv, symbol, depth);
   } else {
     auto &depth_buffer = (*iter).second;
     (*depth_buffer)(symbol, depth, [this](const auto &market_by_price_update) {

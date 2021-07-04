@@ -83,10 +83,6 @@ OrderEntry::OrderEntry(
       download_(Flags::rest_request_timeout(), [this](auto state) { return download(state); }) {
 }
 
-bool OrderEntry::ready() const {
-  return connection_.ready();
-}
-
 void OrderEntry::operator()(const Event<Start> &) {
   connection_.start();
 }
@@ -167,7 +163,6 @@ void OrderEntry::operator()(const core::web::Client::Connected &) {
 
 void OrderEntry::operator()(const core::web::Client::Disconnected &) {
   ++counter_.disconnect;
-  ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   if (!download_.downloading())
     download_.reset();
@@ -324,8 +319,6 @@ uint32_t OrderEntry::download(OrderEntryState state) {
       return 1;
     case OrderEntryState::DONE:
       (*this)(ConnectionStatus::READY);
-      assert(!ready_);
-      ready_ = true;
       return {};
   }
   assert(false);
@@ -378,7 +371,7 @@ void OrderEntry::download_account() {
 }
 
 void OrderEntry::refresh_listen_key() {
-  if (!ready_)
+  if (!ready())
     return;
   auto now = core::get_system_clock();
   if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
@@ -400,6 +393,8 @@ void OrderEntry::create_order(
     const CreateOrder &create_order,
     const std::string_view &cl_ord_id,
     std::function<void(const core::Promise<json::NewOrder> &)> &&callback) {
+  if (!ready())
+    throw server::OMS_ErrorException(Error::GATEWAY_NOT_READY);
   auto timestamp = core::get_realtime_clock();
   auto side = json::map(create_order.side).as_raw_text();
   auto type = json::map(create_order.order_type).as_raw_text();
@@ -468,6 +463,8 @@ void OrderEntry::cancel_order(
     const server::Order &order,
     const std::string_view &request_id,
     std::function<void(const core::Promise<json::CancelOrder> &)> &&callback) {
+  if (!ready())
+    throw server::OMS_ErrorException(Error::GATEWAY_NOT_READY, order);
   auto timestamp = core::get_realtime_clock();
   // XXX use encode buffer
   auto body = roq::format(

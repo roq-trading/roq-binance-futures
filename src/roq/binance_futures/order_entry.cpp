@@ -49,7 +49,7 @@ OrderEntry::OrderEntry(
     Security &security,
     Shared &shared)
     : handler_(handler), stream_id_(stream_id),
-      name_(roq::format("{}:{}:{}"_sv, stream_id_, NAME, security.get_account())),
+      name_(fmt::format("{}:{}:{}"_sv, stream_id_, NAME, security.get_account())),
       connection_(
           *this,
           context,
@@ -241,8 +241,8 @@ template <>
 void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &&callback) {
   auto now = core::get_realtime_clock();
   auto [timestamp, signature] = security_.create_signature(now);
-  auto query = roq::format("?{}&signature={}"_sv, timestamp, signature);
-  auto headers = roq::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
+  auto query = fmt::format("?{}&signature={}"_sv, timestamp, signature);
+  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
   core::web::Request request{
       .method = core::http::Method::GET,
       .path = "/fapi/v2/account"_sv,
@@ -274,7 +274,7 @@ void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &
 
 template <>
 void OrderEntry::get(std::function<void(const core::Promise<json::ListenKey> &)> &&callback) {
-  auto headers = roq::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
+  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
   core::web::Request request{
       .method = core::http::Method::POST,
       .path = "/fapi/v1/listenKey"_sv,
@@ -400,7 +400,7 @@ void OrderEntry::create_order(
   auto type = json::map(create_order.order_type).as_raw_text();
   auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
   // XXX use encode buffer
-  auto body = roq::format(
+  auto body = fmt::format(
       R"({{)"
       R"("symbol":"{}",)"
       R"("side":"{}",)"
@@ -429,7 +429,7 @@ void OrderEntry::create_order(
           .count(),
       timestamp.count());
   log::debug(R"(body="{}")"_sv, body);
-  auto headers = roq::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
+  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
   core::web::Request request{
       .method = core::http::Method::POST,
       .path = "/fapi/v1/order"_sv,
@@ -468,7 +468,7 @@ void OrderEntry::cancel_order(
     throw server::OMS_ErrorException(Error::GATEWAY_NOT_READY, order);
   auto timestamp = core::get_realtime_clock();
   // XXX use encode buffer
-  auto body = roq::format(
+  auto body = fmt::format(
       R"({{)"
       R"("symbol":"{}",)"
       R"("origClientOrderId":"{}")"
@@ -483,7 +483,7 @@ void OrderEntry::cancel_order(
           .count(),
       timestamp.count());
   log::debug(R"(body="{}")"_sv, body);
-  auto headers = roq::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
+  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
   core::web::Request request{
       .method = core::http::Method::DELETE,
       .path = "/fapi/v1/order"_sv,
@@ -515,7 +515,7 @@ void OrderEntry::cancel_order(
 void OrderEntry::get_depth(
     const std::string_view &symbol,
     std::function<void(const core::Promise<json::Depth> &)> &&callback) {
-  auto query = roq::format("?symbol={}&limit={}"_sv, symbol, Flags::ws_subscribe_depth_levels());
+  auto query = fmt::format("?symbol={}&limit={}"_sv, symbol, Flags::ws_subscribe_depth_levels());
   core::web::Request request{
       .method = core::http::Method::GET,
       .path = "/fapi/v1/depth"_sv,

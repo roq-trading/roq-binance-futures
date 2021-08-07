@@ -42,7 +42,7 @@ struct create_metrics final : public core::metrics::Factory {
 
 MarketData::MarketData(
     Handler &handler, core::io::Context &context, uint32_t stream_id, Shared &shared)
-    : handler_(handler), stream_id_(stream_id), name_(roq::format("{}:{}"_sv, stream_id_, NAME)),
+    : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"_sv, stream_id_, NAME)),
       connection_(
           *this,
           context,
@@ -205,13 +205,13 @@ void MarketData::subscribe(const roq::span<std::string> &symbols) {
 void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(
+  auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@aggTrade"],)"
       R"("id":{})"
       R"(}})"_sv,
-      roq::join(symbols, R"(@aggTrade",")"_sv),
+      fmt::join(symbols, R"(@aggTrade",")"_sv),
       id);
   connection_.send_text(message);
 }
@@ -219,13 +219,13 @@ void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
 void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(
+  auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@miniTicker"],)"
       R"("id":{})"
       R"(}})"_sv,
-      roq::join(symbols, R"(@miniTicker",")"_sv),
+      fmt::join(symbols, R"(@miniTicker",")"_sv),
       id);
   connection_.send_text(message);
 }
@@ -233,29 +233,29 @@ void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
 void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(
+  auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@bookTicker"],)"
       R"("id":{})"
       R"(}})"_sv,
-      roq::join(symbols, R"(@bookTicker",")"_sv),
+      fmt::join(symbols, R"(@bookTicker",")"_sv),
       id);
   connection_.send_text(message);
 }
 
 void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
-  auto stream = roq::format(R"(@depth@{}ms)"_sv, Flags::ws_subscribe_depth_freq().count());
+  auto stream = fmt::format(R"(@depth@{}ms)"_sv, Flags::ws_subscribe_depth_freq().count());
   auto id = ++request_id_;
-  auto separator = roq::format(R"({}",")"_sv, stream);
-  auto message = roq::format(
+  auto separator = fmt::format(R"({}",")"_sv, stream);
+  auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}{}"],)"
       R"("id":{})"
       R"(}})"_sv,
-      roq::join(symbols, separator),
+      fmt::join(symbols, separator),
       stream,
       id);
   connection_.send_text(message);
@@ -264,13 +264,13 @@ void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
 void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   auto id = ++request_id_;
-  auto message = roq::format(
+  auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@markPrice"],)"
       R"("id":{})"
       R"(}})"_sv,
-      roq::join(symbols, R"(@markPrice",")"_sv),
+      fmt::join(symbols, R"(@markPrice",")"_sv),
       id);
   connection_.send_text(message);
 }

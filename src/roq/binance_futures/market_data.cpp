@@ -14,8 +14,6 @@
 
 #include "roq/core/tools/exception.h"
 
-#include "roq/core/string_utils/string_builder.h"
-
 #include "roq/core/metrics/factory.h"
 
 #include "roq/binance_futures/flags.h"
@@ -307,8 +305,7 @@ void MarketData::operator()(const server::Trace<json::AggTrade> &event) {
         .quantity = agg_trade.quantity,
         .trade_id = {},
     };
-    core::charconv::to_string(
-        core::string_utils::string_builder(trade.trade_id), agg_trade.agg_trade_id);
+    core::charconv::to_string(std::back_inserter(trade.trade_id), agg_trade.agg_trade_id);
     TradeSummary trade_summary{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),

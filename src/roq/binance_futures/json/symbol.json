@@ -23,6 +23,8 @@
 	{ "name": "triggerProtect", "type": "double" },
 	{ "name": "filters" },
 	{ "name": "orderTypes" },
-	{ "name": "timeInForce" }
+	{ "name": "timeInForce" },
+	{ "name": "liquidationFee", "type": "double" },
+	{ "name": "marketTakeBound", "type": "double" }
 ]
 }

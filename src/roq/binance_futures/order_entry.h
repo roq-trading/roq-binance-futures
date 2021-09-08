@@ -84,7 +84,7 @@ class OrderEntry final : public core::web::Client::Handler {
       const std::string_view &request_id,
       const std::string_view &previous_request_id);
 
-  uint16_t operator()(const Event<CancelAllOrders> &);
+  uint16_t operator()(const Event<CancelAllOrders> &, const std::string_view &request_id);
 
   void get_depth(
       const std::string_view &symbol, std::function<void(const core::Promise<json::Depth> &)> &&);

@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Changed
 
+* Added HTTP `request_id` (#55)
 * Use `string_buffer` + `std::back_inserter` instead of `string_builder` (#53)
 * Added new symbols fields: liquidationFee and marketTakeBound (#54)
 

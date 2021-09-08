@@ -148,7 +148,8 @@ uint16_t OrderEntry::operator()(
   return stream_id_;
 }
 
-uint16_t OrderEntry::operator()(const Event<CancelAllOrders> &) {
+uint16_t OrderEntry::operator()(
+    const Event<CancelAllOrders> &, [[maybe_unused]] const std::string_view &request_id) {
   log::fatal("*** CANCEL ALL ORDERS *NOT* SUPPORTED ***"_sv);
 }
 
@@ -218,23 +219,26 @@ void OrderEntry::get(std::function<void(const core::Promise<json::ExchangeInfo> 
       .quality_of_service = {},
       .rate_limit_weight = 1,
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.exchange_info([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        core::json::Buffer buffer(decode_buffer_);
-        auto exchange_info =
-            core::json::Parser::create<json::ExchangeInfo>(response.body(), buffer);
-        log::info<1>("exchange_info={}"_sv, exchange_info);
-        core::Promise<json::ExchangeInfo> promise(exchange_info);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::ExchangeInfo> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      "exchange_info"_sv,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.exchange_info([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            core::json::Buffer buffer(decode_buffer_);
+            auto exchange_info =
+                core::json::Parser::create<json::ExchangeInfo>(response.body(), buffer);
+            log::info<1>("exchange_info={}"_sv, exchange_info);
+            core::Promise<json::ExchangeInfo> promise(exchange_info);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::ExchangeInfo> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 template <>
@@ -254,22 +258,25 @@ void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &
       .quality_of_service = {},
       .rate_limit_weight = 5,
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.account([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        core::json::Buffer buffer(decode_buffer_);
-        auto account = core::json::Parser::create<json::Account>(response.body(), buffer);
-        log::info<1>("account={}"_sv, account);
-        core::Promise<json::Account> promise(account);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::Account> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      "account"_sv,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.account([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            core::json::Buffer buffer(decode_buffer_);
+            auto account = core::json::Parser::create<json::Account>(response.body(), buffer);
+            log::info<1>("account={}"_sv, account);
+            core::Promise<json::Account> promise(account);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::Account> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 template <>
@@ -286,21 +293,24 @@ void OrderEntry::get(std::function<void(const core::Promise<json::ListenKey> &)>
       .quality_of_service = {},
       .rate_limit_weight = 1,
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.listen_key([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        auto listen_key = core::json::Parser::create<json::ListenKey>(response.body());
-        log::info<1>("listen_key={}"_sv, listen_key);
-        core::Promise<json::ListenKey> promise(listen_key);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::ListenKey> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      "listen_key"_sv,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.listen_key([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            auto listen_key = core::json::Parser::create<json::ListenKey>(response.body());
+            log::info<1>("listen_key={}"_sv, listen_key);
+            core::Promise<json::ListenKey> promise(listen_key);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::ListenKey> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 uint32_t OrderEntry::download(OrderEntryState state) {
@@ -441,22 +451,25 @@ void OrderEntry::create_order(
       .quality_of_service = core::web::QualityOfService::IMMEDIATE,
       .rate_limit_weight = 1,
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.new_order([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        core::json::Buffer buffer(decode_buffer_);
-        auto new_order = core::json::Parser::create<json::NewOrder>(response.body(), buffer);
-        log::info<1>("new_order={}"_sv, new_order);
-        core::Promise<json::NewOrder> promise(new_order);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::NewOrder> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      cl_ord_id,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.new_order([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            core::json::Buffer buffer(decode_buffer_);
+            auto new_order = core::json::Parser::create<json::NewOrder>(response.body(), buffer);
+            log::info<1>("new_order={}"_sv, new_order);
+            core::Promise<json::NewOrder> promise(new_order);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::NewOrder> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 void OrderEntry::cancel_order(
@@ -495,21 +508,24 @@ void OrderEntry::cancel_order(
       .quality_of_service = core::web::QualityOfService::IMMEDIATE,
       .rate_limit_weight = 1,
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.cancel_order([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        auto cancel_order = core::json::Parser::create<json::CancelOrder>(response.body());
-        log::info<1>("cancel_order={}"_sv, cancel_order);
-        core::Promise<json::CancelOrder> promise(cancel_order);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::CancelOrder> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      request_id,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.cancel_order([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            auto cancel_order = core::json::Parser::create<json::CancelOrder>(response.body());
+            log::info<1>("cancel_order={}"_sv, cancel_order);
+            core::Promise<json::CancelOrder> promise(cancel_order);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::CancelOrder> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 void OrderEntry::get_depth(
@@ -527,24 +543,27 @@ void OrderEntry::get_depth(
       .quality_of_service = {},
       .rate_limit_weight = 20,  // note! scales with levels (20 this is the value for 1000 levels)
   };
-  connection_(request, [this, callback{std::move(callback)}](auto &response) {
-    profile_.cancel_order([&]() {
-      try {
-        response.expect(core::http::Status::OK);
-        core::json::Parser parser(response.body());
-        auto root = parser.root();
-        core::json::Buffer buffer(decode_buffer_);
-        json::Depth depth(root, buffer);
-        log::info<1>("depth={}"_sv, depth);
-        core::Promise<json::Depth> promise(depth);
-        callback(promise);
-      } catch (NetworkError &e) {
-        log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-        core::Promise<json::Depth> promise(std::current_exception());
-        callback(promise);
-      }
-    });
-  });
+  connection_(
+      "depth"_sv,
+      request,
+      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
+        profile_.cancel_order([&]() {
+          try {
+            response.expect(core::http::Status::OK);
+            core::json::Parser parser(response.body());
+            auto root = parser.root();
+            core::json::Buffer buffer(decode_buffer_);
+            json::Depth depth(root, buffer);
+            log::info<1>("depth={}"_sv, depth);
+            core::Promise<json::Depth> promise(depth);
+            callback(promise);
+          } catch (NetworkError &e) {
+            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+            core::Promise<json::Depth> promise(std::current_exception());
+            callback(promise);
+          }
+        });
+      });
 }
 
 void OrderEntry::operator()(const json::NewOrder &) {

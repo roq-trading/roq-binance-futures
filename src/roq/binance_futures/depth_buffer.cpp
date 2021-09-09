@@ -69,7 +69,7 @@ DepthBuffer::DepthBuffer(
 
 bool DepthBuffer::update_helper(const json::Depth &depth) {
   log::debug("got snapshot, symbol={}, last_update_id={}"_sv, symbol_, depth.last_update_id);
-  // snapshot
+  // apply snapshot
   core::back_emplacer bids(shared_.bids), asks(shared_.asks);
   log::debug("depth={}"_sv, depth);
   for (auto &item : depth.bids)
@@ -89,7 +89,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
   log::debug("market_by_price_update={}"_sv, market_by_price_update);
   for (auto &iter : offsets_)
     log::debug("have symbol={} last_update_id={}"_sv, symbol_, std::get<0>(iter));
-  // apply updates
+  // apply collected updates (> last_update_id)
   std::tuple<uint64_t, size_t, size_t> value{depth.last_update_id, 0, 0};
   auto begin = std::upper_bound(offsets_.begin(), offsets_.end(), value, [](auto &lhs, auto &rhs) {
     return std::get<0>(lhs) < std::get<0>(rhs);
@@ -140,6 +140,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
 
 std::pair<size_t, size_t> DepthBuffer::update_helper(const json::DepthUpdate &depth_update) {
   if (ROQ_LIKELY(ready_)) {
+    // normal case
     core::back_emplacer bids(shared_.bids), asks(shared_.asks);
     for (auto &item : depth_update.bids)
       bids.emplace_back([&item](auto &result) { emplace(result, item); });
@@ -147,6 +148,7 @@ std::pair<size_t, size_t> DepthBuffer::update_helper(const json::DepthUpdate &de
       asks.emplace_back([&item](auto &result) { emplace(result, item); });
     return std::make_pair(bids.size(), asks.size());
   } else {
+    // initializing -- collect the updates until we receive a snapshot
     offsets_.emplace_back(depth_update.final_update_id, bids_.size(), asks_.size());
     for (auto &item : depth_update.bids)
       bids_.emplace_back(MBPUpdate{

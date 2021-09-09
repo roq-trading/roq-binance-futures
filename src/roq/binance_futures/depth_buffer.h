@@ -20,6 +20,12 @@
 namespace roq {
 namespace binance_futures {
 
+// this exists due to the initialization protocol:
+// - subscribe incremental updates
+// - collect incremental updates
+// - request snapshot
+// - initial state = snapshot + apply incremental updates
+// - normal operation from then on
 struct DepthBuffer final {
   DepthBuffer(
       Shared &,
@@ -42,7 +48,7 @@ struct DepthBuffer final {
       update_helper(depth);
       if (ready_) {
         auto result = market_by_price_.extract(shared_.bids, shared_.asks);
-        MarketByPriceUpdate market_by_price_update{
+        const MarketByPriceUpdate market_by_price_update{
             .stream_id = stream_id_,
             .exchange = Flags::exchange(),
             .symbol = symbol,
@@ -60,7 +66,7 @@ struct DepthBuffer final {
   void operator()(const json::DepthUpdate &depth_update, F callback) {
     auto result = update_helper(depth_update);
     if (ready_) {
-      MarketByPriceUpdate market_by_price_update{
+      const MarketByPriceUpdate market_by_price_update{
           .stream_id = stream_id_,
           .exchange = Flags::exchange(),
           .symbol = depth_update.symbol,

@@ -401,7 +401,12 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
     } else {
       auto &depth_buffer = (*iter).second;
       (*depth_buffer)(depth_update, [this, &event](auto &market_by_price_update) {
-        server::create_trace_and_dispatch(event.trace_info, market_by_price_update, handler_, true);
+        try {
+          server::create_trace_and_dispatch(
+              event.trace_info, market_by_price_update, handler_, true);
+        } catch (market::BadState &) {
+          log::fatal("*** RESUBSCRIBE REQUIRED HERE ***"_sv);
+        }
       });
     }
   });
@@ -458,8 +463,12 @@ void MarketData::operator()(const std::string_view &symbol, const json::Depth &d
   } else {
     auto &depth_buffer = (*iter).second;
     (*depth_buffer)(symbol, depth, [this](const auto &market_by_price_update) {
-      server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
-      server::create_trace_and_dispatch(trace_info, market_by_price_update, handler_, true);
+      try {
+        server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
+        server::create_trace_and_dispatch(trace_info, market_by_price_update, handler_, true);
+      } catch (market::BadState &) {
+        log::fatal("*** RESUBSCRIBE REQUIRED HERE ***"_sv);
+      }
     });
   }
 }

@@ -391,7 +391,8 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
       auto [tick_size, min_trade_vol] = shared_.refdata[symbol];
       depth_buffer_.emplace(
           symbol,
-          std::make_unique<DepthBuffer>(shared_, stream_id_, symbol, tick_size, min_trade_vol));
+          std::make_unique<DepthBuffer>(
+              shared_, stream_id_, shared_.gateway_settings, symbol, tick_size, min_trade_vol));
       // note! snasphot is requested using the master order entry connection
       GetDepth get_depth{
           .stream_id = stream_id_,

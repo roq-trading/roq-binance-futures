@@ -29,18 +29,12 @@ void emplace(MBPUpdate &result, const T &value) {
 DepthBuffer::DepthBuffer(
     Shared &shared,
     uint16_t stream_id,
+    const GatewaySettings &gateway_settings,
     const std::string_view &symbol,
     double tick_size,
     double min_trade_vol)
     : shared_(shared), stream_id_(stream_id), symbol_(symbol),
-      market_by_price_(
-          core::market::MarketByPrice::Config{
-              .type = {},
-              .max_depth = server::Flags::cache_mbp_max_depth(),
-              .allow_fractional_tick_size = {},
-              .allow_remove_non_existing = true,  // note! documented on website
-          },
-          symbol) {
+      market_by_price_(Flags::exchange(), symbol, gateway_settings) {
   // XXX should be constructor
   ReferenceData reference_data{
       .stream_id = stream_id,

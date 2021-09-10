@@ -30,6 +30,7 @@ struct DepthBuffer final {
   DepthBuffer(
       Shared &,
       uint16_t stream_id,
+      const GatewaySettings &,
       const std::string_view &symbol,
       double tick_size,
       double min_trade_vol);

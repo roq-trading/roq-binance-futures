@@ -197,7 +197,7 @@ void Gateway::operator()(const MarketData::GetDepth &get_depth) {
       if (ROQ_UNLIKELY(iter == market_data_.end()))
         log::fatal("Unexpected: stream_id={}"_sv, stream_id);
       (*(*iter).second)(symbol, depth);
-    } catch (NetworkError &e) {
+    } catch (core::NetworkError &e) {
       log::fatal(R"(Unexpected what="{}")"_sv, e.what());
     }
   });

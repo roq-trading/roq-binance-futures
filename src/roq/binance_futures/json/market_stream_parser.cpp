@@ -39,7 +39,7 @@ void MarketStreamParser::dispatch(
     const server::TraceInfo &trace_info) {
   int64_t id = -1;
   std::string symbol;  // allocating because we need uppercase
-  auto stream = Stream::UNDEFINED;
+  // auto stream = Stream::UNDEFINED;
   bool dispatched = false;
   for (int i = 0; i < 2 && !dispatched; ++i) {
     core::json::Parser parser(message);

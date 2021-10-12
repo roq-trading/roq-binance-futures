@@ -352,7 +352,7 @@ void MarketData::operator()(const server::Trace<json::MiniTicker> &event) {
         .exchange = Flags::exchange(),
         .symbol = mini_ticker.symbol,
         .statistics = statistics,
-        .snapshot = false,
+        .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = mini_ticker.event_time,
     };
     create_trace_and_dispatch(event.trace_info, statistics_update, handler_, true);
@@ -373,7 +373,7 @@ void MarketData::operator()(const server::Trace<json::BookTicker> &event) {
             .ask_price = book_ticker.best_ask_price,
             .ask_quantity = book_ticker.best_ask_qty,
         },
-        .snapshot = false,
+        .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = {},
     };
     create_trace_and_dispatch(event.trace_info, top_of_book, handler_, true);
@@ -449,7 +449,7 @@ void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
         .exchange = Flags::exchange(),
         .symbol = mark_price.symbol,
         .statistics = statistics,
-        .snapshot = false,
+        .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = mark_price.event_time,
     };
     create_trace_and_dispatch(event.trace_info, statistics_update, handler_, true);

@@ -76,7 +76,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
       .symbol = symbol_,
       .bids = bids,
       .asks = asks,
-      .snapshot = true,
+      .update_type = UpdateType::SNAPSHOT,
       .exchange_time_utc = {},
   };
   market_by_price_(market_by_price_update);
@@ -101,7 +101,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
           .symbol = symbol_,
           .bids = {&bids_[std::get<1>(previous)], std::get<1>(current) - std::get<1>(previous)},
           .asks = {&asks_[std::get<2>(previous)], std::get<2>(current) - std::get<2>(previous)},
-          .snapshot = false,
+          .update_type = UpdateType::INCREMENTAL,
           .exchange_time_utc = {},
       };
       log::debug("apply: market_by_price_update={}"_sv, market_by_price_update);
@@ -116,7 +116,7 @@ bool DepthBuffer::update_helper(const json::Depth &depth) {
         .symbol = symbol_,
         .bids = {&bids_[std::get<1>(previous)], bids_.size() - std::get<1>(previous)},
         .asks = {&asks_[std::get<2>(previous)], asks_.size() - std::get<2>(previous)},
-        .snapshot = false,
+        .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = {},
     };
     log::debug("apply: market_by_price_update={}"_sv, market_by_price_update);

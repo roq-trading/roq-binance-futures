@@ -55,7 +55,7 @@ struct DepthBuffer final {
             .symbol = symbol,
             .bids = {shared_.bids.data(), result.first},
             .asks = {shared_.asks.data(), result.second},
-            .snapshot = true,
+            .update_type = UpdateType::SNAPSHOT,
             .exchange_time_utc = {},
         };
         callback(market_by_price_update);
@@ -73,7 +73,7 @@ struct DepthBuffer final {
           .symbol = depth_update.symbol,
           .bids = {shared_.bids.data(), result.first},
           .asks = {shared_.asks.data(), result.second},
-          .snapshot = false,
+          .update_type = UpdateType::INCREMENTAL,
           .exchange_time_utc = {},
       };
       callback(market_by_price_update);

@@ -2,18 +2,14 @@
 
 #pragma once
 
-#include <fmt/format.h>
-
 #include <chrono>
 #include <string>
 #include <string_view>
 #include <utility>
 
-#include "roq/core/crypto/hmac.h"
-
-#include "roq/core/http/method.h"
-
 #include "roq/binance_futures/config.h"
+
+#include "roq/binance_futures/tools/hasher.h"
 
 namespace roq {
 namespace binance_futures {
@@ -26,16 +22,15 @@ class Security final {
   Security(const Security &) = delete;
 
   std::string_view get_account() const { return account_; }
-
   std::string_view get_api_key() const { return key_; }
 
   std::string create_signature();
-  std::pair<std::string, std::string> create_signature(const std::chrono::nanoseconds &now);
+  std::pair<std::string, std::string> create_signature(std::chrono::nanoseconds now);
 
  private:
   const std::string account_;
   const std::string key_;
-  core::crypto::HMAC_SHA256 hmac_;
+  tools::Hasher hasher_;
 };
 
 }  // namespace binance_futures

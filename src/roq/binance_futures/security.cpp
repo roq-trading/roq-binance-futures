@@ -2,39 +2,19 @@
 
 #include "roq/binance_futures/security.h"
 
-#include <cassert>
-
-#include "roq/core/binascii/hex.h"
-
-#include "roq/core/crypto/hmac.h"
-
 namespace roq {
 namespace binance_futures {
 
 Security::Security(const Config &config, const std::string_view &account)
-    : account_(account), key_(config.get_api_key(account_)), hmac_(config.get_secret(account_)) {
+    : account_(account), key_(config.get_api_key(account_)), hasher_(config.get_secret(account_)) {
 }
 
 std::string Security::create_signature() {
-  hmac_.clear();
-  std::array<char, 32> buffer;
-  auto length = hmac_.digest(buffer);
-  assert(length == buffer.size());
-  auto signature = core::binascii::Hex::encode(buffer);
-  return signature;
+  return hasher_.create_signature();
 }
 
-std::pair<std::string, std::string> Security::create_signature(
-    const std::chrono::nanoseconds &now) {
-  auto timestamp = fmt::format(
-      "timestamp={}"_sv, std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
-  hmac_.clear();
-  hmac_.update(timestamp);
-  std::array<char, 32> buffer;
-  auto length = hmac_.digest(buffer);
-  assert(length == buffer.size());
-  auto signature = core::binascii::Hex::encode(buffer);
-  return std::make_pair(timestamp, signature);
+std::pair<std::string, std::string> Security::create_signature(std::chrono::nanoseconds now) {
+  return hasher_.create_signature(now);
 }
 
 }  // namespace binance_futures

@@ -1,0 +1,21 @@
+{
+"name": "Position",
+"type": "item",
+"values": [
+	{ "name": "symbol", "type": "std::string_view" },
+	{ "name": "initialMargin", "type": "double" },
+	{ "name": "maintMargin", "type": "double" },
+	{ "name": "unrealizedProfit", "type": "double" },
+	{ "name": "positionInitialMargin", "type": "double" },
+	{ "name": "openOrderInitialMargin", "type": "double" },
+	{ "name": "leverage", "type": "double" },
+	{ "name": "isolated", "type": "bool" },
+	{ "name": "entryPrice", "type": "double" },
+	{ "name": "maxNotional", "type": "double" },
+	{ "name": "positionSide", "type": "std::string_view" },
+	{ "name": "positionAmt", "type": "double" },
+	{ "name": "notional", "type": "double" },
+	{ "name": "isolatedWallet", "type": "double" },
+	{ "name": "updateTime", "type": "std::chrono::milliseconds" }
+]
+}

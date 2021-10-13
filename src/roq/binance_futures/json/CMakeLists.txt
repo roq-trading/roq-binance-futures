@@ -7,6 +7,7 @@ include(RoqAutogen)
 set(AUTOGEN_SCHEMAS
     account.json
     agg_trade.json
+    asset.json
     balance.json
     balance_update.json
     balances_item.json
@@ -32,6 +33,7 @@ set(AUTOGEN_SCHEMAS
     order_type.json
     outbound_account_info.json
     outbound_account_position.json
+    position.json
     result.json
     side.json
     stream.json

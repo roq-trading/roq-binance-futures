@@ -596,6 +596,7 @@ void OrderEntry::operator()(const json::ListenKey &listen_key) {
 
 void OrderEntry::operator()(const json::Account &account) {
   server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
+  /*
   for (auto &item : account.balances) {
     FundsUpdate funds_update{
         .stream_id = stream_id_,
@@ -607,6 +608,7 @@ void OrderEntry::operator()(const json::Account &account) {
     };
     create_trace_and_dispatch(trace_info, funds_update, handler_, true);
   }
+  */
 }
 
 void OrderEntry::operator()(const json::ExchangeInfo &exchange_info) {

@@ -138,8 +138,8 @@ uint16_t OrderEntry::operator()(
     const Event<CancelOrder> &event,
     const oms::Order &order,
     const std::string_view &request_id,
-    [[maybe_unused]] const std::string_view &previous_request_id) {
-  cancel_order(event.value, order, request_id);
+    const std::string_view &previous_request_id) {
+  cancel_order(event.value, order, request_id, previous_request_id);
   return stream_id_;
 }
 
@@ -477,17 +477,19 @@ void OrderEntry::refresh_listen_key() {
 
 // new-order
 
-void OrderEntry::new_order(const CreateOrder &create_order, const std::string_view &cl_ord_id) {
+void OrderEntry::new_order(const CreateOrder &create_order, const std::string_view &request_id) {
   profile_.new_order([&]() {
     if (!ready())
       throw oms::NotReadyException();
     auto method = core::http::Method::POST;
     auto path = "/fapi/v1/order"_sv;
     auto headers = security_.create_headers();
-    std::chrono::milliseconds timestamp = utils::safe_cast(core::get_realtime_clock());
     auto side = json::map(create_order.side).as_raw_text();
     auto type = json::map(create_order.order_type).as_raw_text();
     auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
+    auto reduce_only = false;
+    std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
+    std::chrono::milliseconds timestamp = utils::safe_cast(core::get_realtime_clock());
     auto body = fmt::format(
         R"({{)"
         R"("symbol":"{}",)"
@@ -495,11 +497,10 @@ void OrderEntry::new_order(const CreateOrder &create_order, const std::string_vi
         R"("type":"{}",)"
         R"("timeInForce":"{}",)"
         R"("quantity":{},)"
-        R"("quoteOrderQty":{},)"  // XXX ???
+        R"("reduceOnly":{},)"
         R"("price":{},)"
         R"("newClientOrderId":"{}")"
-        R"("stopPrice":{},)"   // XXX ???
-        R"("icebergQty":{},)"  // XXX ???
+        R"("stopPrice":{},)"
         R"("recvWindow":{},)"
         R"("timestamp":{})"
         R"(}})"_sv,
@@ -508,13 +509,11 @@ void OrderEntry::new_order(const CreateOrder &create_order, const std::string_vi
         type,
         time_in_force,
         create_order.quantity,
-        0.0,
+        reduce_only,
         create_order.price,
-        cl_ord_id,
-        0.0,
-        0.0,
-        std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
-            .count(),
+        request_id,
+        create_order.stop_price,
+        recv_window.count(),
         timestamp.count());
     log::debug(R"(body="{}")"_sv, body);
     core::web::Request request{
@@ -528,7 +527,7 @@ void OrderEntry::new_order(const CreateOrder &create_order, const std::string_vi
         .quality_of_service = core::web::QualityOfService::IMMEDIATE,
         .rate_limit_weight = 1,
     };
-    connection_(cl_ord_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+    connection_(request_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
       new_order_ack(response);
     });
   });
@@ -561,28 +560,26 @@ void OrderEntry::operator()(const server::Trace<json::NewOrder> &) {
 void OrderEntry::cancel_order(
     [[maybe_unused]] const CancelOrder &cancel_order,
     const oms::Order &order,
-    const std::string_view &request_id) {
+    const std::string_view &request_id,
+    const std::string_view &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
       throw oms::NotReadyException();
     auto method = core::http::Method::DELETE;
     auto path = "/fapi/v1/order"_sv;
     auto headers = security_.create_headers();
+    std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
     std::chrono::milliseconds timestamp = utils::safe_cast(core::get_realtime_clock());
-    // XXX use encode buffer
     auto body = fmt::format(
         R"({{)"
         R"("symbol":"{}",)"
         R"("origClientOrderId":"{}")"
-        R"("newClientOrderId":"{}")"
         R"("recvWindow":{},)"
         R"("timestamp":{})"
         R"(}})"_sv,
         order.symbol,
-        order.external_order_id,
-        request_id,
-        std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
-            .count(),
+        previous_request_id,
+        recv_window.count(),
         timestamp.count());
     log::debug(R"(body="{}")"_sv, body);
     core::web::Request request{

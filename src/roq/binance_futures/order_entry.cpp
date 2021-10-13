@@ -6,6 +6,7 @@
 
 #include "roq/utils/compare.h"
 #include "roq/utils/mask.h"
+#include "roq/utils/safe_cast.h"
 #include "roq/utils/update.h"
 
 #include "roq/core/charconv.h"
@@ -24,8 +25,6 @@ namespace binance_futures {
 namespace {
 static const auto NAME = "om"_sv;
 static const auto SUPPORTS = utils::Mask{
-    SupportType::REFERENCE_DATA,
-    SupportType::MARKET_STATUS,
     SupportType::CREATE_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
@@ -33,8 +32,6 @@ static const auto SUPPORTS = utils::Mask{
 };
 
 static const auto ALLOW_PIPELINING = false;
-
-static const auto X_MBX_USED_WEIGHT = "X-MBX-USED-WEIGHT-1M"_sv;
 
 struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)
@@ -69,12 +66,18 @@ OrderEntry::OrderEntry(
           .disconnect = create_metrics(name_, "disconnect"_sv),
       },
       profile_{
-          .exchange_info = create_metrics(name_, "exchange_info"_sv),
-          .account = create_metrics(name_, "account"_sv),
           .listen_key = create_metrics(name_, "listen_key"_sv),
-          .depth = create_metrics(name_, "depth"_sv),
+          .listen_key_ack = create_metrics(name_, "listen_key_ack"_sv),
+          .balance = create_metrics(name_, "balance"_sv),
+          .balance_ack = create_metrics(name_, "balance_ack"_sv),
+          .account = create_metrics(name_, "account"_sv),
+          .account_ack = create_metrics(name_, "account_ack"_sv),
+          .open_orders = create_metrics(name_, "open_orders"_sv),
+          .open_orders_ack = create_metrics(name_, "open_orders_ack"_sv),
           .new_order = create_metrics(name_, "new_order"_sv),
+          .new_order_ack = create_metrics(name_, "new_order_ack"_sv),
           .cancel_order = create_metrics(name_, "cancel_order"_sv),
+          .cancel_order_ack = create_metrics(name_, "cancel_order_ack"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -101,26 +104,25 @@ void OrderEntry::operator()(metrics::Writer &writer) {
       // counter
       .write(counter_.disconnect, metrics::COUNTER)
       // profile
-      .write(profile_.exchange_info, metrics::PROFILE)
-      .write(profile_.account, metrics::PROFILE)
       .write(profile_.listen_key, metrics::PROFILE)
-      .write(profile_.depth, metrics::PROFILE)
+      .write(profile_.listen_key_ack, metrics::PROFILE)
+      .write(profile_.balance, metrics::PROFILE)
+      .write(profile_.balance_ack, metrics::PROFILE)
+      .write(profile_.account, metrics::PROFILE)
+      .write(profile_.account_ack, metrics::PROFILE)
+      .write(profile_.open_orders, metrics::PROFILE)
+      .write(profile_.open_orders, metrics::PROFILE)
       .write(profile_.new_order, metrics::PROFILE)
+      .write(profile_.new_order_ack, metrics::PROFILE)
       .write(profile_.cancel_order, metrics::PROFILE)
+      .write(profile_.cancel_order_ack, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY);
 }
 
 uint16_t OrderEntry::operator()(
     const Event<CreateOrder> &event, const oms::Order &, const std::string_view &request_id) {
-  create_order(event.value, request_id, [this](auto &promise) {
-    try {
-      (*this)(promise.get());
-    } catch (core::NetworkError &e) {
-      // XXX send ack failure
-      log::fatal(R"(Unexpected what="{}")"_sv, e.what());
-    }
-  });
+  new_order(event.value, request_id);
   return stream_id_;
 }
 
@@ -137,14 +139,7 @@ uint16_t OrderEntry::operator()(
     const oms::Order &order,
     const std::string_view &request_id,
     [[maybe_unused]] const std::string_view &previous_request_id) {
-  cancel_order(event.value, order, request_id, [this](auto &promise) {
-    try {
-      (*this)(promise.get());
-    } catch (core::NetworkError &e) {
-      // XXX send ack failure
-      log::fatal(R"(Unexpected what="{}")"_sv, e.what());
-    }
-  });
+  cancel_order(event.value, order, request_id);
   return stream_id_;
 }
 
@@ -167,17 +162,6 @@ void OrderEntry::operator()(const core::web::Client::Disconnected &) {
   (*this)(ConnectionStatus::DISCONNECTED);
   if (!download_.downloading())
     download_.reset();
-}
-
-void OrderEntry::operator()(const core::web::Client::Header &header) {
-  if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT) != 0)
-    return;
-  try {
-    auto value = core::from_chars<uint32_t>(header.value);
-    connection_.update_rate_limit_usage(value);
-  } catch (std::exception &) {
-    // XXX maybe warn?
-  }
 }
 
 void OrderEntry::operator()(const core::web::Client::Latency &latency) {
@@ -206,126 +190,22 @@ void OrderEntry::operator()(ConnectionStatus status) {
   }
 }
 
-template <>
-void OrderEntry::get(std::function<void(const core::Promise<json::ExchangeInfo> &)> &&callback) {
-  core::web::Request request{
-      .method = core::http::Method::GET,
-      .path = "/fapi/v1/exchangeInfo"_sv,
-      .query = {},
-      .accept = core::http::Accept::JSON,
-      .content_type = {},
-      .headers = {},
-      .body = {},
-      .quality_of_service = {},
-      .rate_limit_weight = 1,
-  };
-  connection_(
-      "exchange_info"_sv,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.exchange_info([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            core::json::Buffer buffer(decode_buffer_);
-            auto exchange_info =
-                core::json::Parser::create<json::ExchangeInfo>(response.body(), buffer);
-            log::info<1>("exchange_info={}"_sv, exchange_info);
-            core::Promise<json::ExchangeInfo> promise(exchange_info);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::ExchangeInfo> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
-template <>
-void OrderEntry::get(std::function<void(const core::Promise<json::Account> &)> &&callback) {
-  auto now = core::get_realtime_clock();
-  auto [timestamp, signature] = security_.create_signature(now);
-  auto query = fmt::format("?{}&signature={}"_sv, timestamp, signature);
-  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
-  core::web::Request request{
-      .method = core::http::Method::GET,
-      .path = "/fapi/v2/account"_sv,
-      .query = query,
-      .accept = {},
-      .content_type = {},
-      .headers = headers,
-      .body = {},
-      .quality_of_service = {},
-      .rate_limit_weight = 5,
-  };
-  connection_(
-      "account"_sv,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.account([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            core::json::Buffer buffer(decode_buffer_);
-            auto account = core::json::Parser::create<json::Account>(response.body(), buffer);
-            log::info<1>("account={}"_sv, account);
-            core::Promise<json::Account> promise(account);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::Account> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
-template <>
-void OrderEntry::get(std::function<void(const core::Promise<json::ListenKey> &)> &&callback) {
-  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
-  core::web::Request request{
-      .method = core::http::Method::POST,
-      .path = "/fapi/v1/listenKey"_sv,
-      .query = {},
-      .accept = {},
-      .content_type = {},
-      .headers = headers,
-      .body = {},
-      .quality_of_service = {},
-      .rate_limit_weight = 1,
-  };
-  connection_(
-      "listen_key"_sv,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.listen_key([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            auto listen_key = core::json::Parser::create<json::ListenKey>(response.body());
-            log::info<1>("listen_key={}"_sv, listen_key);
-            core::Promise<json::ListenKey> promise(listen_key);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::ListenKey> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
 uint32_t OrderEntry::download(OrderEntryState state) {
   switch (state) {
     case OrderEntryState::UNDEFINED:
       assert(false);
       break;
-    case OrderEntryState::EXCHANGE_INFO:
-      download_exchange_info();
-      return 1;
     case OrderEntryState::LISTEN_KEY:
-      download_listen_key();
+      get_listen_key();
+      return 1;
+    case OrderEntryState::BALANCE:
+      get_balance();
       return 1;
     case OrderEntryState::ACCOUNT:
-      download_account();
+      get_account();
+      return 1;
+    case OrderEntryState::OPEN_ORDERS:
+      get_open_orders();
       return 1;
     case OrderEntryState::DONE:
       (*this)(ConnectionStatus::READY);
@@ -335,247 +215,51 @@ uint32_t OrderEntry::download(OrderEntryState state) {
   return {};
 }
 
-void OrderEntry::download_exchange_info() {
-  constexpr auto state = OrderEntryState::EXCHANGE_INFO;
-  auto sequence = download_.sequence();
-  get<json::ExchangeInfo>([this, sequence](auto &promise) {
+// listen-key
+
+void OrderEntry::get_listen_key() {
+  profile_.listen_key([&]() {
+    auto method = core::http::Method::POST;
+    auto path = "/fapi/v1/listenKey"_sv;
+    auto headers = security_.create_headers();
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = {},
+        .accept = {},
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+        .rate_limit_weight = 1,
+    };
+    connection_(
+        "listen_key"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+          get_listen_key_ack(response);
+        });
+  });
+}
+
+void OrderEntry::get_listen_key_ack(const core::web::Response &response) {
+  profile_.listen_key_ack([&]() {
+    server::TraceInfo trace_info;
+    auto state = OrderEntryState::LISTEN_KEY;
     try {
-      if (download_.skip(sequence, state))
-        return;
-      (*this)(promise.get());
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      auto listen_key = core::json::Parser::create<json::ListenKey>(body);
+      server::Trace event(trace_info, listen_key);
+      (*this)(event);
       download_.check(state);
-    } catch (core::NetworkError &) {
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
       download_.retry(state);
     }
   });
 }
 
-void OrderEntry::download_listen_key() {
-  constexpr auto state = OrderEntryState::LISTEN_KEY;
-  auto sequence = download_.sequence();
-  get<json::ListenKey>([this, sequence](auto &promise) {
-    try {
-      if (download_.skip(sequence, state))
-        return;
-      (*this)(promise.get());
-      download_.check(state);
-    } catch (core::NetworkError &) {
-      download_.retry(state);
-    }
-  });
-}
-
-void OrderEntry::download_account() {
-  constexpr auto state = OrderEntryState::ACCOUNT;
-  auto sequence = download_.sequence();
-  get<json::Account>([this, sequence](auto &promise) {
-    try {
-      if (download_.skip(sequence, state))
-        return;
-      (*this)(promise.get());
-      download_.check(state);
-    } catch (core::NetworkError &) {
-      download_.retry(state);
-    }
-  });
-}
-
-void OrderEntry::refresh_listen_key() {
-  if (!ready())
-    return;
-  auto now = core::get_system_clock();
-  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
-    return;
-  log::info("Refreshing listen key..."_sv);
-  listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
-  get<json::ListenKey>([this](auto &promise) {
-    try {
-      (*this)(promise.get());
-    } catch (core::NetworkError &) {
-      log::warn("Rescheduling listen key refresh!"_sv);
-      auto now = core::get_system_clock();
-      listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
-    }
-  });
-}
-
-void OrderEntry::create_order(
-    const CreateOrder &create_order,
-    const std::string_view &cl_ord_id,
-    std::function<void(const core::Promise<json::NewOrder> &)> &&callback) {
-  if (!ready())
-    throw oms::NotReadyException();
-  auto timestamp = core::get_realtime_clock();
-  auto side = json::map(create_order.side).as_raw_text();
-  auto type = json::map(create_order.order_type).as_raw_text();
-  auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
-  // XXX use encode buffer
-  auto body = fmt::format(
-      R"({{)"
-      R"("symbol":"{}",)"
-      R"("side":"{}",)"
-      R"("type":"{}",)"
-      R"("timeInForce":"{}",)"
-      R"("quantity":{},)"
-      R"("quoteOrderQty":{},)"  // XXX ???
-      R"("price":{},)"
-      R"("newClientOrderId":"{}")"
-      R"("stopPrice":{},)"   // XXX ???
-      R"("icebergQty":{},)"  // XXX ???
-      R"("recvWindow":{},)"
-      R"("timestamp":{})"
-      R"(}})"_sv,
-      create_order.symbol,
-      side,
-      type,
-      time_in_force,
-      create_order.quantity,
-      0.0,
-      create_order.price,
-      cl_ord_id,
-      0.0,
-      0.0,
-      std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
-          .count(),
-      timestamp.count());
-  log::debug(R"(body="{}")"_sv, body);
-  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
-  core::web::Request request{
-      .method = core::http::Method::POST,
-      .path = "/fapi/v1/order"_sv,
-      .query = {},
-      .accept = core::http::Accept::JSON,
-      .content_type = core::http::ContentType::JSON,
-      .headers = headers,
-      .body = body,
-      .quality_of_service = core::web::QualityOfService::IMMEDIATE,
-      .rate_limit_weight = 1,
-  };
-  connection_(
-      cl_ord_id,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.new_order([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            core::json::Buffer buffer(decode_buffer_);
-            auto new_order = core::json::Parser::create<json::NewOrder>(response.body(), buffer);
-            log::info<1>("new_order={}"_sv, new_order);
-            core::Promise<json::NewOrder> promise(new_order);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::NewOrder> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
-void OrderEntry::cancel_order(
-    [[maybe_unused]] const CancelOrder &cancel_order,
-    const oms::Order &order,
-    const std::string_view &request_id,
-    std::function<void(const core::Promise<json::CancelOrder> &)> &&callback) {
-  if (!ready())
-    throw oms::NotReadyException();
-  auto timestamp = core::get_realtime_clock();
-  // XXX use encode buffer
-  auto body = fmt::format(
-      R"({{)"
-      R"("symbol":"{}",)"
-      R"("origClientOrderId":"{}")"
-      R"("newClientOrderId":"{}")"
-      R"("recvWindow":{},)"
-      R"("timestamp":{})"
-      R"(}})"_sv,
-      order.symbol,
-      order.external_order_id,
-      request_id,
-      std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
-          .count(),
-      timestamp.count());
-  log::debug(R"(body="{}")"_sv, body);
-  auto headers = fmt::format("X-MBX-APIKEY: {}\r\n"_sv, security_.get_api_key());
-  core::web::Request request{
-      .method = core::http::Method::DELETE,
-      .path = "/fapi/v1/order"_sv,
-      .query = {},
-      .accept = core::http::Accept::JSON,
-      .content_type = core::http::ContentType::JSON,
-      .headers = headers,
-      .body = body,
-      .quality_of_service = core::web::QualityOfService::IMMEDIATE,
-      .rate_limit_weight = 1,
-  };
-  connection_(
-      request_id,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.cancel_order([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            auto cancel_order = core::json::Parser::create<json::CancelOrder>(response.body());
-            log::info<1>("cancel_order={}"_sv, cancel_order);
-            core::Promise<json::CancelOrder> promise(cancel_order);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::CancelOrder> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
-void OrderEntry::get_depth(
-    const std::string_view &symbol,
-    std::function<void(const core::Promise<json::Depth> &)> &&callback) {
-  auto query = fmt::format("?symbol={}&limit={}"_sv, symbol, Flags::ws_subscribe_depth_levels());
-  core::web::Request request{
-      .method = core::http::Method::GET,
-      .path = "/fapi/v1/depth"_sv,
-      .query = query,
-      .accept = core::http::Accept::JSON,
-      .content_type = core::http::ContentType::JSON,
-      .headers = {},
-      .body = {},
-      .quality_of_service = {},
-      .rate_limit_weight = 20,  // note! scales with levels (20 this is the value for 1000 levels)
-  };
-  connection_(
-      "depth"_sv,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.cancel_order([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            core::json::Parser parser(response.body());
-            auto root = parser.root();
-            core::json::Buffer buffer(decode_buffer_);
-            json::Depth depth(root, buffer);
-            log::info<1>("depth={}"_sv, depth);
-            core::Promise<json::Depth> promise(depth);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::Depth> promise(std::current_exception());
-            callback(promise);
-          }
-        });
-      });
-}
-
-void OrderEntry::operator()(const json::NewOrder &) {
-  throw NotImplementedException();
-}
-
-void OrderEntry::operator()(const json::CancelOrder &) {
-  throw NotImplementedException();
-}
-
-void OrderEntry::operator()(const json::ListenKey &listen_key) {
-  server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
+void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
+  auto &[trace_info, listen_key] = event;
   bool initial = listen_key_.empty();
   if (utils::update(listen_key_, listen_key.listen_key)) {
     if (initial) {
@@ -594,8 +278,113 @@ void OrderEntry::operator()(const json::ListenKey &listen_key) {
   listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
 }
 
-void OrderEntry::operator()(const json::Account &account) {
-  server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
+// balance
+
+void OrderEntry::get_balance() {
+  profile_.balance([&]() {
+    auto method = core::http::Method::GET;
+    auto path = "/fapi/v2/balance"_sv;
+    auto query = security_.create_query();
+    auto headers = security_.create_headers();
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = query,
+        .accept = {},
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+        .rate_limit_weight = 5,
+    };
+    connection_("balance"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+      get_balance_ack(response);
+    });
+  });
+}
+
+void OrderEntry::get_balance_ack(const core::web::Response &response) {
+  profile_.balance_ack([&]() {
+    server::TraceInfo trace_info;
+    auto state = OrderEntryState::BALANCE;
+    try {
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      core::json::Buffer buffer(decode_buffer_);
+      auto balance = core::json::Parser::create<json::Balance>(body, buffer);
+      server::Trace event(trace_info, balance);
+      (*this)(event);
+      download_.check(state);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      download_.retry(state);
+    }
+  });
+}
+
+void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
+  auto &[trace_info, balance] = event;
+  /*
+  for (auto &item : balance.balances) {
+    FundsUpdate funds_update{
+        .stream_id = stream_id_,
+        .balance = security_.get_balance(),
+        .currency = item.asset,
+        .balance = item.free,
+        .hold = item.locked,
+        .external_balance = {},
+    };
+    create_trace_and_dispatch(trace_info, funds_update, handler_, true);
+  }
+  */
+}
+
+// account
+
+void OrderEntry::get_account() {
+  profile_.account([&]() {
+    auto method = core::http::Method::GET;
+    auto path = "/fapi/v2/account"_sv;
+    auto query = security_.create_query();
+    auto headers = security_.create_headers();
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = query,
+        .accept = {},
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+        .rate_limit_weight = 5,
+    };
+    connection_("account"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+      get_account_ack(response);
+    });
+  });
+}
+
+void OrderEntry::get_account_ack(const core::web::Response &response) {
+  profile_.account_ack([&]() {
+    server::TraceInfo trace_info;
+    auto state = OrderEntryState::ACCOUNT;
+    try {
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      core::json::Buffer buffer(decode_buffer_);
+      auto account = core::json::Parser::create<json::Account>(body, buffer);
+      server::Trace event(trace_info, account);
+      (*this)(event);
+      download_.check(state);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      download_.retry(state);
+    }
+  });
+}
+
+void OrderEntry::operator()(const server::Trace<json::Account> &event) {
+  auto &[trace_info, account] = event;
   /*
   for (auto &item : account.balances) {
     FundsUpdate funds_update{
@@ -611,66 +400,227 @@ void OrderEntry::operator()(const json::Account &account) {
   */
 }
 
-void OrderEntry::operator()(const json::ExchangeInfo &exchange_info) {
-  server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
-  std::vector<std::string> symbols;
-  size_t counter = {};
-  for (const auto &item : exchange_info.symbols) {
-    log::info<1>("item={}"_sv, item);
-    if (shared_.discard_symbol(item.symbol)) {
-      log::info<1>(R"(Drop symbol="{}")"_sv, item.symbol);
-      continue;
+// open-orders
+
+void OrderEntry::get_open_orders() {
+  profile_.open_orders([&]() {
+    auto method = core::http::Method::GET;
+    auto path = "/fapi/v1/openOrders"_sv;
+    auto query = security_.create_query();
+    auto headers = security_.create_headers();
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = query,
+        .accept = {},
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+        .rate_limit_weight = 5,
+    };
+    connection_(
+        "open_orders"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+          get_open_orders_ack(response);
+        });
+  });
+}
+
+void OrderEntry::get_open_orders_ack(const core::web::Response &response) {
+  profile_.open_orders_ack([&]() {
+    server::TraceInfo trace_info;
+    auto state = OrderEntryState::OPEN_ORDERS;
+    try {
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      core::json::Buffer buffer(decode_buffer_);
+      auto open_orders = core::json::Parser::create<json::OpenOrders>(body, buffer);
+      server::Trace event(trace_info, open_orders);
+      (*this)(event);
+      download_.check(state);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      download_.retry(state);
     }
-    // note! convert to lowercase
-    std::string symbol(item.symbol);
-    std::transform(
-        symbol.begin(), symbol.end(), symbol.begin(), [](auto c) { return std::tolower(c); });
-    if (all_symbols_.emplace(symbol).second)  // only include new
-      symbols.emplace_back(symbol);
-    ++counter;
-    auto tick_size = std::pow(10.0, -static_cast<double>(item.quote_precision));
-    auto min_trade_vol = std::pow(10.0, -static_cast<double>(item.base_asset_precision));
-    ReferenceData reference_data{
+  });
+}
+
+void OrderEntry::operator()(const server::Trace<json::OpenOrders> &event) {
+  auto &[trace_info, open_orders] = event;
+  /*
+  for (auto &item : account.balances) {
+    FundsUpdate funds_update{
         .stream_id = stream_id_,
-        .exchange = Flags::exchange(),
-        .symbol = item.symbol,
-        .description = {},
-        .security_type = {},
-        .currency = item.quote_asset,
-        .settlement_currency = item.base_asset,
-        .commission_currency = {},
-        .tick_size = tick_size,
-        .multiplier = NaN,
-        .min_trade_vol = min_trade_vol,
-        .option_type = {},
-        .strike_currency = {},
-        .strike_price = NaN,
-        .underlying = {},
-        .time_zone = {},
-        .issue_date = {},
-        .settlement_date = {},
-        .expiry_datetime = {},
-        .expiry_datetime_utc = {},
+        .account = security_.get_account(),
+        .currency = item.asset,
+        .balance = item.free,
+        .hold = item.locked,
+        .external_account = {},
     };
-    create_trace_and_dispatch(trace_info, reference_data, handler_, false);
-    auto trading_status = json::map(item.status);
-    MarketStatus market_status{
-        .stream_id = stream_id_,
-        .exchange = Flags::exchange(),
-        .symbol = item.symbol,
-        .trading_status = trading_status,
-    };
-    create_trace_and_dispatch(trace_info, market_status, handler_, true);
-    // XXX EXPERIMENTAL
-    shared_.refdata[item.symbol] = std::make_pair(tick_size, min_trade_vol);
+    create_trace_and_dispatch(trace_info, funds_update, handler_, true);
   }
-  log::info("Exchange info: including symbols {}/{}"_sv, counter, exchange_info.symbols.size());
-  if (!symbols.empty()) {
-    SymbolsUpdate symbols_update{
-        .symbols = symbols,
+  */
+}
+
+// ...
+
+void OrderEntry::refresh_listen_key() {
+  if (!ready())
+    return;
+  auto now = core::get_system_clock();
+  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
+    return;
+  log::info("Refreshing listen key..."_sv);
+  listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
+  get_listen_key();
+}
+
+// new-order
+
+void OrderEntry::new_order(const CreateOrder &create_order, const std::string_view &cl_ord_id) {
+  profile_.new_order([&]() {
+    if (!ready())
+      throw oms::NotReadyException();
+    auto method = core::http::Method::POST;
+    auto path = "/fapi/v1/order"_sv;
+    auto headers = security_.create_headers();
+    std::chrono::milliseconds timestamp = utils::safe_cast(core::get_realtime_clock());
+    auto side = json::map(create_order.side).as_raw_text();
+    auto type = json::map(create_order.order_type).as_raw_text();
+    auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
+    auto body = fmt::format(
+        R"({{)"
+        R"("symbol":"{}",)"
+        R"("side":"{}",)"
+        R"("type":"{}",)"
+        R"("timeInForce":"{}",)"
+        R"("quantity":{},)"
+        R"("quoteOrderQty":{},)"  // XXX ???
+        R"("price":{},)"
+        R"("newClientOrderId":"{}")"
+        R"("stopPrice":{},)"   // XXX ???
+        R"("icebergQty":{},)"  // XXX ???
+        R"("recvWindow":{},)"
+        R"("timestamp":{})"
+        R"(}})"_sv,
+        create_order.symbol,
+        side,
+        type,
+        time_in_force,
+        create_order.quantity,
+        0.0,
+        create_order.price,
+        cl_ord_id,
+        0.0,
+        0.0,
+        std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
+            .count(),
+        timestamp.count());
+    log::debug(R"(body="{}")"_sv, body);
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = {},
+        .accept = core::http::Accept::JSON,
+        .content_type = core::http::ContentType::JSON,
+        .headers = headers,
+        .body = body,
+        .quality_of_service = core::web::QualityOfService::IMMEDIATE,
+        .rate_limit_weight = 1,
     };
-    handler_(symbols_update);
-  }
+    connection_(cl_ord_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+      new_order_ack(response);
+    });
+  });
+}
+
+void OrderEntry::new_order_ack(const core::web::Response &response) {
+  profile_.new_order_ack([&]() {
+    server::TraceInfo trace_info;
+    try {
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      core::json::Buffer buffer(decode_buffer_);
+      auto new_order = core::json::Parser::create<json::NewOrder>(body, buffer);
+      log::info<1>("new_order={}"_sv, new_order);
+      server::Trace event(trace_info, new_order);
+      (*this)(event);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      // XXX HANS ???
+    }
+  });
+}
+
+void OrderEntry::operator()(const server::Trace<json::NewOrder> &) {
+  throw NotImplementedException();
+}
+
+// cancel-order
+
+void OrderEntry::cancel_order(
+    [[maybe_unused]] const CancelOrder &cancel_order,
+    const oms::Order &order,
+    const std::string_view &request_id) {
+  profile_.cancel_order([&]() {
+    if (!ready())
+      throw oms::NotReadyException();
+    auto method = core::http::Method::DELETE;
+    auto path = "/fapi/v1/order"_sv;
+    auto headers = security_.create_headers();
+    std::chrono::milliseconds timestamp = utils::safe_cast(core::get_realtime_clock());
+    // XXX use encode buffer
+    auto body = fmt::format(
+        R"({{)"
+        R"("symbol":"{}",)"
+        R"("origClientOrderId":"{}")"
+        R"("newClientOrderId":"{}")"
+        R"("recvWindow":{},)"
+        R"("timestamp":{})"
+        R"(}})"_sv,
+        order.symbol,
+        order.external_order_id,
+        request_id,
+        std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window())
+            .count(),
+        timestamp.count());
+    log::debug(R"(body="{}")"_sv, body);
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = {},
+        .accept = core::http::Accept::JSON,
+        .content_type = core::http::ContentType::JSON,
+        .headers = headers,
+        .body = body,
+        .quality_of_service = core::web::QualityOfService::IMMEDIATE,
+        .rate_limit_weight = 1,
+    };
+    connection_(request_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+      cancel_order_ack(response);
+    });
+  });
+}
+
+void OrderEntry::cancel_order_ack(const core::web::Response &response) {
+  profile_.cancel_order_ack([&]() {
+    server::TraceInfo trace_info;
+    try {
+      response.expect(core::http::Status::OK);
+      auto body = response.body();
+      auto cancel_order = core::json::Parser::create<json::CancelOrder>(body);
+      log::info<1>("cancel_order={}"_sv, cancel_order);
+      server::Trace event(trace_info, cancel_order);
+      (*this)(event);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      // XXX HANS ???
+    }
+  });
+}
+
+void OrderEntry::operator()(const server::Trace<json::CancelOrder> &) {
+  throw NotImplementedException();
 }
 
 }  // namespace binance_futures

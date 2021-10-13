@@ -9,6 +9,7 @@ set(AUTOGEN_SCHEMAS
     agg_trade.json
     asset.json
     balance.json
+    balance_item.json
     balance_update.json
     balances_item.json
     book_ticker.json
@@ -29,6 +30,8 @@ set(AUTOGEN_SCHEMAS
     mark_price_update.json
     mini_ticker.json
     new_order.json
+    open_orders.json
+    order.json
     order_status.json
     order_type.json
     outbound_account_info.json

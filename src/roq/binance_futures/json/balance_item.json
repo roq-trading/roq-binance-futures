@@ -1,0 +1,15 @@
+{
+"name": "BalanceItem",
+"type": "item",
+"values": [
+	{ "name": "accountAlias", "type": "std::string_view" },
+	{ "name": "asset", "type": "std::string_view" },
+	{ "name": "balance", "type": "double" },
+	{ "name": "crossWalletBalance", "type": "double" },
+	{ "name": "crossUnPnl", "type": "double" },
+	{ "name": "availableBalance", "type": "double" },
+	{ "name": "maxWithdrawAmount", "type": "double" },
+	{ "name": "marginAvailable", "type": "bool" },
+	{ "name": "updateTime", "type": "std::chrono::milliseconds" }
+]
+}

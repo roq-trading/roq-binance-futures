@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "roq/server.h"
 
@@ -17,6 +16,7 @@
 #include "roq/binance_futures/drop_copy.h"
 #include "roq/binance_futures/market_data.h"
 #include "roq/binance_futures/order_entry.h"
+#include "roq/binance_futures/rest.h"
 #include "roq/binance_futures/security.h"
 #include "roq/binance_futures/shared.h"
 
@@ -24,9 +24,10 @@ namespace roq {
 namespace binance_futures {
 
 class Gateway final : public server::Handler,
+                      public Rest::Handler,
+                      public MarketData::Handler,
                       public OrderEntry::Handler,
-                      public DropCopy::Handler,
-                      public MarketData::Handler {
+                      public DropCopy::Handler {
  public:
   Gateway(server::Dispatcher &, const Config &);
 
@@ -66,8 +67,9 @@ class Gateway final : public server::Handler,
   void operator()(const server::Trace<StatisticsUpdate> &, bool is_last) override;
   void operator()(const server::Trace<FundsUpdate> &, bool is_last) override;
 
+  void operator()(Rest::SymbolsUpdate &) override;
+
   void operator()(const OrderEntry::ListenKeyUpdate &) override;
-  void operator()(OrderEntry::SymbolsUpdate &) override;
 
   void operator()(const MarketData::GetDepth &) override;
 
@@ -88,6 +90,7 @@ class Gateway final : public server::Handler,
   // seed
   uint16_t stream_id_ = {};
   // streams
+  Rest rest_;
   absl::flat_hash_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   absl::flat_hash_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   absl::flat_hash_map<uint16_t, std::unique_ptr<MarketData>> market_data_;

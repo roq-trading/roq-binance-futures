@@ -1,9 +1,7 @@
 {
 "name": "Balance",
-"type": "item",
+"type": "array",
 "values": [
-	{ "name": "asset", "type": "std::string_view" },
-	{ "name": "free", "type": "double" },
-	{ "name": "locked", "type": "double" }
+	{ "name": "data", "type": "roq::span<BalanceItem>" }
 ]
 }

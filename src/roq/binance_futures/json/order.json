@@ -1,0 +1,29 @@
+{
+"name": "Order",
+"type": "array_item",
+"values": [
+	{ "name": "avgPrice", "type": "double" },
+	{ "name": "clientOrderId", "type": "std::string_view" },
+	{ "name": "cumQuote", "type": "double" },
+	{ "name": "executedQty", "type": "double" },
+	{ "name": "orderId", "type": "int64_t" },
+	{ "name": "origQty", "type": "double" },
+	{ "name": "origType", "type": "std::string_view" },
+	{ "name": "price", "type": "double" },
+	{ "name": "reduceOnly", "type": "bool" },
+	{ "name": "side", "type": "std::string_view" },
+	{ "name": "positionSide", "type": "std::string_view" },
+	{ "name": "status", "type": "std::string_view" },
+	{ "name": "stopPrice", "type": "double" },
+	{ "name": "closePosition", "type": "bool" },
+	{ "name": "symbol", "type": "std::string_view" },
+	{ "name": "time", "type": "std::chrono::milliseconds" },
+	{ "name": "timeInForce", "type": "std::string_view" },
+	{ "name": "type", "type": "std::string_view" },
+	{ "name": "activatePrice", "type": "double" },
+	{ "name": "priceRate", "type": "double" },
+	{ "name": "updateTime", "type": "std::chrono::milliseconds" },
+	{ "name": "workingType", "type": "std::string_view" },
+	{ "name": "priceProtect", "type": "bool" }
+]
+}

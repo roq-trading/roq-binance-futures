@@ -22,14 +22,16 @@ class Security final {
   Security(const Security &) = delete;
 
   std::string_view get_account() const { return account_; }
-  std::string_view get_api_key() const { return key_; }
 
-  std::string create_signature();
-  std::pair<std::string, std::string> create_signature(std::chrono::nanoseconds now);
+  std::string create_headers();
+  std::string create_query();
+
+  // std::string create_signature();
+
+  // std::pair<std::string, std::string> create_signature(std::chrono::nanoseconds now);
 
  private:
   const std::string account_;
-  const std::string key_;
   tools::Hasher hasher_;
 };
 

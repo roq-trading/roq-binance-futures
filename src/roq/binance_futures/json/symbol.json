@@ -21,7 +21,7 @@
 	{ "name": "underlyingSubType" },
 	{ "name": "settlePlan", "type": "uint32_t" },
 	{ "name": "triggerProtect", "type": "double" },
-	{ "name": "filters" },
+	{ "name": "filters", "type": "std::string_view" },
 	{ "name": "orderTypes" },
 	{ "name": "timeInForce" },
 	{ "name": "liquidationFee", "type": "double" },

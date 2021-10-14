@@ -42,6 +42,10 @@ fill.h
 fill.cpp
 filter_type.h
 filter_type.cpp
+filter.h
+filter.cpp
+filters.h
+filters.cpp
 listen_key.h
 listen_key.cpp
 mark_price_update.h

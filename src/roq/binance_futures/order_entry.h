@@ -104,17 +104,24 @@ class OrderEntry final : public core::web::Client::Handler {
 
   void refresh_listen_key();
 
-  void new_order(const CreateOrder &, const std::string_view &request_id);
-  void new_order_ack(const core::web::Response &);
-  void operator()(const server::Trace<json::NewOrder> &);
+  void new_order(const Event<CreateOrder> &, const std::string_view &request_id);
+  void new_order_ack(
+      const core::web::Response &, uint8_t user_id, uint32_t order_id, uint32_t version);
+  void operator()(
+      const server::Trace<json::NewOrder> &, uint8_t user_id, uint32_t order_id, uint32_t version);
 
   void cancel_order(
-      const CancelOrder &,
+      const Event<CancelOrder> &,
       const oms::Order &,
       const std::string_view &request_id,
       const std::string_view &previous_request_id);
-  void cancel_order_ack(const core::web::Response &);
-  void operator()(const server::Trace<json::CancelOrder> &);
+  void cancel_order_ack(
+      const core::web::Response &, uint8_t user_id, uint32_t order_id, uint32_t version);
+  void operator()(
+      const server::Trace<json::CancelOrder> &,
+      uint8_t user_id,
+      uint32_t order_id,
+      uint32_t version);
 
  private:
   Handler &handler_;

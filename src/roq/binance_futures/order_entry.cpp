@@ -122,7 +122,7 @@ void OrderEntry::operator()(metrics::Writer &writer) {
 
 uint16_t OrderEntry::operator()(
     const Event<CreateOrder> &event, const oms::Order &, const std::string_view &request_id) {
-  new_order(event.value, request_id);
+  new_order(event, request_id);
   return stream_id_;
 }
 
@@ -139,7 +139,7 @@ uint16_t OrderEntry::operator()(
     const oms::Order &order,
     const std::string_view &request_id,
     const std::string_view &previous_request_id) {
-  cancel_order(event.value, order, request_id, previous_request_id);
+  cancel_order(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
@@ -478,10 +478,11 @@ void OrderEntry::refresh_listen_key() {
 
 // new-order
 
-void OrderEntry::new_order(const CreateOrder &create_order, const std::string_view &request_id) {
+void OrderEntry::new_order(const Event<CreateOrder> &event, const std::string_view &request_id) {
   profile_.new_order([&]() {
     if (!ready())
       throw oms::NotReadyException();
+    auto &[message_info, create_order] = event;
     auto method = core::http::Method::POST;
     auto path = "/fapi/v1/order"_sv;
     auto headers = security_.create_headers();
@@ -528,23 +529,32 @@ void OrderEntry::new_order(const CreateOrder &create_order, const std::string_vi
         .quality_of_service = core::web::QualityOfService::IMMEDIATE,
         .rate_limit_weight = 1,
     };
-    connection_(request_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
-      new_order_ack(response);
-    });
+    connection_(
+        request_id,
+        request,
+        [this, user_id = message_info.source, order_id = create_order.order_id](
+            [[maybe_unused]] auto &request_id, auto &response) {
+          uint32_t version = 1;
+          new_order_ack(response, user_id, order_id, version);
+        });
   });
 }
 
-void OrderEntry::new_order_ack(const core::web::Response &response) {
+void OrderEntry::new_order_ack(
+    const core::web::Response &response, uint8_t user_id, uint32_t order_id, uint32_t version) {
+  server::TraceInfo trace_info;
   profile_.new_order_ack([&]() {
-    server::TraceInfo trace_info;
     try {
-      response.expect(core::http::Status::OK);
+      log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
+      auto status = response.raw_status();
       auto body = response.body();
+      log::debug(R"(status={}, body="{}")"_sv, status, body);
+      response.expect(core::http::Status::OK);
       core::json::Buffer buffer(decode_buffer_);
       auto new_order = core::json::Parser::create<json::NewOrder>(body, buffer);
       log::info<1>("new_order={}"_sv, new_order);
       server::Trace event(trace_info, new_order);
-      (*this)(event);
+      (*this)(event, user_id, order_id, version);
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
       // XXX HANS ???
@@ -552,20 +562,22 @@ void OrderEntry::new_order_ack(const core::web::Response &response) {
   });
 }
 
-void OrderEntry::operator()(const server::Trace<json::NewOrder> &) {
+void OrderEntry::operator()(
+    const server::Trace<json::NewOrder> &, uint8_t user_id, uint32_t order_id, uint32_t version) {
   throw NotImplementedException();
 }
 
 // cancel-order
 
 void OrderEntry::cancel_order(
-    [[maybe_unused]] const CancelOrder &cancel_order,
+    const Event<CancelOrder> &event,
     const oms::Order &order,
     const std::string_view &request_id,
     const std::string_view &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
       throw oms::NotReadyException();
+    auto &[message_info, cancel_order] = event;
     auto method = core::http::Method::DELETE;
     auto path = "/fapi/v1/order"_sv;
     auto headers = security_.create_headers();
@@ -594,22 +606,32 @@ void OrderEntry::cancel_order(
         .quality_of_service = core::web::QualityOfService::IMMEDIATE,
         .rate_limit_weight = 1,
     };
-    connection_(request_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
-      cancel_order_ack(response);
-    });
+    connection_(
+        request_id,
+        request,
+        [this,
+         user_id = message_info.source,
+         order_id = cancel_order.order_id,
+         version = cancel_order.version]([[maybe_unused]] auto &request_id, auto &response) {
+          cancel_order_ack(response, user_id, order_id, version);
+        });
   });
 }
 
-void OrderEntry::cancel_order_ack(const core::web::Response &response) {
+void OrderEntry::cancel_order_ack(
+    const core::web::Response &response, uint8_t user_id, uint32_t order_id, uint32_t version) {
+  server::TraceInfo trace_info;
   profile_.cancel_order_ack([&]() {
-    server::TraceInfo trace_info;
     try {
-      response.expect(core::http::Status::OK);
+      log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
+      auto status = response.raw_status();
       auto body = response.body();
+      log::debug(R"(status={}, body="{}")"_sv, status, body);
+      response.expect(core::http::Status::OK);
       auto cancel_order = core::json::Parser::create<json::CancelOrder>(body);
       log::info<1>("cancel_order={}"_sv, cancel_order);
       server::Trace event(trace_info, cancel_order);
-      (*this)(event);
+      (*this)(event, user_id, order_id, version);
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
       // XXX HANS ???
@@ -617,7 +639,11 @@ void OrderEntry::cancel_order_ack(const core::web::Response &response) {
   });
 }
 
-void OrderEntry::operator()(const server::Trace<json::CancelOrder> &) {
+void OrderEntry::operator()(
+    const server::Trace<json::CancelOrder> &,
+    uint8_t user_id,
+    uint32_t order_id,
+    uint32_t version) {
   throw NotImplementedException();
 }
 

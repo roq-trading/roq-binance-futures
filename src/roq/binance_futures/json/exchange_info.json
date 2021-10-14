@@ -8,6 +8,6 @@
 	{ "name": "exchangeFilters" },
 	{ "name": "symbols", "type": "roq::span<Symbol>" },
 	{ "name": "futuresType", "type": "std::string_view", "comment": "undoc" },
-	{ "name": "assets", "comment": "undoc" }
+	{ "name": "assets", "type": "roq::span<ExchangeInfoAsset>" }
 ]
 }

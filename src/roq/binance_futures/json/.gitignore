@@ -30,6 +30,8 @@ event_type.h
 event_type.cpp
 exchange_info.h
 exchange_info.cpp
+exchange_info_asset.h
+exchange_info_asset.cpp
 execution_report.h
 execution_report.cpp
 execution_type.h

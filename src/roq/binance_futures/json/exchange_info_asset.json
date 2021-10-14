@@ -1,0 +1,9 @@
+{
+"name": "ExchangeInfoAsset",
+"type": "item",
+"values": [
+	{ "name": "asset", "type": "std::string_view" },
+	{ "name": "marginAvailable", "type": "bool" },
+	{ "name": "autoAssetExchange", "type": "double" }
+]
+}

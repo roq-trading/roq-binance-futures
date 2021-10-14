@@ -21,6 +21,7 @@ set(AUTOGEN_SCHEMAS
     error.json
     event_type.json
     exchange_info.json
+    exchange_info_asset.json
     execution_report.json
     execution_type.json
     field.json

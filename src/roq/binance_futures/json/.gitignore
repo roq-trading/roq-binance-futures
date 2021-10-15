@@ -4,6 +4,8 @@ agg_trade.h
 agg_trade.cpp
 asset.h
 asset.cpp
+auto_cancel_all_open_orders.h
+auto_cancel_all_open_orders.cpp
 balance.h
 balance.cpp
 balance_item.h
@@ -14,6 +16,8 @@ balances_item.h
 balances_item.cpp
 book_ticker.h
 book_ticker.cpp
+cancel_all_open_orders.h
+cancel_all_open_orders.cpp
 cancel_order.h
 cancel_order.cpp
 contract_type.h

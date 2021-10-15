@@ -71,6 +71,13 @@
       "description": "listen key refresh period"
     },
     {
+      "name": "rest_order_countdown",
+      "type": "std::chrono::nanoseconds",
+      "validator": "roq::core::flags::TimePeriod",
+      "default": "30s",
+      "description": "auto-cancel countdown time"
+    },
+    {
       "name": "rest_order_recv_window",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::core::flags::TimePeriod",

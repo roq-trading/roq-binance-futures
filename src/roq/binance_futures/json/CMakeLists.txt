@@ -8,11 +8,13 @@ set(AUTOGEN_SCHEMAS
     account.json
     agg_trade.json
     asset.json
+    auto_cancel_all_open_orders.json
     balance.json
     balance_item.json
     balance_update.json
     balances_item.json
     book_ticker.json
+    cancel_all_open_orders.json
     cancel_order.json
     contract_type.json
     depth.json

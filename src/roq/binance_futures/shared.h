@@ -30,6 +30,11 @@ struct Shared final {
     return dispatcher_.update_order(std::forward<Args>(args)...);
   }
 
+  template <typename... Args>
+  auto create_order(Args &&...args) {
+    return dispatcher_.create_order(std::forward<Args>(args)...);
+  }
+
  public:
   const GatewaySettings gateway_settings;
 

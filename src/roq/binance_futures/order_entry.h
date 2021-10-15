@@ -45,6 +45,7 @@ class OrderEntry final : public core::web::Client::Handler {
     virtual void operator()(const server::Trace<ReferenceData> &, bool is_last) = 0;
     virtual void operator()(const server::Trace<MarketStatus> &, bool is_last) = 0;
     virtual void operator()(const server::Trace<FundsUpdate> &, bool is_last) = 0;
+    virtual void operator()(const server::Trace<PositionUpdate> &, bool is_last) = 0;
     // cross-communication
     virtual void operator()(const ListenKeyUpdate &) = 0;
   };
@@ -104,9 +105,13 @@ class OrderEntry final : public core::web::Client::Handler {
 
   void refresh_listen_key();
 
-  void new_order(const Event<CreateOrder> &, const std::string_view &request_id);
+  void new_order(
+      const Event<CreateOrder> &, const oms::Order &order, const std::string_view &request_id);
   void new_order_ack(
-      const core::web::Response &, uint8_t user_id, uint32_t order_id, uint32_t version);
+      const server::Trace<core::web::Response> &,
+      uint8_t user_id,
+      uint32_t order_id,
+      uint32_t version);
   void operator()(
       const server::Trace<json::NewOrder> &, uint8_t user_id, uint32_t order_id, uint32_t version);
 
@@ -116,7 +121,10 @@ class OrderEntry final : public core::web::Client::Handler {
       const std::string_view &request_id,
       const std::string_view &previous_request_id);
   void cancel_order_ack(
-      const core::web::Response &, uint8_t user_id, uint32_t order_id, uint32_t version);
+      const server::Trace<core::web::Response> &,
+      uint8_t user_id,
+      uint32_t order_id,
+      uint32_t version);
   void operator()(
       const server::Trace<json::CancelOrder> &,
       uint8_t user_id,

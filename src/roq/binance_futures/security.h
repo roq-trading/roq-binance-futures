@@ -23,12 +23,10 @@ class Security final {
 
   std::string_view get_account() const { return account_; }
 
-  std::string create_headers();
-  std::string create_query();
+  std::string create_query(const std::string_view &body) { return hasher_.create_query(body); }
+  std::string create_query() { return create_query({}); }
 
-  // std::string create_signature();
-
-  // std::pair<std::string, std::string> create_signature(std::chrono::nanoseconds now);
+  std::string_view create_headers() const { return hasher_.create_headers(); }
 
  private:
   const std::string account_;

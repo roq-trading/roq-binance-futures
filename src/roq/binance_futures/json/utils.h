@@ -237,6 +237,8 @@ inline json::TimeInForce map(roq::TimeInForce time_in_force) {
   return json::TimeInForce::UNDEFINED;
 }
 
+extern roq::Error guess_error(int32_t code);
+
 }  // namespace json
 }  // namespace binance_futures
 }  // namespace roq

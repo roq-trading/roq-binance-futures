@@ -19,6 +19,9 @@ namespace binance_futures {
 namespace {
 static const auto NAME = "ex"_sv;
 static const auto SUPPORTS = utils::Mask{
+    SupportType::ORDER_ACK,
+    SupportType::ORDER,
+    SupportType::TRADE,  // XXX HANS ???
     SupportType::FUNDS,
 };
 

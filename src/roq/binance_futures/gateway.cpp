@@ -155,6 +155,10 @@ void Gateway::operator()(const server::Trace<FundsUpdate> &event, bool is_last) 
   dispatcher_(event, is_last);
 }
 
+void Gateway::operator()(const server::Trace<PositionUpdate> &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
 void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
   auto &symbols = symbols_update.symbols;
   for (auto &[_, market_data] : market_data_) {

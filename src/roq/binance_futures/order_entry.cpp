@@ -631,6 +631,7 @@ void OrderEntry::new_order_ack(
         }
         case core::http::Category::CLIENT_ERROR: {  // 4xx
           auto error = core::json::Parser::create<json::Error>(body);
+          log::warn("error={}"_sv, error);
           oms::Response response{
               .type = RequestType::CREATE_ORDER,
               .origin = Origin::EXCHANGE,
@@ -978,6 +979,7 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
     try {
       auto status = response.raw_status();
       auto body = response.body();
+      log::debug(R"(status={}, body="{}")"_sv, status, body);
       auto category = core::http::to_category(status);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
@@ -1011,7 +1013,6 @@ void OrderEntry::operator()(const server::Trace<json::CancelAllOpenOrders> &even
 // auto-cancel-all-orders
 
 void OrderEntry::auto_cancel_all_open_orders() {
-  log::debug("HERE"_sv);
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto method = core::http::Method::DELETE;
@@ -1020,7 +1021,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
       auto body = fmt::format(
           R"(symbol={}&)"
-          R"(countdownTime={}&)"_sv,
+          R"(countdownTime={}&)"
           R"(recvWindow={})"_sv,
           symbol,
           countdown_time,
@@ -1055,6 +1056,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
     try {
       auto status = response.raw_status();
       auto body = response.body();
+      log::debug(R"(status={}, body="{}")"_sv, status, body);
       auto category = core::http::to_category(status);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
@@ -1066,8 +1068,10 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
           break;
         }
         case core::http::Category::CLIENT_ERROR: {  // 4xx
-          auto error = core::json::Parser::create<json::Error>(body);
-          log::warn("error={}"_sv, error);
+          if (!std::empty(body)) {
+            auto error = core::json::Parser::create<json::Error>(body);
+            log::warn("error={}"_sv, error);
+          }
           // XXX HANS ???
           break;
         }

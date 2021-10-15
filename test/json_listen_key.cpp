@@ -9,7 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
-TEST(json_ticker, simple) {
+TEST(json_listen_key, simple) {
   auto message = R"({)"
                  R"("listenKey":"JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY")"
                  R"(})";

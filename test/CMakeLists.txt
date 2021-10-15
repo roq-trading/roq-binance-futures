@@ -3,6 +3,8 @@ set(TARGET_NAME "${PROJECT_NAME}-test")
 set(SOURCES
     json_account.cpp
     json_balance.cpp
+    json_book_ticker.cpp
+    json_error.cpp
     json_exchange_info.cpp
     json_filters.cpp
     json_listen_key.cpp

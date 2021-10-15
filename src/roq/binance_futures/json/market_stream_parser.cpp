@@ -73,6 +73,12 @@ void MarketStreamParser::dispatch(
             handler(id, result);
           }
           break;
+        case Field::STREAM:
+          break;
+        case Field::DATA: {
+          dispatch(handler, core::json::get<std::string_view>(value), buffer, trace_info);
+          return;
+        }
         case Field::EVENT_TYPE: {
           // note! assuming event_type is the first field
           EventType event_type(value);

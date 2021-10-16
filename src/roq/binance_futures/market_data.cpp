@@ -36,6 +36,17 @@ struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)
       : core::metrics::Factory(server::Flags::name(), group, function) {}
 };
+
+template <typename T>
+void emplace(MBPUpdate &result, const T &value) {
+  new (&result) MBPUpdate{
+      .price = value.price,
+      .quantity = value.qty,
+      .implied_quantity = NaN,
+      .price_level = {},
+      .number_of_orders = {},
+  };
+}
 }  // namespace
 
 MarketData::MarketData(
@@ -85,7 +96,12 @@ void MarketData::operator()(const Event<Stop> &) {
 }
 
 void MarketData::operator()(const Event<Timer> &event) {
-  connection_.refresh(event.value.now);
+  auto now = event.value.now;
+  connection_.refresh(now);
+  if (connection_.ready()) {
+    check_subscribe_queue(now);
+    check_request_queue(now);
+  }
 }
 
 void MarketData::operator()(metrics::Writer &writer) {
@@ -244,7 +260,8 @@ void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
 
 void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
-  auto stream = fmt::format(R"(@depth@{}ms)"_sv, Flags::ws_subscribe_depth_freq().count());
+  std::chrono::milliseconds frequency = utils::safe_cast(Flags::ws_subscribe_depth_freq());
+  auto stream = fmt::format(R"(@depth@{}ms)"_sv, frequency.count());
   auto id = ++request_id_;
   auto separator = fmt::format(R"({}",")"_sv, stream);
   auto message = fmt::format(
@@ -382,33 +399,44 @@ void MarketData::operator()(const server::Trace<json::BookTicker> &event) {
 
 void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
   profile_.depth_update([&]() {
+    // auto &[trace_info, depth_update] = event;
+    auto &trace_info = event.trace_info;
     auto &depth_update = event.value;
     log::info<3>(R"(depth_update={})"_sv, depth_update);
     auto symbol = depth_update.symbol;
-    auto iter = depth_buffer_.find(symbol);
-    if (ROQ_UNLIKELY(iter == depth_buffer_.end())) {
-      log::debug(R"(CREATE symbol="{}")"_sv, symbol);
-      auto [tick_size, min_trade_vol] = shared_.refdata[symbol];
-      depth_buffer_.emplace(
-          symbol,
-          std::make_unique<DepthBuffer>(
-              shared_, stream_id_, shared_.gateway_settings, symbol, tick_size, min_trade_vol));
-      // note! snasphot is requested using the master order entry connection
-      GetDepth get_depth{
-          .stream_id = stream_id_,
-          .symbol = symbol,
-      };
-      handler_(get_depth);
-    } else {
-      auto &depth_buffer = (*iter).second;
-      (*depth_buffer)(depth_update, [this, &event](auto &market_by_price_update) {
-        try {
-          server::create_trace_and_dispatch(
-              event.trace_info, market_by_price_update, handler_, true, false);
-        } catch (market::BadState &) {
-          log::fatal("*** RESUBSCRIBE REQUIRED HERE ***"_sv);
-        }
-      });
+    auto &collector = shared_.mbp_collector[symbol];
+    core::back_emplacer bids(shared_.bids), asks(shared_.asks);
+    for (auto &item : depth_update.bids)
+      bids.emplace_back([&item](auto &result) { emplace(result, item); });
+    for (auto &item : depth_update.asks)
+      asks.emplace_back([&item](auto &result) { emplace(result, item); });
+    try {
+      collector(
+          bids,
+          asks,
+          depth_update.first_update_id,
+          depth_update.final_update_id,
+          depth_update.final_update_id_in_last_stream,
+          [&](auto &bids, auto &asks) {
+            MarketByPriceUpdate market_by_price_update{
+                .stream_id = stream_id_,
+                .exchange = Flags::exchange(),
+                .symbol = symbol,
+                .bids = bids,
+                .asks = asks,
+                .update_type = UpdateType::INCREMENTAL,
+                .exchange_time_utc = depth_update.event_time,
+            };
+            server::create_trace_and_dispatch(
+                event.trace_info, market_by_price_update, handler_, true, false);
+          },
+          [&]() {
+            auto now = trace_info.source_receive_time;
+            request_queue_.emplace_back(now + Flags::ws_mbp_request_delay(), symbol);
+          });
+    } catch (market::BadState &) {
+      log::fatal("*** RESUBSCRIBE REQUIRED HERE ***"_sv);
+      // XXX HANS how to reset the sequencer?
     }
   });
 }
@@ -456,22 +484,40 @@ void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
   });
 }
 
-void MarketData::operator()(const std::string_view &symbol, const json::Depth &depth) {
-  log::info<3>("symbol={} depth={}"_sv, symbol, depth);
-  auto iter = depth_buffer_.find(symbol);
-  if (ROQ_UNLIKELY(iter == depth_buffer_.end())) {
-    log::warn(R"(Unexpected: symbol="{}", depth={})"_sv, symbol, depth);
-  } else {
-    auto &depth_buffer = (*iter).second;
-    (*depth_buffer)(symbol, depth, [this](const auto &market_by_price_update) {
-      try {
-        server::TraceInfo trace_info;  // note! not correct (*after* message parsing)
-        server::create_trace_and_dispatch(
-            trace_info, market_by_price_update, handler_, true, false);
-      } catch (market::BadState &) {
-        log::fatal("*** RESUBSCRIBE REQUIRED HERE ***"_sv);
-      }
-    });
+void MarketData::check_subscribe_queue(std::chrono::nanoseconds now) {
+  while (!subscribe_queue_.empty()) {
+    auto &tmp = subscribe_queue_.front();
+    if (now < tmp.first)
+      break;
+    if (shared_.can_request(now, [&]() {
+          auto &message = tmp.second;
+          log::debug(R"(Subscribe: "{}")"_sv, message);
+          connection_.send_text(message);
+          subscribe_queue_.pop_front();
+        })) {
+    } else {
+      return;
+    }
+  }
+}
+
+void MarketData::check_request_queue(std::chrono::nanoseconds now) {
+  while (!request_queue_.empty()) {
+    auto &tmp = request_queue_.front();
+    if (now < tmp.first)
+      break;
+    if (shared_.can_request(now, [&]() {
+          auto &symbol = tmp.second;
+          log::debug(R"(Requesting order book snapshot symbol="{}")"_sv, symbol);
+          const GetDepth request{
+              .symbol = symbol,
+          };
+          handler_(request);
+          request_queue_.pop_front();
+        })) {
+    } else {
+      return;
+    }
   }
 }
 

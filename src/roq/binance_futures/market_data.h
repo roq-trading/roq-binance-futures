@@ -4,6 +4,7 @@
 
 #include <absl/container/flat_hash_map.h>
 
+#include <deque>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -20,11 +21,9 @@
 #include "roq/download.h"
 #include "roq/server.h"
 
-#include "roq/binance_futures/depth_buffer.h"
 #include "roq/binance_futures/market_data_state.h"
 #include "roq/binance_futures/shared.h"
 
-#include "roq/binance_futures/json/depth.h"
 #include "roq/binance_futures/json/market_stream_parser.h"
 
 namespace roq {
@@ -34,7 +33,6 @@ class MarketData final : public core::web::Socket::Handler,
                          public json::MarketStreamParser::Handler {
  public:
   struct GetDepth final {
-    uint16_t stream_id;
     std::string_view symbol;
   };
 
@@ -65,7 +63,8 @@ class MarketData final : public core::web::Socket::Handler,
 
   void update_subscriptions(std::vector<std::string> &symbols);
 
-  void operator()(const std::string_view &symbol, const json::Depth &);
+  void check_subscribe_queue(std::chrono::nanoseconds now);
+  void check_request_queue(std::chrono::nanoseconds now);
 
  protected:
   void operator()(const core::web::Socket::Connected &) override;
@@ -130,7 +129,9 @@ class MarketData final : public core::web::Socket::Handler,
   bool ready_ = false;
   ConnectionStatus status_ = {};
   server::Download<MarketDataState> download_;
-  absl::flat_hash_map<std::string, std::unique_ptr<DepthBuffer>> depth_buffer_;
+  // experimental
+  std::deque<std::pair<std::chrono::nanoseconds, std::string> > subscribe_queue_;
+  std::deque<std::pair<std::chrono::nanoseconds, std::string> > request_queue_;
 };
 
 }  // namespace binance_futures

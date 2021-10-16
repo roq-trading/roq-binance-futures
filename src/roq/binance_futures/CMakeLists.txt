@@ -5,7 +5,6 @@ add_subdirectory(flags)
 set(SOURCES
     application.cpp
     config.cpp
-    depth_buffer.cpp
     drop_copy.cpp
     flags.cpp
     gateway.cpp

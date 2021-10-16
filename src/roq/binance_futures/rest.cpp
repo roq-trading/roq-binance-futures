@@ -9,6 +9,7 @@
 #include "roq/utils/safe_cast.h"
 #include "roq/utils/update.h"
 
+#include "roq/core/back_emplacer.h"
 #include "roq/core/charconv.h"
 
 #include "roq/core/metrics/factory.h"
@@ -36,6 +37,17 @@ struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)
       : core::metrics::Factory(server::Flags::name(), group, function) {}
 };
+
+template <typename T>
+void emplace(MBPUpdate &result, const T &value) {
+  new (&result) MBPUpdate{
+      .price = value.price,
+      .quantity = value.qty,
+      .implied_quantity = NaN,
+      .price_level = {},
+      .number_of_orders = {},
+  };
+}
 }  // namespace
 
 Rest::Rest(Handler &handler, core::io::Context &context, uint16_t stream_id, Shared &shared)
@@ -173,14 +185,16 @@ void Rest::get_exchange_info() {
     };
     connection_(
         "exchange_info"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
-          get_exchange_info_ack(response);
+          server::TraceInfo trace_info;
+          server::Trace event(trace_info, response);
+          get_exchange_info_ack(event);
         });
   });
 }
 
-void Rest::get_exchange_info_ack(const core::web::Response &response) {
+void Rest::get_exchange_info_ack(const server::Trace<core::web::Response> &event) {
   profile_.exchange_info_ack([&]() {
-    server::TraceInfo trace_info;
+    auto &[trace_info, response] = event;
     auto state = RestState::EXCHANGE_INFO;
     try {
       response.expect(core::http::Status::OK);
@@ -299,44 +313,76 @@ void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
 
 // depth
 
-void Rest::get_depth(
-    const std::string_view &symbol,
-    std::function<void(const core::Promise<json::Depth> &)> &&callback) {
-  auto method = core::http::Method::GET;
-  auto path = "/fapi/v1/depth"_sv;
-  auto query = fmt::format("?symbol={}&limit={}"_sv, symbol, Flags::ws_subscribe_depth_levels());
-  core::web::Request request{
-      .method = method,
-      .path = path,
-      .query = query,
-      .accept = core::http::Accept::JSON,
-      .content_type = core::http::ContentType::JSON,
-      .headers = {},
-      .body = {},
-      .quality_of_service = {},
-      .rate_limit_weight = 20,  // note! scales with levels (20 this is the value for 1000 levels)
-  };
-  connection_(
-      "depth"_sv,
-      request,
-      [this, callback{std::move(callback)}]([[maybe_unused]] auto &request_id, auto &response) {
-        profile_.depth_ack([&]() {
-          try {
-            response.expect(core::http::Status::OK);
-            core::json::Parser parser(response.body());
-            auto root = parser.root();
-            core::json::Buffer buffer(decode_buffer_);
-            json::Depth depth(root, buffer);
-            log::info<1>("depth={}"_sv, depth);
-            core::Promise<json::Depth> promise(depth);
-            callback(promise);
-          } catch (core::NetworkError &e) {
-            log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
-            core::Promise<json::Depth> promise(std::current_exception());
-            callback(promise);
-          }
+void Rest::get_depth(const std::string_view &symbol) {
+  profile_.depth([&]() {
+    auto method = core::http::Method::GET;
+    auto path = "/fapi/v1/depth"_sv;
+    auto query = fmt::format("?symbol={}&limit={}"_sv, symbol, Flags::ws_subscribe_depth_levels());
+    core::web::Request request{
+        .method = method,
+        .path = path,
+        .query = query,
+        .accept = core::http::Accept::JSON,
+        .content_type = core::http::ContentType::JSON,
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+        .rate_limit_weight = 20,  // note! scales with levels (20 this is the value for 1000 levels)
+    };
+    connection_(
+        "depth"_sv,
+        request,
+        [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
+          server::TraceInfo trace_info;
+          server::Trace event(trace_info, response);
+          get_depth_ack(event, symbol);
         });
-      });
+  });
+}
+
+void Rest::get_depth_ack(
+    const server::Trace<core::web::Response> &event, const std::string_view &symbol) {
+  profile_.depth_ack([&]() {
+    auto &[trace_info, response] = event;
+    try {
+      response.expect(core::http::Status::OK);
+      core::json::Parser parser(response.body());
+      auto root = parser.root();
+      core::json::Buffer buffer(decode_buffer_);
+      json::Depth depth(root, buffer);
+      log::info<1>("depth={}"_sv, depth);
+      server::Trace event(trace_info, depth);
+      (*this)(event, symbol);
+    } catch (core::NetworkError &e) {
+      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+    }
+  });
+}
+
+void Rest::operator()(const server::Trace<json::Depth> &event, const std::string_view &symbol) {
+  log::debug(R"(SNAPSHOT symbol="{}")"_sv, symbol);
+  // auto &[trace_info, depth] = event;
+  auto &trace_info = event.trace_info;
+  auto &depth = event.value;
+  auto &collector = shared_.mbp_collector[symbol];
+  core::back_emplacer bids(shared_.bids), asks(shared_.asks);
+  for (auto &item : depth.bids)
+    bids.emplace_back([&item](auto &result) { emplace(result, item); });
+  for (auto &item : depth.asks)
+    asks.emplace_back([&item](auto &result) { emplace(result, item); });
+  MarketByPriceUpdate market_by_price_update{
+      .stream_id = stream_id_,
+      .exchange = Flags::exchange(),
+      .symbol = symbol,
+      .bids = bids,
+      .asks = asks,
+      .update_type = UpdateType::SNAPSHOT,
+      .exchange_time_utc = depth.transaction_time,
+  };
+  server::Trace event_2(trace_info, market_by_price_update);
+  shared_(event_2, true, [&](auto &market_by_price) {
+    collector.apply(market_by_price, depth.last_update_id);
+  });
 }
 
 }  // namespace binance_futures

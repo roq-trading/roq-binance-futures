@@ -218,19 +218,7 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
 }
 
 void Gateway::operator()(const MarketData::GetDepth &get_depth) {
-  auto stream_id = get_depth.stream_id;
-  std::string symbol(get_depth.symbol);  // need a copy for the callback
-  rest_.get_depth(symbol, [this, stream_id, symbol](auto &promise) {
-    try {
-      auto &depth = promise.get();
-      auto iter = market_data_.find(stream_id);
-      if (ROQ_UNLIKELY(iter == market_data_.end()))
-        log::fatal("Unexpected: stream_id={}"_sv, stream_id);
-      (*(*iter).second)(symbol, depth);
-    } catch (core::NetworkError &e) {
-      log::fatal(R"(Unexpected what="{}")"_sv, e.what());
-    }
-  });
+  rest_.get_depth(get_depth.symbol);
 }
 
 uint16_t Gateway::operator()(

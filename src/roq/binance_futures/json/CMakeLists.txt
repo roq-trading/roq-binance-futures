@@ -43,6 +43,7 @@ set(AUTOGEN_SCHEMAS
     outbound_account_info.json
     outbound_account_position.json
     position.json
+    position_side.json
     rate_limit.json
     rate_limit_type.json
     result.json
@@ -51,7 +52,8 @@ set(AUTOGEN_SCHEMAS
     symbol.json
     symbol_status.json
     ticker.json
-    time_in_force.json)
+    time_in_force.json
+    working_type.json)
 
 roq_autogen(
   OUTPUT

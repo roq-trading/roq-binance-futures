@@ -1,6 +1,6 @@
-symbols = ".*"
+# symbols = ".*"
 # symbols = ".*USDT"
-# symbols = "LTCUSDT"
+symbols = "XRPUSDT"
 
 [accounts]
 

@@ -1,0 +1,9 @@
+{
+"name": "PositionSide",
+"type": "enum",
+"values": [
+	{ "name": "BOTH" },
+	{ "name": "LONG" },
+	{ "name": "SHORT" }
+]
+}

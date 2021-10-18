@@ -160,7 +160,6 @@ uint32_t DropCopy::download(DropCopyState state) {
       (*this)(ConnectionStatus::READY);
       assert(!ready_);
       ready_ = true;
-      // subscribe(symbols_);
       return {};
   }
   assert(false);
@@ -170,6 +169,7 @@ uint32_t DropCopy::download(DropCopyState state) {
 void DropCopy::parse(const std::string_view &message) {
   profile_.parse([&]() {
     try {
+      log::debug(R"(message="{}")"_sv, message);
       server::TraceInfo trace_info;
       core::json::Buffer buffer(decode_buffer_);
       json::UserStreamParser::dispatch(*this, message, buffer, trace_info);
@@ -183,6 +183,7 @@ void DropCopy::parse(const std::string_view &message) {
 void DropCopy::operator()(
     const json::OutboundAccountInfo &outbound_account_info, const server::TraceInfo &trace_info) {
   profile_.outbound_account_info([&]() {
+    log::debug("outbound_account_info={}"_sv, outbound_account_info);
     log::info<3>("outbound_account_info={}"_sv, outbound_account_info);
     for (auto &item : outbound_account_info.balances) {
       FundsUpdate funds_update{
@@ -202,6 +203,7 @@ void DropCopy::operator()(
     const json::OutboundAccountPosition &outbound_account_position,
     const server::TraceInfo &trace_info) {
   profile_.outbound_account_position([&]() {
+    log::debug("outbound_account_position={}"_sv, outbound_account_position);
     log::info<3>("outbound_account_position={}"_sv, outbound_account_position);
     for (auto &item : outbound_account_position.balances) {
       FundsUpdate funds_update{
@@ -219,6 +221,7 @@ void DropCopy::operator()(
 
 void DropCopy::operator()(const json::BalanceUpdate &balance_update, const server::TraceInfo &) {
   profile_.balance_update([&]() {
+    log::debug("balance_update={}"_sv, balance_update);
     log::info<3>("balance_update={}"_sv, balance_update);
     // note! contains delta (changes) -- we're not going to use here
   });
@@ -227,6 +230,7 @@ void DropCopy::operator()(const json::BalanceUpdate &balance_update, const serve
 void DropCopy::operator()(
     const json::ExecutionReport &execution_report, const server::TraceInfo &trace_info) {
   profile_.execution_report([&]() {
+    log::debug("execution_report={}"_sv, execution_report);
     log::info<3>("execution_report={}"_sv, execution_report);
     auto side = json::map(execution_report.side);
     auto status = json::map(execution_report.current_order_status);

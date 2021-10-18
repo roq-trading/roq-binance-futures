@@ -74,6 +74,8 @@ outbound_account_position.h
 outbound_account_position.cpp
 position.h
 position.cpp
+position_side.h
+position_side.cpp
 rate_limit.h
 rate_limit.cpp
 rate_limit_type.h
@@ -92,3 +94,5 @@ ticker.h
 ticker.cpp
 time_in_force.h
 time_in_force.cpp
+working_type.h
+working_type.cpp

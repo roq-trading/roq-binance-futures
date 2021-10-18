@@ -1,0 +1,8 @@
+{
+"name": "WorkingType",
+"type": "enum",
+"values": [
+	{ "name": "CONTRACT_PRICE" },
+	{ "name": "MARK_PRICE" }
+]
+}

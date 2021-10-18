@@ -449,6 +449,7 @@ void OrderEntry::get_open_orders_ack(const core::web::Response &response) {
     try {
       response.expect(core::http::Status::OK);
       auto body = response.body();
+      log::debug(R"(body="{}")"_sv, body);
       core::json::Buffer buffer(decode_buffer_);
       auto open_orders = core::json::Parser::create<json::OpenOrders>(body, buffer);
       server::Trace event(trace_info, open_orders);
@@ -494,7 +495,7 @@ void OrderEntry::operator()(const server::Trace<json::OpenOrders> &event) {
         .stop_price = order.stop_price,
         .remaining_quantity = NaN,
         .traded_quantity = order.executed_qty,
-        .average_traded_price = {},
+        .average_traded_price = order.avg_price,
         .last_traded_quantity = {},
         .last_traded_price = {},
         .last_liquidity = {},
@@ -696,7 +697,6 @@ void OrderEntry::operator()(
   auto time_in_force = json::map(new_order.time_in_force);
   auto order_status = json::map(new_order.status);
   auto external_order_id = fmt::format("{}"_sv, new_order.order_id);  // XXX HANS
-  // XXX HANS fills???
   oms::Response response{
       .type = RequestType::CREATE_ORDER,
       .origin = Origin::EXCHANGE,
@@ -705,8 +705,8 @@ void OrderEntry::operator()(
       .text = {},
       .version = version,
       .request_id = {},
-      .quantity = NaN,
-      .price = NaN,
+      .quantity = new_order.orig_qty,
+      .price = new_order.price,
   };
   oms::OrderUpdate order_update{
       .account = security_.get_account(),
@@ -720,16 +720,16 @@ void OrderEntry::operator()(
       .execution_instruction = {},
       .order_template = {},
       .create_time_utc = {},
-      .update_time_utc = utils::safe_cast(new_order.transact_time),
+      .update_time_utc = utils::safe_cast(new_order.update_time),
       .external_account = {},
       .external_order_id = external_order_id,
       .status = order_status,
       .quantity = new_order.orig_qty,
       .price = new_order.price,
-      .stop_price = NaN,
+      .stop_price = new_order.stop_price,
       .remaining_quantity = NaN,
       .traded_quantity = new_order.executed_qty,
-      .average_traded_price = NaN,
+      .average_traded_price = new_order.avg_price,
       .last_traded_quantity = NaN,
       .last_traded_price = NaN,
       .last_liquidity = {},
@@ -894,8 +894,8 @@ void OrderEntry::operator()(
       .text = {},
       .version = version,
       .request_id = {},
-      .quantity = NaN,
-      .price = NaN,
+      .quantity = cancel_order.orig_qty,
+      .price = cancel_order.price,
   };
   oms::OrderUpdate order_update{
       .account = security_.get_account(),
@@ -915,10 +915,10 @@ void OrderEntry::operator()(
       .status = order_status,
       .quantity = cancel_order.orig_qty,
       .price = cancel_order.price,
-      .stop_price = NaN,
+      .stop_price = cancel_order.stop_price,
       .remaining_quantity = NaN,
       .traded_quantity = cancel_order.executed_qty,
-      .average_traded_price = NaN,
+      .average_traded_price = cancel_order.avg_price,
       .last_traded_quantity = NaN,
       .last_traded_price = NaN,
       .last_liquidity = {},
@@ -1015,7 +1015,7 @@ void OrderEntry::operator()(const server::Trace<json::CancelAllOpenOrders> &even
 void OrderEntry::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
-      auto method = core::http::Method::DELETE;
+      auto method = core::http::Method::POST;
       auto path = "/fapi/v1/countdownCancelAll"_sv;
       std::chrono::milliseconds countdown_time = utils::safe_cast(Flags::rest_order_countdown());
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
@@ -1024,7 +1024,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
           R"(countdownTime={}&)"
           R"(recvWindow={})"_sv,
           symbol,
-          countdown_time,
+          countdown_time.count(),
           recv_window.count());
       log::debug(R"(body="{}")"_sv, body);
       auto query = security_.create_query(body);

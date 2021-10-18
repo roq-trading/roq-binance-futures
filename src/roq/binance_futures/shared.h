@@ -50,9 +50,6 @@ struct Shared final {
     return rate_limiter_.can_request(now, callback);
   }
 
- protected:
-  bool can_request_helper(std::chrono::nanoseconds now);
-
  public:
   const GatewaySettings gateway_settings;
 

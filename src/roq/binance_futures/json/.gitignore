@@ -44,12 +44,14 @@ field.h
 field.cpp
 fill.h
 fill.cpp
-filter_type.h
-filter_type.cpp
 filter.h
 filter.cpp
+filter_type.h
+filter_type.cpp
 filters.h
 filters.cpp
+interval.h
+interval.cpp
 listen_key.h
 listen_key.cpp
 mark_price_update.h
@@ -72,6 +74,10 @@ outbound_account_position.h
 outbound_account_position.cpp
 position.h
 position.cpp
+rate_limit.h
+rate_limit.cpp
+rate_limit_type.h
+rate_limit_type.cpp
 result.h
 result.cpp
 side.h

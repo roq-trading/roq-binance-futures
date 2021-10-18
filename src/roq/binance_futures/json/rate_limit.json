@@ -1,0 +1,10 @@
+{
+"name": "RateLimit",
+"type": "item",
+"values": [
+	{ "name": "rateLimitType", "type": "RateLimitType" },
+	{ "name": "interval", "type": "Interval" },
+	{ "name": "intervalNum", "type": "int32_t" },
+	{ "name": "limit", "type": "int32_t" }
+]
+}

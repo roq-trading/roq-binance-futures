@@ -28,9 +28,10 @@ set(AUTOGEN_SCHEMAS
     execution_type.json
     field.json
     fill.json
-    filter_type.json
     filter.json
+    filter_type.json
     filters.json
+    interval.json
     listen_key.json
     mark_price_update.json
     mini_ticker.json
@@ -42,6 +43,8 @@ set(AUTOGEN_SCHEMAS
     outbound_account_info.json
     outbound_account_position.json
     position.json
+    rate_limit.json
+    rate_limit_type.json
     result.json
     side.json
     stream.json

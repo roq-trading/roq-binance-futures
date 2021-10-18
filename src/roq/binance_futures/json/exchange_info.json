@@ -4,7 +4,7 @@
 "values": [
 	{ "name": "timezone", "type": "std::string_view" },
 	{ "name": "serverTime", "type": "std::chrono::milliseconds" },
-	{ "name": "rateLimits" },
+	{ "name": "rateLimits", "type": "roq::span<RateLimit>" },
 	{ "name": "exchangeFilters" },
 	{ "name": "symbols", "type": "roq::span<Symbol>" },
 	{ "name": "futuresType", "type": "std::string_view", "comment": "undoc" },

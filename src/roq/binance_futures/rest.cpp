@@ -213,6 +213,9 @@ void Rest::get_exchange_info_ack(const server::Trace<core::web::Response> &event
 
 void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
   auto &[trace_info, exchange_info] = event;
+  for (auto &item : exchange_info.rate_limits) {
+    log::debug("rate_limit={}"_sv, item);
+  }
   std::vector<std::string> symbols;
   size_t counter = {};
   for (const auto &item : exchange_info.symbols) {
@@ -360,29 +363,42 @@ void Rest::get_depth_ack(
 }
 
 void Rest::operator()(const server::Trace<json::Depth> &event, const std::string_view &symbol) {
-  log::debug(R"(SNAPSHOT symbol="{}")"_sv, symbol);
   // auto &[trace_info, depth] = event;
   auto &trace_info = event.trace_info;
   auto &depth = event.value;
+  auto sequence = depth.last_update_id;
+  // log::debug(R"(SNAPSHOT symbol="{}", sequence={})"_sv, symbol, sequence);
   auto &collector = shared_.mbp_collector[symbol];
   core::back_emplacer bids(shared_.bids), asks(shared_.asks);
   for (auto &item : depth.bids)
     bids.emplace_back([&item](auto &result) { emplace(result, item); });
   for (auto &item : depth.asks)
     asks.emplace_back([&item](auto &result) { emplace(result, item); });
-  MarketByPriceUpdate market_by_price_update{
-      .stream_id = stream_id_,
-      .exchange = Flags::exchange(),
-      .symbol = symbol,
-      .bids = bids,
-      .asks = asks,
-      .update_type = UpdateType::SNAPSHOT,
-      .exchange_time_utc = depth.transaction_time,
-  };
-  server::Trace event_2(trace_info, market_by_price_update);
-  shared_(event_2, true, [&](auto &market_by_price) {
-    collector.apply(market_by_price, depth.last_update_id);
-  });
+  auto exchange_time_utc = depth.transaction_time;
+  collector(
+      bids,
+      asks,
+      sequence,
+      [&](auto &bids, auto &asks, auto sequence) {  // snapshot
+        // log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"_sv, symbol, sequence);
+        MarketByPriceUpdate market_by_price_update{
+            .stream_id = stream_id_,
+            .exchange = Flags::exchange(),
+            .symbol = symbol,
+            .bids = bids,
+            .asks = asks,
+            .update_type = UpdateType::SNAPSHOT,
+            .exchange_time_utc = exchange_time_utc,
+        };
+        server::Trace event_2(trace_info, market_by_price_update);
+        shared_(event_2, true, [&](auto &market_by_price) {
+          collector.apply(market_by_price, sequence);
+        });
+      },
+      [&]() {  // request
+        log::debug(R"(REQUEST symbol="{}")"_sv, symbol);
+        get_depth(symbol);
+      });
 }
 
 }  // namespace binance_futures

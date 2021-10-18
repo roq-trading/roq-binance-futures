@@ -5,7 +5,6 @@
 #include <absl/container/flat_hash_map.h>
 
 #include <chrono>
-#include <deque>
 #include <string>
 #include <utility>
 
@@ -13,6 +12,8 @@
 #include "roq/server.h"
 
 #include "roq/core/memory.h"
+
+#include "roq/core/limit/rate_limiter.h"
 
 #include "roq/core/market/mbp_sequencer.h"
 
@@ -46,10 +47,7 @@ struct Shared final {
 
   template <typename F>
   bool can_request(std::chrono::nanoseconds now, F callback) {
-    auto result = can_request_helper(now);
-    if (result)
-      callback();
-    return result;
+    return rate_limiter_.can_request(now, callback);
   }
 
  protected:
@@ -66,8 +64,7 @@ struct Shared final {
  private:
   server::Dispatcher &dispatcher_;
 
-  std::deque<std::chrono::nanoseconds> request_history_;
-  bool request_is_blocked_ = false;
+  core::limit::RateLimiter rate_limiter_;
 };
 
 }  // namespace binance_futures

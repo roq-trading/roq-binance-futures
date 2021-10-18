@@ -1,0 +1,8 @@
+{
+"name": "Interval",
+"type": "enum",
+"values": [
+	{ "name": "MINUTE" },
+	{ "name": "SECOND" }
+]
+}

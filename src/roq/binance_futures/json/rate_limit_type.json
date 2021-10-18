@@ -1,0 +1,8 @@
+{
+"name": "RateLimitType",
+"type": "enum",
+"values": [
+	{ "name": "REQUEST_WEIGHT" },
+	{ "name": "ORDERS" }
+]
+}

@@ -75,7 +75,6 @@ void Gateway::operator()(const Event<Start> &event) {
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(event);
   assert(market_data_.empty());
-  // order_entry_.download.begin();
 }
 
 void Gateway::operator()(const Event<Stop> &event) {

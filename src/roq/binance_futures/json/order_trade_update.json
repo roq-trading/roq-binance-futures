@@ -1,0 +1,10 @@
+{
+"name": "OrderTradeUpdate",
+"type": "item",
+"values": [
+	{ "raw": "e", "name": "event_type", "type": "std::string_view" },
+	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
+	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
+	{ "raw": "o", "name": "execution_report", "type": "ExecutionReport" }
+]
+}

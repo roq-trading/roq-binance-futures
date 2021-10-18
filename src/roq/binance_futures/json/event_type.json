@@ -7,10 +7,6 @@
 	{ "name": "bookTicker" },
 	{ "name": "depthUpdate" },
 	{ "name": "markPriceUpdate" },
-	{ "name": "outboundAccountInfo" },
-	{ "name": "outboundAccountPosition" },
-	{ "name": "balanceUpdate" },
-	{ "name": "executionReport" },
-	{ "name": "listStatus" }
+	{ "name": "ORDER_TRADE_UPDATE" }
 ]
 }

@@ -10,10 +10,7 @@
 
 #include "roq/binance_futures/json/event_type.h"
 
-#include "roq/binance_futures/json/balance_update.h"
-#include "roq/binance_futures/json/execution_report.h"
-#include "roq/binance_futures/json/outbound_account_info.h"
-#include "roq/binance_futures/json/outbound_account_position.h"
+#include "roq/binance_futures/json/order_trade_update.h"
 
 namespace roq {
 namespace binance_futures {
@@ -21,10 +18,7 @@ namespace json {
 
 struct UserStreamParser final {
   struct Handler {
-    virtual void operator()(const OutboundAccountInfo &, const server::TraceInfo &) = 0;
-    virtual void operator()(const OutboundAccountPosition &, const server::TraceInfo &) = 0;
-    virtual void operator()(const BalanceUpdate &, const server::TraceInfo &) = 0;
-    virtual void operator()(const ExecutionReport &, const server::TraceInfo &) = 0;
+    virtual void operator()(const server::Trace<OrderTradeUpdate> &) = 0;
   };
 
   static void dispatch(

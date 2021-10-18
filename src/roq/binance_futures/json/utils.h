@@ -54,13 +54,15 @@ inline roq::OrderStatus map(json::OrderStatus side) {
       return roq::OrderStatus::WORKING;
     case json::OrderStatus::PARTIALLY_FILLED:
       return roq::OrderStatus::WORKING;
+    case json::OrderStatus::FILLED:
+      return roq::OrderStatus::COMPLETED;
     case json::OrderStatus::CANCELED:
       return roq::OrderStatus::CANCELED;
-    case json::OrderStatus::PENDING_CANCEL:
-      break;
-    case json::OrderStatus::REJECTED:
-      return roq::OrderStatus::REJECTED;
     case json::OrderStatus::EXPIRED:
+      break;
+    case json::OrderStatus::NEW_INSURANCE:
+      break;
+    case json::OrderStatus::NEW_ADL:
       break;
   }
   return roq::OrderStatus::UNDEFINED;
@@ -82,14 +84,14 @@ inline json::OrderStatus map(roq::OrderStatus side) {
     case roq::OrderStatus::STOPPED:
       break;
     case roq::OrderStatus::COMPLETED:
-      break;  // XXX NO COMPLETED ???
+      return json::OrderStatus::FILLED;
     case roq::OrderStatus::EXPIRED:
       return json::OrderStatus::EXPIRED;
       break;
     case roq::OrderStatus::CANCELED:
       return json::OrderStatus::CANCELED;
     case roq::OrderStatus::REJECTED:
-      return json::OrderStatus::REJECTED;
+      break;
   }
   return json::OrderStatus::UNDEFINED;
 }
@@ -100,20 +102,16 @@ inline roq::OrderType map(json::OrderType side) {
       break;
     case json::OrderType::UNKNOWN:
       break;
-    case json::OrderType::LIMIT:
-      return roq::OrderType::LIMIT;
     case json::OrderType::MARKET:
       return roq::OrderType::MARKET;
-    case json::OrderType::STOP_LOSS:
-      break;
-    case json::OrderType::STOP_LOSS_LIMIT:
+    case json::OrderType::LIMIT:
+      return roq::OrderType::LIMIT;
+    case json::OrderType::STOP:
       break;
     case json::OrderType::TAKE_PROFIT:
       break;
-    case json::OrderType::TAKE_PROFIT_LIMIT:
+    case json::OrderType::LIQUIDATION:
       break;
-    case json::OrderType::LIMIT_MAKER:
-      return roq::OrderType::LIMIT;
   }
   return roq::OrderType::UNDEFINED;
 }
@@ -199,6 +197,8 @@ inline roq::TimeInForce map(json::TimeInForce time_in_force) {
       return roq::TimeInForce::IOC;
     case json::TimeInForce::FOK:
       return roq::TimeInForce::FOK;
+    case json::TimeInForce::GTX:
+      return roq::TimeInForce::GTX;
   }
   return roq::TimeInForce::UNDEFINED;
 }
@@ -218,7 +218,7 @@ inline json::TimeInForce map(roq::TimeInForce time_in_force) {
     case roq::TimeInForce::FOK:
       return json::TimeInForce::FOK;
     case roq::TimeInForce::GTX:
-      break;
+      return json::TimeInForce::GTX;
     case roq::TimeInForce::GTD:
       break;
     case roq::TimeInForce::AT_THE_CLOSE:

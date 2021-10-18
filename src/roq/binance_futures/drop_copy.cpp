@@ -25,9 +25,12 @@ static const auto SUPPORTS = utils::Mask{
     SupportType::FUNDS,
 };
 
-static auto create_query(const std::string_view &listen_key) {
+static auto create_uri(const std::string_view &listen_key) {
   assert(!listen_key.empty());
-  return fmt::format("?streams={}"_sv, listen_key);
+  // XXX HANS make it easier to append to path
+  auto &uri = Flags::ws_uri();
+  auto result = fmt::format("{}://{}{}/{}"_sv, uri.scheme, uri.host, uri.path, listen_key);
+  return core::URI{result};
 }
 
 struct create_metrics final : public core::metrics::Factory {
@@ -47,8 +50,8 @@ DropCopy::DropCopy(
       connection_(
           *this,
           context,
-          core::URI(Flags::ws_uri()),  // HANS User Data Streams are accessed at /ws/<listenKey>
-          create_query(listen_key),
+          create_uri(listen_key),
+          {},
           Flags::ws_ping_freq(),
           Flags::decode_buffer_size(),
           Flags::encode_buffer_size(),
@@ -59,10 +62,7 @@ DropCopy::DropCopy(
       },
       profile_{
           .parse = create_metrics(name_, "parse"_sv),
-          .outbound_account_info = create_metrics(name_, "outbound_account_info"_sv),
-          .outbound_account_position = create_metrics(name_, "outbound_account_position"_sv),
-          .balance_update = create_metrics(name_, "balance_update"_sv),
-          .execution_report = create_metrics(name_, "execution_report"_sv),
+          .order_trade_update = create_metrics(name_, "order_trade_update"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -94,10 +94,7 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(counter_.disconnect, metrics::COUNTER)
       // profile
       .write(profile_.parse, metrics::PROFILE)
-      .write(profile_.outbound_account_info, metrics::PROFILE)
-      .write(profile_.outbound_account_position, metrics::PROFILE)
-      .write(profile_.balance_update, metrics::PROFILE)
-      .write(profile_.execution_report, metrics::PROFILE)
+      .write(profile_.order_trade_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -180,60 +177,15 @@ void DropCopy::parse(const std::string_view &message) {
   });
 }
 
-void DropCopy::operator()(
-    const json::OutboundAccountInfo &outbound_account_info, const server::TraceInfo &trace_info) {
-  profile_.outbound_account_info([&]() {
-    log::debug("outbound_account_info={}"_sv, outbound_account_info);
-    log::info<3>("outbound_account_info={}"_sv, outbound_account_info);
-    for (auto &item : outbound_account_info.balances) {
-      FundsUpdate funds_update{
-          .stream_id = stream_id_,
-          .account = security_.get_account(),
-          .currency = item.asset,
-          .balance = item.free_amount,
-          .hold = item.locked_amount,
-          .external_account = {},
-      };
-      create_trace_and_dispatch(trace_info, funds_update, handler_, true);
-    }
-  });
-}
-
-void DropCopy::operator()(
-    const json::OutboundAccountPosition &outbound_account_position,
-    const server::TraceInfo &trace_info) {
-  profile_.outbound_account_position([&]() {
-    log::debug("outbound_account_position={}"_sv, outbound_account_position);
-    log::info<3>("outbound_account_position={}"_sv, outbound_account_position);
-    for (auto &item : outbound_account_position.balances) {
-      FundsUpdate funds_update{
-          .stream_id = stream_id_,
-          .account = security_.get_account(),
-          .currency = item.asset,
-          .balance = item.free_amount,
-          .hold = item.locked_amount,
-          .external_account = {},
-      };
-      create_trace_and_dispatch(trace_info, funds_update, handler_, true);
-    }
-  });
-}
-
-void DropCopy::operator()(const json::BalanceUpdate &balance_update, const server::TraceInfo &) {
-  profile_.balance_update([&]() {
-    log::debug("balance_update={}"_sv, balance_update);
-    log::info<3>("balance_update={}"_sv, balance_update);
-    // note! contains delta (changes) -- we're not going to use here
-  });
-}
-
-void DropCopy::operator()(
-    const json::ExecutionReport &execution_report, const server::TraceInfo &trace_info) {
-  profile_.execution_report([&]() {
-    log::debug("execution_report={}"_sv, execution_report);
-    log::info<3>("execution_report={}"_sv, execution_report);
+void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
+  profile_.order_trade_update([&]() {
+    auto &[trace_info, order_trade_update] = event;
+    log::debug("order_trade_update={}"_sv, order_trade_update);
+    log::info<3>("order_trade_update={}"_sv, order_trade_update);
+    auto &execution_report = order_trade_update.execution_report;
     auto side = json::map(execution_report.side);
-    auto status = json::map(execution_report.current_order_status);
+    auto external_order_id = fmt::format("{}"_sv, execution_report.order_id);  // XXX HANS
+    auto order_status = json::map(execution_report.order_status);
     auto order_type = json::map(execution_report.order_type);
     auto time_in_force = json::map(execution_report.time_in_force);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
@@ -249,18 +201,18 @@ void DropCopy::operator()(
         .execution_instruction = {},
         .order_template = {},
         .create_time_utc = {},
-        .update_time_utc = execution_report.transaction_time,
+        .update_time_utc = order_trade_update.event_time,
         .external_account = {},
-        .external_order_id = execution_report.client_order_id,  // XXX should be order_id
-        .status = status,
-        .quantity = NaN,
-        .price = execution_report.price,
+        .external_order_id = external_order_id,
+        .status = order_status,
+        .quantity = execution_report.original_quantity,
+        .price = execution_report.original_price,
         .stop_price = execution_report.stop_price,
         .remaining_quantity = NaN,
-        .traded_quantity = execution_report.cumulative_filled_quantity,
-        .average_traded_price = NaN,
-        .last_traded_quantity = NaN,
-        .last_traded_price = NaN,
+        .traded_quantity = execution_report.order_filled_accumulated_quantity,
+        .average_traded_price = execution_report.average_price,
+        .last_traded_quantity = execution_report.last_filled_quantity,
+        .last_traded_price = execution_report.last_filled_price,
         .last_liquidity = liquidity,
     };
     if (shared_.update_order(

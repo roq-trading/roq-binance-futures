@@ -12,6 +12,7 @@ set(SOURCES
     json_listen_key.cpp
     json_new_order.cpp
     json_open_orders.cpp
+    json_order_trade_update.cpp
     main.cpp)
 
 add_executable("${TARGET_NAME}" ${SOURCES})

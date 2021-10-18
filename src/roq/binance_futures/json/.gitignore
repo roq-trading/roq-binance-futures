@@ -10,8 +10,6 @@ balance.h
 balance.cpp
 balance_item.h
 balance_item.cpp
-balance_update.h
-balance_update.cpp
 balances_item.h
 balances_item.cpp
 book_ticker.h
@@ -66,12 +64,10 @@ order.h
 order.cpp
 order_status.h
 order_status.cpp
+order_trade_update.h
+order_trade_update.cpp
 order_type.h
 order_type.cpp
-outbound_account_info.h
-outbound_account_info.cpp
-outbound_account_position.h
-outbound_account_position.cpp
 position.h
 position.cpp
 position_side.h

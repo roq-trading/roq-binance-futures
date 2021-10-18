@@ -4,6 +4,7 @@
 "values": [
 	{ "name": "GTC" },
 	{ "name": "IOC" },
-	{ "name": "FOK" }
+	{ "name": "FOK" },
+	{ "name": "GTX" }
 ]
 }

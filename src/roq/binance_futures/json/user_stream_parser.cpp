@@ -47,29 +47,12 @@ bool UserStreamParser::try_dispatch(
     case EventType::MARK_PRICE_UPDATE:
       log::fatal("Unexpected"_sv);
       break;
-    case EventType::OUTBOUND_ACCOUNT_INFO: {
-      auto outbound_account_info = core::json::Parser::create<OutboundAccountInfo>(message, buffer);
-      handler(outbound_account_info, trace_info);
+    case EventType::ORDER_TRADE_UPDATE: {
+      auto order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
+      server::Trace event(trace_info, order_trade_update);
+      handler(event);
       break;
     }
-    case EventType::OUTBOUND_ACCOUNT_POSITION: {
-      auto outbound_account_position =
-          core::json::Parser::create<OutboundAccountPosition>(message, buffer);
-      handler(outbound_account_position, trace_info);
-      break;
-    }
-    case EventType::BALANCE_UPDATE: {
-      auto balance_update = core::json::Parser::create<BalanceUpdate>(message);
-      handler(balance_update, trace_info);
-      break;
-    }
-    case EventType::EXECUTION_REPORT: {
-      auto execution_report = core::json::Parser::create<ExecutionReport>(message);
-      handler(execution_report, trace_info);
-      break;
-    }
-    case EventType::LIST_STATUS:
-      return false;  // XXX implement this
     default:
       return false;
   }

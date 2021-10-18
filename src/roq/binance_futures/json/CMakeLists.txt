@@ -11,7 +11,6 @@ set(AUTOGEN_SCHEMAS
     auto_cancel_all_open_orders.json
     balance.json
     balance_item.json
-    balance_update.json
     balances_item.json
     book_ticker.json
     cancel_all_open_orders.json
@@ -39,9 +38,8 @@ set(AUTOGEN_SCHEMAS
     open_orders.json
     order.json
     order_status.json
+    order_trade_update.json
     order_type.json
-    outbound_account_info.json
-    outbound_account_position.json
     position.json
     position_side.json
     rate_limit.json

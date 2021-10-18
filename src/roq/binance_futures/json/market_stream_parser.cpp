@@ -105,11 +105,7 @@ void MarketStreamParser::dispatch(
               break;
             case EventType::UNDEFINED:
             case EventType::UNKNOWN:
-            case EventType::OUTBOUND_ACCOUNT_INFO:
-            case EventType::OUTBOUND_ACCOUNT_POSITION:
-            case EventType::BALANCE_UPDATE:
-            case EventType::EXECUTION_REPORT:
-            case EventType::LIST_STATUS:
+            case EventType::ORDER_TRADE_UPDATE:
               log::fatal("Unexpected"_sv);
               break;
           }

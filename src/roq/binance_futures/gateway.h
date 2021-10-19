@@ -72,8 +72,6 @@ class Gateway final : public server::Handler,
 
   void operator()(const OrderEntry::ListenKeyUpdate &) override;
 
-  void operator()(const MarketData::GetDepth &) override;
-
   // utilities
 
   OrderEntry &get_order_entry(const std::string_view &account);

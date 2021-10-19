@@ -216,10 +216,6 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
   }
 }
 
-void Gateway::operator()(const MarketData::GetDepth &get_depth) {
-  rest_.get_depth(get_depth.symbol);
-}
-
 uint16_t Gateway::operator()(
     const Event<CreateOrder> &event, const oms::Order &order, const std::string_view &request_id) {
   assert(!event.value.account.empty());

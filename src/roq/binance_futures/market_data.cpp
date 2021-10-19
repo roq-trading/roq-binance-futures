@@ -71,10 +71,10 @@ MarketData::MarketData(
           .error = create_metrics(name_, "error"_sv),
           .result = create_metrics(name_, "result"_sv),
           .agg_trade = create_metrics(name_, "agg_trade"_sv),
+          .mark_price_update = create_metrics(name_, "mark_price_update"_sv),
           .mini_ticker = create_metrics(name_, "mini_ticker"_sv),
           .book_ticker = create_metrics(name_, "book_ticker"_sv),
           .depth_update = create_metrics(name_, "depth_update"_sv),
-          .mark_price_update = create_metrics(name_, "mark_price_update"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -113,10 +113,10 @@ void MarketData::operator()(metrics::Writer &writer) {
       .write(profile_.error, metrics::PROFILE)
       .write(profile_.result, metrics::PROFILE)
       .write(profile_.agg_trade, metrics::PROFILE)
+      .write(profile_.mark_price_update, metrics::PROFILE)
       .write(profile_.mini_ticker, metrics::PROFILE)
       .write(profile_.book_ticker, metrics::PROFILE)
       .write(profile_.depth_update, metrics::PROFILE)
-      .write(profile_.mark_price_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -210,10 +210,10 @@ uint32_t MarketData::download(MarketDataState state) {
 
 void MarketData::subscribe(const roq::span<std::string> &symbols) {
   subscribe_agg_trade(symbols);
+  subscribe_mark_price(symbols);
   subscribe_mini_ticker(symbols);
   subscribe_book_ticker(symbols);
-  subscribe_depth(symbols);
-  subscribe_mark_price(symbols);
+  subscribe_diff_depth(symbols);
 }
 
 void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
@@ -227,6 +227,22 @@ void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
       R"("id":{})"
       R"(}})"_sv,
       fmt::join(symbols, R"(@aggTrade",")"_sv),
+      id);
+  log::debug("message={}"_sv, message);
+  subscribe_queue_.emplace_back(now, message);
+}
+
+void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
+  assert(!symbols.empty());
+  auto id = ++request_id_;
+  auto now = core::get_system_clock();
+  auto message = fmt::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@markPrice"],)"
+      R"("id":{})"
+      R"(}})"_sv,
+      fmt::join(symbols, R"(@markPrice",")"_sv),
       id);
   log::debug("message={}"_sv, message);
   subscribe_queue_.emplace_back(now, message);
@@ -264,7 +280,7 @@ void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
   subscribe_queue_.emplace_back(now, message);
 }
 
-void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
+void MarketData::subscribe_diff_depth(const roq::span<std::string> &symbols) {
   assert(!symbols.empty());
   std::chrono::milliseconds frequency = utils::safe_cast(Flags::ws_subscribe_depth_freq());
   auto stream = fmt::format(R"(@depth@{}ms)"_sv, frequency.count());
@@ -284,22 +300,6 @@ void MarketData::subscribe_depth(const roq::span<std::string> &symbols) {
   subscribe_queue_.emplace_back(now, message);
 }
 
-void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
-  auto id = ++request_id_;
-  auto now = core::get_system_clock();
-  auto message = fmt::format(
-      R"({{)"
-      R"("method":"SUBSCRIBE",)"
-      R"("params":["{}@markPrice"],)"
-      R"("id":{})"
-      R"(}})"_sv,
-      fmt::join(symbols, R"(@markPrice",")"_sv),
-      id);
-  log::debug("message={}"_sv, message);
-  subscribe_queue_.emplace_back(now, message);
-}
-
 void MarketData::parse(const std::string_view &message) {
   profile_.parse([&]() {
     try {
@@ -313,12 +313,18 @@ void MarketData::parse(const std::string_view &message) {
   });
 }
 
-void MarketData::operator()(int32_t id, const json::Error &error) {
-  profile_.error([&]() { log::warn("id={}, error={}"_sv, id, error); });
+void MarketData::operator()(const server::Trace<json::Error> &event, int32_t id) {
+  profile_.error([&]() {
+    auto &[trace_info, error] = event;
+    log::warn("error={}, id={}"_sv, error, id);
+  });
 }
 
-void MarketData::operator()(int32_t id, const json::Result &result) {
-  profile_.result([&]() { log::info("id={}, result={}"_sv, id, result); });
+void MarketData::operator()(const server::Trace<json::Result> &event, int32_t id) {
+  profile_.result([&]() {
+    auto &[trace_info, result] = event;
+    log::info("result={}, id={}"_sv, result, id);
+  });
 }
 
 void MarketData::operator()(const server::Trace<json::AggTrade> &event) {

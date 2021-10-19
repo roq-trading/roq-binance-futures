@@ -83,23 +83,23 @@ class MarketData final : public core::web::Socket::Handler,
   void subscribe(const roq::span<std::string> &symbols);
 
   void subscribe_agg_trade(const roq::span<std::string> &symbols);
+  void subscribe_mark_price(const roq::span<std::string> &symbols);
   void subscribe_mini_ticker(const roq::span<std::string> &symbols);
   void subscribe_book_ticker(const roq::span<std::string> &symbols);
-  void subscribe_depth(const roq::span<std::string> &symbols);
-  void subscribe_mark_price(const roq::span<std::string> &symbols);
+  void subscribe_diff_depth(const roq::span<std::string> &symbols);
 
   void parse(const std::string_view &message);
 
   // response
-  void operator()(int32_t, const json::Error &) override;
-  void operator()(int32_t, const json::Result &) override;
+  void operator()(const server::Trace<json::Error> &, int32_t id) override;
+  void operator()(const server::Trace<json::Result> &, int32_t id) override;
 
   // update
   void operator()(const server::Trace<json::AggTrade> &) override;
+  void operator()(const server::Trace<json::MarkPriceUpdate> &) override;
   void operator()(const server::Trace<json::MiniTicker> &) override;
   void operator()(const server::Trace<json::BookTicker> &) override;
   void operator()(const server::Trace<json::DepthUpdate> &) override;
-  void operator()(const server::Trace<json::MarkPriceUpdate> &) override;
 
  private:
   Handler &handler_;
@@ -117,8 +117,8 @@ class MarketData final : public core::web::Socket::Handler,
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, error, result, agg_trade, mini_ticker, book_ticker, depth_update,
-        mark_price_update;
+    core::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker,
+        book_ticker, depth_update;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;

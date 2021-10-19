@@ -90,14 +90,13 @@ class Rest final : public core::web::Client::Handler {
   core::web::Client connection_;
   // buffers
   core::Buffer decode_buffer_;
-  core::Buffer decode_buffer_2_;
+  core::Buffer decode_buffer_2_;  // note! decode nested arrays (ExchangeInfo)
   // metrics
   struct {
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile exchange_info, exchange_info_ack,  //
-        depth, depth_ack;                                     //
+    core::metrics::Profile exchange_info, exchange_info_ack, depth, depth_ack;
   } profile_;
   struct {
     core::metrics::Latency ping;

@@ -8,8 +8,7 @@ namespace roq {
 namespace binance_futures {
 
 Shared::Shared(server::Dispatcher &dispatcher)
-    : gateway_settings(dispatcher.get_gateway_settings()),
-      bids(server::Flags::cache_mbp_max_depth()), asks(server::Flags::cache_mbp_max_depth()),
+    : bids(server::Flags::cache_mbp_max_depth()), asks(server::Flags::cache_mbp_max_depth()),
       final_bids(server::Flags::cache_mbp_max_depth()),
       final_asks(server::Flags::cache_mbp_max_depth()), dispatcher_(dispatcher),
       rate_limiter_(Flags::request_limit(), Flags::request_limit_interval()) {

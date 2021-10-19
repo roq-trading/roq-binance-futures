@@ -54,7 +54,6 @@ struct Shared final {
   const GatewaySettings gateway_settings;
 
   core::page_aligned_vector<MBPUpdate> bids, asks, final_bids, final_asks;
-  absl::flat_hash_map<std::string, std::pair<double, double> > refdata;
 
   absl::flat_hash_map<std::string, core::market::MBP_Sequencer> mbp_collector;
 

@@ -436,9 +436,9 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
       collector(
           bids,
           asks,
-          depth_update.first_update_id,
-          depth_update.final_update_id,
-          depth_update.final_update_id_in_last_stream,
+          first_sequence,
+          last_sequence,
+          previous_sequence,
           [&](auto &bids, auto &asks) {  // update
             // log::debug(R"(PUBLISH UPDATE symbol="{}")"_sv, symbol);
             MarketByPriceUpdate market_by_price_update{
@@ -466,7 +466,7 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
             };
             server::Trace event_2(trace_info, market_by_price_update);
             shared_(event_2, true, [&](auto &market_by_price) {
-              collector.apply(market_by_price, sequence);
+              collector.apply(market_by_price, sequence, true);
             });
           },
           [&]() {  // request

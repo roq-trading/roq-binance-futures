@@ -302,8 +302,6 @@ void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
         .trading_status = trading_status,
     };
     create_trace_and_dispatch(trace_info, market_status, handler_, true);
-    // XXX EXPERIMENTAL
-    shared_.refdata[item.symbol] = std::make_pair(tick_size, min_trade_vol);
   }
   log::info("Exchange info: including symbols {}/{}"_sv, counter, exchange_info.symbols.size());
   if (!symbols.empty()) {
@@ -392,7 +390,7 @@ void Rest::operator()(const server::Trace<json::Depth> &event, const std::string
         };
         server::Trace event_2(trace_info, market_by_price_update);
         shared_(event_2, true, [&](auto &market_by_price) {
-          collector.apply(market_by_price, sequence);
+          collector.apply(market_by_price, sequence, true);
         });
       },
       [&]() {  // request

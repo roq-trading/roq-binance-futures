@@ -2,7 +2,7 @@
 "name": "Depth",
 "type": "comp",
 "values": [
-	{ "name": "lastUpdateId", "type": "uint64_t" },
+	{ "name": "lastUpdateId", "type": "int64_t" },
 	{ "raw": "E", "name": "message_output_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
 	{ "name": "bids", "type": "roq::span<DepthItem>" },

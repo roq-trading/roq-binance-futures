@@ -3,6 +3,7 @@
 "type": "enum",
 "values": [
 	{ "name": "ORDER" },
-	{ "name": "AUTO_EXCHANGE" }
+	{ "name": "AUTO_EXCHANGE" },
+	{ "name": "WITHDRAW" }
 ]
 }

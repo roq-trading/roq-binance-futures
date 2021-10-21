@@ -2,7 +2,10 @@
 
 #include "roq/binance_futures/drop_copy.h"
 
+#include <algorithm>
+
 #include "roq/utils/mask.h"
+#include "roq/utils/safe_cast.h"
 #include "roq/utils/update.h"
 
 #include "roq/core/metrics/factory.h"
@@ -21,8 +24,9 @@ static const auto NAME = "ex"_sv;
 static const auto SUPPORTS = utils::Mask{
     SupportType::ORDER_ACK,
     SupportType::ORDER,
-    SupportType::TRADE,  // XXX HANS ???
+    SupportType::TRADE,
     SupportType::FUNDS,
+    SupportType::POSITION,
 };
 
 static auto create_uri(const std::string_view &listen_key) {
@@ -64,6 +68,7 @@ DropCopy::DropCopy(
           .parse = create_metrics(name_, "parse"_sv),
           .order_trade_update = create_metrics(name_, "order_trade_update"_sv),
           .account_update = create_metrics(name_, "account_update"_sv),
+          .margin_call = create_metrics(name_, "margin_call"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -97,6 +102,7 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(profile_.parse, metrics::PROFILE)
       .write(profile_.order_trade_update, metrics::PROFILE)
       .write(profile_.account_update, metrics::PROFILE)
+      .write(profile_.margin_call, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -181,7 +187,9 @@ void DropCopy::parse(const std::string_view &message) {
 
 void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
   profile_.order_trade_update([&]() {
-    auto &[trace_info, order_trade_update] = event;
+    // auto &[trace_info, order_trade_update] = event;
+    auto &trace_info = event.trace_info;
+    auto &order_trade_update = event.value;
     log::debug("order_trade_update={}"_sv, order_trade_update);
     log::info<3>("order_trade_update={}"_sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
@@ -203,7 +211,7 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
         .execution_instruction = {},
         .order_template = {},
         .create_time_utc = {},
-        .update_time_utc = order_trade_update.event_time,
+        .update_time_utc = utils::safe_cast(order_trade_update.event_time),
         .external_account = {},
         .external_order_id = external_order_id,
         .status = order_status,
@@ -222,8 +230,33 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
             stream_id_,
             trace_info,
             order_update,
-            []([[maybe_unused]] auto &order) {
-              // XXX IMPLEMENT
+            [&](auto &order) {
+              if (execution_report.execution_type == json::ExecutionType::TRADE) {
+                auto external_trade_id =
+                    fmt::format("{}"_sv, execution_report.trade_id);  // XXX HANS
+                Fill fill{
+                    .external_trade_id = {},
+                    .quantity = execution_report.last_filled_quantity,
+                    .price = execution_report.last_filled_price,
+                };
+                TradeUpdate trade_update{
+                    .stream_id = stream_id_,
+                    .account = order.account,
+                    .order_id = order.order_id,
+                    .exchange = order.exchange,
+                    .symbol = order.symbol,
+                    .side = order.side,
+                    .position_effect = order.position_effect,
+                    .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
+                    .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
+                    .external_account = order.external_account,
+                    .external_order_id = order.external_order_id,
+                    .fills = {&fill, 1},
+                    .routing_id = order.routing_id,
+                };
+                server::create_trace_and_dispatch(
+                    trace_info, trade_update, handler_, true, order.user_id);
+              }
             })) {
     } else {
       log::warn("*** EXTERNAL ORDER ***"_sv);
@@ -235,7 +268,43 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
 void DropCopy::operator()(const server::Trace<json::AccountUpdate> &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
-    log::debug("account_update={}"_sv, account_update);
+    log::info<2>("account_update={}"_sv, account_update);
+    for (auto &item : account_update.data.balances) {
+      log::debug("item={}"_sv, item);
+      FundsUpdate funds_update{
+          .stream_id = stream_id_,
+          .account = security_.get_account(),
+          .currency = item.asset,
+          .balance = item.wallet_balance,
+          .hold = NaN,  // note! we don't see this
+          .external_account = {},
+      };
+      create_trace_and_dispatch(trace_info, funds_update, handler_, true);
+    }
+    for (auto &item : account_update.data.positions) {
+      if (shared_.discard_symbol(item.symbol))
+        continue;
+      log::debug("item={}"_sv, item);
+      PositionUpdate position_update{
+          .stream_id = stream_id_,
+          .account = security_.get_account(),
+          .exchange = Flags::exchange(),
+          .symbol = item.symbol,
+          .external_account{},
+          .long_quantity = std::max(0.0, item.position_amount),
+          .short_quantity = std::max(0.0, -item.position_amount),
+          .long_quantity_begin = NaN,
+          .short_quantity_begin = NaN,
+      };
+      create_trace_and_dispatch(trace_info, position_update, handler_, true);
+    }
+  });
+}
+
+void DropCopy::operator()(const server::Trace<json::MarginCall> &event) {
+  profile_.margin_call([&]() {
+    auto &[trace_info, margin_call] = event;
+    log::debug("margin_call={}"_sv, margin_call);
   });
 }
 

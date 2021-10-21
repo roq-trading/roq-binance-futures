@@ -2,7 +2,7 @@
 "name": "AccountUpdateData",
 "type": "comp",
 "values": [
-	{ "raw": "m", "name": "event_reason", "type": "std::string_view" },
+	{ "raw": "m", "name": "event_reason", "type": "EventReason" },
 	{ "raw": "B", "name": "balances", "type": "roq::span<AccountUpdateDataBalance>" },
 	{ "raw": "P", "name": "positions", "type": "roq::span<AccountUpdateDataPosition>" }
 ]

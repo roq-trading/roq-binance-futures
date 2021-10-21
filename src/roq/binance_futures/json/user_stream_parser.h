@@ -11,6 +11,7 @@
 #include "roq/binance_futures/json/event_type.h"
 
 #include "roq/binance_futures/json/account_update.h"
+#include "roq/binance_futures/json/margin_call.h"
 #include "roq/binance_futures/json/order_trade_update.h"
 
 namespace roq {
@@ -21,6 +22,7 @@ struct UserStreamParser final {
   struct Handler {
     virtual void operator()(const server::Trace<OrderTradeUpdate> &) = 0;
     virtual void operator()(const server::Trace<AccountUpdate> &) = 0;
+    virtual void operator()(const server::Trace<MarginCall> &) = 0;
   };
 
   static void dispatch(

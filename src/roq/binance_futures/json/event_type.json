@@ -8,6 +8,7 @@
 	{ "name": "depthUpdate" },
 	{ "name": "markPriceUpdate" },
 	{ "name": "ORDER_TRADE_UPDATE" },
-	{ "name": "ACCOUNT_UPDATE" }
+	{ "name": "ACCOUNT_UPDATE" },
+	{ "name": "MARGIN_CALL" }
 ]
 }

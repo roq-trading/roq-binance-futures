@@ -59,6 +59,12 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
+    case EventType::MARGIN_CALL: {
+      auto margin_call = core::json::Parser::create<MarginCall>(message, buffer);
+      server::Trace event(trace_info, margin_call);
+      handler(event);
+      break;
+    }
     default:
       return false;
   }

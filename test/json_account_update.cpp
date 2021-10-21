@@ -65,5 +65,5 @@ TEST(json_account_update, simple) {
   EXPECT_DOUBLE_EQ(p0.isolated_wallet, 0.0);
   EXPECT_EQ(p0.position_side, json::PositionSide::BOTH);
   EXPECT_EQ(p0.unknown_1, "USDT"_sv);
-  EXPECT_EQ(data.event_reason, "ORDER"_sv);
+  EXPECT_EQ(data.event_reason, json::EventReason::ORDER);
 }

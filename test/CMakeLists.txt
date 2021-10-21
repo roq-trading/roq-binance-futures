@@ -11,6 +11,7 @@ set(SOURCES
     json_exchange_info.cpp
     json_filters.cpp
     json_listen_key.cpp
+    json_margin_call.cpp
     json_new_order.cpp
     json_open_orders.cpp
     json_order_trade_update.cpp

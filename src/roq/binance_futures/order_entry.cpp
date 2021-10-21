@@ -2,6 +2,7 @@
 
 #include "roq/binance_futures/order_entry.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "roq/utils/compare.h"
@@ -408,6 +409,8 @@ void OrderEntry::get_account_ack(const server::Trace<core::web::Response> &event
 void OrderEntry::operator()(const server::Trace<json::Account> &event) {
   auto &[trace_info, account] = event;
   for (auto &item : account.positions) {
+    if (shared_.discard_symbol(item.symbol))
+      continue;
     log::debug("item={}"_sv, item);
     PositionUpdate position_update{
         .stream_id = stream_id_,
@@ -415,8 +418,8 @@ void OrderEntry::operator()(const server::Trace<json::Account> &event) {
         .exchange = Flags::exchange(),
         .symbol = item.symbol,
         .external_account{},
-        .long_quantity = std::fabs(item.notional),    // XXX HANS verify
-        .short_quantity = std::fabs(-item.notional),  // XXX HANS verify
+        .long_quantity = std::max(0.0, item.notional),    // XXX HANS verify
+        .short_quantity = std::max(0.0, -item.notional),  // XXX HANS verify
         .long_quantity_begin = NaN,
         .short_quantity_begin = NaN,
     };

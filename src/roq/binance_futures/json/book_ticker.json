@@ -2,7 +2,7 @@
 "name": "BookTicker",
 "type": "comp",
 "values": [
-	{ "raw": "e", "name": "event_type", "type": "std::string_view" },
+	{ "raw": "e", "name": "event_type", "type": "EventType" },
 	{ "raw": "u", "name": "order_book_update_id", "type": "int64_t" },
 	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },

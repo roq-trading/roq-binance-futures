@@ -1,0 +1,8 @@
+{
+"name": "EventReason",
+"type": "enum",
+"values": [
+	{ "name": "ORDER" },
+	{ "name": "AUTO_EXCHANGE" }
+]
+}

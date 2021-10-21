@@ -24,6 +24,7 @@ set(AUTOGEN_SCHEMAS
     depth_item.json
     depth_update.json
     error.json
+    event_reason.json
     event_type.json
     exchange_info.json
     exchange_info_asset.json
@@ -36,6 +37,8 @@ set(AUTOGEN_SCHEMAS
     filters.json
     interval.json
     listen_key.json
+    margin_call.json
+    margin_call_item.json
     mark_price_update.json
     mini_ticker.json
     new_order.json

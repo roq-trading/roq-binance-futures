@@ -7,6 +7,6 @@
 	{ "name": "result" },
 	{ "name": "stream" },
 	{ "name": "data" },
-	{ "raw": "e", "name": "event_type", "type": "std::string_view" }
+	{ "raw": "e", "name": "event_type", "type": "EventType" }
 ]
 }

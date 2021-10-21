@@ -11,7 +11,6 @@ using namespace roq::binance_futures;
 
 using namespace std::chrono_literals;
 
-// note! positions have been truncated
 TEST(json_book_ticker, simple) {
   auto message = R"({)"
                  R"("e":"bookTicker",)"
@@ -27,6 +26,15 @@ TEST(json_book_ticker, simple) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
+  EXPECT_EQ(obj.event_type, json::EventType::BOOK_TICKER);
+  EXPECT_EQ(obj.order_book_update_id, 847033385825);
+  EXPECT_EQ(obj.symbol, "BTCUSDT"_sv);
+  EXPECT_DOUBLE_EQ(obj.best_bid_price, 58950.76);
+  EXPECT_DOUBLE_EQ(obj.best_bid_qty, 0.172);
+  EXPECT_DOUBLE_EQ(obj.best_ask_price, 58955.21);
+  EXPECT_DOUBLE_EQ(obj.best_ask_qty, 0.191);
+  EXPECT_EQ(obj.transaction_time, 1634288226709ms);
+  EXPECT_EQ(obj.event_time, 1634288226716ms);
 }
 
 TEST(json_book_ticker, parse_stream_simple) {

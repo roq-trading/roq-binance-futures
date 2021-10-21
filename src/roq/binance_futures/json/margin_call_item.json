@@ -1,0 +1,14 @@
+{
+"name": "MarginCallItem",
+"type": "item",
+"values": [
+	{ "raw": "s", "name": "symbol", "type": "std::string_view" },
+	{ "raw": "ps", "name": "position_side", "type": "PositionSide" },
+	{ "raw": "pa", "name": "position_amount", "type": "double" },
+	{ "raw": "mt", "name": "margin_type", "type": "std::string_view" },
+	{ "raw": "iw", "name": "isolated_wallet", "type": "double" },
+	{ "raw": "mp", "name": "mark_price", "type": "double" },
+	{ "raw": "up", "name": "unrealized_pnl", "type": "double" },
+	{ "raw": "mm", "name": "maintenance_margin_required", "type": "double" }
+]
+}

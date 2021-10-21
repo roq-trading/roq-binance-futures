@@ -36,6 +36,8 @@ depth_update.h
 depth_update.cpp
 error.h
 error.cpp
+event_reason.h
+event_reason.cpp
 event_type.h
 event_type.cpp
 exchange_info.h
@@ -60,6 +62,10 @@ interval.h
 interval.cpp
 listen_key.h
 listen_key.cpp
+margin_call.h
+margin_call.cpp
+margin_call_item.h
+margin_call_item.cpp
 mark_price_update.h
 mark_price_update.cpp
 mini_ticker.h

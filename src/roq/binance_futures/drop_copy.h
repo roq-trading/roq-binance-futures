@@ -30,7 +30,9 @@ class DropCopy final : public core::web::Socket::Handler, public json::UserStrea
   struct Handler {
     virtual void operator()(const server::Trace<StreamStatus> &) = 0;
     virtual void operator()(const server::Trace<ExternalLatency> &) = 0;
+    virtual void operator()(const server::Trace<TradeUpdate> &, bool is_last, uint8_t user_id) = 0;
     virtual void operator()(const server::Trace<FundsUpdate> &, bool is_last) = 0;
+    virtual void operator()(const server::Trace<PositionUpdate> &, bool is_last) = 0;
   };
 
   DropCopy(
@@ -69,6 +71,7 @@ class DropCopy final : public core::web::Socket::Handler, public json::UserStrea
 
   void operator()(const server::Trace<json::OrderTradeUpdate> &) override;
   void operator()(const server::Trace<json::AccountUpdate> &) override;
+  void operator()(const server::Trace<json::MarginCall> &) override;
 
  private:
   Handler &handler_;
@@ -84,7 +87,7 @@ class DropCopy final : public core::web::Socket::Handler, public json::UserStrea
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, order_trade_update, account_update;
+    core::metrics::Profile parse, order_trade_update, account_update, margin_call;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;

@@ -6,6 +6,10 @@ include(RoqAutogen)
 
 set(AUTOGEN_SCHEMAS
     account.json
+    account_update.json
+    account_update_data.json
+    account_update_data_balance.json
+    account_update_data_position.json
     agg_trade.json
     asset.json
     auto_cancel_all_open_orders.json

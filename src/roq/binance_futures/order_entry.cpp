@@ -346,6 +346,7 @@ void OrderEntry::get_balance_ack(const server::Trace<core::web::Response> &event
 void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
   auto &[trace_info, balance] = event;
   for (auto &item : balance.data) {
+    log::debug("item={}"_sv, item);
     FundsUpdate funds_update{
         .stream_id = stream_id_,
         .account = security_.get_account(),
@@ -407,6 +408,7 @@ void OrderEntry::get_account_ack(const server::Trace<core::web::Response> &event
 void OrderEntry::operator()(const server::Trace<json::Account> &event) {
   auto &[trace_info, account] = event;
   for (auto &item : account.positions) {
+    log::debug("item={}"_sv, item);
     PositionUpdate position_update{
         .stream_id = stream_id_,
         .account = security_.get_account(),
@@ -1034,7 +1036,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
           symbol,
           countdown_time.count(),
           recv_window.count());
-      log::debug(R"(body="{}")"_sv, body);
+      // log::debug(R"(body="{}")"_sv, body);
       auto query = security_.create_query(body);
       auto headers = security_.create_headers();
       core::web::Request request{
@@ -1064,7 +1066,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
     try {
       auto status = response.raw_status();
       auto body = response.body();
-      log::debug(R"(status={}, body="{}")"_sv, status, body);
+      // log::debug(R"(status={}, body="{}")"_sv, status, body);
       auto category = core::http::to_category(status);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
@@ -1093,9 +1095,9 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
   });
 }
 
-void OrderEntry::operator()(const server::Trace<json::AutoCancelAllOpenOrders> &event) {
-  auto &[trace_info, auto_cancel_all_open_orders] = event;
-  log::debug("auto_cancel_all_open_orders={}"_sv, auto_cancel_all_open_orders);
+void OrderEntry::operator()(const server::Trace<json::AutoCancelAllOpenOrders> &) {
+  // auto &[trace_info, auto_cancel_all_open_orders] = event;
+  // log::debug("auto_cancel_all_open_orders={}"_sv, auto_cancel_all_open_orders);
 }
 
 }  // namespace binance_futures

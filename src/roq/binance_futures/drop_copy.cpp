@@ -63,6 +63,7 @@ DropCopy::DropCopy(
       profile_{
           .parse = create_metrics(name_, "parse"_sv),
           .order_trade_update = create_metrics(name_, "order_trade_update"_sv),
+          .account_update = create_metrics(name_, "account_update"_sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"_sv),
@@ -95,6 +96,7 @@ void DropCopy::operator()(metrics::Writer &writer) {
       // profile
       .write(profile_.parse, metrics::PROFILE)
       .write(profile_.order_trade_update, metrics::PROFILE)
+      .write(profile_.account_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -227,6 +229,13 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
       log::warn("*** EXTERNAL ORDER ***"_sv);
       log::warn("execution_report={}"_sv, execution_report);
     }
+  });
+}
+
+void DropCopy::operator()(const server::Trace<json::AccountUpdate> &event) {
+  profile_.account_update([&]() {
+    auto &[trace_info, account_update] = event;
+    log::debug("account_update={}"_sv, account_update);
   });
 }
 

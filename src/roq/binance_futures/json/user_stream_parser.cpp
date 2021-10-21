@@ -53,6 +53,12 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
+    case EventType::ACCOUNT_UPDATE: {
+      auto account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
+      server::Trace event(trace_info, account_update);
+      handler(event);
+      break;
+    }
     default:
       return false;
   }

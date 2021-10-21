@@ -1,5 +1,13 @@
 account.h
 account.cpp
+account_update.h
+account_update.cpp
+account_update_data.h
+account_update_data.cpp
+account_update_data_balance.h
+account_update_data_balance.cpp
+account_update_data_position.h
+account_update_data_position.cpp
 agg_trade.h
 agg_trade.cpp
 asset.h

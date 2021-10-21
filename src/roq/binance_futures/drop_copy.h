@@ -68,6 +68,7 @@ class DropCopy final : public core::web::Socket::Handler, public json::UserStrea
   void parse(const std::string_view &message);
 
   void operator()(const server::Trace<json::OrderTradeUpdate> &) override;
+  void operator()(const server::Trace<json::AccountUpdate> &) override;
 
  private:
   Handler &handler_;
@@ -83,7 +84,7 @@ class DropCopy final : public core::web::Socket::Handler, public json::UserStrea
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, order_trade_update;
+    core::metrics::Profile parse, order_trade_update, account_update;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;

@@ -243,27 +243,33 @@ void OrderEntry::get_listen_key() {
         .method = method,
         .path = path,
         .query = {},
-        .accept = {},
+        .accept = core::http::Accept::JSON,
         .content_type = {},
         .headers = headers,
         .body = {},
         .quality_of_service = {},
         .rate_limit_weight = 1,
     };
+    auto sequence = download_.sequence();
     connection_(
-        "listen_key"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+        "listen_key"_sv,
+        request,
+        [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           server::TraceInfo trace_info;
           server::Trace event(trace_info, response);
-          get_listen_key_ack(event);
+          get_listen_key_ack(event, sequence);
         });
   });
 }
 
-void OrderEntry::get_listen_key_ack(const server::Trace<core::web::Response> &event) {
+void OrderEntry::get_listen_key_ack(
+    const server::Trace<core::web::Response> &event, uint32_t sequence) {
+  auto state = OrderEntryState::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
     auto &[trace_info, response] = event;
-    auto state = OrderEntryState::LISTEN_KEY;
     try {
+      if (download_.skip(sequence, state))
+        return;
       response.expect(core::http::Status::OK);
       auto body = response.body();
       auto listen_key = core::json::Parser::create<json::ListenKey>(body);
@@ -310,26 +316,31 @@ void OrderEntry::get_balance() {
         .method = method,
         .path = path,
         .query = query,
-        .accept = {},
+        .accept = core::http::Accept::JSON,
         .content_type = {},
         .headers = headers,
         .body = {},
         .quality_of_service = {},
         .rate_limit_weight = 5,
     };
-    connection_("balance"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
-      server::TraceInfo trace_info;
-      server::Trace event(trace_info, response);
-      get_balance_ack(event);
-    });
+    auto sequence = download_.sequence();
+    connection_(
+        "balance"_sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
+          server::TraceInfo trace_info;
+          server::Trace event(trace_info, response);
+          get_balance_ack(event, sequence);
+        });
   });
 }
 
-void OrderEntry::get_balance_ack(const server::Trace<core::web::Response> &event) {
+void OrderEntry::get_balance_ack(
+    const server::Trace<core::web::Response> &event, uint32_t sequence) {
+  auto state = OrderEntryState::BALANCE;
   profile_.balance_ack([&]() {
     auto &[trace_info, response] = event;
-    auto state = OrderEntryState::BALANCE;
     try {
+      if (download_.skip(sequence, state))
+        return;
       response.expect(core::http::Status::OK);
       auto body = response.body();
       core::json::Buffer buffer(decode_buffer_);
@@ -372,26 +383,31 @@ void OrderEntry::get_account() {
         .method = method,
         .path = path,
         .query = query,
-        .accept = {},
+        .accept = core::http::Accept::JSON,
         .content_type = {},
         .headers = headers,
         .body = {},
         .quality_of_service = {},
         .rate_limit_weight = 5,
     };
-    connection_("account"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
-      server::TraceInfo trace_info;
-      server::Trace event(trace_info, response);
-      get_account_ack(event);
-    });
+    auto sequence = download_.sequence();
+    connection_(
+        "account"_sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
+          server::TraceInfo trace_info;
+          server::Trace event(trace_info, response);
+          get_account_ack(event, sequence);
+        });
   });
 }
 
-void OrderEntry::get_account_ack(const server::Trace<core::web::Response> &event) {
+void OrderEntry::get_account_ack(
+    const server::Trace<core::web::Response> &event, uint32_t sequence) {
+  auto state = OrderEntryState::ACCOUNT;
   profile_.account_ack([&]() {
     auto &[trace_info, response] = event;
-    auto state = OrderEntryState::ACCOUNT;
     try {
+      if (download_.skip(sequence, state))
+        return;
       response.expect(core::http::Status::OK);
       auto body = response.body();
       core::json::Buffer buffer(decode_buffer_);
@@ -439,27 +455,33 @@ void OrderEntry::get_open_orders() {
         .method = method,
         .path = path,
         .query = query,
-        .accept = {},
+        .accept = core::http::Accept::JSON,
         .content_type = {},
         .headers = headers,
         .body = {},
         .quality_of_service = {},
         .rate_limit_weight = 5,
     };
+    auto sequence = download_.sequence();
     connection_(
-        "open_orders"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+        "open_orders"_sv,
+        request,
+        [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           server::TraceInfo trace_info;
           server::Trace event(trace_info, response);
-          get_open_orders_ack(event);
+          get_open_orders_ack(event, sequence);
         });
   });
 }
 
-void OrderEntry::get_open_orders_ack(const server::Trace<core::web::Response> &event) {
+void OrderEntry::get_open_orders_ack(
+    const server::Trace<core::web::Response> &event, uint32_t sequence) {
+  auto state = OrderEntryState::OPEN_ORDERS;
   profile_.open_orders_ack([&]() {
     auto &[trace_info, response] = event;
-    auto state = OrderEntryState::OPEN_ORDERS;
     try {
+      if (download_.skip(sequence, state))
+        return;
       response.expect(core::http::Status::OK);
       auto body = response.body();
       log::debug(R"(body="{}")"_sv, body);

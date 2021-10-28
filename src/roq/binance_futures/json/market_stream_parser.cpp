@@ -28,7 +28,7 @@ static void dispatch_helper(
   core::json::Parser parser(message);
   auto root = parser.root();
   T value(root, buffer);
-  server::create_trace_and_dispatch(trace_info, value, handler);
+  server::create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
 

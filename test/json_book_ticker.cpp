@@ -51,7 +51,7 @@ TEST(json_book_ticker, parse_stream_simple) {
                  R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  server::TraceInfo trace_info;
+  auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
     void operator()(const server::Trace<json::Error> &, [[maybe_unused]] int32_t id) override {
       FAIL();
@@ -91,7 +91,7 @@ TEST(json_book_ticker, parse_stream_wrapped) {
                  R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  server::TraceInfo trace_info;
+  auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
     void operator()(const server::Trace<json::Error> &, [[maybe_unused]] int32_t id) override {
       FAIL();

@@ -264,14 +264,17 @@ void OrderEntry::get_listen_key() {
 
 void OrderEntry::get_listen_key_ack(
     const server::Trace<core::web::Response> &event, uint32_t sequence) {
-  auto state = OrderEntryState::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
     auto &[trace_info, response] = event;
+    auto state = OrderEntryState::LISTEN_KEY;
     try {
-      if (download_.skip(sequence, state))
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      if (download_.skip(sequence, state)) {
+        log::info("Download state={} has already been processed"_sv, state);
         return;
+      }
       response.expect(core::http::Status::OK);
-      auto body = response.body();
       auto listen_key = core::json::Parser::create<json::ListenKey>(body);
       server::Trace event(trace_info, listen_key);
       (*this)(event);
@@ -286,6 +289,7 @@ void OrderEntry::get_listen_key_ack(
 
 void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
   auto &[trace_info, listen_key] = event;
+  log::info<2>("listen_key={}"_sv, listen_key);
   bool initial = listen_key_.empty();
   if (utils::update(listen_key_, listen_key.listen_key)) {
     if (initial) {
@@ -335,14 +339,17 @@ void OrderEntry::get_balance() {
 
 void OrderEntry::get_balance_ack(
     const server::Trace<core::web::Response> &event, uint32_t sequence) {
-  auto state = OrderEntryState::BALANCE;
   profile_.balance_ack([&]() {
     auto &[trace_info, response] = event;
+    auto state = OrderEntryState::BALANCE;
     try {
-      if (download_.skip(sequence, state))
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      if (download_.skip(sequence, state)) {
+        log::info("Download state={} has already been processed"_sv, state);
         return;
+      }
       response.expect(core::http::Status::OK);
-      auto body = response.body();
       core::json::Buffer buffer(decode_buffer_);
       auto balance = core::json::Parser::create<json::Balance>(body, buffer);
       server::Trace event(trace_info, balance);
@@ -357,6 +364,7 @@ void OrderEntry::get_balance_ack(
 
 void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
   auto &[trace_info, balance] = event;
+  log::info<2>("balance={}"_sv, balance);
   for (auto &item : balance.data) {
     log::debug("item={}"_sv, item);
     FundsUpdate funds_update{
@@ -402,14 +410,17 @@ void OrderEntry::get_account() {
 
 void OrderEntry::get_account_ack(
     const server::Trace<core::web::Response> &event, uint32_t sequence) {
-  auto state = OrderEntryState::ACCOUNT;
   profile_.account_ack([&]() {
     auto &[trace_info, response] = event;
+    auto state = OrderEntryState::ACCOUNT;
     try {
-      if (download_.skip(sequence, state))
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      if (download_.skip(sequence, state)) {
+        log::info("Download state={} has already been processed"_sv, state);
         return;
+      }
       response.expect(core::http::Status::OK);
-      auto body = response.body();
       core::json::Buffer buffer(decode_buffer_);
       auto account = core::json::Parser::create<json::Account>(body, buffer);
       server::Trace event(trace_info, account);
@@ -424,6 +435,7 @@ void OrderEntry::get_account_ack(
 
 void OrderEntry::operator()(const server::Trace<json::Account> &event) {
   auto &[trace_info, account] = event;
+  log::info<2>("account={}"_sv, account);
   for (auto &item : account.positions) {
     if (shared_.discard_symbol(item.symbol))
       continue;
@@ -476,15 +488,17 @@ void OrderEntry::get_open_orders() {
 
 void OrderEntry::get_open_orders_ack(
     const server::Trace<core::web::Response> &event, uint32_t sequence) {
-  auto state = OrderEntryState::OPEN_ORDERS;
   profile_.open_orders_ack([&]() {
     auto &[trace_info, response] = event;
+    auto state = OrderEntryState::OPEN_ORDERS;
     try {
-      if (download_.skip(sequence, state))
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      if (download_.skip(sequence, state)) {
+        log::info("Download state={} has already been processed"_sv, state);
         return;
+      }
       response.expect(core::http::Status::OK);
-      auto body = response.body();
-      log::debug(R"(body="{}")"_sv, body);
       core::json::Buffer buffer(decode_buffer_);
       auto open_orders = core::json::Parser::create<json::OpenOrders>(body, buffer);
       server::Trace event(trace_info, open_orders);
@@ -499,8 +513,10 @@ void OrderEntry::get_open_orders_ack(
 
 void OrderEntry::operator()(const server::Trace<json::OpenOrders> &event) {
   auto &[trace_info, open_orders] = event;
+  log::info<2>("open_orders={}"_sv, open_orders);
   for (auto &order : open_orders.data) {
     log::debug("order={}"_sv, order);
+    log::info<2>("order={}"_sv, order);
     if (order.client_order_id.empty())  // XXX HANS maybe we need a utility function to validate?
       continue;
     open_orders_symbols_.emplace(order.symbol);  // XXX HANS experimental
@@ -651,12 +667,10 @@ void OrderEntry::new_order_ack(
     uint32_t version) {
   profile_.new_order_ack([&]() {
     auto &[trace_info, response] = event;
+    log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
     try {
-      log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
-      auto status = response.raw_status();
-      auto body = response.body();
-      log::debug(R"(status={}, body="{}")"_sv, status, body);
-      auto category = core::http::to_category(status);
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -727,6 +741,12 @@ void OrderEntry::operator()(
     uint32_t order_id,
     uint32_t version) {
   auto &[trace_info, new_order] = event;
+  log::info<2>(
+      "new_order={}, user_id={}, order_id={}, version={}"_sv,
+      new_order,
+      user_id,
+      order_id,
+      version);
   auto side = json::map(new_order.side);
   auto order_type = json::map(new_order.type);
   auto time_in_force = json::map(new_order.time_in_force);
@@ -840,10 +860,8 @@ void OrderEntry::cancel_order_ack(
     auto &[trace_info, response] = event;
     try {
       log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
-      auto status = response.raw_status();
-      auto body = response.body();
-      log::debug(R"(status={}, body="{}")"_sv, status, body);
-      auto category = core::http::to_category(status);
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           auto cancel_order = core::json::Parser::create<json::CancelOrder>(body);
@@ -916,6 +934,12 @@ void OrderEntry::operator()(
     uint32_t order_id,
     uint32_t version) {
   auto &[trace_info, cancel_order] = event;
+  log::info<2>(
+      "cancel_order={}, user_id={}, order_id={}, version={}"_sv,
+      cancel_order,
+      user_id,
+      order_id,
+      version);
   auto side = json::map(cancel_order.side);
   auto order_type = json::map(cancel_order.type);
   auto time_in_force = json::map(cancel_order.time_in_force);
@@ -1012,10 +1036,8 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
   profile_.cancel_all_open_orders_ack([&]() {
     auto &[trace_info, response] = event;
     try {
-      auto status = response.raw_status();
-      auto body = response.body();
-      log::debug(R"(status={}, body="{}")"_sv, status, body);
-      auto category = core::http::to_category(status);
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -1089,10 +1111,8 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
   profile_.auto_cancel_all_open_orders_ack([&]() {
     auto &[trace_info, response] = event;
     try {
-      auto status = response.raw_status();
-      auto body = response.body();
-      // log::debug(R"(status={}, body="{}")"_sv, status, body);
-      auto category = core::http::to_category(status);
+      auto [status, category, body] = response.result();
+      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -1120,9 +1140,9 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
   });
 }
 
-void OrderEntry::operator()(const server::Trace<json::AutoCancelAllOpenOrders> &) {
-  // auto &[trace_info, auto_cancel_all_open_orders] = event;
-  // log::debug("auto_cancel_all_open_orders={}"_sv, auto_cancel_all_open_orders);
+void OrderEntry::operator()(const server::Trace<json::AutoCancelAllOpenOrders> &event) {
+  auto &[trace_info, auto_cancel_all_open_orders] = event;
+  log::info<2>("auto_cancel_all_open_orders={}"_sv, auto_cancel_all_open_orders);
 }
 
 }  // namespace binance_futures

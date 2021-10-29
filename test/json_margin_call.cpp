@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 TEST(json_margin_call, online_example) {
@@ -37,5 +38,5 @@ TEST(json_margin_call, online_example) {
   auto &positions = obj.positions;
   ASSERT_EQ(std::size(positions), 1);
   auto &p0 = positions[0];
-  EXPECT_EQ(p0.symbol, "ETHUSDT"_sv);
+  EXPECT_EQ(p0.symbol, "ETHUSDT"sv);
 }

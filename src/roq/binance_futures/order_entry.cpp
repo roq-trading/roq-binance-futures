@@ -19,13 +19,13 @@
 #include "roq/binance_futures/json/error.h"
 #include "roq/binance_futures/json/utils.h"
 
-using namespace roq::literals;
+using namespace std::literals;
 
 namespace roq {
 namespace binance_futures {
 
 namespace {
-static const auto NAME = "om"_sv;
+static const auto NAME = "om"sv;
 static const auto SUPPORTS = utils::Mask{
     SupportType::CREATE_ORDER,
     SupportType::CANCEL_ORDER,
@@ -48,7 +48,7 @@ OrderEntry::OrderEntry(
     Security &security,
     Shared &shared)
     : handler_(handler), stream_id_(stream_id),
-      name_(fmt::format("{}:{}:{}"_sv, stream_id_, NAME, security.get_account())),
+      name_(fmt::format("{}:{}:{}"sv, stream_id_, NAME, security.get_account())),
       connection_(
           *this,
           context,
@@ -65,29 +65,29 @@ OrderEntry::OrderEntry(
           Flags::rest_ping_path()),
       decode_buffer_(Flags::decode_buffer_size()),
       counter_{
-          .disconnect = create_metrics(name_, "disconnect"_sv),
+          .disconnect = create_metrics(name_, "disconnect"sv),
       },
       profile_{
-          .listen_key = create_metrics(name_, "listen_key"_sv),
-          .listen_key_ack = create_metrics(name_, "listen_key_ack"_sv),
-          .balance = create_metrics(name_, "balance"_sv),
-          .balance_ack = create_metrics(name_, "balance_ack"_sv),
-          .account = create_metrics(name_, "account"_sv),
-          .account_ack = create_metrics(name_, "account_ack"_sv),
-          .open_orders = create_metrics(name_, "open_orders"_sv),
-          .open_orders_ack = create_metrics(name_, "open_orders_ack"_sv),
-          .new_order = create_metrics(name_, "new_order"_sv),
-          .new_order_ack = create_metrics(name_, "new_order_ack"_sv),
-          .cancel_order = create_metrics(name_, "cancel_order"_sv),
-          .cancel_order_ack = create_metrics(name_, "cancel_order_ack"_sv),
-          .cancel_all_open_orders = create_metrics(name_, "cancel_all_open_orders"_sv),
-          .cancel_all_open_orders_ack = create_metrics(name_, "cancel_all_open_orders_ack"_sv),
-          .auto_cancel_all_open_orders = create_metrics(name_, "auto_cancel_all_open_orders"_sv),
+          .listen_key = create_metrics(name_, "listen_key"sv),
+          .listen_key_ack = create_metrics(name_, "listen_key_ack"sv),
+          .balance = create_metrics(name_, "balance"sv),
+          .balance_ack = create_metrics(name_, "balance_ack"sv),
+          .account = create_metrics(name_, "account"sv),
+          .account_ack = create_metrics(name_, "account_ack"sv),
+          .open_orders = create_metrics(name_, "open_orders"sv),
+          .open_orders_ack = create_metrics(name_, "open_orders_ack"sv),
+          .new_order = create_metrics(name_, "new_order"sv),
+          .new_order_ack = create_metrics(name_, "new_order_ack"sv),
+          .cancel_order = create_metrics(name_, "cancel_order"sv),
+          .cancel_order_ack = create_metrics(name_, "cancel_order_ack"sv),
+          .cancel_all_open_orders = create_metrics(name_, "cancel_all_open_orders"sv),
+          .cancel_all_open_orders_ack = create_metrics(name_, "cancel_all_open_orders_ack"sv),
+          .auto_cancel_all_open_orders = create_metrics(name_, "auto_cancel_all_open_orders"sv),
           .auto_cancel_all_open_orders_ack =
-              create_metrics(name_, "auto_cancel_all_open_orders_ack"_sv),
+              create_metrics(name_, "auto_cancel_all_open_orders_ack"sv),
       },
       latency_{
-          .ping = create_metrics(name_, "ping"_sv),
+          .ping = create_metrics(name_, "ping"sv),
       },
       security_(security), shared_(shared),
       download_(Flags::rest_request_timeout(), [this](auto state) { return download(state); }) {
@@ -202,7 +202,7 @@ void OrderEntry::operator()(ConnectionStatus status) {
         .type = StreamType::REST,
         .priority = Priority::PRIMARY,
     };
-    log::info("stream_status={}"_sv, stream_status);
+    log::info("stream_status={}"sv, stream_status);
     server::create_trace_and_dispatch(handler_, trace_info, stream_status);
   }
 }
@@ -237,7 +237,7 @@ uint32_t OrderEntry::download(OrderEntryState state) {
 void OrderEntry::get_listen_key() {
   profile_.listen_key([&]() {
     auto method = core::http::Method::POST;
-    auto path = "/fapi/v1/listenKey"_sv;
+    auto path = "/fapi/v1/listenKey"sv;
     auto headers = security_.create_headers();
     core::web::Request request{
         .method = method,
@@ -252,7 +252,7 @@ void OrderEntry::get_listen_key() {
     };
     auto sequence = download_.sequence();
     connection_(
-        "listen_key"_sv,
+        "listen_key"sv,
         request,
         [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
@@ -269,9 +269,9 @@ void OrderEntry::get_listen_key_ack(
     auto state = OrderEntryState::LISTEN_KEY;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       if (download_.skip(sequence, state)) {
-        log::info("Download state={} has already been processed"_sv, state);
+        log::info("Download state={} has already been processed"sv, state);
         return;
       }
       response.expect(core::http::Status::OK);
@@ -280,7 +280,7 @@ void OrderEntry::get_listen_key_ack(
       (*this)(event);
       download_.check_relaxed(state);
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       if (download_.downloading())
         download_.retry(state);
     }
@@ -289,11 +289,11 @@ void OrderEntry::get_listen_key_ack(
 
 void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
   auto &[trace_info, listen_key] = event;
-  log::info<2>("listen_key={}"_sv, listen_key);
+  log::info<2>("listen_key={}"sv, listen_key);
   bool initial = listen_key_.empty();
   if (utils::update(listen_key_, listen_key.listen_key)) {
     if (initial) {
-      log::info(R"(Listen key has been acquired (value="{}"))"_sv, listen_key_);
+      log::info(R"(Listen key has been acquired (value="{}"))"sv, listen_key_);
       ListenKeyUpdate listen_key_update{
           .account = security_.get_account(),
           .listen_key = listen_key.listen_key,
@@ -301,7 +301,7 @@ void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
       create_trace_and_dispatch(handler_, trace_info, listen_key_update);
     } else {
       if (ROQ_UNLIKELY(!initial))
-        log::info("Listen key has been refreshed!"_sv);
+        log::info("Listen key has been refreshed!"sv);
     }
   }
   auto now = core::get_system_clock();
@@ -313,7 +313,7 @@ void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
 void OrderEntry::get_balance() {
   profile_.balance([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v2/balance"_sv;
+    auto path = "/fapi/v2/balance"sv;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -329,7 +329,7 @@ void OrderEntry::get_balance() {
     };
     auto sequence = download_.sequence();
     connection_(
-        "balance"_sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
+        "balance"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
           server::Trace event(trace_info, response);
           get_balance_ack(event, sequence);
@@ -344,9 +344,9 @@ void OrderEntry::get_balance_ack(
     auto state = OrderEntryState::BALANCE;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       if (download_.skip(sequence, state)) {
-        log::info("Download state={} has already been processed"_sv, state);
+        log::info("Download state={} has already been processed"sv, state);
         return;
       }
       response.expect(core::http::Status::OK);
@@ -356,7 +356,7 @@ void OrderEntry::get_balance_ack(
       (*this)(event);
       download_.check(state);
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       download_.retry(state);
     }
   });
@@ -364,9 +364,9 @@ void OrderEntry::get_balance_ack(
 
 void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
   auto &[trace_info, balance] = event;
-  log::info<2>("balance={}"_sv, balance);
+  log::info<2>("balance={}"sv, balance);
   for (auto &item : balance.data) {
-    log::debug("item={}"_sv, item);
+    log::debug("item={}"sv, item);
     FundsUpdate funds_update{
         .stream_id = stream_id_,
         .account = security_.get_account(),
@@ -384,7 +384,7 @@ void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
 void OrderEntry::get_account() {
   profile_.account([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v2/account"_sv;
+    auto path = "/fapi/v2/account"sv;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -400,7 +400,7 @@ void OrderEntry::get_account() {
     };
     auto sequence = download_.sequence();
     connection_(
-        "account"_sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
+        "account"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
           server::Trace event(trace_info, response);
           get_account_ack(event, sequence);
@@ -415,9 +415,9 @@ void OrderEntry::get_account_ack(
     auto state = OrderEntryState::ACCOUNT;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       if (download_.skip(sequence, state)) {
-        log::info("Download state={} has already been processed"_sv, state);
+        log::info("Download state={} has already been processed"sv, state);
         return;
       }
       response.expect(core::http::Status::OK);
@@ -427,7 +427,7 @@ void OrderEntry::get_account_ack(
       (*this)(event);
       download_.check(state);
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       download_.retry(state);
     }
   });
@@ -435,11 +435,11 @@ void OrderEntry::get_account_ack(
 
 void OrderEntry::operator()(const server::Trace<json::Account> &event) {
   auto &[trace_info, account] = event;
-  log::info<2>("account={}"_sv, account);
+  log::info<2>("account={}"sv, account);
   for (auto &item : account.positions) {
     if (shared_.discard_symbol(item.symbol))
       continue;
-    log::debug("item={}"_sv, item);
+    log::debug("item={}"sv, item);
     PositionUpdate position_update{
         .stream_id = stream_id_,
         .account = security_.get_account(),
@@ -460,7 +460,7 @@ void OrderEntry::operator()(const server::Trace<json::Account> &event) {
 void OrderEntry::get_open_orders() {
   profile_.open_orders([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v1/openOrders"_sv;
+    auto path = "/fapi/v1/openOrders"sv;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -476,7 +476,7 @@ void OrderEntry::get_open_orders() {
     };
     auto sequence = download_.sequence();
     connection_(
-        "open_orders"_sv,
+        "open_orders"sv,
         request,
         [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
@@ -493,9 +493,9 @@ void OrderEntry::get_open_orders_ack(
     auto state = OrderEntryState::OPEN_ORDERS;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       if (download_.skip(sequence, state)) {
-        log::info("Download state={} has already been processed"_sv, state);
+        log::info("Download state={} has already been processed"sv, state);
         return;
       }
       response.expect(core::http::Status::OK);
@@ -505,7 +505,7 @@ void OrderEntry::get_open_orders_ack(
       (*this)(event);
       download_.check(state);
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       download_.retry(state);
     }
   });
@@ -513,17 +513,17 @@ void OrderEntry::get_open_orders_ack(
 
 void OrderEntry::operator()(const server::Trace<json::OpenOrders> &event) {
   auto &[trace_info, open_orders] = event;
-  log::info<2>("open_orders={}"_sv, open_orders);
+  log::info<2>("open_orders={}"sv, open_orders);
   for (auto &order : open_orders.data) {
-    log::debug("order={}"_sv, order);
-    log::info<2>("order={}"_sv, order);
+    log::debug("order={}"sv, order);
+    log::info<2>("order={}"sv, order);
     if (order.client_order_id.empty())  // XXX HANS maybe we need a utility function to validate?
       continue;
     open_orders_symbols_.emplace(order.symbol);  // XXX HANS experimental
     auto side = json::map(order.side);
     auto order_type = json::map(order.type);
     auto time_in_force = json::map(order.time_in_force);
-    auto external_order_id = fmt::format("{}"_sv, order.order_id);  // XXX HANS
+    auto external_order_id = fmt::format("{}"sv, order.order_id);  // XXX HANS
     auto order_status = json::map(order.status);
     oms::OrderUpdate order_update{
         .account = security_.get_account(),
@@ -563,7 +563,7 @@ void OrderEntry::refresh_listen_key() {
   auto now = core::get_system_clock();
   if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
     return;
-  log::info("Refreshing listen key..."_sv);
+  log::info("Refreshing listen key..."sv);
   listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
   get_listen_key();
 }
@@ -578,7 +578,7 @@ void OrderEntry::new_order(
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);  // XXX HANS experimental
     auto method = core::http::Method::POST;
-    auto path = "/fapi/v1/order"_sv;
+    auto path = "/fapi/v1/order"sv;
     auto side = json::map(create_order.side).as_raw_text();
     auto type = json::map(create_order.order_type).as_raw_text();
     auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
@@ -595,7 +595,7 @@ void OrderEntry::new_order(
           R"(reduceOnly={}&)"
           R"(price={:.{}f}&)"
           R"(newClientOrderId={}&)"
-          R"(recvWindow={})"_sv,
+          R"(recvWindow={})"sv,
           create_order.symbol,
           side,
           type,
@@ -618,7 +618,7 @@ void OrderEntry::new_order(
           R"(price={:.{}f}&)"
           R"(newClientOrderId={}&)"
           R"(stopPrice={:.{}f}&)"
-          R"(recvWindow={})"_sv,
+          R"(recvWindow={})"sv,
           create_order.symbol,
           side,
           type,
@@ -633,7 +633,7 @@ void OrderEntry::new_order(
           order.price_decimal_digits,
           recv_window.count());
     }
-    log::debug(R"(body="{}")"_sv, body);
+    log::debug(R"(body="{}")"sv, body);
     auto query = security_.create_query(body);
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -667,10 +667,10 @@ void OrderEntry::new_order_ack(
     uint32_t version) {
   profile_.new_order_ack([&]() {
     auto &[trace_info, response] = event;
-    log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
+    log::debug("user_id={}, order_id={}, version={}"sv, user_id, order_id, version);
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -681,7 +681,7 @@ void OrderEntry::new_order_ack(
         }
         case core::http::Category::CLIENT_ERROR: {  // 4xx
           auto error = core::json::Parser::create<json::Error>(body);
-          log::warn("error={}"_sv, error);
+          log::warn("error={}"sv, error);
           oms::Response response{
               .type = RequestType::CREATE_ORDER,
               .origin = Origin::EXCHANGE,
@@ -701,7 +701,7 @@ void OrderEntry::new_order_ack(
                   response,
                   []([[maybe_unused]] auto &order) {})) {
           } else {
-            log::warn("Did not find order: user_id={}, order_id={}"_sv, user_id, order_id);
+            log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
           }
           break;
         }
@@ -709,7 +709,7 @@ void OrderEntry::new_order_ack(
           response.expect(core::http::Status::OK);  // throws
       }
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       oms::Response response{
           .type = RequestType::CREATE_ORDER,
           .origin = Origin::GATEWAY,
@@ -729,7 +729,7 @@ void OrderEntry::new_order_ack(
               response,
               []([[maybe_unused]] auto &order) {})) {
       } else {
-        log::warn("Did not find order: user_id={}, order_id={}"_sv, user_id, order_id);
+        log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
       }
     }
   });
@@ -742,16 +742,12 @@ void OrderEntry::operator()(
     uint32_t version) {
   auto &[trace_info, new_order] = event;
   log::info<2>(
-      "new_order={}, user_id={}, order_id={}, version={}"_sv,
-      new_order,
-      user_id,
-      order_id,
-      version);
+      "new_order={}, user_id={}, order_id={}, version={}"sv, new_order, user_id, order_id, version);
   auto side = json::map(new_order.side);
   auto order_type = json::map(new_order.type);
   auto time_in_force = json::map(new_order.time_in_force);
   auto order_status = json::map(new_order.status);
-  auto external_order_id = fmt::format("{}"_sv, new_order.order_id);  // XXX HANS
+  auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // XXX HANS
   oms::Response response{
       .type = RequestType::CREATE_ORDER,
       .origin = Origin::EXCHANGE,
@@ -798,7 +794,7 @@ void OrderEntry::operator()(
           order_update,
           []([[maybe_unused]] auto &order) {})) {
   } else {
-    log::warn("Did not find order: user_id={}, order_id={}"_sv, user_id, order_id);
+    log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
   }
 }
 
@@ -814,16 +810,16 @@ void OrderEntry::cancel_order(
       throw oms::NotReadyException();
     auto &[message_info, cancel_order] = event;
     auto method = core::http::Method::DELETE;
-    auto path = "/fapi/v1/order"_sv;
+    auto path = "/fapi/v1/order"sv;
     std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
     auto body = fmt::format(
         R"(symbol={}&)"
         R"(origClientOrderId={}&)"
-        R"(recvWindow={})"_sv,
+        R"(recvWindow={})"sv,
         order.symbol,
         previous_request_id,
         recv_window.count());
-    log::debug(R"(body="{}")"_sv, body);
+    log::debug(R"(body="{}")"sv, body);
     auto query = security_.create_query(body);
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -859,9 +855,9 @@ void OrderEntry::cancel_order_ack(
   profile_.cancel_order_ack([&]() {
     auto &[trace_info, response] = event;
     try {
-      log::debug("user_id={}, order_id={}, version={}"_sv, user_id, order_id, version);
+      log::debug("user_id={}, order_id={}, version={}"sv, user_id, order_id, version);
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           auto cancel_order = core::json::Parser::create<json::CancelOrder>(body);
@@ -890,7 +886,7 @@ void OrderEntry::cancel_order_ack(
                   response,
                   []([[maybe_unused]] auto &order) {})) {
           } else {
-            log::warn("Did not find order: user_id={}, order_id={}"_sv, user_id, order_id);
+            log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
           }
           break;
         }
@@ -898,7 +894,7 @@ void OrderEntry::cancel_order_ack(
           response.expect(core::http::Status::OK);  // throws
       }
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       oms::Response response{
           .type = RequestType::CANCEL_ORDER,
           .origin = Origin::GATEWAY,
@@ -919,7 +915,7 @@ void OrderEntry::cancel_order_ack(
               []([[maybe_unused]] auto &order) {})) {
       } else {
         log::warn(
-            "Did not find order: user_id={}, order_id={}, version={}"_sv,
+            "Did not find order: user_id={}, order_id={}, version={}"sv,
             user_id,
             order_id,
             version);
@@ -935,7 +931,7 @@ void OrderEntry::operator()(
     uint32_t version) {
   auto &[trace_info, cancel_order] = event;
   log::info<2>(
-      "cancel_order={}, user_id={}, order_id={}, version={}"_sv,
+      "cancel_order={}, user_id={}, order_id={}, version={}"sv,
       cancel_order,
       user_id,
       order_id,
@@ -943,7 +939,7 @@ void OrderEntry::operator()(
   auto side = json::map(cancel_order.side);
   auto order_type = json::map(cancel_order.type);
   auto time_in_force = json::map(cancel_order.time_in_force);
-  auto external_order_id = fmt::format("{}"_sv, cancel_order.order_id);  // XXX HANS
+  auto external_order_id = fmt::format("{}"sv, cancel_order.order_id);  // XXX HANS
   auto order_status = json::map(cancel_order.status);
   oms::Response response{
       .type = RequestType::CANCEL_ORDER,
@@ -991,7 +987,7 @@ void OrderEntry::operator()(
           order_update,
           []([[maybe_unused]] auto &order) {})) {
   } else {
-    log::warn("Did not find order: user_id={}, order_id={}"_sv, user_id, order_id);
+    log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
   }
 }
 
@@ -1002,14 +998,14 @@ void OrderEntry::cancel_all_open_orders(
   profile_.cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto method = core::http::Method::DELETE;
-      auto path = "/fapi/v1/allOpenOrders"_sv;
+      auto path = "/fapi/v1/allOpenOrders"sv;
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
       auto body = fmt::format(
           R"(symbol={}&)"
-          R"(recvWindow={})"_sv,
+          R"(recvWindow={})"sv,
           symbol,
           recv_window.count());
-      log::debug(R"(body="{}")"_sv, body);
+      log::debug(R"(body="{}")"sv, body);
       auto query = security_.create_query(body);
       auto headers = security_.create_headers();
       core::web::Request request{
@@ -1037,7 +1033,7 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
     auto &[trace_info, response] = event;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -1048,7 +1044,7 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
         }
         case core::http::Category::CLIENT_ERROR: {  // 4xx
           auto error = core::json::Parser::create<json::Error>(body);
-          log::warn("error={}"_sv, error);
+          log::warn("error={}"sv, error);
           // XXX HANS ???
           break;
         }
@@ -1056,7 +1052,7 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
           response.expect(core::http::Status::OK);  // throws
       }
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       // XXX HANS ???
     }
   });
@@ -1064,7 +1060,7 @@ void OrderEntry::cancel_all_open_orders_ack(const server::Trace<core::web::Respo
 
 void OrderEntry::operator()(const server::Trace<json::CancelAllOpenOrders> &event) {
   auto &[trace_info, cancel_all_open_orders] = event;
-  log::debug("cancel_all_open_orders={}"_sv, cancel_all_open_orders);
+  log::debug("cancel_all_open_orders={}"sv, cancel_all_open_orders);
 }
 
 // auto-cancel-all-orders
@@ -1073,17 +1069,17 @@ void OrderEntry::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto method = core::http::Method::POST;
-      auto path = "/fapi/v1/countdownCancelAll"_sv;
+      auto path = "/fapi/v1/countdownCancelAll"sv;
       std::chrono::milliseconds countdown_time = utils::safe_cast(Flags::rest_order_countdown());
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
       auto body = fmt::format(
           R"(symbol={}&)"
           R"(countdownTime={}&)"
-          R"(recvWindow={})"_sv,
+          R"(recvWindow={})"sv,
           symbol,
           countdown_time.count(),
           recv_window.count());
-      // log::debug(R"(body="{}")"_sv, body);
+      // log::debug(R"(body="{}")"sv, body);
       auto query = security_.create_query(body);
       auto headers = security_.create_headers();
       core::web::Request request{
@@ -1098,7 +1094,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
           .rate_limit_weight = 1,
       };
       connection_(
-          "auto_cancel"_sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
+          "auto_cancel"sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
             auto trace_info = server::create_trace_info();
             server::Trace event(trace_info, response);
             auto_cancel_all_open_orders_ack(event);
@@ -1112,7 +1108,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
     auto &[trace_info, response] = event;
     try {
       auto [status, category, body] = response.result();
-      log::debug(R"(status={}, category={}, body="{}")"_sv, status, category, body);
+      log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       switch (category) {
         case core::http::Category::SUCCESS: {  // 2xx
           core::json::Buffer buffer(decode_buffer_);
@@ -1125,7 +1121,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
         case core::http::Category::CLIENT_ERROR: {  // 4xx
           if (!std::empty(body)) {
             auto error = core::json::Parser::create<json::Error>(body);
-            log::warn("error={}"_sv, error);
+            log::warn("error={}"sv, error);
           }
           // XXX HANS ???
           break;
@@ -1134,7 +1130,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
           response.expect(core::http::Status::OK);  // throws
       }
     } catch (core::NetworkError &e) {
-      log::warn(R"(Exception type={}, what="{}")"_sv, typeid(e).name(), e.what());
+      log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
       // XXX HANS ???
     }
   });
@@ -1142,7 +1138,7 @@ void OrderEntry::auto_cancel_all_open_orders_ack(const server::Trace<core::web::
 
 void OrderEntry::operator()(const server::Trace<json::AutoCancelAllOpenOrders> &event) {
   auto &[trace_info, auto_cancel_all_open_orders] = event;
-  log::info<2>("auto_cancel_all_open_orders={}"_sv, auto_cancel_all_open_orders);
+  log::info<2>("auto_cancel_all_open_orders={}"sv, auto_cancel_all_open_orders);
 }
 
 }  // namespace binance_futures

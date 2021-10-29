@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 TEST(json_cancel_order, simple) {
@@ -37,9 +38,9 @@ TEST(json_cancel_order, simple) {
                  R"(})";
   auto obj = core::json::Parser::create<json::CancelOrder>(message);
   EXPECT_EQ(obj.order_id, 17759646892);
-  EXPECT_EQ(obj.symbol, "XRPUSDT"_sv);
+  EXPECT_EQ(obj.symbol, "XRPUSDT"sv);
   EXPECT_EQ(obj.status, json::OrderStatus::CANCELED);
-  EXPECT_EQ(obj.client_order_id, "rwAC6QMAAQAAM0V8zdAW"_sv);
+  EXPECT_EQ(obj.client_order_id, "rwAC6QMAAQAAM0V8zdAW"sv);
   EXPECT_DOUBLE_EQ(obj.price, 1.0823);
   EXPECT_DOUBLE_EQ(obj.avg_price, 0.0);
   EXPECT_DOUBLE_EQ(obj.orig_qty, 5.0);

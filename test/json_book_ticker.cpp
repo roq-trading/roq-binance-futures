@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 TEST(json_book_ticker, simple) {
@@ -28,7 +29,7 @@ TEST(json_book_ticker, simple) {
   auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
   EXPECT_EQ(obj.event_type, json::EventType::BOOK_TICKER);
   EXPECT_EQ(obj.order_book_update_id, 847033385825);
-  EXPECT_EQ(obj.symbol, "BTCUSDT"_sv);
+  EXPECT_EQ(obj.symbol, "BTCUSDT"sv);
   EXPECT_DOUBLE_EQ(obj.best_bid_price, 58950.76);
   EXPECT_DOUBLE_EQ(obj.best_bid_qty, 0.172);
   EXPECT_DOUBLE_EQ(obj.best_ask_price, 58955.21);

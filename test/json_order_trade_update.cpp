@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 TEST(json_order_trade_update, simple_new) {
@@ -55,8 +56,8 @@ TEST(json_order_trade_update, simple_new) {
   EXPECT_EQ(obj.transaction_time, 1634553049579ms);
   EXPECT_EQ(obj.event_time, 1634553049581ms);
   auto &execution_report = obj.execution_report;
-  EXPECT_EQ(execution_report.symbol, "XRPUSDT"_sv);
-  EXPECT_EQ(execution_report.client_order_id, "mwAC6QMAAQAA1UL7ndIW"_sv);
+  EXPECT_EQ(execution_report.symbol, "XRPUSDT"sv);
+  EXPECT_EQ(execution_report.client_order_id, "mwAC6QMAAQAA1UL7ndIW"sv);
   EXPECT_EQ(execution_report.side, json::Side::BUY);
   EXPECT_EQ(execution_report.order_type, json::OrderType::LIMIT);
   EXPECT_EQ(execution_report.time_in_force, json::TimeInForce::GTC);
@@ -128,8 +129,8 @@ TEST(json_order_trade_update, simple_canceled) {
   EXPECT_EQ(obj.transaction_time, 1634561771964ms);
   EXPECT_EQ(obj.event_time, 1634561771970ms);
   auto &execution_report = obj.execution_report;
-  EXPECT_EQ(execution_report.symbol, "XRPUSDT"_sv);
-  EXPECT_EQ(execution_report.client_order_id, "KQAC6QMAAQAASLsSpNQW"_sv);
+  EXPECT_EQ(execution_report.symbol, "XRPUSDT"sv);
+  EXPECT_EQ(execution_report.client_order_id, "KQAC6QMAAQAASLsSpNQW"sv);
   EXPECT_EQ(execution_report.side, json::Side::BUY);
   EXPECT_EQ(execution_report.order_type, json::OrderType::LIMIT);
   EXPECT_EQ(execution_report.time_in_force, json::TimeInForce::GTC);
@@ -203,8 +204,8 @@ TEST(json_order_trade_update, simple_filled_maker) {
   EXPECT_EQ(obj.transaction_time, 1634812374563ms);
   EXPECT_EQ(obj.event_time, 1634812374567ms);
   auto &execution_report = obj.execution_report;
-  EXPECT_EQ(execution_report.symbol, "XRPUSDT"_sv);
-  EXPECT_EQ(execution_report.client_order_id, "-gAC6QMAAQAAYIZV_g4X"_sv);
+  EXPECT_EQ(execution_report.symbol, "XRPUSDT"sv);
+  EXPECT_EQ(execution_report.client_order_id, "-gAC6QMAAQAAYIZV_g4X"sv);
   EXPECT_EQ(execution_report.side, json::Side::SELL);
   EXPECT_EQ(execution_report.order_type, json::OrderType::LIMIT);
   EXPECT_EQ(execution_report.time_in_force, json::TimeInForce::GTC);
@@ -219,7 +220,7 @@ TEST(json_order_trade_update, simple_filled_maker) {
   EXPECT_DOUBLE_EQ(execution_report.order_filled_accumulated_quantity, 5.0);
   EXPECT_DOUBLE_EQ(execution_report.last_filled_price, 1.1583);
   EXPECT_DOUBLE_EQ(execution_report.commission, 0.00115829);
-  EXPECT_EQ(execution_report.commission_asset, "USDT"_sv);
+  EXPECT_EQ(execution_report.commission_asset, "USDT"sv);
   EXPECT_EQ(execution_report.order_trade_time, 1634812374563ms);
   EXPECT_EQ(execution_report.trade_id, 673747843);
   EXPECT_DOUBLE_EQ(execution_report.bids_notional, 0.0);
@@ -280,8 +281,8 @@ TEST(json_order_trade_update, simple_filled_taker) {
   EXPECT_EQ(obj.transaction_time, 1634814520988ms);
   EXPECT_EQ(obj.event_time, 1634814520998ms);
   auto &execution_report = obj.execution_report;
-  EXPECT_EQ(execution_report.symbol, "XRPUSDT"_sv);
-  EXPECT_EQ(execution_report.client_order_id, "mwAC6QMAAQAAH6jkfg8X"_sv);
+  EXPECT_EQ(execution_report.symbol, "XRPUSDT"sv);
+  EXPECT_EQ(execution_report.client_order_id, "mwAC6QMAAQAAH6jkfg8X"sv);
   EXPECT_EQ(execution_report.side, json::Side::BUY);
   EXPECT_EQ(execution_report.order_type, json::OrderType::LIMIT);
   EXPECT_EQ(execution_report.time_in_force, json::TimeInForce::GTC);
@@ -296,7 +297,7 @@ TEST(json_order_trade_update, simple_filled_taker) {
   EXPECT_DOUBLE_EQ(execution_report.order_filled_accumulated_quantity, 10.0);
   EXPECT_DOUBLE_EQ(execution_report.last_filled_price, 1.1559);
   EXPECT_DOUBLE_EQ(execution_report.commission, 0.00462360);
-  EXPECT_EQ(execution_report.commission_asset, "USDT"_sv);
+  EXPECT_EQ(execution_report.commission_asset, "USDT"sv);
   EXPECT_EQ(execution_report.order_trade_time, 1634814520988ms);
   EXPECT_EQ(execution_report.trade_id, 673771916);
   EXPECT_DOUBLE_EQ(execution_report.bids_notional, 0.0);

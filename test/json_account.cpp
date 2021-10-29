@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 // note! positions have been truncated
@@ -196,7 +197,7 @@ TEST(json_account, simple) {
   auto &assets = obj.assets;
   ASSERT_EQ(std::size(assets), 5);
   auto &a0 = assets[0];
-  EXPECT_EQ(a0.asset, "BTC"_sv);
+  EXPECT_EQ(a0.asset, "BTC"sv);
   EXPECT_DOUBLE_EQ(a0.wallet_balance, 0.0);
   EXPECT_DOUBLE_EQ(a0.unrealized_profit, 0.0);
   EXPECT_DOUBLE_EQ(a0.margin_balance, 0.0);
@@ -217,7 +218,7 @@ TEST(json_account, simple) {
   auto &positions = obj.positions;
   ASSERT_EQ(std::size(positions), 4);
   auto &p0 = positions[0];
-  EXPECT_EQ(p0.symbol, "RAYUSDT"_sv);
+  EXPECT_EQ(p0.symbol, "RAYUSDT"sv);
   EXPECT_DOUBLE_EQ(p0.initial_margin, 0.0);
   EXPECT_DOUBLE_EQ(p0.maint_margin, 0.0);
   EXPECT_DOUBLE_EQ(p0.unrealized_profit, 0.0);
@@ -227,7 +228,7 @@ TEST(json_account, simple) {
   EXPECT_EQ(p0.isolated, false);
   EXPECT_DOUBLE_EQ(p0.entry_price, 0.0);
   EXPECT_DOUBLE_EQ(p0.max_notional, 25000.0);
-  EXPECT_EQ(p0.position_side, "BOTH"_sv);
+  EXPECT_EQ(p0.position_side, "BOTH"sv);
   EXPECT_DOUBLE_EQ(p0.position_amt, 0.0);
   EXPECT_DOUBLE_EQ(p0.notional, 0.0);
   EXPECT_DOUBLE_EQ(p0.isolated_wallet, 0.0);

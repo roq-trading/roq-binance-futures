@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 TEST(json_open_orders, simple_empty) {
@@ -51,9 +52,9 @@ TEST(json_open_orders, simple_1) {
   ASSERT_EQ(std::size(data), 1);
   auto &d0 = data[0];
   EXPECT_EQ(d0.order_id, 17759938812);
-  EXPECT_EQ(d0.symbol, "XRPUSDT"_sv);
+  EXPECT_EQ(d0.symbol, "XRPUSDT"sv);
   EXPECT_EQ(d0.status, json::OrderStatus::NEW);
-  EXPECT_EQ(d0.client_order_id, "GgAC6gMAAQAANhJPG9EW"_sv);
+  EXPECT_EQ(d0.client_order_id, "GgAC6gMAAQAANhJPG9EW"sv);
   EXPECT_DOUBLE_EQ(d0.price, 1.0765);
   EXPECT_DOUBLE_EQ(d0.avg_price, 0.0);
   EXPECT_DOUBLE_EQ(d0.orig_qty, 5.0);

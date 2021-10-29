@@ -9,6 +9,8 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
+
 TEST(json_error, simple) {
   auto message =
       R"#({)#"
@@ -18,5 +20,5 @@ TEST(json_error, simple) {
   auto obj = core::json::Parser::create<json::Error>(message);
   EXPECT_EQ(obj.code, -4164);
   EXPECT_EQ(
-      obj.msg, "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"_sv);
+      obj.msg, "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"sv);
 }

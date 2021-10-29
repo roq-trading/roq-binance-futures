@@ -12,7 +12,7 @@
 
 #include "roq/logging.h"
 
-using namespace roq::literals;
+using namespace std::literals;
 
 namespace roq {
 namespace binance_futures {
@@ -48,11 +48,11 @@ void MarketStreamParser::dispatch(
       auto field = Field(key);
       switch (field) {
         case Field::UNDEFINED:
-          log::fatal("Unexpected"_sv);
+          log::fatal("Unexpected"sv);
           break;
         case Field::UNKNOWN:
 #if !defined(NDEBUG)
-          log::fatal(R"(Unknown key="{}")"_sv, key);
+          log::fatal(R"(Unknown key="{}")"sv, key);
 #endif
           break;
         case Field::ID:
@@ -110,7 +110,7 @@ void MarketStreamParser::dispatch(
             case EventType::ORDER_TRADE_UPDATE:
             case EventType::ACCOUNT_UPDATE:
             case EventType::MARGIN_CALL:
-              log::fatal("Unexpected"_sv);
+              log::fatal("Unexpected"sv);
               break;
           }
           assert(dispatched);
@@ -123,8 +123,8 @@ void MarketStreamParser::dispatch(
   }
   if (dispatched)
     return;
-  log::warn(R"(message="{}")"_sv, message);
-  log::fatal("Unexpected"_sv);
+  log::warn(R"(message="{}")"sv, message);
+  log::fatal("Unexpected"sv);
 }
 
 }  // namespace json

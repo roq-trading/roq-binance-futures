@@ -9,10 +9,12 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
+
 TEST(json_listen_key, simple) {
   auto message = R"({)"
                  R"("listenKey":"JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY")"
                  R"(})";
   auto obj = core::json::Parser::create<json::ListenKey>(message);
-  EXPECT_EQ(obj.listen_key, "JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY"_sv);
+  EXPECT_EQ(obj.listen_key, "JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY"sv);
 }

@@ -9,6 +9,7 @@
 using namespace roq;
 using namespace roq::binance_futures;
 
+using namespace std::literals;
 using namespace std::chrono_literals;
 
 // note: symbols heavily truncated
@@ -124,52 +125,52 @@ TEST(json_exchange_info, simple) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::ExchangeInfo>(message, buffer);
-  EXPECT_EQ(obj.timezone, "UTC"_sv);
+  EXPECT_EQ(obj.timezone, "UTC"sv);
   EXPECT_EQ(obj.server_time, 1634122324532ms);
-  EXPECT_EQ(obj.futures_type, "U_MARGINED"_sv);
+  EXPECT_EQ(obj.futures_type, "U_MARGINED"sv);
   // not parsed: rate_limits
   // not parsed: exchange_filters
   auto &assets = obj.assets;
   ASSERT_EQ(std::size(assets), 5);
   auto &a0 = assets[0];
-  EXPECT_EQ(a0.asset, "USDT"_sv);
+  EXPECT_EQ(a0.asset, "USDT"sv);
   EXPECT_EQ(a0.margin_available, true);
   EXPECT_DOUBLE_EQ(a0.auto_asset_exchange, -10000.0);
   auto &a1 = assets[1];
-  EXPECT_EQ(a1.asset, "BTC"_sv);
+  EXPECT_EQ(a1.asset, "BTC"sv);
   EXPECT_EQ(a1.margin_available, true);
   EXPECT_DOUBLE_EQ(a1.auto_asset_exchange, -0.001);
   auto &a2 = assets[2];
-  EXPECT_EQ(a2.asset, "BNB"_sv);
+  EXPECT_EQ(a2.asset, "BNB"sv);
   EXPECT_EQ(a2.margin_available, true);
   EXPECT_DOUBLE_EQ(a2.auto_asset_exchange, -10.0);
   auto &a3 = assets[3];
-  EXPECT_EQ(a3.asset, "ETH"_sv);
+  EXPECT_EQ(a3.asset, "ETH"sv);
   EXPECT_EQ(a3.margin_available, true);
   EXPECT_DOUBLE_EQ(a3.auto_asset_exchange, -5.0);
   auto &a4 = assets[4];
-  EXPECT_EQ(a4.asset, "BUSD"_sv);
+  EXPECT_EQ(a4.asset, "BUSD"sv);
   EXPECT_EQ(a4.margin_available, true);
   EXPECT_DOUBLE_EQ(a4.auto_asset_exchange, -10000.0);
   auto &symbols = obj.symbols;
   ASSERT_EQ(std::size(symbols), 2);
   auto &s0 = symbols[0];
-  EXPECT_EQ(s0.symbol, "BTCUSDT"_sv);
-  EXPECT_EQ(s0.pair, "BTCUSDT"_sv);
+  EXPECT_EQ(s0.symbol, "BTCUSDT"sv);
+  EXPECT_EQ(s0.pair, "BTCUSDT"sv);
   EXPECT_EQ(s0.contract_type, json::ContractType::PERPETUAL);
   EXPECT_EQ(s0.delivery_date, 4133404800000ms);
   EXPECT_EQ(s0.onboard_date, 1569398400000ms);
   EXPECT_EQ(s0.status, json::SymbolStatus::TRADING);
   EXPECT_DOUBLE_EQ(s0.maint_margin_percent, 2.5);
   EXPECT_DOUBLE_EQ(s0.required_margin_percent, 5.0);
-  EXPECT_EQ(s0.base_asset, "BTC"_sv);
-  EXPECT_EQ(s0.quote_asset, "USDT"_sv);
-  EXPECT_EQ(s0.margin_asset, "USDT"_sv);
+  EXPECT_EQ(s0.base_asset, "BTC"sv);
+  EXPECT_EQ(s0.quote_asset, "USDT"sv);
+  EXPECT_EQ(s0.margin_asset, "USDT"sv);
   EXPECT_EQ(s0.price_precision, 2);
   EXPECT_EQ(s0.quantity_precision, 3);
   EXPECT_EQ(s0.base_asset_precision, 8);
   EXPECT_EQ(s0.quote_precision, 8);
-  EXPECT_EQ(s0.underlying_type, "COIN"_sv);
+  EXPECT_EQ(s0.underlying_type, "COIN"sv);
   // not parsed: underlying_sub_type
   EXPECT_EQ(s0.settle_plan, 0);
   EXPECT_DOUBLE_EQ(s0.trigger_protect, 0.05);
@@ -179,22 +180,22 @@ TEST(json_exchange_info, simple) {
   // not parsed: order_type
   // not parsed: time_in_force
   auto &s1 = symbols[1];
-  EXPECT_EQ(s1.symbol, "ETHUSDT"_sv);
-  EXPECT_EQ(s1.pair, "ETHUSDT"_sv);
+  EXPECT_EQ(s1.symbol, "ETHUSDT"sv);
+  EXPECT_EQ(s1.pair, "ETHUSDT"sv);
   EXPECT_EQ(s1.contract_type, json::ContractType::PERPETUAL);
   EXPECT_EQ(s1.delivery_date, 4133404800000ms);
   EXPECT_EQ(s1.onboard_date, 1569398400000ms);
   EXPECT_EQ(s1.status, json::SymbolStatus::TRADING);
   EXPECT_DOUBLE_EQ(s1.maint_margin_percent, 2.5);
   EXPECT_DOUBLE_EQ(s1.required_margin_percent, 5.0);
-  EXPECT_EQ(s1.base_asset, "ETH"_sv);
-  EXPECT_EQ(s1.quote_asset, "USDT"_sv);
-  EXPECT_EQ(s1.margin_asset, "USDT"_sv);
+  EXPECT_EQ(s1.base_asset, "ETH"sv);
+  EXPECT_EQ(s1.quote_asset, "USDT"sv);
+  EXPECT_EQ(s1.margin_asset, "USDT"sv);
   EXPECT_EQ(s1.price_precision, 2);
   EXPECT_EQ(s1.quantity_precision, 3);
   EXPECT_EQ(s1.base_asset_precision, 8);
   EXPECT_EQ(s1.quote_precision, 8);
-  EXPECT_EQ(s1.underlying_type, "COIN"_sv);
+  EXPECT_EQ(s1.underlying_type, "COIN"sv);
   // not parsed: underlying_sub_type
   EXPECT_EQ(s1.settle_plan, 0);
   EXPECT_DOUBLE_EQ(s1.trigger_protect, 0.05);

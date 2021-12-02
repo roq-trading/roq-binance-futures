@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2021, Hans Erik Thrane */
+/* Copyright (c) 2017-2022, Hans Erik Thrane */
 
 #include "roq/binance_futures/drop_copy.h"
 
@@ -30,7 +30,7 @@ static const auto SUPPORTS = utils::Mask{
 };
 
 static auto create_uri(const std::string_view &listen_key) {
-  assert(!listen_key.empty());
+  assert(!std::empty(listen_key));
   // XXX HANS make it easier to append to path
   auto &uri = Flags::ws_uri();
   auto result = fmt::format("{}://{}{}/{}"sv, uri.scheme, uri.host, uri.path, listen_key);

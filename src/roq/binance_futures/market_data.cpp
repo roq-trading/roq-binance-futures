@@ -1,4 +1,4 @@
-/* Copyright (c) 2017-2021, Hans Erik Thrane */
+/* Copyright (c) 2017-2022, Hans Erik Thrane */
 
 #include "roq/binance_futures/market_data.h"
 
@@ -123,19 +123,19 @@ void MarketData::operator()(metrics::Writer &writer) {
 void MarketData::update_subscriptions(std::vector<std::string> &symbols) {
   assert(&symbols != &symbols_);
   auto max_size = Flags::ws_max_subscriptions_per_stream();
-  auto offset = symbols_.size();
+  auto offset = std::size(symbols_);
   if (max_size <= offset)
     return;
-  if (symbols.empty())
+  if (std::empty(symbols))
     return;
   symbols_.reserve(max_size);
-  auto length = std::min(max_size - offset, symbols.size());
+  auto length = std::min(max_size - offset, std::size(symbols));
   assert(length > 0);
-  for (size_t i = {}; i < length; ++i) {
+  for (size_t i = 0; i < length; ++i) {
     symbols_.emplace_back(symbols.back());
     symbols.pop_back();
   }
-  assert(length == (symbols_.size() - offset));
+  assert(length == (std::size(symbols_) - offset));
   if (ready_)
     subscribe({&symbols_[offset], length});
 }
@@ -219,7 +219,7 @@ void MarketData::subscribe(const roq::span<std::string> &symbols) {
 }
 
 void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
+  assert(!std::empty(symbols));
   auto id = ++request_id_;
   auto now = core::get_system_clock();
   auto message = fmt::format(
@@ -235,7 +235,7 @@ void MarketData::subscribe_agg_trade(const roq::span<std::string> &symbols) {
 }
 
 void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
+  assert(!std::empty(symbols));
   auto id = ++request_id_;
   auto now = core::get_system_clock();
   auto message = fmt::format(
@@ -251,7 +251,7 @@ void MarketData::subscribe_mark_price(const roq::span<std::string> &symbols) {
 }
 
 void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
+  assert(!std::empty(symbols));
   auto id = ++request_id_;
   auto now = core::get_system_clock();
   auto message = fmt::format(
@@ -267,7 +267,7 @@ void MarketData::subscribe_mini_ticker(const roq::span<std::string> &symbols) {
 }
 
 void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
+  assert(!std::empty(symbols));
   auto id = ++request_id_;
   auto now = core::get_system_clock();
   auto message = fmt::format(
@@ -283,7 +283,7 @@ void MarketData::subscribe_book_ticker(const roq::span<std::string> &symbols) {
 }
 
 void MarketData::subscribe_diff_depth(const roq::span<std::string> &symbols) {
-  assert(!symbols.empty());
+  assert(!std::empty(symbols));
   std::chrono::milliseconds frequency = utils::safe_cast(Flags::ws_subscribe_depth_freq());
   auto stream = fmt::format(R"(@depth@{}ms)"sv, frequency.count());
   auto id = ++request_id_;
@@ -539,7 +539,7 @@ void MarketData::operator()(const server::Trace<json::MarkPriceUpdate> &event) {
 }
 
 void MarketData::check_subscribe_queue(std::chrono::nanoseconds now) {
-  while (!subscribe_queue_.empty()) {
+  while (!std::empty(subscribe_queue_)) {
     auto &tmp = subscribe_queue_.front();
     if (now < tmp.first)
       break;

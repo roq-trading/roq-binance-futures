@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "roq/server.h"
 
@@ -71,6 +72,8 @@ class Gateway final : public server::Handler,
 
   void operator()(Rest::SymbolsUpdate &) override;
 
+  void ensure_symbol_slices(size_t size);
+
   void operator()(const OrderEntry::ListenKeyUpdate &) override;
 
   // utilities
@@ -91,7 +94,7 @@ class Gateway final : public server::Handler,
   Rest rest_;
   absl::flat_hash_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   absl::flat_hash_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
-  absl::flat_hash_map<uint16_t, std::unique_ptr<MarketData>> market_data_;
+  std::vector<std::unique_ptr<MarketData>> market_data_;
 };
 
 }  // namespace binance_futures

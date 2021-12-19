@@ -13,6 +13,7 @@
 #include "roq/server.h"
 
 #include "roq/core/memory.h"
+#include "roq/core/symbols.h"
 
 #include "roq/core/limit/rate_limiter.h"
 
@@ -62,6 +63,9 @@ struct Shared final {
   server::Dispatcher &dispatcher_;
 
   core::limit::RateLimiter rate_limiter_;
+
+ public:
+  core::Symbols symbols;
 };
 
 }  // namespace binance_futures

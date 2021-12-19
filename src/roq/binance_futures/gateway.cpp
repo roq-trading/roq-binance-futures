@@ -78,7 +78,7 @@ void Gateway::operator()(const Event<Start> &event) {
 
 void Gateway::operator()(const Event<Stop> &event) {
   log::info("Stopping the gateway..."sv);
-  for (auto &[_, market_data] : market_data_)
+  for (auto &market_data : market_data_)
     (*market_data)(event);
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
@@ -95,7 +95,7 @@ void Gateway::operator()(const Event<Timer> &event) {
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(event);
-  for (auto &[_, market_data] : market_data_)
+  for (auto &market_data : market_data_)
     (*market_data)(event);
   context_.dispatch(true);
 }
@@ -182,23 +182,22 @@ void Gateway::operator()(const server::Trace<PositionUpdate> &event, bool is_las
 }
 
 void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
-  auto &symbols = symbols_update.symbols;
-  for (auto &[_, market_data] : market_data_) {
-    if (std::empty(symbols))
-      break;
-    (*market_data).update_subscriptions(symbols);
-  }
-  for (;;) {
-    if (std::empty(symbols))
-      break;
-    log::info("Create market-data (user-stream)"sv);
+  auto [size, start_from] = shared_.symbols(symbols_update.symbols);
+  ensure_symbol_slices(size);
+  for (auto &iter : market_data_)
+    (*iter).subscribe(start_from);
+}
+
+void Gateway::ensure_symbol_slices(size_t size) {
+  while (std::size(market_data_) < size) {
     auto stream_id = ++stream_id_;
-    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id, shared_);
-    (*market_data).update_subscriptions(symbols);
-    MessageInfo message_info;  // XXX something sensible
+    auto index = std::size(market_data_);
+    log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
+    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, shared_, index);
+    MessageInfo message_info;
     Start start;
     create_event_and_dispatch(*market_data, message_info, start);
-    market_data_.emplace(stream_id, std::move(market_data));
+    market_data_.emplace_back(std::move(market_data));
   }
 }
 
@@ -212,7 +211,7 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
     log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
     auto drop_copy = std::make_unique<DropCopy>(
         *this, context_, ++stream_id_, *security_[account], shared_, listen_key_update.listen_key);
-    MessageInfo message_info;  // XXX something sensible
+    MessageInfo message_info;
     Start start;
     create_event_and_dispatch(*drop_copy, message_info, start);
     (*iter).second = std::move(drop_copy);
@@ -257,7 +256,7 @@ void Gateway::operator()(metrics::Writer &writer) {
   for (auto &[_, drop_copy] : drop_copy_)
     if (static_cast<bool>(drop_copy))
       (*drop_copy)(writer);
-  for (auto &[_, market_data] : market_data_)
+  for (auto &market_data : market_data_)
     (*market_data)(writer);
 }
 

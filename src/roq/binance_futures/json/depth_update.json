@@ -6,6 +6,7 @@
 	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "s", "name": "symbol", "type": "std::string_view" },
+	{ "raw": "ps", "name": "pair", "type": "std::string_view" },
 	{ "raw": "U", "name": "first_update_id", "type": "int64_t" },
 	{ "raw": "u", "name": "final_update_id", "type": "int64_t" },
 	{ "raw": "pu", "name": "final_update_id_in_last_stream", "type": "int64_t" },

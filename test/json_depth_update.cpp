@@ -1,0 +1,42 @@
+/* Copyright (c) 2017-2022, Hans Erik Thrane */
+
+#include <gtest/gtest.h>
+
+#include "roq/core/json/parser.h"
+
+#include "roq/binance_futures/json/depth_update.h"
+
+using namespace roq;
+using namespace roq::binance_futures;
+
+using namespace std::literals;
+using namespace std::chrono_literals;
+
+TEST(json_depth_update, simple_coin_m) {
+  auto message = R"({)"
+                 R"("e":"depthUpdate",)"
+                 R"("E":1640247455980,)"
+                 R"("T":1640247455971,)"
+                 R"("s":"BTCUSD_220325",)"
+                 R"("ps":"BTCUSD",)"
+                 R"("U":300681317200,)"
+                 R"("u":300681318938,)"
+                 R"("pu":300681316807,)"
+                 R"("b":[["49417.0","0"]],)"
+                 R"("a":[)"
+                 R"(["49425.9","332"],)"
+                 R"(["49437.0","5"],)"
+                 R"(["49438.9","30"],)"
+                 R"(["49443.9","0"],)"
+                 R"(["49445.2","0"],)"
+                 R"(["49457.7","0"],)"
+                 R"(["49460.1","7"],)"
+                 R"(["49464.4","0"],)"
+                 R"(["49508.1","61"],)"
+                 R"(["49527.2","74"])"
+                 R"(])"
+                 R"(})";
+  core::Buffer buffer_(65536);
+  core::json::Buffer buffer(buffer_);
+  auto obj = core::json::Parser::create<json::DepthUpdate>(message, buffer);
+}

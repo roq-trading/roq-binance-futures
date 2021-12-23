@@ -3,6 +3,7 @@
 "type": "enum",
 "values": [
 	{ "name": "PERPETUAL" },
-	{ "name": "CURRENT_QUARTER" }
+	{ "name": "CURRENT_QUARTER" },
+	{ "name": "NEXT_QUARTER" }
 ]
 }

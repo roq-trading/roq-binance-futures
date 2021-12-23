@@ -1,4 +1,5 @@
 symbols = ".*"
+#symbols = "BTCUSD_220325"
 
 [accounts]
 

@@ -64,7 +64,7 @@ Rest::Rest(Handler &handler, core::io::Context &context, uint16_t stream_id, Sha
           ALLOW_PIPELINING,
           Flags::rest_request_timeout(),
           Flags::rest_ping_freq(),
-          Flags::rest_ping_path()),
+          fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path())),
       decode_buffer_(Flags::decode_buffer_size()), decode_buffer_2_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
@@ -173,7 +173,7 @@ uint32_t Rest::download(RestState state) {
 void Rest::get_exchange_info() {
   profile_.exchange_info([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v1/exchangeInfo"sv;
+    auto path = fmt::format("/{}/v1/exchangeInfo"sv, Flags::api());
     core::web::Request request{
         .method = method,
         .path = path,
@@ -335,7 +335,7 @@ void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
 void Rest::get_depth(const std::string_view &symbol) {
   profile_.depth([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v1/depth"sv;
+    auto path = fmt::format("/{}/v1/depth"sv, Flags::api());
     auto query = fmt::format("?symbol={}&limit={}"sv, symbol, Flags::ws_subscribe_depth_levels());
     core::web::Request request{
         .method = method,

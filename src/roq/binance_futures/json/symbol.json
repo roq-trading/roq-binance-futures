@@ -25,6 +25,10 @@
 	{ "name": "orderTypes" },
 	{ "name": "timeInForce" },
 	{ "name": "liquidationFee", "type": "double" },
-	{ "name": "marketTakeBound", "type": "double" }
+	{ "name": "marketTakeBound", "type": "double" },
+	{ "name": "contractStatus", "type": "std::string_view", "comment": "COIN-M" },
+	{ "name": "contractSize", "type": "double", "comment": "COIN-M" },
+	{ "name": "equalQtyPrecision", "comment": "COIN-M" },
+	{ "name": "maxMoveOrderLimit", "comment": "COIN-M" }
 ]
 }

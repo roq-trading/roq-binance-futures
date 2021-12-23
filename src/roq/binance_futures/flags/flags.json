@@ -22,6 +22,13 @@
       "description": "exchange identifier (string)"
     },
     {
+      "name": "api",
+      "type": "std::string",
+      "validator": "roq::core::flags::NonEmpty<std::string>",
+      "default": "fapi",
+      "description": "what api to use (fapi, dapi)"
+    },
+    {
       "name": "rest_uri",
       "type": "roq::core::URI",
       "validator": "roq::core::flags::URI<std::string>",
@@ -39,8 +46,8 @@
       "name": "rest_ping_path",
       "type": "std::string",
       "validator": "roq::core::flags::Path<std::string>",
-      "default": "/fapi/v1/time",
-      "description": "URI path used for REST connection keep-alive messages"
+      "default": "/v1/time",
+      "description": "URI path used for REST connection keep-alive messages (*without* the api prefix)"
     },
     {
       "name": "rest_request_timeout",

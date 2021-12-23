@@ -61,7 +61,7 @@ OrderEntry::OrderEntry(
           ALLOW_PIPELINING,
           Flags::rest_request_timeout(),
           Flags::rest_ping_freq(),
-          Flags::rest_ping_path()),
+          fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path())),
       decode_buffer_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
@@ -236,7 +236,7 @@ uint32_t OrderEntry::download(OrderEntryState state) {
 void OrderEntry::get_listen_key() {
   profile_.listen_key([&]() {
     auto method = core::http::Method::POST;
-    auto path = "/fapi/v1/listenKey"sv;
+    auto path = fmt::format("/{}/v1/listenKey"sv, Flags::api());
     auto headers = security_.create_headers();
     core::web::Request request{
         .method = method,

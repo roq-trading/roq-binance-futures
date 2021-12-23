@@ -4,9 +4,9 @@ All notable changes will be documented in this file.
 
 ## Head
 
-### Changed
+### Added
 
-* Support the COIN-M API (#147)
+* Support COIN-M API (#147)
 
 ## 0.7.9 &ndash; 2021-12-08
 

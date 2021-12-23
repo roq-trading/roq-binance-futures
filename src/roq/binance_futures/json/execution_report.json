@@ -17,6 +17,7 @@
 	{ "raw": "l", "name": "last_filled_quantity", "type": "double" },
 	{ "raw": "z", "name": "order_filled_accumulated_quantity", "type": "double" },
 	{ "raw": "L", "name": "last_filled_price", "type": "double" },
+	{ "raw": "ma", "name": "margin_asset", "type": "std::string_view", "comment": "COIN-M" },
 	{ "raw": "N", "name": "commission_asset", "type": "std::string_view" },
 	{ "raw": "n", "name": "commission", "type": "double" },
 	{ "raw": "T", "name": "order_trade_time", "type": "std::chrono::milliseconds" },

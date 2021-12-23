@@ -4,6 +4,7 @@
 "values": [
 	{ "name": "orderId", "type": "int64_t" },
 	{ "name": "symbol", "type": "std::string_view" },
+	{ "name": "pair", "type": "std::string_view", "comment": "COIN-M" },
 	{ "name": "status", "type": "OrderStatus" },
 	{ "name": "clientOrderId", "type": "std::string_view" },
 	{ "name": "price", "type": "double" },
@@ -12,6 +13,7 @@
 	{ "name": "executedQty", "type": "double" },
 	{ "name": "cumQty", "type": "double" },
 	{ "name": "cumQuote", "type": "double" },
+	{ "name": "cumBase", "type": "double", "comment": "COIN-M" },
 	{ "name": "timeInForce", "type": "TimeInForce" },
 	{ "name": "type", "type": "OrderType" },
 	{ "name": "reduceOnly", "type": "bool" },

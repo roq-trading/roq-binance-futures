@@ -10,6 +10,7 @@
 	{ "name": "availableBalance", "type": "double" },
 	{ "name": "maxWithdrawAmount", "type": "double" },
 	{ "name": "marginAvailable", "type": "bool" },
-	{ "name": "updateTime", "type": "std::chrono::milliseconds" }
+	{ "name": "updateTime", "type": "std::chrono::milliseconds" },
+	{ "name": "withdrawAvailable", "type": "double" }
 ]
 }

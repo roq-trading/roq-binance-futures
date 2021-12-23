@@ -16,6 +16,10 @@
 	{ "name": "positionAmt", "type": "double" },
 	{ "name": "notional", "type": "double" },
 	{ "name": "isolatedWallet", "type": "double" },
-	{ "name": "updateTime", "type": "std::chrono::milliseconds" }
+	{ "name": "updateTime", "type": "std::chrono::milliseconds" },
+	{ "name": "bidNotional", "type": "double" },
+	{ "name": "askNotional", "type": "double" },
+	{ "name": "maxQty", "type": "double", "comment": "COIN-M" },
+	{ "name": "notionalValue", "type": "double", "comment": "COIN-M" }
 ]
 }

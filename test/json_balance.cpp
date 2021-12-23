@@ -12,7 +12,7 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_balance, simple) {
+TEST(json_balance, simple_usd_m) {
   auto message = R"([{)"
                  R"("accountAlias":"mYAuTiXqXqsR",)"
                  R"("asset":"BTC",)"
@@ -120,4 +120,41 @@ TEST(json_balance, simple) {
   EXPECT_DOUBLE_EQ(a4.max_withdraw_amount, 0.0);
   EXPECT_EQ(a4.margin_available, true);
   EXPECT_EQ(a4.update_time, 0ms);
+}
+
+TEST(json_balance, simple_coinm) {
+  auto message = R"([{)"
+                 R"("accountAlias":"SgmYSgfWmYmY",)"
+                 R"("asset":"BTC",)"
+                 R"("balance":"0.00000000",)"
+                 R"("withdrawAvailable":"0.00000000",)"
+                 R"("updateTime":1640262685148,)"
+                 R"("crossWalletBalance":"0.00000000",)"
+                 R"("crossUnPnl":"0.00000000",)"
+                 R"("availableBalance":"0.00000000")"
+                 R"(},{)"
+                 R"("accountAlias":"SgmYSgfWmYmY",)"
+                 R"("asset":"ADA",)"
+                 R"("balance":"0.00000000",)"
+                 R"("withdrawAvailable":"0.00000000",)"
+                 R"("updateTime":1640262685148,)"
+                 R"("crossWalletBalance":"0.00000000",)"
+                 R"("crossUnPnl":"0.00000000",)"
+                 R"("availableBalance":"0.00000000")"
+                 R"(},{)"
+                 R"("accountAlias":"SgmYSgfWmYmY",)"
+                 R"("asset":"LINK",)"
+                 R"("balance":"0.00000000",)"
+                 R"("withdrawAvailable":"0.00000000",)"
+                 R"("updateTime":1640262685148,)"
+                 R"("crossWalletBalance":"0.00000000",)"
+                 R"("crossUnPnl":"0.00000000",)"
+                 R"("availableBalance":"0.00000000")"
+                 R"(})"
+                 R"(])";
+  core::Buffer buffer_(65536);
+  core::json::Buffer buffer(buffer_);
+  auto obj = core::json::Parser::create<json::Balance>(message, buffer);
+  auto &data = obj.data;
+  ASSERT_EQ(std::size(data), 3);
 }

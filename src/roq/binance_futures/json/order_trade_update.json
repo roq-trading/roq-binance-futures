@@ -5,6 +5,7 @@
 	{ "raw": "e", "name": "event_type", "type": "EventType" },
 	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
+	{ "raw": "i", "name": "account_alias", "type": "std::string_view", "comment": "COIN-M" },
 	{ "raw": "o", "name": "execution_report", "type": "ExecutionReport" }
 ]
 }

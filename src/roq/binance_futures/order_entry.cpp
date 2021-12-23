@@ -304,10 +304,21 @@ void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
 
 // balance
 
+namespace {
+std::string_view get_balance_path() {
+  auto api = Flags::api();
+  if (api.compare("fapi"sv) == 0)
+    return "/fapi/v2/balance"sv;
+  if (api.compare("dapi"sv) == 0)
+    return "/dapi/v1/balance"sv;
+  throw RuntimeErrorException("Unexpected"sv);
+}
+}  // namespace
+
 void OrderEntry::get_balance() {
   profile_.balance([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v2/balance"sv;
+    auto path = get_balance_path();
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -374,10 +385,21 @@ void OrderEntry::operator()(const server::Trace<json::Balance> &event) {
 
 // account
 
+namespace {
+std::string_view get_account_path() {
+  auto api = Flags::api();
+  if (api.compare("fapi"sv) == 0)
+    return "/fapi/v2/account"sv;
+  if (api.compare("dapi"sv) == 0)
+    return "/dapi/v1/account"sv;
+  throw RuntimeErrorException("Unexpected"sv);
+}
+}  // namespace
+
 void OrderEntry::get_account() {
   profile_.account([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v2/account"sv;
+    auto path = get_account_path();
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -452,7 +474,7 @@ void OrderEntry::operator()(const server::Trace<json::Account> &event) {
 void OrderEntry::get_open_orders() {
   profile_.open_orders([&]() {
     auto method = core::http::Method::GET;
-    auto path = "/fapi/v1/openOrders"sv;
+    auto path = fmt::format("/{}/v1/openOrders"sv, Flags::api());
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     core::web::Request request{
@@ -570,7 +592,7 @@ void OrderEntry::new_order(
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);  // XXX HANS experimental
     auto method = core::http::Method::POST;
-    auto path = "/fapi/v1/order"sv;
+    auto path = fmt::format("/{}/v1/order"sv, Flags::api());
     auto side = json::map(create_order.side).as_raw_text();
     auto type = json::map(create_order.order_type).as_raw_text();
     auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
@@ -796,7 +818,7 @@ void OrderEntry::cancel_order(
       throw oms::NotReadyException();
     auto &[message_info, cancel_order] = event;
     auto method = core::http::Method::DELETE;
-    auto path = "/fapi/v1/order"sv;
+    auto path = fmt::format("/{}/v1/order"sv, Flags::api());
     std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
     auto body = fmt::format(
         R"(symbol={}&)"
@@ -983,7 +1005,7 @@ void OrderEntry::cancel_all_open_orders(
   profile_.cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto method = core::http::Method::DELETE;
-      auto path = "/fapi/v1/allOpenOrders"sv;
+      auto path = fmt::format("/{}/v1/allOpenOrders"sv, Flags::api());
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
       auto body = fmt::format(
           R"(symbol={}&)"
@@ -1053,7 +1075,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto method = core::http::Method::POST;
-      auto path = "/fapi/v1/countdownCancelAll"sv;
+      auto path = fmt::format("/{}/v1/countdownCancelAll"sv, Flags::api());
       std::chrono::milliseconds countdown_time = utils::safe_cast(Flags::rest_order_countdown());
       std::chrono::milliseconds recv_window = utils::safe_cast(Flags::rest_order_recv_window());
       auto body = fmt::format(

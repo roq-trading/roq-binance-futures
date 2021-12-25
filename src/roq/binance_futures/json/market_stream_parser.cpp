@@ -116,6 +116,8 @@ void MarketStreamParser::dispatch(
           assert(dispatched);
           break;
         }
+        case Field::ORDER_BOOK_UPDATE_ID:
+          break;
       }
       if (dispatched)
         break;

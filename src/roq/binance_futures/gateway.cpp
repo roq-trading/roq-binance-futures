@@ -63,8 +63,6 @@ Gateway::Gateway(server::Dispatcher &dispatcher, const Config &config)
       drop_copy_(create_drop_copy(security_)) {
   if (Flags::rest_cancel_on_disconnect())
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
-  if (Flags::api().compare("fapi"sv) != 0 && Flags::api().compare("dapi"sv) != 0)
-    log::fatal("--api must be one of: fapi, dapi"sv);
 }
 
 void Gateway::operator()(const Event<Start> &event) {

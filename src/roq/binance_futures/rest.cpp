@@ -173,7 +173,7 @@ uint32_t Rest::download(RestState state) {
 void Rest::get_exchange_info() {
   profile_.exchange_info([&]() {
     auto method = core::http::Method::GET;
-    auto path = fmt::format("/{}/v1/exchangeInfo"sv, Flags::api());
+    auto path = shared_.api.get_exchange_info;
     core::web::Request request{
         .method = method,
         .path = path,
@@ -336,7 +336,7 @@ void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
 void Rest::get_depth(const std::string_view &symbol) {
   profile_.depth([&]() {
     auto method = core::http::Method::GET;
-    auto path = fmt::format("/{}/v1/depth"sv, Flags::api());
+    auto path = shared_.api.get_depth;
     auto query = fmt::format("?symbol={}&limit={}"sv, symbol, Flags::ws_subscribe_depth_levels());
     core::web::Request request{
         .method = method,

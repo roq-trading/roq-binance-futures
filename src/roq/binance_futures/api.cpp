@@ -39,7 +39,7 @@ API API::create() {
         .countdown_cancel_all = "/fapi/v1/countdownCancelAll"sv,
     };
   }
-  throw RuntimeErrorException(R"(Unknown api="{}")"sv, api);
+  throw RuntimeError(R"(Unknown api="{}")"sv, api);
 }
 
 }  // namespace binance_futures

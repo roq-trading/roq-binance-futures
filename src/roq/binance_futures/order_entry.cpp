@@ -294,7 +294,7 @@ void OrderEntry::operator()(const server::Trace<json::ListenKey> &event) {
       };
       create_trace_and_dispatch(handler_, trace_info, listen_key_update);
     } else {
-      if (ROQ_UNLIKELY(!initial))
+      if (!initial) [[unlikely]]
         log::info("Listen key has been refreshed!"sv);
     }
   }

@@ -4,10 +4,10 @@
 "values": [
 	{ "name": "timezone", "type": "std::string_view" },
 	{ "name": "serverTime", "type": "std::chrono::milliseconds" },
-	{ "name": "rateLimits", "type": "roq::span<RateLimit>" },
+	{ "name": "rateLimits", "type": "std::span<RateLimit>" },
 	{ "name": "exchangeFilters" },
-	{ "name": "symbols", "type": "roq::span<Symbol>" },
+	{ "name": "symbols", "type": "std::span<Symbol>" },
 	{ "name": "futuresType", "type": "std::string_view", "comment": "undoc" },
-	{ "name": "assets", "type": "roq::span<ExchangeInfoAsset>" }
+	{ "name": "assets", "type": "std::span<ExchangeInfoAsset>" }
 ]
 }

@@ -2,6 +2,6 @@
 "name": "Balance",
 "type": "array",
 "values": [
-	{ "name": "data", "type": "roq::span<BalanceItem>" }
+	{ "name": "data", "type": "std::span<BalanceItem>" }
 ]
 }

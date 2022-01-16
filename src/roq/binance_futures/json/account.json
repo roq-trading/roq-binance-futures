@@ -18,7 +18,7 @@
 	{ "name": "totalCrossUnPnl", "type": "double" },
 	{ "name": "availableBalance", "type": "double" },
 	{ "name": "maxWithdrawAmount", "type": "double" },
-	{ "name": "assets", "type": "roq::span<Asset>" },
-	{ "name": "positions", "type": "roq::span<Position>" }
+	{ "name": "assets", "type": "std::span<Asset>" },
+	{ "name": "positions", "type": "std::span<Position>" }
 ]
 }

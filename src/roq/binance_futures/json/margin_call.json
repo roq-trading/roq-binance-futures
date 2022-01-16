@@ -5,6 +5,6 @@
 	{ "raw": "e", "name": "event_type", "type": "EventType" },
 	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
 	{ "raw": "cw", "name": "cross_wallet_balance", "type": "double" },
-	{ "raw": "p", "name": "positions", "type": "roq::span<MarginCallItem>" }
+	{ "raw": "p", "name": "positions", "type": "std::span<MarginCallItem>" }
 ]
 }

@@ -3,7 +3,7 @@
 "type": "comp",
 "values": [
 	{ "raw": "m", "name": "event_reason", "type": "EventReason" },
-	{ "raw": "B", "name": "balances", "type": "roq::span<AccountUpdateDataBalance>" },
-	{ "raw": "P", "name": "positions", "type": "roq::span<AccountUpdateDataPosition>" }
+	{ "raw": "B", "name": "balances", "type": "std::span<AccountUpdateDataBalance>" },
+	{ "raw": "P", "name": "positions", "type": "std::span<AccountUpdateDataPosition>" }
 ]
 }

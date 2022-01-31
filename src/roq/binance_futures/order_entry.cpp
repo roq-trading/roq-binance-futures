@@ -26,15 +26,15 @@ namespace roq {
 namespace binance_futures {
 
 namespace {
-static const auto NAME = "om"sv;
-static const auto SUPPORTS = utils::Mask{
+const auto NAME = "om"sv;
+const auto SUPPORTS = utils::Mask{
     SupportType::CREATE_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
     SupportType::FUNDS,
 };
 
-static const auto ALLOW_PIPELINING = false;
+const auto ALLOW_PIPELINING = false;
 
 struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)

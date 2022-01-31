@@ -20,8 +20,8 @@ namespace roq {
 namespace binance_futures {
 
 namespace {
-static const auto NAME = "ex"sv;
-static const auto SUPPORTS = utils::Mask{
+const auto NAME = "ex"sv;
+const auto SUPPORTS = utils::Mask{
     SupportType::ORDER_ACK,
     SupportType::ORDER,
     SupportType::TRADE,
@@ -29,7 +29,7 @@ static const auto SUPPORTS = utils::Mask{
     SupportType::POSITION,
 };
 
-static auto create_uri(const std::string_view &listen_key) {
+auto create_uri(const std::string_view &listen_key) {
   assert(!std::empty(listen_key));
   // XXX HANS make it easier to append to path
   auto &uri = Flags::ws_uri();

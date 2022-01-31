@@ -20,7 +20,7 @@ namespace json {
 
 namespace {
 template <typename T>
-static void dispatch_helper(
+void dispatch_helper(
     MarketStreamParser::Handler &handler,
     const std::string_view &message,
     core::json::Buffer &buffer,

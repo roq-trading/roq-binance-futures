@@ -20,6 +20,8 @@ set(SOURCES
     json_order_trade_update.cpp
     main.cpp)
 
+roq_gitignore(OUTPUT ".gitignore" SOURCES "${TARGET_NAME}")
+
 add_executable("${TARGET_NAME}" ${SOURCES})
 
 target_link_libraries(

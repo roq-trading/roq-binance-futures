@@ -108,7 +108,7 @@ class OrderEntry final : public core::web::Client::Handler {
   void refresh_listen_key();
 
   void new_order(
-      const Event<CreateOrder> &, const oms::Order &order, const std::string_view &request_id);
+      const Event<CreateOrder> &, const oms::Order &, const std::string_view &request_id);
   void new_order_ack(
       const server::Trace<core::web::Response> &,
       uint8_t user_id,

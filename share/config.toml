@@ -5,7 +5,6 @@ symbols = "BTCUSD.*"
   [accounts.A1]
   master = true
   login = "YOUR_BINANCE_FUTURES_API_KEY_GOES_HERE"
-  password = "YOUR_BINANCE_FUTURES_PASSPHRASE_GOES_HERE"
   secret = "YOUR_BINANCE_FUTURES_SECRET_GOES_HERE"
   symbols = [ ".*" ]
 

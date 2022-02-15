@@ -32,8 +32,6 @@ const auto SUPPORTS = utils::Mask{
     SupportType::MARKET_STATUS,
 };
 
-const auto ALLOW_PIPELINING = false;
-
 struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(const std::string_view &group, const std::string_view &function)
       : core::metrics::Factory(server::Flags::name(), group, function) {}
@@ -49,23 +47,30 @@ void emplace(MBPUpdate &result, const T &value) {
       .number_of_orders = {},
   };
 }
+
+auto create_connection(auto &handler, auto &context) {
+  auto ping_path = fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path());
+  core::web::Client::Config config{
+      .decode_buffer_size = Flags::decode_buffer_size(),
+      .encode_buffer_size = Flags::encode_buffer_size(),
+      .validate_certificate = server::Flags::tls_validate_certificate(),
+      .uri = Flags::rest_uri(),
+      .proxy = Flags::rest_proxy(),
+      .user_agent = ROQ_PACKAGE_NAME,
+      .connection = core::http::Connection::KEEP_ALIVE,
+      .allow_pipelining = false,
+      .request_timeout = Flags::rest_request_timeout(),
+      .ping_frequency = Flags::rest_ping_freq(),
+      .ping_path = ping_path,
+  };
+  return core::web::Client{handler, context, config};
+}
 }  // namespace
 
 Rest::Rest(Handler &handler, core::io::Context &context, uint16_t stream_id, Shared &shared)
     : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"sv, stream_id_, NAME)),
-      connection_(
-          *this,
-          context,
-          Flags::decode_buffer_size(),
-          Flags::encode_buffer_size(),
-          core::URI(Flags::rest_uri()),
-          ROQ_PACKAGE_NAME,
-          core::http::Connection::KEEP_ALIVE,
-          ALLOW_PIPELINING,
-          Flags::rest_request_timeout(),
-          Flags::rest_ping_freq(),
-          fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path())),
-      decode_buffer_(Flags::decode_buffer_size()), decode_buffer_2_(Flags::decode_buffer_size()),
+      connection_(create_connection(*this, context)), decode_buffer_(Flags::decode_buffer_size()),
+      decode_buffer_2_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
       },

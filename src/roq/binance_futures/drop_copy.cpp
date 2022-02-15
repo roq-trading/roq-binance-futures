@@ -29,6 +29,11 @@ const auto SUPPORTS = utils::Mask{
     SupportType::POSITION,
 };
 
+struct create_metrics final : public core::metrics::Factory {
+  explicit create_metrics(const std::string_view &group, const std::string_view &function)
+      : core::metrics::Factory(server::Flags::name(), group, function) {}
+};
+
 auto create_uri(const std::string_view &listen_key) {
   assert(!std::empty(listen_key));
   // XXX HANS make it easier to append to path
@@ -37,10 +42,18 @@ auto create_uri(const std::string_view &listen_key) {
   return core::URI{result};
 }
 
-struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(const std::string_view &group, const std::string_view &function)
-      : core::metrics::Factory(server::Flags::name(), group, function) {}
-};
+auto create_connection(auto &handler, auto &context, const auto &listen_key) {
+  auto uri = create_uri(listen_key);
+  core::web::ClientSocket::Config config{
+      .validate_certificate = server::Flags::tls_validate_certificate(),
+      .uri = uri,
+      .query = {},
+      .ping_frequency = Flags::ws_ping_freq(),
+      .read_buffer_size = Flags::decode_buffer_size(),
+      .encode_buffer_size = Flags::encode_buffer_size(),
+  };
+  return core::web::ClientSocket{handler, context, config, []() { return std::string(); }};
+}
 }  // namespace
 
 DropCopy::DropCopy(
@@ -51,15 +64,7 @@ DropCopy::DropCopy(
     Shared &shared,
     const std::string_view &listen_key)
     : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"sv, stream_id_, NAME)),
-      connection_(
-          *this,
-          context,
-          create_uri(listen_key),
-          {},
-          Flags::ws_ping_freq(),
-          Flags::decode_buffer_size(),
-          Flags::encode_buffer_size(),
-          []() { return std::string(); }),
+      connection_(create_connection(*this, context, listen_key)),
       decode_buffer_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),

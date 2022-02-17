@@ -142,4 +142,3 @@ TEST(json_book_ticker, simple_coin_m) {
   EXPECT_EQ(obj.transaction_time, 1640247707198ms);
   EXPECT_EQ(obj.event_time, 1640247707203ms);
 }
-

@@ -184,7 +184,8 @@ void MarketData::subscribe(const std::span<std::string const> &symbols) {
   subscribe(symbols, "markPrice"sv);
   subscribe(symbols, "miniTicker"sv);
   subscribe(symbols, "bookTicker"sv);
-  std::chrono::milliseconds frequency = utils::safe_cast(Flags::ws_subscribe_depth_freq());
+  auto frequency =
+      std::chrono::duration_cast<std::chrono::milliseconds>(Flags::ws_subscribe_depth_freq());
   auto depth = fmt::format(R"(depth@{}ms)"sv, frequency.count());
   subscribe(symbols, depth);
 }
@@ -322,7 +323,7 @@ void MarketData::operator()(const server::Trace<json::BookTicker> &event) {
 
 void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
   profile_.depth_update([&]() {
-    // auto &[trace_info, depth_update] = event;
+    // auto &[trace_info, depth_update] = event;  // XXX clang13
     auto &trace_info = event.trace_info;
     auto &depth_update = event.value;
     log::info<3>(R"(depth_update={})"sv, depth_update);
@@ -330,13 +331,12 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
     auto first_sequence = depth_update.first_update_id;
     auto last_sequence = depth_update.final_update_id;
     auto previous_sequence = depth_update.final_update_id_in_last_stream;
-    auto &collector = shared_.mbp_collector[symbol];
     core::back_emplacer bids(shared_.bids), asks(shared_.asks);
     for (auto &item : depth_update.bids)
       bids.emplace_back([&item](auto &result) { emplace(result, item); });
     for (auto &item : depth_update.asks)
       asks.emplace_back([&item](auto &result) { emplace(result, item); });
-    auto exchange_time_utc = depth_update.event_time;
+    auto &collector = shared_.mbp_collector[symbol];
     try {
       collector(
           bids,
@@ -353,7 +353,7 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
                 .bids = bids,
                 .asks = asks,
                 .update_type = UpdateType::INCREMENTAL,
-                .exchange_time_utc = exchange_time_utc,
+                .exchange_time_utc = depth_update.event_time,
                 .exchange_sequence = last_sequence,
                 .price_decimals = {},
                 .quantity_decimals = {},
@@ -371,7 +371,7 @@ void MarketData::operator()(const server::Trace<json::DepthUpdate> &event) {
                 .bids = bids,
                 .asks = asks,
                 .update_type = UpdateType::SNAPSHOT,
-                .exchange_time_utc = exchange_time_utc,
+                .exchange_time_utc = depth_update.event_time,
                 .exchange_sequence = collector.last_sequence(),
                 .price_decimals = {},
                 .quantity_decimals = {},

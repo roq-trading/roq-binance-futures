@@ -36,7 +36,6 @@ struct create_metrics final : public core::metrics::Factory {
 
 auto create_uri(const std::string_view &listen_key) {
   assert(!std::empty(listen_key));
-  // XXX HANS make it easier to append to path
   auto &uri = Flags::ws_uri();
   auto result = fmt::format("{}://{}{}/{}"sv, uri.scheme, uri.host, uri.path, listen_key);
   return core::URI{result};
@@ -197,14 +196,14 @@ void DropCopy::parse(const std::string_view &message) {
 
 void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
   profile_.order_trade_update([&]() {
-    // auto &[trace_info, order_trade_update] = event;
+    // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
     log::debug("order_trade_update={}"sv, order_trade_update);
     log::info<3>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
     auto side = json::map(execution_report.side);
-    auto external_order_id = fmt::format("{}"sv, execution_report.order_id);  // XXX HANS
+    auto external_order_id = fmt::format("{}"sv, execution_report.order_id);
     auto order_status = json::map(execution_report.order_status);
     auto order_type = json::map(execution_report.order_type);
     auto time_in_force = json::map(execution_report.time_in_force);
@@ -242,8 +241,7 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
             order_update,
             [&](auto &order) {
               if (execution_report.execution_type == json::ExecutionType::TRADE) {
-                auto external_trade_id =
-                    fmt::format("{}"sv, execution_report.trade_id);  // XXX HANS
+                auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
                 Fill fill{
                     .external_trade_id = {},
                     .quantity = execution_report.last_filled_quantity,
@@ -295,14 +293,16 @@ void DropCopy::operator()(const server::Trace<json::AccountUpdate> &event) {
       if (shared_.discard_symbol(item.symbol))
         continue;
       log::debug("item={}"sv, item);
+      auto long_quantity = std::max(0.0, item.position_amount);
+      auto short_quantity = std::max(0.0, -item.position_amount);
       PositionUpdate position_update{
           .stream_id = stream_id_,
           .account = security_.get_account(),
           .exchange = Flags::exchange(),
           .symbol = item.symbol,
           .external_account{},
-          .long_quantity = std::max(0.0, item.position_amount),
-          .short_quantity = std::max(0.0, -item.position_amount),
+          .long_quantity = long_quantity,
+          .short_quantity = short_quantity,
           .long_quantity_begin = NaN,
           .short_quantity_begin = NaN,
       };

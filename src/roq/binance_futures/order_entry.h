@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "roq/core/buffer.h"
+#include "roq/core/download.h"
 
 #include "roq/core/metrics/counter.h"
 #include "roq/core/metrics/latency.h"
@@ -17,7 +18,6 @@
 
 #include "roq/core/web/client.h"
 
-#include "roq/download.h"
 #include "roq/server.h"
 
 #include "roq/binance_futures/order_entry_state.h"
@@ -175,7 +175,7 @@ class OrderEntry final : public core::web::Client::Handler {
   // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
   ConnectionStatus status_ = {};
-  server::Download<OrderEntryState> download_;
+  core::Download<OrderEntryState> download_;
   // experimental
   absl::flat_hash_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};

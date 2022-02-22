@@ -233,6 +233,7 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
         .last_traded_quantity = execution_report.last_filled_quantity,
         .last_traded_price = execution_report.last_filled_price,
         .last_liquidity = liquidity,
+        .update_type = {},
     };
     if (shared_.update_order(
             execution_report.client_order_id,

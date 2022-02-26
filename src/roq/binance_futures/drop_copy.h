@@ -76,6 +76,15 @@ class DropCopy final : public core::web::ClientSocket::Handler,
   void operator()(const server::Trace<json::AccountUpdate> &) override;
   void operator()(const server::Trace<json::MarginCall> &) override;
 
+  void request_balance();
+  void check_response_balance();
+
+  void request_account();
+  void check_response_account();
+
+  void request_orders();
+  void check_response_orders();
+
  private:
   Handler &handler_;
   // config

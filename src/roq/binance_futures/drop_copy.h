@@ -18,6 +18,7 @@
 #include "roq/server.h"
 
 #include "roq/binance_futures/drop_copy_state.h"
+#include "roq/binance_futures/request.h"
 #include "roq/binance_futures/security.h"
 #include "roq/binance_futures/shared.h"
 
@@ -43,6 +44,7 @@ class DropCopy final : public core::web::ClientSocket::Handler,
       uint16_t stream_id,
       Security &,
       Shared &,
+      Request &,
       const std::string_view &listen_key);
 
   DropCopy(DropCopy &&) = delete;
@@ -106,8 +108,9 @@ class DropCopy final : public core::web::ClientSocket::Handler,
   } latency_;
   // security
   Security &security_;
-  // cache
+  // shared
   Shared &shared_;
+  Request &request_;
   // state
   bool ready_ = false;
   ConnectionStatus status_ = {};

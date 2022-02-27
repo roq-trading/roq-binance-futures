@@ -61,6 +61,7 @@ DropCopy::DropCopy(
     uint16_t stream_id,
     Security &security,
     Shared &shared,
+    Request &request,
     const std::string_view &listen_key)
     : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"sv, stream_id_, NAME)),
       connection_(create_connection(*this, context, listen_key)),
@@ -78,7 +79,7 @@ DropCopy::DropCopy(
           .ping = create_metrics(name_, "ping"sv),
           .heartbeat = create_metrics(name_, "heartbeat"sv),
       },
-      security_(security), shared_(shared),
+      security_(security), shared_(shared), request_(request),
       download_({}, [this](auto state) { return download(state); }) {
 }
 
@@ -333,15 +334,13 @@ void DropCopy::operator()(const server::Trace<json::MarginCall> &event) {
 
 void DropCopy::request_balance() {
   log::info("Requesting balance download..."sv);
-  auto &request_response = shared_.request_response[security_.get_account()];
-  request_response.request_balance = core::clock::GetSystem();
+  request_.request_balance = core::clock::GetSystem();
 }
 
 void DropCopy::check_response_balance() {
   if (download_.state() != DropCopyState::BALANCE)
     return;
-  auto &request_response = shared_.request_response[security_.get_account()];
-  if (request_response.request_balance < request_response.respond_balance) {
+  if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
     download_.check(DropCopyState::BALANCE);
   }
@@ -349,15 +348,13 @@ void DropCopy::check_response_balance() {
 
 void DropCopy::request_account() {
   log::info("Requesting account download..."sv);
-  auto &request_response = shared_.request_response[security_.get_account()];
-  request_response.request_account = core::clock::GetSystem();
+  request_.request_account = core::clock::GetSystem();
 }
 
 void DropCopy::check_response_account() {
   if (download_.state() != DropCopyState::ACCOUNT)
     return;
-  auto &request_response = shared_.request_response[security_.get_account()];
-  if (request_response.request_account < request_response.respond_account) {
+  if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
     download_.check(DropCopyState::ACCOUNT);
   }
@@ -365,15 +362,13 @@ void DropCopy::check_response_account() {
 
 void DropCopy::request_orders() {
   log::info("Requesting order download..."sv);
-  auto &request_response = shared_.request_response[security_.get_account()];
-  request_response.request_orders = core::clock::GetSystem();
+  request_.request_orders = core::clock::GetSystem();
 }
 
 void DropCopy::check_response_orders() {
   if (download_.state() != DropCopyState::ORDERS)
     return;
-  auto &request_response = shared_.request_response[security_.get_account()];
-  if (request_response.request_orders < request_response.respond_orders) {
+  if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
     download_.check(DropCopyState::ORDERS);
   }

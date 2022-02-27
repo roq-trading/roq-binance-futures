@@ -64,7 +64,8 @@ OrderEntry::OrderEntry(
     core::io::Context &context,
     uint16_t stream_id,
     Security &security,
-    Shared &shared)
+    Shared &shared,
+    Request &request)
     : handler_(handler), stream_id_(stream_id),
       name_(fmt::format("{}:{}:{}"sv, stream_id_, NAME, security.get_account())),
       connection_(create_connection(*this, context)), decode_buffer_(Flags::decode_buffer_size()),
@@ -93,7 +94,7 @@ OrderEntry::OrderEntry(
       latency_{
           .ping = create_metrics(name_, "ping"sv),
       },
-      security_(security), shared_(shared),
+      security_(security), shared_(shared), request_(request),
       download_(Flags::rest_request_timeout(), [this](auto state) { return download(state); }) {
 }
 
@@ -114,18 +115,17 @@ void OrderEntry::operator()(const Event<Timer> &event) {
     auto_cancel_all_open_orders();
   }
   if (ready() && !downloading()) {
-    auto &request_response = shared_.request_response[security_.get_account()];
-    if (!downloading() && request_response.respond_balance < request_response.request_balance) {
+    if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
       get_balance();
       download_balance_ = true;
     }
-    if (!downloading() && request_response.respond_account < request_response.request_account) {
+    if (!downloading() && request_.respond_account < request_.request_account) {
       log::info<1>("Download account..."sv);
       get_account();
       download_account_ = true;
     }
-    if (!downloading() && request_response.respond_orders < request_response.request_orders) {
+    if (!downloading() && request_.respond_orders < request_.request_orders) {
       log::info<1>("Download orders..."sv);
       get_open_orders();
       download_orders_ = true;
@@ -358,8 +358,7 @@ void OrderEntry::get_balance_ack(const server::Trace<core::web::Response> &event
       server::Trace event(trace_info, balance);
       (*this)(event);
       download_balance_ = false;
-      auto &request_response = shared_.request_response[security_.get_account()];
-      request_response.respond_balance = core::clock::GetSystem();
+      request_.respond_balance = core::clock::GetSystem();
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     }
@@ -422,8 +421,7 @@ void OrderEntry::get_account_ack(const server::Trace<core::web::Response> &event
       server::Trace event(trace_info, account);
       (*this)(event);
       download_account_ = false;
-      auto &request_response = shared_.request_response[security_.get_account()];
-      request_response.respond_account = core::clock::GetSystem();
+      request_.respond_account = core::clock::GetSystem();
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     }
@@ -493,8 +491,7 @@ void OrderEntry::get_open_orders_ack(const server::Trace<core::web::Response> &e
       server::Trace event(trace_info, open_orders);
       (*this)(event);
       download_orders_ = false;
-      auto &request_response = shared_.request_response[security_.get_account()];
-      request_response.respond_orders = core::clock::GetSystem();
+      request_.respond_orders = core::clock::GetSystem();
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     }

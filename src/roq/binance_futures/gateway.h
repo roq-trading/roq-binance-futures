@@ -17,6 +17,7 @@
 #include "roq/binance_futures/drop_copy.h"
 #include "roq/binance_futures/market_data.h"
 #include "roq/binance_futures/order_entry.h"
+#include "roq/binance_futures/request.h"
 #include "roq/binance_futures/rest.h"
 #include "roq/binance_futures/security.h"
 #include "roq/binance_futures/shared.h"
@@ -88,6 +89,7 @@ class Gateway final : public server::Handler,
   core::io::Context context_;
   // shared
   Shared shared_;
+  absl::flat_hash_map<std::string, Request> request_;
   // seed
   uint16_t stream_id_ = {};
   // streams

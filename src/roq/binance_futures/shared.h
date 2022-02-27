@@ -57,19 +57,6 @@ struct Shared final {
   core::limit::RateLimiter rate_limiter;
   core::Symbols symbols;
   core::TimerQueue depth_request_queue;
-
-  struct RequestResponse final {
-    // balance
-    std::chrono::nanoseconds request_balance = {};
-    std::chrono::nanoseconds respond_balance = {};
-    // account
-    std::chrono::nanoseconds request_account = {};
-    std::chrono::nanoseconds respond_account = {};
-    // orders
-    std::chrono::nanoseconds request_orders = {};
-    std::chrono::nanoseconds respond_orders = {};
-  };
-  absl::flat_hash_map<std::string, RequestResponse> request_response;
 };
 
 }  // namespace binance_futures

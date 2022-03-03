@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,8 +12,10 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
+using namespace Catch::literals;
+
 // note! positions have been truncated
-TEST(json_account, simple_usd_m) {
+TEST_CASE("json_account_simple_usd_m", "json_account") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"
@@ -178,68 +180,68 @@ TEST(json_account, simple_usd_m) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::Account>(message, buffer);
-  EXPECT_EQ(obj.fee_tier, 0);
-  EXPECT_EQ(obj.can_trade, true);
-  EXPECT_EQ(obj.can_deposit, true);
-  EXPECT_EQ(obj.can_withdraw, true);
-  EXPECT_EQ(obj.update_time, 0ms);
-  EXPECT_DOUBLE_EQ(obj.total_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_maint_margin, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_unrealized_profit, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_margin_balance, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_position_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_open_order_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_cross_wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(obj.total_cross_un_pnl, 0.0);
-  EXPECT_DOUBLE_EQ(obj.available_balance, 0.0);
-  EXPECT_DOUBLE_EQ(obj.max_withdraw_amount, 0.0);
+  CHECK(obj.fee_tier == 0);
+  CHECK(obj.can_trade == true);
+  CHECK(obj.can_deposit == true);
+  CHECK(obj.can_withdraw == true);
+  CHECK(obj.update_time == 0ms);
+  CHECK(obj.total_initial_margin == 0.0_a);
+  CHECK(obj.total_maint_margin == 0.0_a);
+  CHECK(obj.total_wallet_balance == 0.0_a);
+  CHECK(obj.total_unrealized_profit == 0.0_a);
+  CHECK(obj.total_margin_balance == 0.0_a);
+  CHECK(obj.total_position_initial_margin == 0.0_a);
+  CHECK(obj.total_open_order_initial_margin == 0.0_a);
+  CHECK(obj.total_cross_wallet_balance == 0.0_a);
+  CHECK(obj.total_cross_un_pnl == 0.0_a);
+  CHECK(obj.available_balance == 0.0_a);
+  CHECK(obj.max_withdraw_amount == 0.0_a);
   auto &assets = obj.assets;
-  ASSERT_EQ(std::size(assets), 5);
+  REQUIRE(std::size(assets) == 5);
   auto &a0 = assets[0];
-  EXPECT_EQ(a0.asset, "BTC"sv);
-  EXPECT_DOUBLE_EQ(a0.wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(a0.unrealized_profit, 0.0);
-  EXPECT_DOUBLE_EQ(a0.margin_balance, 0.0);
-  EXPECT_DOUBLE_EQ(a0.maint_margin, 0.0);
-  EXPECT_DOUBLE_EQ(a0.initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(a0.position_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(a0.open_order_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(a0.max_withdraw_amount, 0.0);
-  EXPECT_DOUBLE_EQ(a0.cross_wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(a0.cross_un_pnl, 0.0);
-  EXPECT_DOUBLE_EQ(a0.available_balance, 0.0);
-  EXPECT_EQ(a0.margin_available, true);
-  EXPECT_EQ(a0.update_time, 0ms);
+  CHECK(a0.asset == "BTC"sv);
+  CHECK(a0.wallet_balance == 0.0_a);
+  CHECK(a0.unrealized_profit == 0.0_a);
+  CHECK(a0.margin_balance == 0.0_a);
+  CHECK(a0.maint_margin == 0.0_a);
+  CHECK(a0.initial_margin == 0.0_a);
+  CHECK(a0.position_initial_margin == 0.0_a);
+  CHECK(a0.open_order_initial_margin == 0.0_a);
+  CHECK(a0.max_withdraw_amount == 0.0_a);
+  CHECK(a0.cross_wallet_balance == 0.0_a);
+  CHECK(a0.cross_un_pnl == 0.0_a);
+  CHECK(a0.available_balance == 0.0_a);
+  CHECK(a0.margin_available == true);
+  CHECK(a0.update_time == 0ms);
   // XXX TODO a1
   // XXX TODO a2
   // XXX TODO a3
   // XXX TODO a4
   auto &positions = obj.positions;
-  ASSERT_EQ(std::size(positions), 4);
+  REQUIRE(std::size(positions) == 4);
   auto &p0 = positions[0];
-  EXPECT_EQ(p0.symbol, "RAYUSDT"sv);
-  EXPECT_DOUBLE_EQ(p0.initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(p0.maint_margin, 0.0);
-  EXPECT_DOUBLE_EQ(p0.unrealized_profit, 0.0);
-  EXPECT_DOUBLE_EQ(p0.position_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(p0.open_order_initial_margin, 0.0);
-  EXPECT_DOUBLE_EQ(p0.leverage, 20.0);
-  EXPECT_EQ(p0.isolated, false);
-  EXPECT_DOUBLE_EQ(p0.entry_price, 0.0);
-  EXPECT_DOUBLE_EQ(p0.max_notional, 25000.0);
-  EXPECT_EQ(p0.position_side, "BOTH"sv);
-  EXPECT_DOUBLE_EQ(p0.position_amt, 0.0);
-  EXPECT_DOUBLE_EQ(p0.notional, 0.0);
-  EXPECT_DOUBLE_EQ(p0.isolated_wallet, 0.0);
-  EXPECT_EQ(p0.update_time, 0ms);
+  CHECK(p0.symbol == "RAYUSDT"sv);
+  CHECK(p0.initial_margin == 0.0_a);
+  CHECK(p0.maint_margin == 0.0_a);
+  CHECK(p0.unrealized_profit == 0.0_a);
+  CHECK(p0.position_initial_margin == 0.0_a);
+  CHECK(p0.open_order_initial_margin == 0.0_a);
+  CHECK(p0.leverage == 20.0_a);
+  CHECK(p0.isolated == false);
+  CHECK(p0.entry_price == 0.0_a);
+  CHECK(p0.max_notional == 25000.0_a);
+  CHECK(p0.position_side == "BOTH"sv);
+  CHECK(p0.position_amt == 0.0_a);
+  CHECK(p0.notional == 0.0_a);
+  CHECK(p0.isolated_wallet == 0.0_a);
+  CHECK(p0.update_time == 0ms);
   // XXX TODO p1
   // XXX TODO p2
   // XXX TODO p3
 }
 
 // note! positions have been truncated
-TEST(json_account, simple_coin_m) {
+TEST_CASE("json_account_simple_coin_m", "json_account") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"
@@ -314,7 +316,7 @@ TEST(json_account, simple_coin_m) {
   auto obj = core::json::Parser::create<json::Account>(message, buffer);
 }
 
-TEST(json_account, simple_usd_m_new) {
+TEST_CASE("json_account_simple_usd_m_new", "json_account") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"

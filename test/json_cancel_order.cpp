@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_cancel_order, simple) {
+using namespace Catch::literals;
+
+TEST_CASE("json_cancel_order_simple", "json_cancel_order") {
   auto message = R"({)"
                  R"("orderId":17759646892,)"
                  R"("symbol":"XRPUSDT",)"
@@ -37,25 +39,25 @@ TEST(json_cancel_order, simple) {
                  R"("updateTime":1634545259912)"
                  R"(})";
   auto obj = core::json::Parser::create<json::CancelOrder>(message);
-  EXPECT_EQ(obj.order_id, 17759646892);
-  EXPECT_EQ(obj.symbol, "XRPUSDT"sv);
-  EXPECT_EQ(obj.status, json::OrderStatus::CANCELED);
-  EXPECT_EQ(obj.client_order_id, "rwAC6QMAAQAAM0V8zdAW"sv);
-  EXPECT_DOUBLE_EQ(obj.price, 1.0823);
-  EXPECT_DOUBLE_EQ(obj.avg_price, 0.0);
-  EXPECT_DOUBLE_EQ(obj.orig_qty, 5.0);
-  EXPECT_DOUBLE_EQ(obj.executed_qty, 0.0);
-  EXPECT_DOUBLE_EQ(obj.cum_qty, 0.0);
-  EXPECT_DOUBLE_EQ(obj.cum_quote, 0.0);
-  EXPECT_EQ(obj.time_in_force, json::TimeInForce::GTC);
-  EXPECT_EQ(obj.type, json::OrderType::LIMIT);
-  EXPECT_EQ(obj.reduce_only, false);
-  EXPECT_EQ(obj.close_position, false);
-  EXPECT_EQ(obj.side, json::Side::BUY);
-  EXPECT_EQ(obj.position_side, json::PositionSide::BOTH);
-  EXPECT_DOUBLE_EQ(obj.stop_price, 0.0);
-  EXPECT_EQ(obj.working_type, json::WorkingType::CONTRACT_PRICE);
-  EXPECT_EQ(obj.price_protect, false);
-  EXPECT_EQ(obj.orig_type, json::OrderType::LIMIT);
-  EXPECT_EQ(obj.update_time, 1634545259912ms);
+  CHECK(obj.order_id == 17759646892);
+  CHECK(obj.symbol == "XRPUSDT"sv);
+  CHECK(obj.status == json::OrderStatus::CANCELED);
+  CHECK(obj.client_order_id == "rwAC6QMAAQAAM0V8zdAW"sv);
+  CHECK(obj.price == 1.0823_a);
+  CHECK(obj.avg_price == 0.0_a);
+  CHECK(obj.orig_qty == 5.0_a);
+  CHECK(obj.executed_qty == 0.0_a);
+  CHECK(obj.cum_qty == 0.0_a);
+  CHECK(obj.cum_quote == 0.0_a);
+  CHECK(obj.time_in_force == json::TimeInForce::GTC);
+  CHECK(obj.type == json::OrderType::LIMIT);
+  CHECK(obj.reduce_only == false);
+  CHECK(obj.close_position == false);
+  CHECK(obj.side == json::Side::BUY);
+  CHECK(obj.position_side == json::PositionSide::BOTH);
+  CHECK(obj.stop_price == 0.0_a);
+  CHECK(obj.working_type == json::WorkingType::CONTRACT_PRICE);
+  CHECK(obj.price_protect == false);
+  CHECK(obj.orig_type == json::OrderType::LIMIT);
+  CHECK(obj.update_time == 1634545259912ms);
 }

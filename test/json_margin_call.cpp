@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_margin_call, online_example) {
+using namespace Catch::literals;
+
+TEST_CASE("json_margin_call_online_example", "json_margin_call") {
   auto message = R"({)"
                  R"("e":"MARGIN_CALL",)"
                  R"("E":1587727187525,)"
@@ -32,11 +34,11 @@ TEST(json_margin_call, online_example) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::MarginCall>(message, buffer);
-  EXPECT_EQ(obj.event_type, json::EventType::MARGIN_CALL);
-  EXPECT_EQ(obj.event_time, 1587727187525ms);
-  EXPECT_DOUBLE_EQ(obj.cross_wallet_balance, 3.16812045);
+  CHECK(obj.event_type == json::EventType::MARGIN_CALL);
+  CHECK(obj.event_time == 1587727187525ms);
+  CHECK(obj.cross_wallet_balance == 3.16812045_a);
   auto &positions = obj.positions;
-  ASSERT_EQ(std::size(positions), 1);
+  REQUIRE(std::size(positions) == 1);
   auto &p0 = positions[0];
-  EXPECT_EQ(p0.symbol, "ETHUSDT"sv);
+  CHECK(p0.symbol == "ETHUSDT"sv);
 }

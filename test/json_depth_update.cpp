@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_depth_update, simple_coin_m) {
+using namespace Catch::literals;
+
+TEST_CASE("json_depth_update_simple_coin_m", "json_depth_update") {
   auto message = R"({)"
                  R"("e":"depthUpdate",)"
                  R"("E":1640247455980,)"

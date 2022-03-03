@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -11,10 +11,12 @@ using namespace roq::binance_futures;
 
 using namespace std::literals;
 
-TEST(json_listen_key, simple) {
+using namespace Catch::literals;
+
+TEST_CASE("json_listen_key_simple", "json_listen_key") {
   auto message = R"({)"
                  R"("listenKey":"JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY")"
                  R"(})";
   auto obj = core::json::Parser::create<json::ListenKey>(message);
-  EXPECT_EQ(obj.listen_key, "JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY"sv);
+  CHECK(obj.listen_key == "JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY"sv);
 }

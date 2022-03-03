@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -11,12 +11,12 @@ using namespace roq::binance_futures;
 
 using namespace std::literals;
 
-TEST(json_auto_cancel_all_open_orders, simple) {
+TEST_CASE("json_auto_cancel_all_open_orders_simple", "json_auto_cancel_all_open_orders") {
   auto message = R"({)"
                  R"("symbol":"XRPUSDT",)"
                  R"("countdownTime":"30000")"
                  R"(})";
   auto obj = core::json::Parser::create<json::AutoCancelAllOpenOrders>(message);
-  EXPECT_EQ(obj.symbol, "XRPUSDT"sv);
-  EXPECT_EQ(obj.countdown_time, 30000);
+  CHECK(obj.symbol == "XRPUSDT"sv);
+  CHECK(obj.countdown_time == 30000);
 }

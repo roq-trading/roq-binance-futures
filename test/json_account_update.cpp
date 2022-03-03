@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_account_update, order) {
+using namespace Catch::literals;
+
+TEST_CASE("json_account_update_order", "json_account_update") {
   auto message = R"({)"
                  R"("e":"ACCOUNT_UPDATE",)"
                  R"("T":1634811213699,)"
@@ -43,33 +45,33 @@ TEST(json_account_update, order) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::AccountUpdate>(message, buffer);
-  EXPECT_EQ(obj.event_type, json::EventType::ACCOUNT_UPDATE);
-  EXPECT_EQ(obj.transaction_time, 1634811213699ms);
-  EXPECT_EQ(obj.event_time, 1634811213707ms);
+  CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+  CHECK(obj.transaction_time == 1634811213699ms);
+  CHECK(obj.event_time == 1634811213707ms);
   auto &data = obj.data;
   auto &balances = data.balances;
-  EXPECT_EQ(std::size(balances), 1);
+  CHECK(std::size(balances) == 1);
   auto &b0 = balances[0];
-  EXPECT_EQ(b0.asset, "USDT"sv);
-  EXPECT_DOUBLE_EQ(b0.wallet_balance, 21.12168460);
-  EXPECT_DOUBLE_EQ(b0.cross_wallet_balance, 21.12168460);
-  EXPECT_DOUBLE_EQ(b0.balance_change, 0.0);
+  CHECK(b0.asset == "USDT"sv);
+  CHECK(b0.wallet_balance == 21.12168460_a);
+  CHECK(b0.cross_wallet_balance == 21.12168460_a);
+  CHECK(b0.balance_change == 0.0_a);
   auto &positions = data.positions;
-  EXPECT_EQ(std::size(positions), 1);
+  CHECK(std::size(positions) == 1);
   auto &p0 = positions[0];
-  EXPECT_EQ(p0.symbol, "XRPUSDT"sv);
-  EXPECT_DOUBLE_EQ(p0.position_amount, -5.0);
-  EXPECT_DOUBLE_EQ(p0.entry_price, 1.15540);
-  EXPECT_DOUBLE_EQ(p0.accumulated_realized, 0.0);
-  EXPECT_DOUBLE_EQ(p0.unrealized_pnl, 0.001);
-  EXPECT_EQ(p0.margin_type, "cross"sv);
-  EXPECT_DOUBLE_EQ(p0.isolated_wallet, 0.0);
-  EXPECT_EQ(p0.position_side, json::PositionSide::BOTH);
-  EXPECT_EQ(p0.unknown_1, "USDT"sv);
-  EXPECT_EQ(data.event_reason, json::EventReason::ORDER);
+  CHECK(p0.symbol == "XRPUSDT"sv);
+  CHECK(p0.position_amount == -5.0_a);
+  CHECK(p0.entry_price == 1.15540_a);
+  CHECK(p0.accumulated_realized == 0.0_a);
+  CHECK(p0.unrealized_pnl == 0.001_a);
+  CHECK(p0.margin_type == "cross"sv);
+  CHECK(p0.isolated_wallet == 0.0_a);
+  CHECK(p0.position_side == json::PositionSide::BOTH);
+  CHECK(p0.unknown_1 == "USDT"sv);
+  CHECK(data.event_reason == json::EventReason::ORDER);
 }
 
-TEST(json_account_update, withdraw) {
+TEST_CASE("json_account_update_withdraw", "json_account_update") {
   auto message = R"({)"
                  R"("e":"ACCOUNT_UPDATE",)"
                  R"("T":1634827654378,)"
@@ -87,18 +89,18 @@ TEST(json_account_update, withdraw) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::AccountUpdate>(message, buffer);
-  EXPECT_EQ(obj.event_type, json::EventType::ACCOUNT_UPDATE);
-  EXPECT_EQ(obj.transaction_time, 1634827654378ms);
-  EXPECT_EQ(obj.event_time, 1634827654387ms);
+  CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+  CHECK(obj.transaction_time == 1634827654378ms);
+  CHECK(obj.event_time == 1634827654387ms);
   auto &data = obj.data;
   auto &balances = data.balances;
-  EXPECT_EQ(std::size(balances), 1);
+  CHECK(std::size(balances) == 1);
   auto &b0 = balances[0];
-  EXPECT_EQ(b0.asset, "USDT"sv);
-  EXPECT_DOUBLE_EQ(b0.wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(b0.cross_wallet_balance, 0.0);
-  EXPECT_DOUBLE_EQ(b0.balance_change, -21.14364261);
+  CHECK(b0.asset == "USDT"sv);
+  CHECK(b0.wallet_balance == 0.0_a);
+  CHECK(b0.cross_wallet_balance == 0.0_a);
+  CHECK(b0.balance_change == -21.14364261_a);
   auto &positions = data.positions;
-  EXPECT_EQ(std::size(positions), 0);
-  EXPECT_EQ(data.event_reason, json::EventReason::WITHDRAW);
+  CHECK(std::size(positions) == 0);
+  CHECK(data.event_reason == json::EventReason::WITHDRAW);
 }

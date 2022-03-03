@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -11,14 +11,16 @@ using namespace roq::binance_futures;
 
 using namespace std::literals;
 
-TEST(json_error, simple) {
+using namespace Catch::literals;
+
+TEST_CASE("json_error_simple", "json_error") {
   auto message =
       R"#({)#"
       R"#("code":-4164,)#"
       R"#("msg":"Order's notional must be no smaller than 5.0 (unless you choose reduce only)")#"
       R"#(})#";
   auto obj = core::json::Parser::create<json::Error>(message);
-  EXPECT_EQ(obj.code, -4164);
-  EXPECT_EQ(
-      obj.msg, "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"sv);
+  CHECK(obj.code == -4164);
+  CHECK(
+      obj.msg == "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"sv);
 }

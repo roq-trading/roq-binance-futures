@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_mini_ticker, simple_coin_m) {
+using namespace Catch::literals;
+
+TEST_CASE("json_mini_ticker_simple_coin_m", "json_mini_ticker") {
   auto message = R"({)"
                  R"("e":"24hrMiniTicker",)"
                  R"("E":1640248670092,)"
@@ -28,14 +30,14 @@ TEST(json_mini_ticker, simple_coin_m) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::MiniTicker>(message, buffer);
-  EXPECT_EQ(obj.event_type, json::EventType::_24HR_MINI_TICKER);
-  EXPECT_EQ(obj.event_time, 1640248670092ms);
-  EXPECT_EQ(obj.symbol, "BTCUSD_220325"sv);
-  EXPECT_EQ(obj.pair, "BTCUSD"sv);
-  EXPECT_DOUBLE_EQ(obj.close_price, 49461.1);
-  EXPECT_DOUBLE_EQ(obj.open_price, 50769.1);
-  EXPECT_DOUBLE_EQ(obj.high_price, 50903.5);
-  EXPECT_DOUBLE_EQ(obj.low_price, 49230.6);
-  EXPECT_DOUBLE_EQ(obj.total_traded_base_asset_volume, 1913789.0);
-  EXPECT_DOUBLE_EQ(obj.total_traded_quote_asset_volume, 3833.39491534);
+  CHECK(obj.event_type == json::EventType::_24HR_MINI_TICKER);
+  CHECK(obj.event_time == 1640248670092ms);
+  CHECK(obj.symbol == "BTCUSD_220325"sv);
+  CHECK(obj.pair == "BTCUSD"sv);
+  CHECK(obj.close_price == 49461.1_a);
+  CHECK(obj.open_price == 50769.1_a);
+  CHECK(obj.high_price == 50903.5_a);
+  CHECK(obj.low_price == 49230.6_a);
+  CHECK(obj.total_traded_base_asset_volume == 1913789.0_a);
+  CHECK(obj.total_traded_quote_asset_volume == 3833.39491534_a);
 }

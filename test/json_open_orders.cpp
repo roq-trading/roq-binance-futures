@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,15 +12,17 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_open_orders, simple_empty) {
+using namespace Catch::literals;
+
+TEST_CASE("json_open_orders_simple_empty", "json_open_orders") {
   auto message = R"([])";
   core::Buffer buffer_(8192);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::OpenOrders>(message, buffer);
-  ASSERT_EQ(std::size(obj.data), 0);
+  REQUIRE(std::size(obj.data) == 0);
 }
 
-TEST(json_open_orders, simple_1) {
+TEST_CASE("json_open_orders_simple_1", "json_open_orders") {
   auto message = R"([{)"
                  R"("orderId":17759938812,)"
                  R"("symbol":"XRPUSDT",)"
@@ -49,27 +51,27 @@ TEST(json_open_orders, simple_1) {
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::OpenOrders>(message, buffer);
   auto &data = obj.data;
-  ASSERT_EQ(std::size(data), 1);
+  REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];
-  EXPECT_EQ(d0.order_id, 17759938812);
-  EXPECT_EQ(d0.symbol, "XRPUSDT"sv);
-  EXPECT_EQ(d0.status, json::OrderStatus::NEW);
-  EXPECT_EQ(d0.client_order_id, "GgAC6gMAAQAANhJPG9EW"sv);
-  EXPECT_DOUBLE_EQ(d0.price, 1.0765);
-  EXPECT_DOUBLE_EQ(d0.avg_price, 0.0);
-  EXPECT_DOUBLE_EQ(d0.orig_qty, 5.0);
-  EXPECT_DOUBLE_EQ(d0.executed_qty, 0.0);
-  EXPECT_DOUBLE_EQ(d0.cum_quote, 0.0);
-  EXPECT_EQ(d0.time_in_force, json::TimeInForce::GTC);
-  EXPECT_EQ(d0.type, json::OrderType::LIMIT);
-  EXPECT_EQ(d0.reduce_only, false);
-  EXPECT_EQ(d0.close_position, false);
-  EXPECT_EQ(d0.side, json::Side::BUY);
-  EXPECT_EQ(d0.position_side, json::PositionSide::BOTH);
-  EXPECT_DOUBLE_EQ(d0.stop_price, 0.0);
-  EXPECT_EQ(d0.working_type, json::WorkingType::CONTRACT_PRICE);
-  EXPECT_EQ(d0.price_protect, false);
-  EXPECT_EQ(d0.orig_type, json::OrderType::LIMIT);
-  EXPECT_EQ(d0.time, 1634546562277ms);
-  EXPECT_EQ(d0.update_time, 1634546562277ms);
+  CHECK(d0.order_id == 17759938812);
+  CHECK(d0.symbol == "XRPUSDT"sv);
+  CHECK(d0.status == json::OrderStatus::NEW);
+  CHECK(d0.client_order_id == "GgAC6gMAAQAANhJPG9EW"sv);
+  CHECK(d0.price == 1.0765_a);
+  CHECK(d0.avg_price == 0.0_a);
+  CHECK(d0.orig_qty == 5.0_a);
+  CHECK(d0.executed_qty == 0.0_a);
+  CHECK(d0.cum_quote == 0.0_a);
+  CHECK(d0.time_in_force == json::TimeInForce::GTC);
+  CHECK(d0.type == json::OrderType::LIMIT);
+  CHECK(d0.reduce_only == false);
+  CHECK(d0.close_position == false);
+  CHECK(d0.side == json::Side::BUY);
+  CHECK(d0.position_side == json::PositionSide::BOTH);
+  CHECK(d0.stop_price == 0.0_a);
+  CHECK(d0.working_type == json::WorkingType::CONTRACT_PRICE);
+  CHECK(d0.price_protect == false);
+  CHECK(d0.orig_type == json::OrderType::LIMIT);
+  CHECK(d0.time == 1634546562277ms);
+  CHECK(d0.update_time == 1634546562277ms);
 }

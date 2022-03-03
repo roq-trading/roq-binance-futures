@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include <gtest/gtest.h>
+#include <catch2/catch.hpp>
 
 #include "roq/core/json/parser.h"
 
@@ -12,7 +12,9 @@ using namespace roq::binance_futures;
 using namespace std::literals;
 using namespace std::chrono_literals;
 
-TEST(json_book_ticker, simple) {
+using namespace Catch::literals;
+
+TEST_CASE("json_book_ticker_simple", "json_book_ticker") {
   auto message = R"({)"
                  R"("e":"bookTicker",)"
                  R"("u":847033385825,)"
@@ -27,18 +29,18 @@ TEST(json_book_ticker, simple) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
-  EXPECT_EQ(obj.event_type, json::EventType::BOOK_TICKER);
-  EXPECT_EQ(obj.order_book_update_id, 847033385825);
-  EXPECT_EQ(obj.symbol, "BTCUSDT"sv);
-  EXPECT_DOUBLE_EQ(obj.best_bid_price, 58950.76);
-  EXPECT_DOUBLE_EQ(obj.best_bid_qty, 0.172);
-  EXPECT_DOUBLE_EQ(obj.best_ask_price, 58955.21);
-  EXPECT_DOUBLE_EQ(obj.best_ask_qty, 0.191);
-  EXPECT_EQ(obj.transaction_time, 1634288226709ms);
-  EXPECT_EQ(obj.event_time, 1634288226716ms);
+  CHECK(obj.event_type == json::EventType::BOOK_TICKER);
+  CHECK(obj.order_book_update_id == 847033385825);
+  CHECK(obj.symbol == "BTCUSDT"sv);
+  CHECK(obj.best_bid_price == 58950.76_a);
+  CHECK(obj.best_bid_qty == 0.172_a);
+  CHECK(obj.best_ask_price == 58955.21_a);
+  CHECK(obj.best_ask_qty == 0.191_a);
+  CHECK(obj.transaction_time == 1634288226709ms);
+  CHECK(obj.event_time == 1634288226716ms);
 }
 
-TEST(json_book_ticker, parse_stream_simple) {
+TEST_CASE("json_book_ticker_parse_stream_simple", "json_book_ticker") {
   auto message = R"({)"
                  R"("e":"bookTicker",)"
                  R"("u":847033385825,)"
@@ -72,10 +74,10 @@ TEST(json_book_ticker, parse_stream_simple) {
     bool found_ = false;
   } handler;
   json::MarketStreamParser::dispatch(handler, message, buffer, trace_info);
-  EXPECT_TRUE(static_cast<bool>(handler));
+  CHECK(static_cast<bool>(handler) == true);
 }
 
-TEST(json_book_ticker, parse_stream_wrapped) {
+TEST_CASE("json_book_ticker_parse_stream_wrapped", "json_book_ticker") {
   auto message = R"({)"
                  R"("stream":"btcusdt@bookTicker",)"
                  R"("data":{)"
@@ -112,10 +114,10 @@ TEST(json_book_ticker, parse_stream_wrapped) {
     bool found_ = false;
   } handler;
   json::MarketStreamParser::dispatch(handler, message, buffer, trace_info);
-  EXPECT_TRUE(static_cast<bool>(handler));
+  CHECK(static_cast<bool>(handler) == true);
 }
 
-TEST(json_book_ticker, simple_coin_m) {
+TEST_CASE("json_book_ticker_simple_coin_m", "json_book_ticker") {
   auto message = R"({)"
                  R"("u":300683916630,)"
                  R"("e":"bookTicker",)"
@@ -131,14 +133,14 @@ TEST(json_book_ticker, simple_coin_m) {
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
   auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
-  EXPECT_EQ(obj.order_book_update_id, 300683916630);
-  EXPECT_EQ(obj.event_type, json::EventType::BOOK_TICKER);
-  EXPECT_EQ(obj.symbol, "BTCUSD_220325"sv);
-  EXPECT_EQ(obj.pair, "BTCUSD"sv);
-  EXPECT_DOUBLE_EQ(obj.best_bid_price, 49387.1);
-  EXPECT_DOUBLE_EQ(obj.best_bid_qty, 34.0);
-  EXPECT_DOUBLE_EQ(obj.best_ask_price, 49387.2);
-  EXPECT_DOUBLE_EQ(obj.best_ask_qty, 577.0);
-  EXPECT_EQ(obj.transaction_time, 1640247707198ms);
-  EXPECT_EQ(obj.event_time, 1640247707203ms);
+  CHECK(obj.order_book_update_id == 300683916630);
+  CHECK(obj.event_type == json::EventType::BOOK_TICKER);
+  CHECK(obj.symbol == "BTCUSD_220325"sv);
+  CHECK(obj.pair == "BTCUSD"sv);
+  CHECK(obj.best_bid_price == 49387.1_a);
+  CHECK(obj.best_bid_qty == 34.0_a);
+  CHECK(obj.best_ask_price == 49387.2_a);
+  CHECK(obj.best_ask_qty == 577.0_a);
+  CHECK(obj.transaction_time == 1640247707198ms);
+  CHECK(obj.event_time == 1640247707203ms);
 }

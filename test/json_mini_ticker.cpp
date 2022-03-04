@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_mini_ticker_simple_coin_m", "json_mini_ticker") {
+TEST_CASE("json_mini_ticker_simple_coin_m", "[json_mini_ticker]") {
   auto message = R"({)"
                  R"("e":"24hrMiniTicker",)"
                  R"("E":1640248670092,)"

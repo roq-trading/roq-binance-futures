@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_depth_update_simple_coin_m", "json_depth_update") {
+TEST_CASE("json_depth_update_simple_coin_m", "[json_depth_update]") {
   auto message = R"({)"
                  R"("e":"depthUpdate",)"
                  R"("E":1640247455980,)"

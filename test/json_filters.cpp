@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_filters_simple_1", "json_filters") {
+TEST_CASE("json_filters_simple_1", "[json_filters]") {
   auto message = R"([{)"
                  R"("minPrice":"556.72",)"
                  R"("maxPrice":"4529764",)"

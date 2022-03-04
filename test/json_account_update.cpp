@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_account_update_order", "json_account_update") {
+TEST_CASE("json_account_update_order", "[json_account_update]") {
   auto message = R"({)"
                  R"("e":"ACCOUNT_UPDATE",)"
                  R"("T":1634811213699,)"
@@ -71,7 +71,7 @@ TEST_CASE("json_account_update_order", "json_account_update") {
   CHECK(data.event_reason == json::EventReason::ORDER);
 }
 
-TEST_CASE("json_account_update_withdraw", "json_account_update") {
+TEST_CASE("json_account_update_withdraw", "[json_account_update]") {
   auto message = R"({)"
                  R"("e":"ACCOUNT_UPDATE",)"
                  R"("T":1634827654378,)"

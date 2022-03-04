@@ -13,7 +13,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_listen_key_simple", "json_listen_key") {
+TEST_CASE("json_listen_key_simple", "[json_listen_key]") {
   auto message = R"({)"
                  R"("listenKey":"JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY")"
                  R"(})";

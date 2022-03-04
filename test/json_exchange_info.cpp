@@ -15,7 +15,7 @@ using namespace std::chrono_literals;
 using namespace Catch::literals;
 
 // note: symbols heavily truncated
-TEST_CASE("json_exchange_info_simple_usd_m", "json_exchange_info") {
+TEST_CASE("json_exchange_info_simple_usd_m", "[json_exchange_info]") {
   auto message =
       R"({)"
       R"("timezone":"UTC",)"
@@ -209,7 +209,7 @@ TEST_CASE("json_exchange_info_simple_usd_m", "json_exchange_info") {
 }
 
 // note: symbols heavily truncated
-TEST_CASE("json_exchange_info_simple_coin_m", "json_exchange_info") {
+TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
   auto message =
       R"({)"
       R"("timezone":"UTC",)"

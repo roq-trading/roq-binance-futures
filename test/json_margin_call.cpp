@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_margin_call_online_example", "json_margin_call") {
+TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
   auto message = R"({)"
                  R"("e":"MARGIN_CALL",)"
                  R"("E":1587727187525,)"

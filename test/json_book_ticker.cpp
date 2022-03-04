@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_book_ticker_simple", "json_book_ticker") {
+TEST_CASE("json_book_ticker_simple", "[json_book_ticker]") {
   auto message = R"({)"
                  R"("e":"bookTicker",)"
                  R"("u":847033385825,)"
@@ -40,7 +40,7 @@ TEST_CASE("json_book_ticker_simple", "json_book_ticker") {
   CHECK(obj.event_time == 1634288226716ms);
 }
 
-TEST_CASE("json_book_ticker_parse_stream_simple", "json_book_ticker") {
+TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
   auto message = R"({)"
                  R"("e":"bookTicker",)"
                  R"("u":847033385825,)"
@@ -77,7 +77,7 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "json_book_ticker") {
   CHECK(static_cast<bool>(handler) == true);
 }
 
-TEST_CASE("json_book_ticker_parse_stream_wrapped", "json_book_ticker") {
+TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
   auto message = R"({)"
                  R"("stream":"btcusdt@bookTicker",)"
                  R"("data":{)"
@@ -117,7 +117,7 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "json_book_ticker") {
   CHECK(static_cast<bool>(handler) == true);
 }
 
-TEST_CASE("json_book_ticker_simple_coin_m", "json_book_ticker") {
+TEST_CASE("json_book_ticker_simple_coin_m", "[json_book_ticker]") {
   auto message = R"({)"
                  R"("u":300683916630,)"
                  R"("e":"bookTicker",)"

@@ -11,7 +11,7 @@ using namespace roq::binance_futures;
 
 using namespace std::literals;
 
-TEST_CASE("json_auto_cancel_all_open_orders_simple", "json_auto_cancel_all_open_orders") {
+TEST_CASE("json_auto_cancel_all_open_orders_simple", "[json_auto_cancel_all_open_orders]") {
   auto message = R"({)"
                  R"("symbol":"XRPUSDT",)"
                  R"("countdownTime":"30000")"

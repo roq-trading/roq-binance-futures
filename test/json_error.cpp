@@ -13,7 +13,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_error_simple", "json_error") {
+TEST_CASE("json_error_simple", "[json_error]") {
   auto message =
       R"#({)#"
       R"#("code":-4164,)#"

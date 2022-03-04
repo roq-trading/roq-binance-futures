@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_new_order_simple", "json_new_order") {
+TEST_CASE("json_new_order_simple", "[json_new_order]") {
   auto message = R"({)"
                  R"("orderId":17759343290,)"
                  R"("symbol":"XRPUSDT",)"

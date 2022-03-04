@@ -15,7 +15,7 @@ using namespace std::chrono_literals;
 using namespace Catch::literals;
 
 // note! positions have been truncated
-TEST_CASE("json_account_simple_usd_m", "json_account") {
+TEST_CASE("json_account_simple_usd_m", "[json_account]") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"
@@ -241,7 +241,7 @@ TEST_CASE("json_account_simple_usd_m", "json_account") {
 }
 
 // note! positions have been truncated
-TEST_CASE("json_account_simple_coin_m", "json_account") {
+TEST_CASE("json_account_simple_coin_m", "[json_account]") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"
@@ -316,7 +316,7 @@ TEST_CASE("json_account_simple_coin_m", "json_account") {
   auto obj = core::json::Parser::create<json::Account>(message, buffer);
 }
 
-TEST_CASE("json_account_simple_usd_m_new", "json_account") {
+TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
   auto message = R"({)"
                  R"("feeTier":0,)"
                  R"("canTrade":true,)"

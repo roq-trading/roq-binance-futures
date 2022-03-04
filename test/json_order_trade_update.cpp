@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_order_trade_update_simple_new", "json_order_trade_update") {
+TEST_CASE("json_order_trade_update_simple_new", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634553049579,)"
@@ -87,7 +87,7 @@ TEST_CASE("json_order_trade_update_simple_new", "json_order_trade_update") {
   // unknown from here
 }
 
-TEST_CASE("json_order_trade_update_simple_canceled", "json_order_trade_update") {
+TEST_CASE("json_order_trade_update_simple_canceled", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634561771964,)"
@@ -160,7 +160,7 @@ TEST_CASE("json_order_trade_update_simple_canceled", "json_order_trade_update") 
   // unknown from here
 }
 
-TEST_CASE("json_order_trade_update_simple_filled_maker", "json_order_trade_update") {
+TEST_CASE("json_order_trade_update_simple_filled_maker", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634812374563,)"
@@ -237,7 +237,7 @@ TEST_CASE("json_order_trade_update_simple_filled_maker", "json_order_trade_updat
   // unknown from here
 }
 
-TEST_CASE("json_order_trade_update_simple_filled_taker", "json_order_trade_update") {
+TEST_CASE("json_order_trade_update_simple_filled_taker", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634814520988,)"

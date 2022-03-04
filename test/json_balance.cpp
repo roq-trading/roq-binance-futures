@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_balance_simple_usd_m", "json_balance") {
+TEST_CASE("json_balance_simple_usd_m", "[json_balance]") {
   auto message = R"([{)"
                  R"("accountAlias":"mYAuTiXqXqsR",)"
                  R"("asset":"BTC",)"
@@ -124,7 +124,7 @@ TEST_CASE("json_balance_simple_usd_m", "json_balance") {
   CHECK(a4.update_time == 0ms);
 }
 
-TEST_CASE("json_balance_simple_coinm", "json_balance") {
+TEST_CASE("json_balance_simple_coinm", "[json_balance]") {
   auto message = R"([{)"
                  R"("accountAlias":"SgmYSgfWmYmY",)"
                  R"("asset":"BTC",)"

@@ -1,10 +1,10 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/json/user_stream_parser.h"
+#include "roq/binance_futures/json/user_stream_parser.hpp"
 
-#include "roq/logging.h"
+#include "roq/logging.hpp"
 
-#include "roq/core/json/parser.h"
+#include "roq/core/json/parser.hpp"
 
 using namespace std::literals;
 

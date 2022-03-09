@@ -4,18 +4,18 @@
 
 #include <string_view>
 
-#include "roq/core/json/buffer.h"
+#include "roq/core/json/buffer.hpp"
 
-#include "roq/server.h"
+#include "roq/server.hpp"
 
-#include "roq/binance_futures/json/error.h"
-#include "roq/binance_futures/json/result.h"
+#include "roq/binance_futures/json/error.hpp"
+#include "roq/binance_futures/json/result.hpp"
 
-#include "roq/binance_futures/json/agg_trade.h"
-#include "roq/binance_futures/json/book_ticker.h"
-#include "roq/binance_futures/json/depth_update.h"
-#include "roq/binance_futures/json/mark_price_update.h"
-#include "roq/binance_futures/json/mini_ticker.h"
+#include "roq/binance_futures/json/agg_trade.hpp"
+#include "roq/binance_futures/json/book_ticker.hpp"
+#include "roq/binance_futures/json/depth_update.hpp"
+#include "roq/binance_futures/json/mark_price_update.hpp"
+#include "roq/binance_futures/json/mini_ticker.hpp"
 
 namespace roq {
 namespace binance_futures {

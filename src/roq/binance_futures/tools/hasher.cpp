@@ -1,17 +1,17 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/tools/hasher.h"
+#include "roq/binance_futures/tools/hasher.hpp"
 
 #include <fmt/format.h>
 
 #include <array>
 #include <cassert>
 
-#include "roq/utils/safe_cast.h"
+#include "roq/utils/safe_cast.hpp"
 
-#include "roq/core/clock.h"
+#include "roq/core/clock.hpp"
 
-#include "roq/core/binascii/hex.h"
+#include "roq/core/binascii/hex.hpp"
 
 using namespace std::literals;
 

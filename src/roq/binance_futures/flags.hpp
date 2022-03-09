@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "roq/binance_futures/flags/flags.h"
+#include "roq/binance_futures/flags/flags.hpp"
 
 namespace roq {
 namespace binance_futures {

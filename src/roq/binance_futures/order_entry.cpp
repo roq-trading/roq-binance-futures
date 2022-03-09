@@ -1,24 +1,24 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/order_entry.h"
+#include "roq/binance_futures/order_entry.hpp"
 
 #include <algorithm>
 #include <utility>
 
-#include "roq/utils/compare.h"
-#include "roq/utils/mask.h"
-#include "roq/utils/number.h"
-#include "roq/utils/safe_cast.h"
-#include "roq/utils/update.h"
+#include "roq/utils/compare.hpp"
+#include "roq/utils/mask.hpp"
+#include "roq/utils/number.hpp"
+#include "roq/utils/safe_cast.hpp"
+#include "roq/utils/update.hpp"
 
-#include "roq/core/charconv.h"
+#include "roq/core/charconv.hpp"
 
-#include "roq/core/metrics/factory.h"
+#include "roq/core/metrics/factory.hpp"
 
-#include "roq/binance_futures/flags.h"
+#include "roq/binance_futures/flags.hpp"
 
-#include "roq/binance_futures/json/error.h"
-#include "roq/binance_futures/json/utils.h"
+#include "roq/binance_futures/json/error.hpp"
+#include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
 

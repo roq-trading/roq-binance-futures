@@ -1,16 +1,16 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/json/market_stream_parser.h"
+#include "roq/binance_futures/json/market_stream_parser.hpp"
 
 #include <cctype>
 #include <string>
 
-#include "roq/compat.h"
+#include "roq/compat.hpp"
 
-#include "roq/binance_futures/json/field.h"
-#include "roq/binance_futures/json/stream.h"
+#include "roq/binance_futures/json/field.hpp"
+#include "roq/binance_futures/json/stream.hpp"
 
-#include "roq/logging.h"
+#include "roq/logging.hpp"
 
 using namespace std::literals;
 

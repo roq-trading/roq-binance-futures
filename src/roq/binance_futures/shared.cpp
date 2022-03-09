@@ -1,8 +1,8 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/shared.h"
+#include "roq/binance_futures/shared.hpp"
 
-#include "roq/binance_futures/flags.h"
+#include "roq/binance_futures/flags.hpp"
 
 namespace roq {
 namespace binance_futures {

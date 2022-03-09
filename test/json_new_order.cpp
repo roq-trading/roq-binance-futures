@@ -2,9 +2,9 @@
 
 #include <catch2/catch.hpp>
 
-#include "roq/core/json/parser.h"
+#include "roq/core/json/parser.hpp"
 
-#include "roq/binance_futures/json/new_order.h"
+#include "roq/binance_futures/json/new_order.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;

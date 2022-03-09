@@ -1,10 +1,10 @@
 /* Copyright (c) 2017-2022, Hans Erik Thrane */
 
-#include "roq/binance_futures/api.h"
+#include "roq/binance_futures/api.hpp"
 
-#include "roq/exceptions.h"
+#include "roq/exceptions.hpp"
 
-#include "roq/binance_futures/flags.h"
+#include "roq/binance_futures/flags.hpp"
 
 using namespace std::literals;
 

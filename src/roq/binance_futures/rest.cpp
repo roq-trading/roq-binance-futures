@@ -5,8 +5,9 @@
 #include <algorithm>
 #include <utility>
 
+#include "roq/mask.hpp"
+
 #include "roq/utils/compare.hpp"
-#include "roq/utils/mask.hpp"
 #include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
@@ -27,7 +28,8 @@ namespace binance_futures {
 
 namespace {
 const auto NAME = "om"sv;
-const auto SUPPORTS = utils::Mask{
+
+const auto SUPPORTS = Mask{
     SupportType::REFERENCE_DATA,
     SupportType::MARKET_STATUS,
 };

@@ -180,7 +180,7 @@ class OrderEntry final : public core::web::Client::Handler {
   ConnectionStatus status_ = {};
   core::Download<OrderEntryState> download_;
   // experimental
-  absl::flat_hash_set<std::string> open_orders_symbols_;
+  absl::flat_hash_set<Symbol> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};
   bool download_balance_ = false;
   bool download_account_ = false;

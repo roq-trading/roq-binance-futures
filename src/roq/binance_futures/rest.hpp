@@ -38,7 +38,7 @@ namespace binance_futures {
 class Rest final : public core::web::Client::Handler {
  public:
   struct SymbolsUpdate final {
-    std::vector<std::string> &symbols;
+    std::vector<Symbol> &symbols;
   };
 
   struct Handler {
@@ -104,7 +104,7 @@ class Rest final : public core::web::Client::Handler {
   } latency_;
   // cache
   Shared &shared_;
-  absl::flat_hash_set<std::string> all_symbols_;
+  absl::flat_hash_set<Symbol> all_symbols_;
   // state
   ConnectionStatus status_ = {};
   core::Download<RestState> download_;

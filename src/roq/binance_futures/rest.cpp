@@ -236,7 +236,7 @@ void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
   for (auto &item : exchange_info.rate_limits) {
     log::debug("rate_limit={}"sv, item);
   }
-  std::vector<std::string> symbols;
+  std::vector<Symbol> symbols;
   size_t counter = {};
   for (const auto &item : exchange_info.symbols) {
     log::info<2>("item={}"sv, item);

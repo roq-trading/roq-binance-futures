@@ -24,11 +24,11 @@ void dispatch_helper(
     MarketStreamParser::Handler &handler,
     const std::string_view &message,
     core::json::Buffer &buffer,
-    const server::TraceInfo &trace_info) {
+    const TraceInfo &trace_info) {
   core::json::Parser parser(message);
   auto root = parser.root();
   T value(root, buffer);
-  server::create_trace_and_dispatch(handler, trace_info, value);
+  create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
 
@@ -36,7 +36,7 @@ void MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     const std::string_view &message,
     core::json::Buffer &buffer,
-    const server::TraceInfo &trace_info) {
+    const TraceInfo &trace_info) {
   int64_t id = -1;
   std::string symbol;  // allocating because we need uppercase
   // auto stream = Stream::UNDEFINED;
@@ -62,7 +62,7 @@ void MarketStreamParser::dispatch(
         case Field::ERROR:
           if (id >= 0) {
             Error error(value);
-            server::Trace event(trace_info, error);
+            Trace event(trace_info, error);
             dispatched = true;
             handler(event, id);
           }
@@ -70,7 +70,7 @@ void MarketStreamParser::dispatch(
         case Field::RESULT:
           if (id >= 0) {
             Result result(value, buffer);
-            server::Trace event(trace_info, result);
+            Trace event(trace_info, result);
             dispatched = true;
             handler(event, id);
           }

@@ -31,11 +31,11 @@ class DropCopy final : public core::web::ClientSocket::Handler,
                        public json::UserStreamParser::Handler {
  public:
   struct Handler {
-    virtual void operator()(const server::Trace<StreamStatus> &) = 0;
-    virtual void operator()(const server::Trace<ExternalLatency> &) = 0;
-    virtual void operator()(const server::Trace<TradeUpdate> &, bool is_last, uint8_t user_id) = 0;
-    virtual void operator()(const server::Trace<FundsUpdate> &, bool is_last) = 0;
-    virtual void operator()(const server::Trace<PositionUpdate> &, bool is_last) = 0;
+    virtual void operator()(const Trace<StreamStatus> &) = 0;
+    virtual void operator()(const Trace<ExternalLatency> &) = 0;
+    virtual void operator()(const Trace<TradeUpdate> &, bool is_last, uint8_t user_id) = 0;
+    virtual void operator()(const Trace<FundsUpdate> &, bool is_last) = 0;
+    virtual void operator()(const Trace<PositionUpdate> &, bool is_last) = 0;
   };
 
   DropCopy(
@@ -74,9 +74,9 @@ class DropCopy final : public core::web::ClientSocket::Handler,
 
   void parse(const std::string_view &message);
 
-  void operator()(const server::Trace<json::OrderTradeUpdate> &) override;
-  void operator()(const server::Trace<json::AccountUpdate> &) override;
-  void operator()(const server::Trace<json::MarginCall> &) override;
+  void operator()(const Trace<json::OrderTradeUpdate> &) override;
+  void operator()(const Trace<json::AccountUpdate> &) override;
+  void operator()(const Trace<json::MarginCall> &) override;
 
   void request_balance();
   void check_response_balance();

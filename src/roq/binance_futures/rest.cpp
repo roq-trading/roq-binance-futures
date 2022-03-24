@@ -141,7 +141,7 @@ void Rest::operator()(const core::web::Client::Latency &latency) {
       .account = {},
       .latency = latency.sample,
   };
-  server::create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(handler_, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -157,7 +157,7 @@ void Rest::operator()(ConnectionStatus status) {
         .priority = Priority::PRIMARY,
     };
     log::info("stream_status={}"sv, stream_status);
-    server::create_trace_and_dispatch(handler_, trace_info, stream_status);
+    create_trace_and_dispatch(handler_, trace_info, stream_status);
   }
 }
 
@@ -199,14 +199,14 @@ void Rest::get_exchange_info() {
         request,
         [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
-          server::Trace event(trace_info, response);
+          Trace event(trace_info, response);
           get_exchange_info_ack(event, sequence);
         });
   });
 }
 
 void Rest::get_exchange_info_ack(
-    const server::Trace<core::web::Response> &event, uint32_t sequence) {
+    const Trace<core::web::Response> &event, uint32_t sequence) {
   profile_.exchange_info_ack([&]() {
     auto &[trace_info, response] = event;
     auto state = RestState::EXCHANGE_INFO;
@@ -220,7 +220,7 @@ void Rest::get_exchange_info_ack(
       response.expect(core::http::Status::OK);
       core::json::Buffer buffer(decode_buffer_);
       auto exchange_info = core::json::Parser::create<json::ExchangeInfo>(body, buffer);
-      server::Trace event(trace_info, exchange_info);
+      Trace event(trace_info, exchange_info);
       (*this)(event);
       download_.check(state);
     } catch (core::NetworkError &e) {
@@ -230,7 +230,7 @@ void Rest::get_exchange_info_ack(
   });
 }
 
-void Rest::operator()(const server::Trace<json::ExchangeInfo> &event) {
+void Rest::operator()(const Trace<json::ExchangeInfo> &event) {
   auto &[trace_info, exchange_info] = event;
   log::info<2>("exchange_info={}"sv, exchange_info);
   for (auto &item : exchange_info.rate_limits) {
@@ -362,14 +362,14 @@ void Rest::get_depth(const std::string_view &symbol) {
         request,
         [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
-          server::Trace event(trace_info, response);
+          Trace event(trace_info, response);
           get_depth_ack(event, symbol);
         });
   });
 }
 
 void Rest::get_depth_ack(
-    const server::Trace<core::web::Response> &event, const std::string_view &symbol) {
+    const Trace<core::web::Response> &event, const std::string_view &symbol) {
   profile_.depth_ack([&]() {
     auto &[trace_info, response] = event;
     try {
@@ -380,7 +380,7 @@ void Rest::get_depth_ack(
       auto root = parser.root();
       core::json::Buffer buffer(decode_buffer_);
       json::Depth depth(root, buffer);
-      server::Trace event(trace_info, depth);
+      Trace event(trace_info, depth);
       (*this)(event, symbol);
     } catch (core::NetworkError &e) {
       log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
@@ -388,7 +388,7 @@ void Rest::get_depth_ack(
   });
 }
 
-void Rest::operator()(const server::Trace<json::Depth> &event, const std::string_view &symbol) {
+void Rest::operator()(const Trace<json::Depth> &event, const std::string_view &symbol) {
   // auto &[trace_info, depth] = event;
   auto &trace_info = event.trace_info;
   auto &depth = event.value;
@@ -421,7 +421,7 @@ void Rest::operator()(const server::Trace<json::Depth> &event, const std::string
               .quantity_decimals = {},
               .checksum = {},
           };
-          server::Trace event(trace_info, market_by_price_update);
+          Trace event(trace_info, market_by_price_update);
           shared_(event, true, [&](auto &market_by_price) {
             collector.apply(market_by_price, sequence, true);
           });

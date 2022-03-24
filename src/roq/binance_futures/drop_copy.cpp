@@ -143,7 +143,7 @@ void DropCopy::operator()(const core::web::ClientSocket::Latency &latency) {
       .account = security_.get_account(),
       .latency = latency.sample,
   };
-  server::create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(handler_, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -167,7 +167,7 @@ void DropCopy::operator()(ConnectionStatus status) {
         .priority = Priority::PRIMARY,
     };
     log::info("stream_status={}"sv, stream_status);
-    server::create_trace_and_dispatch(handler_, trace_info, stream_status);
+    create_trace_and_dispatch(handler_, trace_info, stream_status);
   }
 }
 
@@ -209,7 +209,7 @@ void DropCopy::parse(const std::string_view &message) {
   });
 }
 
-void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
+void DropCopy::operator()(const Trace<json::OrderTradeUpdate> &event) {
   profile_.order_trade_update([&]() {
     // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
@@ -278,7 +278,7 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
                     .fills = {&fill, 1},
                     .routing_id = order.routing_id,
                 };
-                server::create_trace_and_dispatch(
+                create_trace_and_dispatch(
                     handler_, trace_info, trade_update, true, order.user_id);
               }
             })) {
@@ -289,7 +289,7 @@ void DropCopy::operator()(const server::Trace<json::OrderTradeUpdate> &event) {
   });
 }
 
-void DropCopy::operator()(const server::Trace<json::AccountUpdate> &event) {
+void DropCopy::operator()(const Trace<json::AccountUpdate> &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
@@ -327,7 +327,7 @@ void DropCopy::operator()(const server::Trace<json::AccountUpdate> &event) {
   });
 }
 
-void DropCopy::operator()(const server::Trace<json::MarginCall> &event) {
+void DropCopy::operator()(const Trace<json::MarginCall> &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);

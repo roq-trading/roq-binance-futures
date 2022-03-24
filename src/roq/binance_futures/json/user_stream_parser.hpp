@@ -20,16 +20,16 @@ namespace json {
 
 struct UserStreamParser final {
   struct Handler {
-    virtual void operator()(const server::Trace<OrderTradeUpdate> &) = 0;
-    virtual void operator()(const server::Trace<AccountUpdate> &) = 0;
-    virtual void operator()(const server::Trace<MarginCall> &) = 0;
+    virtual void operator()(const Trace<OrderTradeUpdate> &) = 0;
+    virtual void operator()(const Trace<AccountUpdate> &) = 0;
+    virtual void operator()(const Trace<MarginCall> &) = 0;
   };
 
   static void dispatch(
       Handler &handler,
       const std::string_view &message,
       core::json::Buffer &buffer,
-      const server::TraceInfo &trace);
+      const TraceInfo &trace);
 
  private:
   static bool try_dispatch(
@@ -37,7 +37,7 @@ struct UserStreamParser final {
       const std::string_view &message,
       core::json::Buffer &buffer,
       EventType event_type,
-      const server::TraceInfo &trace);
+      const TraceInfo &trace);
 };
 
 }  // namespace json

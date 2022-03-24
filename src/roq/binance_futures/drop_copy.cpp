@@ -278,8 +278,7 @@ void DropCopy::operator()(const Trace<json::OrderTradeUpdate> &event) {
                     .fills = {&fill, 1},
                     .routing_id = order.routing_id,
                 };
-                create_trace_and_dispatch(
-                    handler_, trace_info, trade_update, true, order.user_id);
+                create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
               }
             })) {
     } else {

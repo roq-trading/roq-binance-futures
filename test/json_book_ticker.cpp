@@ -56,12 +56,8 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
   core::json::Buffer buffer(buffer_);
   auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
-    void operator()(const Trace<json::Error> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::Result> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
+    void operator()(const Trace<json::Error> &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(const Trace<json::Result> &, [[maybe_unused]] int32_t id) override { FAIL(); }
     void operator()(const Trace<json::AggTrade> &) override { FAIL(); }
     void operator()(const Trace<json::MiniTicker> &) override { FAIL(); }
     void operator()(const Trace<json::BookTicker> &) override { found_ = true; }
@@ -96,12 +92,8 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
   core::json::Buffer buffer(buffer_);
   auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
-    void operator()(const Trace<json::Error> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::Result> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
+    void operator()(const Trace<json::Error> &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(const Trace<json::Result> &, [[maybe_unused]] int32_t id) override { FAIL(); }
     void operator()(const Trace<json::AggTrade> &) override { FAIL(); }
     void operator()(const Trace<json::MiniTicker> &) override { FAIL(); }
     void operator()(const Trace<json::BookTicker> &) override { found_ = true; }

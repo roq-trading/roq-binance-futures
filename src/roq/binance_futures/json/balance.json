@@ -1,7 +1,10 @@
 {
-"name": "Balance",
-"type": "array",
-"values": [
-	{ "name": "data", "type": "std::span<BalanceItem>" }
-]
+  "name": "Balance",
+  "type": "array",
+  "values": [
+    {
+      "name": "data",
+      "type": "std::span<BalanceItem>"
+    }
+  ]
 }

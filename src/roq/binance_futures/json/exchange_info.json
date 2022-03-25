@@ -1,13 +1,34 @@
 {
-"name": "ExchangeInfo",
-"type": "comp",
-"values": [
-	{ "name": "timezone", "type": "std::string_view" },
-	{ "name": "serverTime", "type": "std::chrono::milliseconds" },
-	{ "name": "rateLimits", "type": "std::span<RateLimit>" },
-	{ "name": "exchangeFilters" },
-	{ "name": "symbols", "type": "std::span<Symbol>" },
-	{ "name": "futuresType", "type": "std::string_view", "comment": "undoc" },
-	{ "name": "assets", "type": "std::span<ExchangeInfoAsset>" }
-]
+  "name": "ExchangeInfo",
+  "type": "comp",
+  "values": [
+    {
+      "name": "timezone",
+      "type": "std::string_view"
+    },
+    {
+      "name": "serverTime",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "rateLimits",
+      "type": "std::span<RateLimit>"
+    },
+    {
+      "name": "exchangeFilters"
+    },
+    {
+      "name": "symbols",
+      "type": "std::span<Symbol>"
+    },
+    {
+      "name": "futuresType",
+      "type": "std::string_view",
+      "comment": "undoc"
+    },
+    {
+      "name": "assets",
+      "type": "std::span<ExchangeInfoAsset>"
+    }
+  ]
 }

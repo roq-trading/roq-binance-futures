@@ -1,14 +1,30 @@
 {
-"name": "EventType",
-"type": "enum",
-"values": [
-	{ "name": "aggTrade" },
-	{ "name": "24hrMiniTicker" },
-	{ "name": "bookTicker" },
-	{ "name": "depthUpdate" },
-	{ "name": "markPriceUpdate" },
-	{ "name": "ORDER_TRADE_UPDATE" },
-	{ "name": "ACCOUNT_UPDATE" },
-	{ "name": "MARGIN_CALL" }
-]
+  "name": "EventType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "aggTrade"
+    },
+    {
+      "name": "24hrMiniTicker"
+    },
+    {
+      "name": "bookTicker"
+    },
+    {
+      "name": "depthUpdate"
+    },
+    {
+      "name": "markPriceUpdate"
+    },
+    {
+      "name": "ORDER_TRADE_UPDATE"
+    },
+    {
+      "name": "ACCOUNT_UPDATE"
+    },
+    {
+      "name": "MARGIN_CALL"
+    }
+  ]
 }

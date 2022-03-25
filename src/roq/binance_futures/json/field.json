@@ -1,13 +1,30 @@
 {
-"name": "Field",
-"type": "enum",
-"values": [
-	{ "name": "id" },
-	{ "name": "error" },
-	{ "name": "result" },
-	{ "name": "stream" },
-	{ "name": "data" },
-	{ "raw": "e", "name": "event_type", "type": "EventType" },
-	{ "raw": "u", "name": "order_book_update_id" }
-]
+  "name": "Field",
+  "type": "enum",
+  "values": [
+    {
+      "name": "id"
+    },
+    {
+      "name": "error"
+    },
+    {
+      "name": "result"
+    },
+    {
+      "name": "stream"
+    },
+    {
+      "name": "data"
+    },
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "EventType"
+    },
+    {
+      "raw": "u",
+      "name": "order_book_update_id"
+    }
+  ]
 }

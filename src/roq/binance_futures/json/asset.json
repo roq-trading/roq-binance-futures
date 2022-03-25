@@ -1,20 +1,62 @@
 {
-"name": "Asset",
-"type": "item",
-"values": [
-	{ "name": "asset", "type": "std::string_view" },
-	{ "name": "walletBalance", "type": "double" },
-	{ "name": "unrealizedProfit", "type": "double" },
-	{ "name": "marginBalance", "type": "double" },
-	{ "name": "maintMargin", "type": "double" },
-	{ "name": "initialMargin", "type": "double" },
-	{ "name": "positionInitialMargin", "type": "double" },
-	{ "name": "openOrderInitialMargin", "type": "double" },
-	{ "name": "crossWalletBalance", "type": "double" },
-	{ "name": "crossUnPnl", "type": "double" },
-	{ "name": "availableBalance", "type": "double" },
-	{ "name": "maxWithdrawAmount", "type": "double" },
-	{ "name": "marginAvailable", "type": "double" },
-	{ "name": "updateTime", "type": "std::chrono::milliseconds" }
-]
+  "name": "Asset",
+  "type": "item",
+  "values": [
+    {
+      "name": "asset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "walletBalance",
+      "type": "double"
+    },
+    {
+      "name": "unrealizedProfit",
+      "type": "double"
+    },
+    {
+      "name": "marginBalance",
+      "type": "double"
+    },
+    {
+      "name": "maintMargin",
+      "type": "double"
+    },
+    {
+      "name": "initialMargin",
+      "type": "double"
+    },
+    {
+      "name": "positionInitialMargin",
+      "type": "double"
+    },
+    {
+      "name": "openOrderInitialMargin",
+      "type": "double"
+    },
+    {
+      "name": "crossWalletBalance",
+      "type": "double"
+    },
+    {
+      "name": "crossUnPnl",
+      "type": "double"
+    },
+    {
+      "name": "availableBalance",
+      "type": "double"
+    },
+    {
+      "name": "maxWithdrawAmount",
+      "type": "double"
+    },
+    {
+      "name": "marginAvailable",
+      "type": "double"
+    },
+    {
+      "name": "updateTime",
+      "type": "std::chrono::milliseconds"
+    }
+  ]
 }

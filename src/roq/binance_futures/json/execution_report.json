@@ -1,40 +1,180 @@
 {
-"name": "ExecutionReport",
-"type": "item",
-"values": [
-	{ "raw": "s", "name": "symbol", "type": "std::string_view" },
-	{ "raw": "c", "name": "client_order_id", "type": "std::string_view" },
-	{ "raw": "S", "name": "side", "type": "Side" },
-	{ "raw": "o", "name": "order_type", "type": "OrderType" },
-	{ "raw": "f", "name": "time_in_force", "type": "TimeInForce" },
-	{ "raw": "q", "name": "original_quantity", "type": "double" },
-	{ "raw": "p", "name": "original_price", "type": "double" },
-	{ "raw": "ap", "name": "average_price", "type": "double" },
-	{ "raw": "sp", "name": "stop_price", "type": "double" },
-	{ "raw": "x", "name": "execution_type", "type": "ExecutionType" },
-	{ "raw": "X", "name": "order_status", "type": "OrderStatus" },
-	{ "raw": "i", "name": "order_id", "type": "int64_t" },
-	{ "raw": "l", "name": "last_filled_quantity", "type": "double" },
-	{ "raw": "z", "name": "order_filled_accumulated_quantity", "type": "double" },
-	{ "raw": "L", "name": "last_filled_price", "type": "double" },
-	{ "raw": "ma", "name": "margin_asset", "type": "std::string_view", "comment": "COIN-M" },
-	{ "raw": "N", "name": "commission_asset", "type": "std::string_view" },
-	{ "raw": "n", "name": "commission", "type": "double" },
-	{ "raw": "T", "name": "order_trade_time", "type": "std::chrono::milliseconds" },
-	{ "raw": "t", "name": "trade_id", "type": "int64_t" },
-	{ "raw": "b", "name": "bids_notional", "type": "double" },
-	{ "raw": "a", "name": "asks_notional", "type": "double" },
-	{ "raw": "m", "name": "is_trade_maker", "type": "bool" },
-	{ "raw": "R", "name": "is_reduce_only", "type": "bool" },
-	{ "raw": "wt", "name": "stop_price_working_type", "type": "WorkingType" },
-	{ "raw": "ot", "name": "original_order_type", "type": "OrderType" },
-	{ "raw": "ps", "name": "position_side", "type": "PositionSide" },
-	{ "raw": "cp", "name": "if_close_all", "type": "bool" },
-	{ "raw": "AP", "name": "activation_price", "type": "double" },
-	{ "raw": "cr", "name": "callback_rate", "type": "double" },
-	{ "raw": "rp", "name": "realized_profit", "type": "double" },
-	{ "raw": "pP", "name": "unknown_1", "type": "bool", "comment": "UNDOC" },
-	{ "raw": "si", "name": "unknown_2", "type": "double", "comment": "UNDOC" },
-	{ "raw": "ss", "name": "unknown_3", "type": "double", "comment": "UNDOC" }
-]
+  "name": "ExecutionReport",
+  "type": "item",
+  "values": [
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "c",
+      "name": "client_order_id",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "S",
+      "name": "side",
+      "type": "Side"
+    },
+    {
+      "raw": "o",
+      "name": "order_type",
+      "type": "OrderType"
+    },
+    {
+      "raw": "f",
+      "name": "time_in_force",
+      "type": "TimeInForce"
+    },
+    {
+      "raw": "q",
+      "name": "original_quantity",
+      "type": "double"
+    },
+    {
+      "raw": "p",
+      "name": "original_price",
+      "type": "double"
+    },
+    {
+      "raw": "ap",
+      "name": "average_price",
+      "type": "double"
+    },
+    {
+      "raw": "sp",
+      "name": "stop_price",
+      "type": "double"
+    },
+    {
+      "raw": "x",
+      "name": "execution_type",
+      "type": "ExecutionType"
+    },
+    {
+      "raw": "X",
+      "name": "order_status",
+      "type": "OrderStatus"
+    },
+    {
+      "raw": "i",
+      "name": "order_id",
+      "type": "int64_t"
+    },
+    {
+      "raw": "l",
+      "name": "last_filled_quantity",
+      "type": "double"
+    },
+    {
+      "raw": "z",
+      "name": "order_filled_accumulated_quantity",
+      "type": "double"
+    },
+    {
+      "raw": "L",
+      "name": "last_filled_price",
+      "type": "double"
+    },
+    {
+      "raw": "ma",
+      "name": "margin_asset",
+      "type": "std::string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "raw": "N",
+      "name": "commission_asset",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "n",
+      "name": "commission",
+      "type": "double"
+    },
+    {
+      "raw": "T",
+      "name": "order_trade_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "t",
+      "name": "trade_id",
+      "type": "int64_t"
+    },
+    {
+      "raw": "b",
+      "name": "bids_notional",
+      "type": "double"
+    },
+    {
+      "raw": "a",
+      "name": "asks_notional",
+      "type": "double"
+    },
+    {
+      "raw": "m",
+      "name": "is_trade_maker",
+      "type": "bool"
+    },
+    {
+      "raw": "R",
+      "name": "is_reduce_only",
+      "type": "bool"
+    },
+    {
+      "raw": "wt",
+      "name": "stop_price_working_type",
+      "type": "WorkingType"
+    },
+    {
+      "raw": "ot",
+      "name": "original_order_type",
+      "type": "OrderType"
+    },
+    {
+      "raw": "ps",
+      "name": "position_side",
+      "type": "PositionSide"
+    },
+    {
+      "raw": "cp",
+      "name": "if_close_all",
+      "type": "bool"
+    },
+    {
+      "raw": "AP",
+      "name": "activation_price",
+      "type": "double"
+    },
+    {
+      "raw": "cr",
+      "name": "callback_rate",
+      "type": "double"
+    },
+    {
+      "raw": "rp",
+      "name": "realized_profit",
+      "type": "double"
+    },
+    {
+      "raw": "pP",
+      "name": "unknown_1",
+      "type": "bool",
+      "comment": "UNDOC"
+    },
+    {
+      "raw": "si",
+      "name": "unknown_2",
+      "type": "double",
+      "comment": "UNDOC"
+    },
+    {
+      "raw": "ss",
+      "name": "unknown_3",
+      "type": "double",
+      "comment": "UNDOC"
+    }
+  ]
 }

@@ -1,8 +1,14 @@
 {
-"name": "AutoCancelAllOpenOrders",
-"type": "item",
-"values": [
-	{ "name": "symbol", "type": "std::string_view" },
-	{ "name": "countdownTime", "type": "int32_t" }
-]
+  "name": "AutoCancelAllOpenOrders",
+  "type": "item",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "name": "countdownTime",
+      "type": "int32_t"
+    }
+  ]
 }

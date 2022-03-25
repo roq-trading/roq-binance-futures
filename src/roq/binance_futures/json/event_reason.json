@@ -1,9 +1,15 @@
 {
-"name": "EventReason",
-"type": "enum",
-"values": [
-	{ "name": "ORDER" },
-	{ "name": "AUTO_EXCHANGE" },
-	{ "name": "WITHDRAW" }
-]
+  "name": "EventReason",
+  "type": "enum",
+  "values": [
+    {
+      "name": "ORDER"
+    },
+    {
+      "name": "AUTO_EXCHANGE"
+    },
+    {
+      "name": "WITHDRAW"
+    }
+  ]
 }

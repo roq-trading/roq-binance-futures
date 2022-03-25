@@ -1,11 +1,21 @@
 {
-"name": "ExecutionType",
-"type": "enum",
-"values": [
-	{ "name": "NEW" },
-	{ "name": "CALCULATED" },
-	{ "name": "CANCELED" },
-	{ "name": "EXPIRED" },
-	{ "name": "TRADE" }
-]
+  "name": "ExecutionType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "NEW"
+    },
+    {
+      "name": "CALCULATED"
+    },
+    {
+      "name": "CANCELED"
+    },
+    {
+      "name": "EXPIRED"
+    },
+    {
+      "name": "TRADE"
+    }
+  ]
 }

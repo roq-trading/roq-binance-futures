@@ -1,13 +1,27 @@
 {
-"name": "OrderStatus",
-"type": "enum",
-"values": [
-	{ "name": "NEW" },
-	{ "name": "PARTIALLY_FILLED" },
-	{ "name": "FILLED" },
-	{ "name": "CANCELED" },
-	{ "name": "EXPIRED" },
-	{ "name": "NEW_INSURANCE" },
-	{ "name": "NEW_ADL" }
-]
+  "name": "OrderStatus",
+  "type": "enum",
+  "values": [
+    {
+      "name": "NEW"
+    },
+    {
+      "name": "PARTIALLY_FILLED"
+    },
+    {
+      "name": "FILLED"
+    },
+    {
+      "name": "CANCELED"
+    },
+    {
+      "name": "EXPIRED"
+    },
+    {
+      "name": "NEW_INSURANCE"
+    },
+    {
+      "name": "NEW_ADL"
+    }
+  ]
 }

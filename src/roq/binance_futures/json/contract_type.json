@@ -1,9 +1,15 @@
 {
-"name": "ContractType",
-"type": "enum",
-"values": [
-	{ "name": "PERPETUAL" },
-	{ "name": "CURRENT_QUARTER" },
-	{ "name": "NEXT_QUARTER" }
-]
+  "name": "ContractType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "PERPETUAL"
+    },
+    {
+      "name": "CURRENT_QUARTER"
+    },
+    {
+      "name": "NEXT_QUARTER"
+    }
+  ]
 }

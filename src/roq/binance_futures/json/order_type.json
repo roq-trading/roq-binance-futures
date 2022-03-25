@@ -1,11 +1,21 @@
 {
-"name": "OrderType",
-"type": "enum",
-"values": [
-	{ "name": "MARKET" },
-	{ "name": "LIMIT" },
-	{ "name": "STOP" },
-	{ "name": "TAKE_PROFIT" },
-	{ "name": "LIQUIDATION" }
-]
+  "name": "OrderType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "MARKET"
+    },
+    {
+      "name": "LIMIT"
+    },
+    {
+      "name": "STOP"
+    },
+    {
+      "name": "TAKE_PROFIT"
+    },
+    {
+      "name": "LIQUIDATION"
+    }
+  ]
 }

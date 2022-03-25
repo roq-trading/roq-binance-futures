@@ -53,7 +53,8 @@
       "type": "std::string",
       "validator": "roq::core::flags::Path<std::string>",
       "default": "/v1/time",
-      "description": "URI path used for REST connection keep-alive messages (*without* the api prefix)"
+      "description":
+          "URI path used for REST connection keep-alive messages (*without* the api prefix)"
     },
     {
       "name": "rest_request_timeout",

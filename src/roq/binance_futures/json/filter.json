@@ -1,18 +1,65 @@
 {
-"name": "Filter",
-"type": "item",
-"values": [
-	{ "name": "filterType", "type": "FilterType" },
-	{ "name": "notional", "type": "double", "comment": "MIN_NOTIONAL" },
-	{ "name": "minPrice", "type": "double", "comment": "PRICE_FILTER" },
-	{ "name": "maxPrice", "type": "double", "comment": "PRICE_FILTER" },
-	{ "name": "tickSize", "type": "double", "comment": "PRICE_FILTER" },
-	{ "name": "multiplierUp", "type": "double", "comment": "PERCENT_PRICE" },
-	{ "name": "multiplierDown", "type": "double", "comment": "PERCENT_PRICE" },
-	{ "name": "multiplierDecimal", "type": "int32_t", "comment": "PERCENT_PRICE" },
-	{ "name": "minQty", "type": "double", "comment": "LOT_SIZE,MARKET_LOT_SIZE" },
-	{ "name": "maxQty", "type": "double", "comment": "LOT_SIZE,MARKET_LOT_SIZE" },
-	{ "name": "stepSize", "type": "double", "comment": "LOT_SIZE,MARKET_LOT_SIZE" },
-	{ "name": "limit", "type": "int32_t", "comment": "MAX_NUM_ORDERS,MAX_NUM_ALGO_ORDERS" }
-]
+  "name": "Filter",
+  "type": "item",
+  "values": [
+    {
+      "name": "filterType",
+      "type": "FilterType"
+    },
+    {
+      "name": "notional",
+      "type": "double",
+      "comment": "MIN_NOTIONAL"
+    },
+    {
+      "name": "minPrice",
+      "type": "double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "maxPrice",
+      "type": "double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "tickSize",
+      "type": "double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "multiplierUp",
+      "type": "double",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "multiplierDown",
+      "type": "double",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "multiplierDecimal",
+      "type": "int32_t",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "minQty",
+      "type": "double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "maxQty",
+      "type": "double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "stepSize",
+      "type": "double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "limit",
+      "type": "int32_t",
+      "comment": "MAX_NUM_ORDERS,MAX_NUM_ALGO_ORDERS"
+    }
+  ]
 }

@@ -1,13 +1,38 @@
 {
-"name": "Depth",
-"type": "comp",
-"values": [
-	{ "name": "lastUpdateId", "type": "int64_t" },
-	{ "raw": "E", "name": "message_output_time", "type": "std::chrono::milliseconds" },
-	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
-	{ "name": "symbol", "type": "std::string_view", "comment": "COIN-M" },
-	{ "name": "pair", "type": "std::string_view", "comment": "COIN-M" },
-	{ "name": "bids", "type": "std::span<DepthItem>" },
-	{ "name": "asks", "type": "std::span<DepthItem>" }
-]
+  "name": "Depth",
+  "type": "comp",
+  "values": [
+    {
+      "name": "lastUpdateId",
+      "type": "int64_t"
+    },
+    {
+      "raw": "E",
+      "name": "message_output_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "symbol",
+      "type": "std::string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "pair",
+      "type": "std::string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "bids",
+      "type": "std::span<DepthItem>"
+    },
+    {
+      "name": "asks",
+      "type": "std::span<DepthItem>"
+    }
+  ]
 }

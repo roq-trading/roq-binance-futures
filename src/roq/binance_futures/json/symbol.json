@@ -1,34 +1,117 @@
 {
-"name": "Symbol",
-"type": "item",
-"values": [
-	{ "name": "symbol", "type": "std::string_view" },
-	{ "name": "pair", "type": "std::string_view" },
-	{ "name": "contractType", "type": "ContractType" },
-	{ "name": "deliveryDate", "type": "std::chrono::milliseconds" },
-	{ "name": "onboardDate", "type": "std::chrono::milliseconds" },
-	{ "name": "status", "type": "SymbolStatus" },
-	{ "name": "maintMarginPercent", "type": "double" },
-	{ "name": "requiredMarginPercent", "type": "double" },
-	{ "name": "baseAsset", "type": "std::string_view" },
-	{ "name": "quoteAsset", "type": "std::string_view" },
-	{ "name": "marginAsset", "type": "std::string_view" },
-	{ "name": "pricePrecision", "type": "uint32_t" },
-	{ "name": "quantityPrecision", "type": "uint32_t" },
-	{ "name": "baseAssetPrecision", "type": "uint32_t" },
-	{ "name": "quotePrecision", "type": "uint32_t" },
-	{ "name": "underlyingType", "type": "std::string_view" },
-	{ "name": "underlyingSubType" },
-	{ "name": "settlePlan", "type": "uint32_t" },
-	{ "name": "triggerProtect", "type": "double" },
-	{ "name": "filters", "type": "std::string_view" },
-	{ "name": "orderTypes" },
-	{ "name": "timeInForce" },
-	{ "name": "liquidationFee", "type": "double" },
-	{ "name": "marketTakeBound", "type": "double" },
-	{ "name": "contractStatus", "type": "std::string_view", "comment": "COIN-M" },
-	{ "name": "contractSize", "type": "double", "comment": "COIN-M" },
-	{ "name": "equalQtyPrecision", "comment": "COIN-M" },
-	{ "name": "maxMoveOrderLimit", "comment": "COIN-M" }
-]
+  "name": "Symbol",
+  "type": "item",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "name": "pair",
+      "type": "std::string_view"
+    },
+    {
+      "name": "contractType",
+      "type": "ContractType"
+    },
+    {
+      "name": "deliveryDate",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "onboardDate",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "status",
+      "type": "SymbolStatus"
+    },
+    {
+      "name": "maintMarginPercent",
+      "type": "double"
+    },
+    {
+      "name": "requiredMarginPercent",
+      "type": "double"
+    },
+    {
+      "name": "baseAsset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "quoteAsset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "marginAsset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "pricePrecision",
+      "type": "uint32_t"
+    },
+    {
+      "name": "quantityPrecision",
+      "type": "uint32_t"
+    },
+    {
+      "name": "baseAssetPrecision",
+      "type": "uint32_t"
+    },
+    {
+      "name": "quotePrecision",
+      "type": "uint32_t"
+    },
+    {
+      "name": "underlyingType",
+      "type": "std::string_view"
+    },
+    {
+      "name": "underlyingSubType"
+    },
+    {
+      "name": "settlePlan",
+      "type": "uint32_t"
+    },
+    {
+      "name": "triggerProtect",
+      "type": "double"
+    },
+    {
+      "name": "filters",
+      "type": "std::string_view"
+    },
+    {
+      "name": "orderTypes"
+    },
+    {
+      "name": "timeInForce"
+    },
+    {
+      "name": "liquidationFee",
+      "type": "double"
+    },
+    {
+      "name": "marketTakeBound",
+      "type": "double"
+    },
+    {
+      "name": "contractStatus",
+      "type": "std::string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "contractSize",
+      "type": "double",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "equalQtyPrecision",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "maxMoveOrderLimit",
+      "comment": "COIN-M"
+    }
+  ]
 }

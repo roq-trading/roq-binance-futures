@@ -1,16 +1,56 @@
 {
-"name": "BookTicker",
-"type": "comp",
-"values": [
-	{ "raw": "e", "name": "event_type", "type": "EventType" },
-	{ "raw": "u", "name": "order_book_update_id", "type": "int64_t" },
-	{ "raw": "E", "name": "event_time", "type": "std::chrono::milliseconds" },
-	{ "raw": "T", "name": "transaction_time", "type": "std::chrono::milliseconds" },
-	{ "raw": "s", "name": "symbol", "type": "std::string_view" },
-	{ "raw": "ps", "name": "pair", "type": "std::string_view" },
-	{ "raw": "b", "name": "best_bid_price", "type": "double" },
-	{ "raw": "B", "name": "best_bid_qty", "type": "double" },
-	{ "raw": "a", "name": "best_ask_price", "type": "double" },
-	{ "raw": "A", "name": "best_ask_qty", "type": "double" }
-]
+  "name": "BookTicker",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "EventType"
+    },
+    {
+      "raw": "u",
+      "name": "order_book_update_id",
+      "type": "int64_t"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "ps",
+      "name": "pair",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "b",
+      "name": "best_bid_price",
+      "type": "double"
+    },
+    {
+      "raw": "B",
+      "name": "best_bid_qty",
+      "type": "double"
+    },
+    {
+      "raw": "a",
+      "name": "best_ask_price",
+      "type": "double"
+    },
+    {
+      "raw": "A",
+      "name": "best_ask_qty",
+      "type": "double"
+    }
+  ]
 }

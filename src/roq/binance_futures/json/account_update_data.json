@@ -1,9 +1,21 @@
 {
-"name": "AccountUpdateData",
-"type": "comp",
-"values": [
-	{ "raw": "m", "name": "event_reason", "type": "EventReason" },
-	{ "raw": "B", "name": "balances", "type": "std::span<AccountUpdateDataBalance>" },
-	{ "raw": "P", "name": "positions", "type": "std::span<AccountUpdateDataPosition>" }
-]
+  "name": "AccountUpdateData",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "m",
+      "name": "event_reason",
+      "type": "EventReason"
+    },
+    {
+      "raw": "B",
+      "name": "balances",
+      "type": "std::span<AccountUpdateDataBalance>"
+    },
+    {
+      "raw": "P",
+      "name": "positions",
+      "type": "std::span<AccountUpdateDataPosition>"
+    }
+  ]
 }

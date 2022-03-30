@@ -29,7 +29,7 @@ namespace binance_futures {
 namespace {
 const auto NAME = "om"sv;
 
-const auto SUPPORTS = Mask{
+const Mask<SupportType> SUPPORTS{
     SupportType::CREATE_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
@@ -226,7 +226,7 @@ void OrderEntry::operator()(ConnectionStatus status) {
     StreamStatus stream_status{
         .stream_id = stream_id_,
         .account = security_.get_account(),
-        .supports = SUPPORTS.get(),
+        .supports = SUPPORTS,
         .status = status_,
         .type = StreamType::REST,
         .priority = Priority::PRIMARY,
@@ -524,7 +524,7 @@ void OrderEntry::operator()(const Trace<json::OpenOrders> &event) {
         .max_show_quantity = NaN,
         .order_type = order_type,
         .time_in_force = time_in_force,
-        .execution_instruction = {},
+        .execution_instructions = {},
         .order_template = {},
         .create_time_utc = order.time,
         .update_time_utc = order.update_time,
@@ -757,7 +757,7 @@ void OrderEntry::operator()(
       .max_show_quantity = NaN,
       .order_type = order_type,
       .time_in_force = time_in_force,
-      .execution_instruction = {},
+      .execution_instructions = {},
       .order_template = {},
       .create_time_utc = {},
       .update_time_utc = utils::safe_cast(new_order.update_time),
@@ -946,7 +946,7 @@ void OrderEntry::operator()(
       .max_show_quantity = NaN,
       .order_type = order_type,
       .time_in_force = time_in_force,
-      .execution_instruction = {},
+      .execution_instructions = {},
       .order_template = {},
       .create_time_utc = {},
       .update_time_utc = {},

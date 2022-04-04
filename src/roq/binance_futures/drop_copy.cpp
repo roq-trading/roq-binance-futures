@@ -23,7 +23,7 @@ namespace binance_futures {
 namespace {
 const auto NAME = "ex"sv;
 
-const Mask<SupportType> SUPPORTS{
+const Mask SUPPORTS{
     SupportType::ORDER_ACK,
     SupportType::ORDER,
     SupportType::TRADE,

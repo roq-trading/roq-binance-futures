@@ -29,7 +29,7 @@ namespace binance_futures {
 namespace {
 const auto NAME = "om"sv;
 
-const Mask<SupportType> SUPPORTS{
+const Mask SUPPORTS{
     SupportType::REFERENCE_DATA,
     SupportType::MARKET_STATUS,
 };

@@ -38,28 +38,29 @@ bool UserStreamParser::try_dispatch(
     EventType event_type,
     const TraceInfo &trace_info) {
   switch (event_type) {
-    case EventType::UNDEFINED:
-    case EventType::UNKNOWN:
-    case EventType::AGG_TRADE:
-    case EventType::_24HR_MINI_TICKER:
-    case EventType::BOOK_TICKER:
-    case EventType::DEPTH_UPDATE:
-    case EventType::MARK_PRICE_UPDATE:
+    using enum EventType::type_t;
+    case UNDEFINED:
+    case UNKNOWN:
+    case AGG_TRADE:
+    case _24HR_MINI_TICKER:
+    case BOOK_TICKER:
+    case DEPTH_UPDATE:
+    case MARK_PRICE_UPDATE:
       log::fatal("Unexpected"sv);
       break;
-    case EventType::ORDER_TRADE_UPDATE: {
+    case ORDER_TRADE_UPDATE: {
       auto order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
       Trace event(trace_info, order_trade_update);
       handler(event);
       break;
     }
-    case EventType::ACCOUNT_UPDATE: {
+    case ACCOUNT_UPDATE: {
       auto account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
       Trace event(trace_info, account_update);
       handler(event);
       break;
     }
-    case EventType::MARGIN_CALL: {
+    case MARGIN_CALL: {
       auto margin_call = core::json::Parser::create<MarginCall>(message, buffer);
       Trace event(trace_info, margin_call);
       handler(event);

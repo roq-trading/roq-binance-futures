@@ -47,19 +47,20 @@ void MarketStreamParser::dispatch(
     for (auto [key, value] : std::get<core::json::object_t>(root)) {
       auto field = Field(key);
       switch (field) {
-        case Field::UNDEFINED:
+        using enum Field::type_t;
+        case UNDEFINED:
           log::fatal("Unexpected"sv);
           break;
-        case Field::UNKNOWN:
+        case UNKNOWN:
 #if !defined(NDEBUG)
           log::fatal(R"(Unknown key="{}")"sv, key);
 #endif
           break;
-        case Field::ID:
+        case ID:
           // note! assuming id is the first field
           id = std::get<decltype(id)>(value);
           break;
-        case Field::ERROR:
+        case ERROR:
           if (id >= 0) {
             Error error(value);
             Trace event(trace_info, error);
@@ -67,7 +68,7 @@ void MarketStreamParser::dispatch(
             handler(event, id);
           }
           break;
-        case Field::RESULT:
+        case RESULT:
           if (id >= 0) {
             Result result(value, buffer);
             Trace event(trace_info, result);
@@ -75,48 +76,49 @@ void MarketStreamParser::dispatch(
             handler(event, id);
           }
           break;
-        case Field::STREAM:
+        case STREAM:
           break;
-        case Field::DATA: {
+        case DATA: {
           dispatch(handler, core::json::get<std::string_view>(value), buffer, trace_info);
           return;
         }
-        case Field::EVENT_TYPE: {
+        case EVENT_TYPE: {
           // note! assuming event_type is the first field
           EventType event_type(value);
           switch (event_type) {
-            case EventType::AGG_TRADE:
+            using enum EventType::type_t;
+            case AGG_TRADE:
               dispatch_helper<AggTrade>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case EventType::_24HR_MINI_TICKER:
+            case _24HR_MINI_TICKER:
               dispatch_helper<MiniTicker>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case EventType::BOOK_TICKER:
+            case BOOK_TICKER:
               dispatch_helper<BookTicker>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case EventType::DEPTH_UPDATE:
+            case DEPTH_UPDATE:
               dispatch_helper<DepthUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case EventType::MARK_PRICE_UPDATE:
+            case MARK_PRICE_UPDATE:
               dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case EventType::UNDEFINED:
-            case EventType::UNKNOWN:
-            case EventType::ORDER_TRADE_UPDATE:
-            case EventType::ACCOUNT_UPDATE:
-            case EventType::MARGIN_CALL:
+            case UNDEFINED:
+            case UNKNOWN:
+            case ORDER_TRADE_UPDATE:
+            case ACCOUNT_UPDATE:
+            case MARGIN_CALL:
               log::fatal("Unexpected"sv);
               break;
           }
           assert(dispatched);
           break;
         }
-        case Field::ORDER_BOOK_UPDATE_ID:
+        case ORDER_BOOK_UPDATE_ID:
           break;
       }
       if (dispatched)

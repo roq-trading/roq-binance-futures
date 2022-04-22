@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Missing `TopOfBook.exchange_time_utc` (#205)
+
 ## 0.8.3 &ndash; 2022-03-22
 
 ### Changed

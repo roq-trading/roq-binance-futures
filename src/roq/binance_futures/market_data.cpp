@@ -320,8 +320,8 @@ void MarketData::operator()(const Trace<json::BookTicker> &event) {
             .ask_quantity = book_ticker.best_ask_qty,
         },
         .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = {},
-        .exchange_sequence = {},
+        .exchange_time_utc = book_ticker.event_time,
+        .exchange_sequence = book_ticker.order_book_update_id,
     };
     create_trace_and_dispatch(handler_, event.trace_info, top_of_book, true);
   });

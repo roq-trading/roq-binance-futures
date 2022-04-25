@@ -136,7 +136,7 @@ void Rest::operator()(const core::web::Client::Disconnected &) {
 
 void Rest::operator()(const core::web::Client::Latency &latency) {
   auto trace_info = server::create_trace_info();
-  ExternalLatency external_latency{
+  const ExternalLatency external_latency{
       .stream_id = stream_id_,
       .account = {},
       .latency = latency.sample,
@@ -148,7 +148,7 @@ void Rest::operator()(const core::web::Client::Latency &latency) {
 void Rest::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
     auto trace_info = server::create_trace_info();
-    StreamStatus stream_status{
+    const StreamStatus stream_status{
         .stream_id = stream_id_,
         .account = {},
         .supports = SUPPORTS,
@@ -208,7 +208,7 @@ void Rest::get_exchange_info() {
   });
 }
 
-void Rest::get_exchange_info_ack(const Trace<core::web::Response> &event, uint32_t sequence) {
+void Rest::get_exchange_info_ack(const Trace<core::web::Response const> &event, uint32_t sequence) {
   profile_.exchange_info_ack([&]() {
     auto &[trace_info, response] = event;
     auto state = RestState::EXCHANGE_INFO;
@@ -221,7 +221,7 @@ void Rest::get_exchange_info_ack(const Trace<core::web::Response> &event, uint32
       }
       response.expect(core::http::Status::OK);
       core::json::Buffer buffer(decode_buffer_);
-      auto exchange_info = core::json::Parser::create<json::ExchangeInfo>(body, buffer);
+      const auto exchange_info = core::json::Parser::create<json::ExchangeInfo>(body, buffer);
       Trace event(trace_info, exchange_info);
       (*this)(event);
       download_.check(state);
@@ -232,7 +232,7 @@ void Rest::get_exchange_info_ack(const Trace<core::web::Response> &event, uint32
   });
 }
 
-void Rest::operator()(const Trace<json::ExchangeInfo> &event) {
+void Rest::operator()(const Trace<json::ExchangeInfo const> &event) {
   auto &[trace_info, exchange_info] = event;
   log::info<2>("exchange_info={}"sv, exchange_info);
   for (auto &item : exchange_info.rate_limits) {
@@ -299,7 +299,7 @@ void Rest::operator()(const Trace<json::ExchangeInfo> &event) {
     if (all_symbols_.emplace(symbol).second)  // only include new
       symbols.emplace_back(symbol);
     ++counter;
-    ReferenceData reference_data{
+    const ReferenceData reference_data{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
         .symbol = item.symbol,
@@ -326,7 +326,7 @@ void Rest::operator()(const Trace<json::ExchangeInfo> &event) {
     };
     create_trace_and_dispatch(handler_, trace_info, reference_data, false);
     auto trading_status = json::map(item.status);
-    MarketStatus market_status{
+    const MarketStatus market_status{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
         .symbol = item.symbol,
@@ -371,7 +371,8 @@ void Rest::get_depth(const std::string_view &symbol) {
   });
 }
 
-void Rest::get_depth_ack(const Trace<core::web::Response> &event, const std::string_view &symbol) {
+void Rest::get_depth_ack(
+    const Trace<core::web::Response const> &event, const std::string_view &symbol) {
   profile_.depth_ack([&]() {
     auto &[trace_info, response] = event;
     try {
@@ -381,7 +382,7 @@ void Rest::get_depth_ack(const Trace<core::web::Response> &event, const std::str
       core::json::Parser parser(body);
       auto root = parser.root();
       core::json::Buffer buffer(decode_buffer_);
-      json::Depth depth(root, buffer);
+      const json::Depth depth(root, buffer);
       Trace event(trace_info, depth);
       (*this)(event, symbol);
     } catch (core::NetworkError &e) {
@@ -390,7 +391,7 @@ void Rest::get_depth_ack(const Trace<core::web::Response> &event, const std::str
   });
 }
 
-void Rest::operator()(const Trace<json::Depth> &event, const std::string_view &symbol) {
+void Rest::operator()(const Trace<json::Depth const> &event, const std::string_view &symbol) {
   // auto &[trace_info, depth] = event;
   auto &trace_info = event.trace_info;
   auto &depth = event.value;
@@ -410,7 +411,7 @@ void Rest::operator()(const Trace<json::Depth> &event, const std::string_view &s
         sequence,
         [&](auto &bids, auto &asks, auto sequence) {  // snapshot
           log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);
-          MarketByPriceUpdate market_by_price_update{
+          const MarketByPriceUpdate market_by_price_update{
               .stream_id = stream_id_,
               .exchange = Flags::exchange(),
               .symbol = symbol,

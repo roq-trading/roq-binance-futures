@@ -138,7 +138,7 @@ void DropCopy::operator()(const core::web::ClientSocket::Close &) {
 
 void DropCopy::operator()(const core::web::ClientSocket::Latency &latency) {
   auto trace_info = server::create_trace_info();
-  ExternalLatency external_latency{
+  const ExternalLatency external_latency{
       .stream_id = stream_id_,
       .account = security_.get_account(),
       .latency = latency.sample,
@@ -158,7 +158,7 @@ void DropCopy::operator()(const core::web::ClientSocket::Binary &) {
 void DropCopy::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
     auto trace_info = server::create_trace_info();
-    StreamStatus stream_status{
+    const StreamStatus stream_status{
         .stream_id = stream_id_,
         .account = security_.get_account(),
         .supports = SUPPORTS,
@@ -212,7 +212,7 @@ void DropCopy::parse(const std::string_view &message) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::OrderTradeUpdate> &event) {
+void DropCopy::operator()(const Trace<json::OrderTradeUpdate const> &event) {
   profile_.order_trade_update([&]() {
     // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
@@ -267,7 +267,7 @@ void DropCopy::operator()(const Trace<json::OrderTradeUpdate> &event) {
                     .price = execution_report.last_filled_price,
                     .liquidity = {},
                 };
-                TradeUpdate trade_update{
+                const TradeUpdate trade_update{
                     .stream_id = stream_id_,
                     .account = order.account,
                     .order_id = order.order_id,
@@ -293,13 +293,13 @@ void DropCopy::operator()(const Trace<json::OrderTradeUpdate> &event) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::AccountUpdate> &event) {
+void DropCopy::operator()(const Trace<json::AccountUpdate const> &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
     for (auto &item : account_update.data.balances) {
       log::debug("item={}"sv, item);
-      FundsUpdate funds_update{
+      const FundsUpdate funds_update{
           .stream_id = stream_id_,
           .account = security_.get_account(),
           .currency = item.asset,
@@ -315,7 +315,7 @@ void DropCopy::operator()(const Trace<json::AccountUpdate> &event) {
       log::debug("item={}"sv, item);
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
-      PositionUpdate position_update{
+      const PositionUpdate position_update{
           .stream_id = stream_id_,
           .account = security_.get_account(),
           .exchange = Flags::exchange(),
@@ -331,7 +331,7 @@ void DropCopy::operator()(const Trace<json::AccountUpdate> &event) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::MarginCall> &event) {
+void DropCopy::operator()(const Trace<json::MarginCall const> &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);

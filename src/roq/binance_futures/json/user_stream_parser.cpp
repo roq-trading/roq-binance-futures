@@ -17,12 +17,12 @@ void UserStreamParser::dispatch(
     const std::string_view &message,
     core::json::Buffer &buffer,
     const TraceInfo &trace_info) {
-  core::json::Parser parser(message);
+  core::json::Parser parser{message};
   auto root = parser.root();
   for (auto [key, value] : std::get<core::json::object_t>(root)) {
     if (key.compare("e"sv) != 0)
       continue;
-    EventType event_type(value);
+    EventType event_type{value};
     if (try_dispatch(handler, message, buffer, event_type, trace_info))
       return;
     break;
@@ -49,20 +49,20 @@ bool UserStreamParser::try_dispatch(
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {
-      auto order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
-      Trace event(trace_info, order_trade_update);
+      const auto order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
+      Trace event{trace_info, order_trade_update};
       handler(event);
       break;
     }
     case ACCOUNT_UPDATE: {
-      auto account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
-      Trace event(trace_info, account_update);
+      const auto account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
+      Trace event{trace_info, account_update};
       handler(event);
       break;
     }
     case MARGIN_CALL: {
-      auto margin_call = core::json::Parser::create<MarginCall>(message, buffer);
-      Trace event(trace_info, margin_call);
+      const auto margin_call = core::json::Parser::create<MarginCall>(message, buffer);
+      Trace event{trace_info, margin_call};
       handler(event);
       break;
     }

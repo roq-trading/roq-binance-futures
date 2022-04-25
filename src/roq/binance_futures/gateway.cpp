@@ -142,27 +142,28 @@ void Gateway::operator()(const Event<Disconnected> &event) {
   }
 }
 
-void Gateway::operator()(const Trace<StreamStatus> &event) {
+void Gateway::operator()(const Trace<StreamStatus const> &event) {
   dispatcher_(event);
 }
 
-void Gateway::operator()(const Trace<ExternalLatency> &event) {
+void Gateway::operator()(const Trace<ExternalLatency const> &event) {
   dispatcher_(event);
 }
 
-void Gateway::operator()(const Trace<ReferenceData> &event, bool is_last) {
+void Gateway::operator()(const Trace<ReferenceData const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<MarketStatus> &event, bool is_last) {
+void Gateway::operator()(const Trace<MarketStatus const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<TopOfBook> &event, bool is_last) {
+void Gateway::operator()(const Trace<TopOfBook const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<MarketByPriceUpdate> &event, bool is_last, bool refresh) {
+void Gateway::operator()(
+    const Trace<MarketByPriceUpdate const> &event, bool is_last, bool refresh) {
   dispatcher_(
       event,
       is_last,
@@ -172,23 +173,23 @@ void Gateway::operator()(const Trace<MarketByPriceUpdate> &event, bool is_last, 
       []([[maybe_unused]] auto &market_by_price) {});
 }
 
-void Gateway::operator()(const Trace<TradeSummary> &event, bool is_last) {
+void Gateway::operator()(const Trace<TradeSummary const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<StatisticsUpdate> &event, bool is_last) {
+void Gateway::operator()(const Trace<StatisticsUpdate const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<TradeUpdate> &event, bool is_last, uint8_t user_id) {
+void Gateway::operator()(const Trace<TradeUpdate const> &event, bool is_last, uint8_t user_id) {
   dispatcher_(event, is_last, user_id);
 }
 
-void Gateway::operator()(const Trace<FundsUpdate> &event, bool is_last) {
+void Gateway::operator()(const Trace<FundsUpdate const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(const Trace<PositionUpdate> &event, bool is_last) {
+void Gateway::operator()(const Trace<PositionUpdate const> &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
@@ -206,7 +207,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
     log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, shared_, index);
     MessageInfo message_info;
-    Start start;
+    const Start start;
     create_event_and_dispatch(*market_data, message_info, start);
     market_data_.emplace_back(std::move(market_data));
   }
@@ -229,7 +230,7 @@ void Gateway::operator()(const OrderEntry::ListenKeyUpdate &listen_key_update) {
         request_[account],
         listen_key_update.listen_key);
     MessageInfo message_info;
-    Start start;
+    const Start start;
     create_event_and_dispatch(*drop_copy, message_info, start);
     (*iter).second = std::move(drop_copy);
   }

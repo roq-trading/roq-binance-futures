@@ -19,7 +19,7 @@ void UserStreamParser::dispatch(
     const TraceInfo &trace_info) {
   core::json::Parser parser{message};
   auto root = parser.root();
-  for (auto [key, value] : std::get<core::json::object_t>(root)) {
+  for (auto [key, value] : std::get<core::json::Object>(root)) {
     if (key.compare("e"sv) != 0)
       continue;
     EventType event_type{value};

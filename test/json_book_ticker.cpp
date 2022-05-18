@@ -56,17 +56,13 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
   core::json::Buffer buffer(buffer_);
   auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
-    void operator()(const Trace<json::Error const> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::Result const> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::AggTrade const> &) override { FAIL(); }
-    void operator()(const Trace<json::MiniTicker const> &) override { FAIL(); }
-    void operator()(const Trace<json::BookTicker const> &) override { found_ = true; }
-    void operator()(const Trace<json::DepthUpdate const> &) override { FAIL(); }
-    void operator()(const Trace<json::MarkPriceUpdate const> &) override { FAIL(); }
+    void operator()(Trace<json::Error const> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(Trace<json::Result const> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(Trace<json::AggTrade const> const &) override { FAIL(); }
+    void operator()(Trace<json::MiniTicker const> const &) override { FAIL(); }
+    void operator()(Trace<json::BookTicker const> const &) override { found_ = true; }
+    void operator()(Trace<json::DepthUpdate const> const &) override { FAIL(); }
+    void operator()(Trace<json::MarkPriceUpdate const> const &) override { FAIL(); }
 
     operator bool() const { return found_; }
 
@@ -96,17 +92,13 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
   core::json::Buffer buffer(buffer_);
   auto trace_info = server::create_trace_info();
   struct MyHandler final : public json::MarketStreamParser::Handler {
-    void operator()(const Trace<json::Error const> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::Result const> &, [[maybe_unused]] int32_t id) override {
-      FAIL();
-    }
-    void operator()(const Trace<json::AggTrade const> &) override { FAIL(); }
-    void operator()(const Trace<json::MiniTicker const> &) override { FAIL(); }
-    void operator()(const Trace<json::BookTicker const> &) override { found_ = true; }
-    void operator()(const Trace<json::DepthUpdate const> &) override { FAIL(); }
-    void operator()(const Trace<json::MarkPriceUpdate const> &) override { FAIL(); }
+    void operator()(Trace<json::Error const> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(Trace<json::Result const> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
+    void operator()(Trace<json::AggTrade const> const &) override { FAIL(); }
+    void operator()(Trace<json::MiniTicker const> const &) override { FAIL(); }
+    void operator()(Trace<json::BookTicker const> const &) override { found_ = true; }
+    void operator()(Trace<json::DepthUpdate const> const &) override { FAIL(); }
+    void operator()(Trace<json::MarkPriceUpdate const> const &) override { FAIL(); }
 
     operator bool() const { return found_; }
 

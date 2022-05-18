@@ -21,7 +21,7 @@ namespace roq {
 namespace binance_futures {
 
 namespace {
-const auto NAME = "ex"sv;
+auto const NAME = "ex"sv;
 
 const Mask SUPPORTS{
     SupportType::ORDER_ACK,
@@ -32,18 +32,18 @@ const Mask SUPPORTS{
 };
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(const std::string_view &group, const std::string_view &function)
+  explicit create_metrics(std::string_view const &group, std::string_view const &function)
       : core::metrics::Factory(server::Flags::name(), group, function) {}
 };
 
-auto create_uri(const std::string_view &listen_key) {
+auto create_uri(std::string_view const &listen_key) {
   assert(!std::empty(listen_key));
   auto &uri = Flags::ws_uri();
   auto result = fmt::format("{}://{}{}/{}"sv, uri.scheme, uri.host, uri.path, listen_key);
   return core::URI{result};
 }
 
-auto create_connection(auto &handler, auto &context, const auto &listen_key) {
+auto create_connection(auto &handler, auto &context, auto const &listen_key) {
   auto uri = create_uri(listen_key);
   core::web::ClientSocket::Config config{
       .validate_certificate = server::Flags::tls_validate_certificate(),
@@ -64,10 +64,9 @@ DropCopy::DropCopy(
     Security &security,
     Shared &shared,
     Request &request,
-    const std::string_view &listen_key)
+    std::string_view const &listen_key)
     : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"sv, stream_id_, NAME)),
-      connection_(create_connection(*this, context, listen_key)),
-      decode_buffer_(Flags::decode_buffer_size()),
+      connection_(create_connection(*this, context, listen_key)), decode_buffer_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
       },
@@ -89,15 +88,15 @@ bool DropCopy::ready() const {
   return connection_.ready();
 }
 
-void DropCopy::operator()(const Event<Start> &) {
+void DropCopy::operator()(Event<Start> const &) {
   connection_.start();
 }
 
-void DropCopy::operator()(const Event<Stop> &) {
+void DropCopy::operator()(Event<Stop> const &) {
   connection_.stop();
 }
 
-void DropCopy::operator()(const Event<Timer> &event) {
+void DropCopy::operator()(Event<Timer> const &event) {
   connection_.refresh(event.value.now);
   check_response_balance();
   check_response_account();
@@ -118,25 +117,25 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(latency_.heartbeat, metrics::LATENCY);
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Connected &) {
+void DropCopy::operator()(core::web::ClientSocket::Connected const &) {
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Disconnected &) {
+void DropCopy::operator()(core::web::ClientSocket::Disconnected const &) {
   ++counter_.disconnect;
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   download_.reset();
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Ready &) {
+void DropCopy::operator()(core::web::ClientSocket::Ready const &) {
   (*this)(ConnectionStatus::DOWNLOADING);
   download_.begin();
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Close &) {
+void DropCopy::operator()(core::web::ClientSocket::Close const &) {
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Latency &latency) {
+void DropCopy::operator()(core::web::ClientSocket::Latency const &latency) {
   auto trace_info = server::create_trace_info();
   const ExternalLatency external_latency{
       .stream_id = stream_id_,
@@ -147,11 +146,11 @@ void DropCopy::operator()(const core::web::ClientSocket::Latency &latency) {
   latency_.ping.update(latency.sample);
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Text &text) {
+void DropCopy::operator()(core::web::ClientSocket::Text const &text) {
   parse(text.payload);
 }
 
-void DropCopy::operator()(const core::web::ClientSocket::Binary &) {
+void DropCopy::operator()(core::web::ClientSocket::Binary const &) {
   log::fatal("Unexpected"sv);
 }
 
@@ -198,7 +197,7 @@ uint32_t DropCopy::download(DropCopyState state) {
   return {};
 }
 
-void DropCopy::parse(const std::string_view &message) {
+void DropCopy::parse(std::string_view const &message) {
   profile_.parse([&]() {
     try {
       log::debug(R"(message="{}")"sv, message);
@@ -212,7 +211,7 @@ void DropCopy::parse(const std::string_view &message) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::OrderTradeUpdate const> &event) {
+void DropCopy::operator()(Trace<json::OrderTradeUpdate const> const &event) {
   profile_.order_trade_update([&]() {
     // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
@@ -253,39 +252,34 @@ void DropCopy::operator()(const Trace<json::OrderTradeUpdate const> &event) {
         .last_liquidity = liquidity,
         .update_type = UpdateType::INCREMENTAL,
     };
-    if (shared_.update_order(
-            execution_report.client_order_id,
-            stream_id_,
-            trace_info,
-            order_update,
-            [&](auto &order) {
-              if (execution_report.execution_type == json::ExecutionType::TRADE) {
-                auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
-                Fill fill{
-                    .external_trade_id = {},
-                    .quantity = execution_report.last_filled_quantity,
-                    .price = execution_report.last_filled_price,
-                    .liquidity = {},
-                };
-                const TradeUpdate trade_update{
-                    .stream_id = stream_id_,
-                    .account = order.account,
-                    .order_id = order.order_id,
-                    .exchange = order.exchange,
-                    .symbol = order.symbol,
-                    .side = order.side,
-                    .position_effect = order.position_effect,
-                    .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
-                    .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
-                    .external_account = order.external_account,
-                    .external_order_id = order.external_order_id,
-                    .fills = {&fill, 1},
-                    .routing_id = order.routing_id,
-                    .update_type = {},
-                };
-                create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
-              }
-            })) {
+    if (shared_.update_order(execution_report.client_order_id, stream_id_, trace_info, order_update, [&](auto &order) {
+          if (execution_report.execution_type == json::ExecutionType::TRADE) {
+            auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
+            Fill fill{
+                .external_trade_id = {},
+                .quantity = execution_report.last_filled_quantity,
+                .price = execution_report.last_filled_price,
+                .liquidity = {},
+            };
+            const TradeUpdate trade_update{
+                .stream_id = stream_id_,
+                .account = order.account,
+                .order_id = order.order_id,
+                .exchange = order.exchange,
+                .symbol = order.symbol,
+                .side = order.side,
+                .position_effect = order.position_effect,
+                .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
+                .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
+                .external_account = order.external_account,
+                .external_order_id = order.external_order_id,
+                .fills = {&fill, 1},
+                .routing_id = order.routing_id,
+                .update_type = {},
+            };
+            create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
+          }
+        })) {
     } else {
       log::warn("*** EXTERNAL ORDER ***"sv);
       log::warn("execution_report={}"sv, execution_report);
@@ -293,7 +287,7 @@ void DropCopy::operator()(const Trace<json::OrderTradeUpdate const> &event) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::AccountUpdate const> &event) {
+void DropCopy::operator()(Trace<json::AccountUpdate const> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
@@ -331,7 +325,7 @@ void DropCopy::operator()(const Trace<json::AccountUpdate const> &event) {
   });
 }
 
-void DropCopy::operator()(const Trace<json::MarginCall const> &event) {
+void DropCopy::operator()(Trace<json::MarginCall const> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);

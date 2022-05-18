@@ -22,9 +22,9 @@ namespace {
 template <typename T>
 void dispatch_helper(
     MarketStreamParser::Handler &handler,
-    const std::string_view &message,
+    std::string_view const &message,
     core::json::Buffer &buffer,
-    const TraceInfo &trace_info) {
+    TraceInfo const &trace_info) {
   core::json::Parser parser{message};
   auto root = parser.root();
   const T value{root, buffer};
@@ -34,9 +34,9 @@ void dispatch_helper(
 
 void MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
-    const std::string_view &message,
+    std::string_view const &message,
     core::json::Buffer &buffer,
-    const TraceInfo &trace_info) {
+    TraceInfo const &trace_info) {
   int64_t id = -1;
   std::string symbol;  // allocating because we need uppercase
   // auto stream = Stream::UNDEFINED;

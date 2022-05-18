@@ -14,13 +14,11 @@ using namespace std::literals;
 using namespace Catch::literals;
 
 TEST_CASE("json_error_simple", "[json_error]") {
-  auto message =
-      R"#({)#"
-      R"#("code":-4164,)#"
-      R"#("msg":"Order's notional must be no smaller than 5.0 (unless you choose reduce only)")#"
-      R"#(})#";
+  auto message = R"#({)#"
+                 R"#("code":-4164,)#"
+                 R"#("msg":"Order's notional must be no smaller than 5.0 (unless you choose reduce only)")#"
+                 R"#(})#";
   auto obj = core::json::Parser::create<json::Error>(message);
   CHECK(obj.code == -4164);
-  CHECK(
-      obj.msg == "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"sv);
+  CHECK(obj.msg == "Order's notional must be no smaller than 5.0 (unless you choose reduce only)"sv);
 }

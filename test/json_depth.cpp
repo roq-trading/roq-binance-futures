@@ -33,5 +33,5 @@ TEST_CASE("json_depth_simple_coin_m", "[json_depth]") {
                  R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Depth>(message, buffer);
+  [[maybe_unused]] auto obj = core::json::Parser::create<json::Depth>(message, buffer);
 }

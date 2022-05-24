@@ -313,7 +313,7 @@ TEST_CASE("json_account_simple_coin_m", "[json_account]") {
                  R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Account>(message, buffer);
+  [[maybe_unused]] auto obj = core::json::Parser::create<json::Account>(message, buffer);
 }
 
 TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
@@ -406,5 +406,5 @@ TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
                  R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Account>(message, buffer);
+  [[maybe_unused]] auto obj = core::json::Parser::create<json::Account>(message, buffer);
 }

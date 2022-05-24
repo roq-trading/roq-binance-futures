@@ -52,7 +52,7 @@
     },
     {
       "name": "marginAvailable",
-      "type": "double"
+      "type": "bool"
     },
     {
       "name": "updateTime",

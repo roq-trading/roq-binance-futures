@@ -73,7 +73,7 @@ TEST_CASE("json_filters_simple_1", "[json_filters]") {
   CHECK(d4.limit == 10);
   CHECK(d4.filter_type == json::FilterType::MAX_NUM_ALGO_ORDERS);
   auto &d5 = data[5];
-  CHECK(d5.notional == 5);
+  CHECK(d5.notional == 5.0_a);
   CHECK(d5.filter_type == json::FilterType::MIN_NOTIONAL);
   auto &d6 = data[6];
   CHECK(d6.multiplier_down == 0.95_a);

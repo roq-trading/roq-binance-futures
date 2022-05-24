@@ -305,5 +305,5 @@ TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
       R"(})";
   core::Buffer buffer_(65536);
   core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::ExchangeInfo>(message, buffer);
+  [[maybe_unused]] auto obj = core::json::Parser::create<json::ExchangeInfo>(message, buffer);
 }

@@ -46,7 +46,10 @@ auto create_uri(std::string_view const &listen_key) {
 auto create_connection(auto &handler, auto &context, auto const &listen_key) {
   auto uri = create_uri(listen_key);
   core::web::ClientSocket::Config config{
-      .validate_certificate = server::Flags::tls_validate_certificate(),
+      .always_reconnect = true,
+      .connection_timeout = server::Flags::net_connection_timeout(),
+      .disconnect_on_idle_timeout = {},
+      .validate_certificate = server::Flags::net_tls_validate_certificate(),
       .uris = {&uri, 1},
       .query = {},
       .ping_frequency = Flags::ws_ping_freq(),

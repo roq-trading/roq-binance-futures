@@ -55,7 +55,7 @@ auto create_connection(auto &handler, auto &context) {
   core::web::ClientSocket::Config config{
       .always_reconnect = true,
       .connection_timeout = server::Flags::net_connection_timeout(),
-      .disconnect_on_idle_timeout = {},
+      .disconnect_on_idle_timeout = server::Flags::net_disconnect_on_idle_timeout(),
       .validate_certificate = server::Flags::net_tls_validate_certificate(),
       .uris = {&uri, 1},
       .query = {},
@@ -243,6 +243,7 @@ void MarketData::operator()(Trace<json::AggTrade const> const &event) {
   profile_.agg_trade([&]() {
     auto &agg_trade = event.value;
     log::info<3>("agg_trade={}"sv, agg_trade);
+    connection_.touch(trace_info.source_receive_time);
     auto side = agg_trade.buyer_is_maker ? Side::BUY : Side::SELL;
     Trade trade{
         .side = side,
@@ -266,6 +267,7 @@ void MarketData::operator()(Trace<json::MiniTicker const> const &event) {
   profile_.mini_ticker([&]() {
     auto &mini_ticker = event.value;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
+    connection_.touch(trace_info.source_receive_time);
     Statistics statistics[] = {
         {
             .type = StatisticsType::HIGHEST_TRADED_PRICE,
@@ -308,6 +310,7 @@ void MarketData::operator()(Trace<json::BookTicker const> const &event) {
   profile_.book_ticker([&]() {
     auto &book_ticker = event.value;
     log::info<3>("book_ticker={}"sv, book_ticker);
+    connection_.touch(trace_info.source_receive_time);
     const TopOfBook top_of_book{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
@@ -332,6 +335,7 @@ void MarketData::operator()(Trace<json::DepthUpdate const> const &event) {
     auto &trace_info = event.trace_info;
     auto &depth_update = event.value;
     log::info<3>(R"(depth_update={})"sv, depth_update);
+    connection_.touch(trace_info.source_receive_time);
     auto symbol = depth_update.symbol;
     auto first_sequence = depth_update.first_update_id;
     auto last_sequence = depth_update.final_update_id;
@@ -404,6 +408,7 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate const> const &event) {
   profile_.mark_price_update([&]() {
     auto &mark_price_update = event.value;
     log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
+    connection_.touch(trace_info.source_receive_time);
     auto &mark_price = event.value;
     Statistics statistics[] = {
         {

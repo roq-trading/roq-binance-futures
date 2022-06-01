@@ -241,7 +241,7 @@ void MarketData::operator()(Trace<json::Result const> const &event, int32_t id) 
 
 void MarketData::operator()(Trace<json::AggTrade const> const &event) {
   profile_.agg_trade([&]() {
-    auto &agg_trade = event.value;
+    auto &[trace_info, agg_trade] = event;
     log::info<3>("agg_trade={}"sv, agg_trade);
     connection_.touch(trace_info.source_receive_time);
     auto side = agg_trade.buyer_is_maker ? Side::BUY : Side::SELL;
@@ -265,7 +265,7 @@ void MarketData::operator()(Trace<json::AggTrade const> const &event) {
 
 void MarketData::operator()(Trace<json::MiniTicker const> const &event) {
   profile_.mini_ticker([&]() {
-    auto &mini_ticker = event.value;
+    auto &[trace_info, mini_ticker] = event;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
     connection_.touch(trace_info.source_receive_time);
     Statistics statistics[] = {
@@ -308,7 +308,7 @@ void MarketData::operator()(Trace<json::MiniTicker const> const &event) {
 
 void MarketData::operator()(Trace<json::BookTicker const> const &event) {
   profile_.book_ticker([&]() {
-    auto &book_ticker = event.value;
+    auto &[trace_info, book_ticker] = event;
     log::info<3>("book_ticker={}"sv, book_ticker);
     connection_.touch(trace_info.source_receive_time);
     const TopOfBook top_of_book{
@@ -406,7 +406,7 @@ void MarketData::operator()(Trace<json::DepthUpdate const> const &event) {
 
 void MarketData::operator()(Trace<json::MarkPriceUpdate const> const &event) {
   profile_.mark_price_update([&]() {
-    auto &mark_price_update = event.value;
+    auto &[trace_info, mark_price_update] = event;
     log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
     connection_.touch(trace_info.source_receive_time);
     auto &mark_price = event.value;

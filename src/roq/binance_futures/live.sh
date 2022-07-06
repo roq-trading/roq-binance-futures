@@ -20,8 +20,10 @@ WS_URI="wss://fstream.$URI/ws"
 $PREFIX ./roq-binance-futures \
 	--name "$NAME" \
 	--config_file "$CONFIG_FILE" \
-	--client_listen_address $CWD/$NAME.sock \
-	--metrics_listen_address $CWD/${NAME}_metrics.sock \
+  --event_log_dir "$HOME/var/lib/roq/data" \
+  --event_log_symlink \
+	--client_listen_address "$HOME/run/$NAME.sock" \
+	--metrics_listen_address "$HOME/run/${NAME}_metrics.sock" \
 	--ws_uri "$WS_URI" \
 	--rest_uri "$REST_URI" \
 	$@

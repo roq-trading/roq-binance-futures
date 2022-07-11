@@ -40,7 +40,7 @@ auto create_uri(std::string_view const &listen_key) {
   assert(!std::empty(listen_key));
   auto &uri = Flags::ws_uri();
   auto result = fmt::format("{}://{}{}/{}"sv, uri.scheme, uri.host, uri.path, listen_key);
-  return core::URI{result};
+  return io::web::URI{result};
 }
 
 auto create_connection(auto &handler, auto &context, auto const &listen_key) {

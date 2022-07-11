@@ -29,6 +29,7 @@ target_link_libraries(
   "${PROJECT_NAME}-json"
   roq-server::roq-server
   roq-core::roq-core
+  roq-io::roq-io
   roq-logging::roq-logging
   Catch2::Catch2
   ${RT_LIBRARIES})

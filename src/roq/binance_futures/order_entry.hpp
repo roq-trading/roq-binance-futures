@@ -16,7 +16,7 @@
 
 #include "roq/io/context.hpp"
 
-#include "roq/core/web/client.hpp"
+#include "roq/web/rest/client.hpp"
 
 #include "roq/server.hpp"
 
@@ -37,7 +37,7 @@
 namespace roq {
 namespace binance_futures {
 
-class OrderEntry final : public core::web::Client::Handler {
+class OrderEntry final : public web::rest::Client::Handler {
  public:
   struct ListenKeyUpdate final {
     std::string_view account;
@@ -82,34 +82,34 @@ class OrderEntry final : public core::web::Client::Handler {
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
  protected:
-  void operator()(core::web::Client::Connected const &) override;
-  void operator()(core::web::Client::Disconnected const &) override;
-  void operator()(core::web::Client::Latency const &) override;
+  void operator()(web::rest::Client::Connected const &) override;
+  void operator()(web::rest::Client::Disconnected const &) override;
+  void operator()(web::rest::Client::Latency const &) override;
 
   void operator()(ConnectionStatus);
 
   uint32_t download(OrderEntryState state);
 
   void get_listen_key();
-  void get_listen_key_ack(Trace<core::web::Response const> const &, uint32_t sequence);
+  void get_listen_key_ack(Trace<web::rest::Response const> const &, uint32_t sequence);
   void operator()(Trace<json::ListenKey const> const &);
 
   void get_balance();
-  void get_balance_ack(Trace<core::web::Response const> const &);
+  void get_balance_ack(Trace<web::rest::Response const> const &);
   void operator()(Trace<json::Balance const> const &);
 
   void get_account();
-  void get_account_ack(Trace<core::web::Response const> const &);
+  void get_account_ack(Trace<web::rest::Response const> const &);
   void operator()(Trace<json::Account const> const &);
 
   void get_open_orders();
-  void get_open_orders_ack(Trace<core::web::Response const> const &);
+  void get_open_orders_ack(Trace<web::rest::Response const> const &);
   void operator()(Trace<json::OpenOrders const> const &);
 
   void refresh_listen_key();
 
   void new_order(Event<CreateOrder> const &, oms::Order const &, std::string_view const &request_id);
-  void new_order_ack(Trace<core::web::Response const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
+  void new_order_ack(Trace<web::rest::Response const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
   void operator()(Trace<json::NewOrder const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
 
   void cancel_order(
@@ -117,15 +117,15 @@ class OrderEntry final : public core::web::Client::Handler {
       oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
-  void cancel_order_ack(Trace<core::web::Response const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
+  void cancel_order_ack(Trace<web::rest::Response const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
   void operator()(Trace<json::CancelOrder const> const &, uint8_t user_id, uint32_t order_id, uint32_t version);
 
   void cancel_all_open_orders(Event<CancelAllOrders> const &, std::string_view const &request_id);
-  void cancel_all_open_orders_ack(Trace<core::web::Response const> const &);
+  void cancel_all_open_orders_ack(Trace<web::rest::Response const> const &);
   void operator()(Trace<json::CancelAllOpenOrders const> const &);
 
   void auto_cancel_all_open_orders();
-  void auto_cancel_all_open_orders_ack(Trace<core::web::Response const> const &);
+  void auto_cancel_all_open_orders_ack(Trace<web::rest::Response const> const &);
   void operator()(Trace<json::AutoCancelAllOpenOrders const> const &);
 
  private:
@@ -134,7 +134,7 @@ class OrderEntry final : public core::web::Client::Handler {
   const uint16_t stream_id_;
   const std::string name_;
   // connection
-  core::web::Client connection_;
+  std::unique_ptr<web::rest::Client> connection_;
   // buffers
   core::Buffer decode_buffer_;
   // metrics

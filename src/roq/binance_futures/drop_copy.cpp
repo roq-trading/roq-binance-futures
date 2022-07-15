@@ -41,7 +41,7 @@ struct create_metrics final : public core::metrics::Factory {
 auto create_uri(std::string_view const &listen_key) {
   assert(!std::empty(listen_key));
   auto &uri = Flags::ws_uri();
-  auto result = fmt::format("{}://{}{}/{}"sv, uri.scheme, uri.host, uri.path, listen_key);
+  auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
   return io::web::URI{result};
 }
 

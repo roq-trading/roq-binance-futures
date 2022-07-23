@@ -244,6 +244,7 @@ void Rest::operator()(Trace<json::ExchangeInfo const> const &event) {
     auto discard = shared_.discard_symbol(item.symbol);
     // fall-back values
     auto tick_size = std::pow(10.0, -static_cast<double>(item.quote_precision));
+    auto min_notional = NaN;
     auto min_trade_vol = std::pow(10.0, -static_cast<double>(item.base_asset_precision));
     auto max_trade_vol = NaN;
     auto trade_vol_step_size = min_trade_vol;
@@ -268,6 +269,7 @@ void Rest::operator()(Trace<json::ExchangeInfo const> const &event) {
           trade_vol_step_size = filter.step_size;
           break;
         case MIN_NOTIONAL:
+          // min_notional = filter.min_notional;
           break;
         case ICEBERG_PARTS:
           break;
@@ -299,6 +301,7 @@ void Rest::operator()(Trace<json::ExchangeInfo const> const &event) {
         .commission_currency = {},
         .tick_size = tick_size,
         .multiplier = NaN,
+        .min_notional = min_notional,
         .min_trade_vol = min_trade_vol,
         .max_trade_vol = max_trade_vol,
         .trade_vol_step_size = trade_vol_step_size,

@@ -24,14 +24,14 @@ namespace json {
 struct MarketStreamParser final {
   struct Handler {
     // response
-    virtual void operator()(Trace<Error const> const &, int32_t id) = 0;
-    virtual void operator()(Trace<Result const> const &, int32_t id) = 0;
+    virtual void operator()(Trace<Error> const &, int32_t id) = 0;
+    virtual void operator()(Trace<Result> const &, int32_t id) = 0;
     // update
-    virtual void operator()(Trace<AggTrade const> const &) = 0;
-    virtual void operator()(Trace<MiniTicker const> const &) = 0;
-    virtual void operator()(Trace<BookTicker const> const &) = 0;
-    virtual void operator()(Trace<DepthUpdate const> const &) = 0;
-    virtual void operator()(Trace<MarkPriceUpdate const> const &) = 0;
+    virtual void operator()(Trace<AggTrade> const &) = 0;
+    virtual void operator()(Trace<MiniTicker> const &) = 0;
+    virtual void operator()(Trace<BookTicker> const &) = 0;
+    virtual void operator()(Trace<DepthUpdate> const &) = 0;
+    virtual void operator()(Trace<MarkPriceUpdate> const &) = 0;
   };
 
   static void dispatch(

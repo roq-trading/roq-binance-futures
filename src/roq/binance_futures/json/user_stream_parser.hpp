@@ -20,9 +20,9 @@ namespace json {
 
 struct UserStreamParser final {
   struct Handler {
-    virtual void operator()(Trace<OrderTradeUpdate const> const &) = 0;
-    virtual void operator()(Trace<AccountUpdate const> const &) = 0;
-    virtual void operator()(Trace<MarginCall const> const &) = 0;
+    virtual void operator()(Trace<OrderTradeUpdate> const &) = 0;
+    virtual void operator()(Trace<AccountUpdate> const &) = 0;
+    virtual void operator()(Trace<MarginCall> const &) = 0;
   };
 
   static void dispatch(

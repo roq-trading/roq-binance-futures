@@ -216,7 +216,7 @@ void DropCopy::parse(std::string_view const &message) {
   });
 }
 
-void DropCopy::operator()(Trace<json::OrderTradeUpdate const> const &event) {
+void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
     // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
@@ -293,7 +293,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate const> const &event) {
   });
 }
 
-void DropCopy::operator()(Trace<json::AccountUpdate const> const &event) {
+void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
@@ -331,7 +331,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate const> const &event) {
   });
 }
 
-void DropCopy::operator()(Trace<json::MarginCall const> const &event) {
+void DropCopy::operator()(Trace<json::MarginCall> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);

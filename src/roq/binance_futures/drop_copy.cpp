@@ -22,6 +22,8 @@ using namespace std::literals;
 namespace roq {
 namespace binance_futures {
 
+// === CONSTANTS ===
+
 namespace {
 auto const NAME = "ex"sv;
 
@@ -32,13 +34,16 @@ const Mask SUPPORTS{
     SupportType::FUNDS,
     SupportType::POSITION,
 };
+}  // namespace
 
-struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(std::string_view const &group, std::string_view const &function)
-      : core::metrics::Factory(server::Flags::name(), group, function) {}
-};
+// === HELPERS ===
 
-auto create_uri(std::string_view const &listen_key) {
+namespace {
+auto create_name(auto stream_id) {
+  return fmt::format("{}:{}"sv, stream_id, NAME);
+}
+
+auto create_uri(auto const &listen_key) {
   assert(!std::empty(listen_key));
   auto &uri = Flags::ws_uri();
   auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
@@ -60,7 +65,14 @@ auto create_connection(auto &handler, auto &context, auto const &listen_key) {
   };
   return web::socket::ClientFactory::create(handler, context, config, []() { return std::string(); });
 }
+
+struct create_metrics final : public core::metrics::Factory {
+  explicit create_metrics(auto const &group, auto const &function)
+      : core::metrics::Factory(server::Flags::name(), group, function) {}
+};
 }  // namespace
+
+// === IMPLEMENTATION ===
 
 DropCopy::DropCopy(
     Handler &handler,
@@ -70,7 +82,7 @@ DropCopy::DropCopy(
     Shared &shared,
     Request &request,
     std::string_view const &listen_key)
-    : handler_(handler), stream_id_(stream_id), name_(fmt::format("{}:{}"sv, stream_id_, NAME)),
+    : handler_(handler), stream_id_(stream_id), name_(create_name(stream_id_)),
       connection_(create_connection(*this, context, listen_key)), decode_buffer_(Flags::decode_buffer_size()),
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
@@ -218,7 +230,6 @@ void DropCopy::parse(std::string_view const &message) {
 
 void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
-    // auto &[trace_info, order_trade_update] = event; // XXX clang13
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
     log::debug("order_trade_update={}"sv, order_trade_update);

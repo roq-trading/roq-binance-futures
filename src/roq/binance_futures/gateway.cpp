@@ -21,31 +21,28 @@ using namespace std::literals;
 namespace roq {
 namespace binance_futures {
 
+// === HELPERS ===
+
 namespace {
 template <typename R>
-auto create_security(Config const &config) {
+auto create_security(auto const &config) {
   R result;
-  for (auto &[_, iter] : config.accounts)
-    result.try_emplace(iter.name, std::make_unique<Security>(config, iter.name));
+  for (auto &[_, account] : config.accounts)
+    result.try_emplace(account.name, std::make_unique<Security>(config, account.name));
   return result;
 }
 
 template <typename R>
-auto create_request(Config const &config) {
+auto create_request(auto const &config) {
   R result;
-  for (auto &[_, iter] : config.accounts)
-    result.try_emplace(iter.name, Request{});
+  for (auto &[_, account] : config.accounts)
+    result.try_emplace(account.name, Request{});
   return result;
 }
 
 template <typename R>
 auto create_order_entry(
-    Gateway &gateway,
-    io::Context &context,
-    uint16_t &stream_id,
-    auto &security_by_account,
-    Shared &shared,
-    auto &request_by_account) {
+    auto &gateway, auto &context, auto &stream_id, auto &security_by_account, auto &shared, auto &request_by_account) {
   R result;
   for (auto &[account, security] : security_by_account) {
     auto &request = request_by_account[account];
@@ -63,6 +60,8 @@ auto create_drop_copy(auto &security_by_account) {
   return result;
 }
 }  // namespace
+
+// === IMPLEMENTATION ===
 
 Gateway::Gateway(server::Dispatcher &dispatcher, Config const &config, io::Context &context)
     : dispatcher_(dispatcher), security_(create_security<decltype(security_)>(config)), context_(context),
@@ -266,7 +265,7 @@ OrderEntry &Gateway::get_order_entry(std::string_view const &account) {
   auto iter = order_entry_.find(account);
   if (iter != std::end(order_entry_))
     return *(*iter).second;
-  throw RuntimeError(R"(Unknown account="{}")"sv, account);
+  throw RuntimeError{R"(Unknown account="{}")"sv, account};
 }
 
 }  // namespace binance_futures

@@ -27,7 +27,7 @@ namespace binance_futures {
 namespace {
 auto const NAME = "ex"sv;
 
-const Mask SUPPORTS{
+Mask const SUPPORTS{
     SupportType::ORDER_ACK,
     SupportType::ORDER,
     SupportType::TRADE,
@@ -219,7 +219,7 @@ void DropCopy::parse(std::string_view const &message) {
     try {
       log::debug(R"(message="{}")"sv, message);
       auto trace_info = server::create_trace_info();
-      core::json::Buffer buffer(decode_buffer_);
+      core::json::Buffer buffer{decode_buffer_};
       json::UserStreamParser::dispatch(*this, message, buffer, trace_info);
     } catch (...) {
       log::warn(R"(message="{}")"sv, message);

@@ -33,7 +33,7 @@ namespace binance_futures {
 namespace {
 auto const NAME = "om"sv;
 
-const Mask SUPPORTS{
+Mask const SUPPORTS{
     SupportType::CREATE_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
@@ -179,7 +179,7 @@ uint16_t OrderEntry::operator()(
     oms::Order const &,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id) {
-  throw oms::NotSupported("not supported"sv);
+  throw oms::NotSupported{"not supported"sv};
 }
 
 uint16_t OrderEntry::operator()(
@@ -265,12 +265,10 @@ uint32_t OrderEntry::download(OrderEntryState state) {
 
 void OrderEntry::get_listen_key() {
   profile_.listen_key([&]() {
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.get_listen_key;
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::POST,
+        .path = shared_.api.get_listen_key,
         .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -281,7 +279,7 @@ void OrderEntry::get_listen_key() {
     auto sequence = download_.sequence();
     (*connection_)("listen_key"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
       auto trace_info = server::create_trace_info();
-      Trace event(trace_info, response);
+      Trace event{trace_info, response};
       get_listen_key_ack(event, sequence);
     });
   });
@@ -296,7 +294,7 @@ void OrderEntry::get_listen_key_ack(Trace<web::rest::Response> const &event, [[m
       log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       response.expect(web::http::Status::OK);
       const auto listen_key = core::json::Parser::create<json::ListenKey>(body);
-      Trace event(trace_info, listen_key);
+      Trace event{trace_info, listen_key};
       (*this)(event);
       download_.check_relaxed(state);
     } catch (NetworkError &e) {
@@ -332,13 +330,11 @@ void OrderEntry::operator()(Trace<json::ListenKey> const &event) {
 
 void OrderEntry::get_balance() {
   profile_.balance([&]() {
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.get_balance;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::GET,
+        .path = shared_.api.get_balance,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -348,7 +344,7 @@ void OrderEntry::get_balance() {
     };
     (*connection_)("balance"sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
       auto trace_info = server::create_trace_info();
-      Trace event(trace_info, response);
+      Trace event{trace_info, response};
       get_balance_ack(event);
     });
   });
@@ -361,9 +357,9 @@ void OrderEntry::get_balance_ack(Trace<web::rest::Response> const &event) {
       auto [status, category, body] = response.result();
       log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       response.expect(web::http::Status::OK);
-      core::json::Buffer buffer(decode_buffer_);
+      core::json::Buffer buffer{decode_buffer_};
       const auto balance = core::json::Parser::create<json::Balance>(body, buffer);
-      Trace event(trace_info, balance);
+      Trace event{trace_info, balance};
       (*this)(event);
       download_balance_ = false;
       request_.respond_balance = core::clock::GetSystem();
@@ -395,13 +391,11 @@ void OrderEntry::operator()(Trace<json::Balance> const &event) {
 
 void OrderEntry::get_account() {
   profile_.account([&]() {
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.get_account;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::GET,
+        .path = shared_.api.get_account,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -411,7 +405,7 @@ void OrderEntry::get_account() {
     };
     (*connection_)("account"sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
       auto trace_info = server::create_trace_info();
-      Trace event(trace_info, response);
+      Trace event{trace_info, response};
       get_account_ack(event);
     });
   });
@@ -424,9 +418,9 @@ void OrderEntry::get_account_ack(Trace<web::rest::Response> const &event) {
       auto [status, category, body] = response.result();
       log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       response.expect(web::http::Status::OK);
-      core::json::Buffer buffer(decode_buffer_);
+      core::json::Buffer buffer{decode_buffer_};
       const auto account = core::json::Parser::create<json::Account>(body, buffer);
-      Trace event(trace_info, account);
+      Trace event{trace_info, account};
       (*this)(event);
       download_account_ = false;
       request_.respond_account = core::clock::GetSystem();
@@ -464,13 +458,11 @@ void OrderEntry::operator()(Trace<json::Account> const &event) {
 
 void OrderEntry::get_open_orders() {
   profile_.open_orders([&]() {
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.get_open_orders;
     auto query = security_.create_query();
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::GET,
+        .path = shared_.api.get_open_orders,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -480,7 +472,7 @@ void OrderEntry::get_open_orders() {
     };
     (*connection_)("open_orders"sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
       auto trace_info = server::create_trace_info();
-      Trace event(trace_info, response);
+      Trace event{trace_info, response};
       get_open_orders_ack(event);
     });
   });
@@ -493,9 +485,9 @@ void OrderEntry::get_open_orders_ack(Trace<web::rest::Response> const &event) {
       auto [status, category, body] = response.result();
       log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
       response.expect(web::http::Status::OK);
-      core::json::Buffer buffer(decode_buffer_);
+      core::json::Buffer buffer{decode_buffer_};
       const auto open_orders = core::json::Parser::create<json::OpenOrders>(body, buffer);
-      Trace event(trace_info, open_orders);
+      Trace event{trace_info, open_orders};
       (*this)(event);
       download_orders_ = false;
       request_.respond_orders = core::clock::GetSystem();
@@ -573,11 +565,9 @@ void OrderEntry::new_order(
     Event<CreateOrder> const &event, oms::Order const &order, std::string_view const &request_id) {
   profile_.new_order([&]() {
     if (!ready())
-      throw oms::NotReady("not ready"sv);
+      throw oms::NotReady{"not ready"sv};
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.order;
     auto side = json::map(create_order.side).as_raw_text();
     auto type = json::map(create_order.order_type).as_raw_text();
     auto time_in_force = json::map(create_order.time_in_force).as_raw_text();
@@ -631,8 +621,8 @@ void OrderEntry::new_order(
     auto query = security_.create_query(body);
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::POST,
+        .path = shared_.api.order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -647,7 +637,7 @@ void OrderEntry::new_order(
             [[maybe_unused]] auto &request_id, auto &response) {
           const uint32_t version = 1;
           auto trace_info = server::create_trace_info();
-          Trace event(trace_info, response);
+          Trace event{trace_info, response};
           new_order_ack(event, user_id, order_id, version);
         });
   });
@@ -664,9 +654,9 @@ void OrderEntry::new_order_ack(
       switch (category) {
         using enum web::http::Category;
         case SUCCESS: {  // 2xx
-          core::json::Buffer buffer(decode_buffer_);
+          core::json::Buffer buffer{decode_buffer_};
           const auto new_order = core::json::Parser::create<json::NewOrder>(body, buffer);
-          Trace event(trace_info, new_order);
+          Trace event{trace_info, new_order};
           (*this)(event, user_id, order_id, version);
           break;
         }
@@ -779,10 +769,8 @@ void OrderEntry::cancel_order(
     std::string_view const &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
-      throw oms::NotReady("not ready"sv);
+      throw oms::NotReady{"not ready"sv};
     auto &[message_info, cancel_order] = event;
-    auto method = web::http::Method::DELETE;
-    auto path = shared_.api.order;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
     auto body = fmt::format(
         R"(symbol={}&)"
@@ -795,8 +783,8 @@ void OrderEntry::cancel_order(
     auto query = security_.create_query(body);
     auto headers = security_.create_headers();
     web::rest::Request request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::DELETE,
+        .path = shared_.api.order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -810,7 +798,7 @@ void OrderEntry::cancel_order(
         [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
             [[maybe_unused]] auto &request_id, auto &response) {
           auto trace_info = server::create_trace_info();
-          Trace event(trace_info, response);
+          Trace event{trace_info, response};
           cancel_order_ack(event, user_id, order_id, version);
         });
   });
@@ -828,7 +816,7 @@ void OrderEntry::cancel_order_ack(
         using enum web::http::Category;
         case SUCCESS: {  // 2xx
           const auto cancel_order = core::json::Parser::create<json::CancelOrder>(body);
-          Trace event(trace_info, cancel_order);
+          Trace event{trace_info, cancel_order};
           (*this)(event, user_id, order_id, version);
           break;
         }
@@ -938,8 +926,6 @@ void OrderEntry::cancel_all_open_orders(
     Event<CancelAllOrders> const &, [[maybe_unused]] std::string_view const &request_id) {
   profile_.cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
-      auto method = web::http::Method::DELETE;
-      auto path = shared_.api.all_open_orders;
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
       auto body = fmt::format(
           R"(symbol={}&)"
@@ -950,8 +936,8 @@ void OrderEntry::cancel_all_open_orders(
       auto query = security_.create_query(body);
       auto headers = security_.create_headers();
       web::rest::Request request{
-          .method = method,
-          .path = path,
+          .method = web::http::Method::DELETE,
+          .path = shared_.api.all_open_orders,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -961,7 +947,7 @@ void OrderEntry::cancel_all_open_orders(
       };
       (*connection_)(request_id, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
         auto trace_info = server::create_trace_info();
-        Trace event(trace_info, response);
+        Trace event{trace_info, response};
         cancel_all_open_orders_ack(event);
       });
     }
@@ -977,9 +963,9 @@ void OrderEntry::cancel_all_open_orders_ack(Trace<web::rest::Response> const &ev
       switch (category) {
         using enum web::http::Category;
         case SUCCESS: {  // 2xx
-          core::json::Buffer buffer(decode_buffer_);
+          core::json::Buffer buffer{decode_buffer_};
           const auto cancel_order = core::json::Parser::create<json::CancelAllOpenOrders>(body, buffer);
-          Trace event(trace_info, cancel_order);
+          Trace event{trace_info, cancel_order};
           (*this)(event);
           break;
         }
@@ -1009,8 +995,6 @@ void OrderEntry::operator()(Trace<json::CancelAllOpenOrders> const &event) {
 void OrderEntry::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
-      auto method = web::http::Method::POST;
-      auto path = shared_.api.countdown_cancel_all;
       auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_countdown());
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
       auto body = fmt::format(
@@ -1024,8 +1008,8 @@ void OrderEntry::auto_cancel_all_open_orders() {
       auto query = security_.create_query(body);
       auto headers = security_.create_headers();
       web::rest::Request request{
-          .method = method,
-          .path = path,
+          .method = web::http::Method::POST,
+          .path = shared_.api.countdown_cancel_all,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -1035,7 +1019,7 @@ void OrderEntry::auto_cancel_all_open_orders() {
       };
       (*connection_)("auto_cancel"sv, request, [this]([[maybe_unused]] auto &request_id, auto &response) {
         auto trace_info = server::create_trace_info();
-        Trace event(trace_info, response);
+        Trace event{trace_info, response};
         auto_cancel_all_open_orders_ack(event);
       });
     }
@@ -1051,9 +1035,9 @@ void OrderEntry::auto_cancel_all_open_orders_ack(Trace<web::rest::Response> cons
       switch (category) {
         using enum web::http::Category;
         case SUCCESS: {  // 2xx
-          core::json::Buffer buffer(decode_buffer_);
+          core::json::Buffer buffer{decode_buffer_};
           const auto auto_cancel_order = core::json::Parser::create<json::AutoCancelAllOpenOrders>(body, buffer);
-          Trace event(trace_info, auto_cancel_order);
+          Trace event{trace_info, auto_cancel_order};
           (*this)(event);
           break;
         }

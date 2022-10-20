@@ -3,9 +3,9 @@
 CWD="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 
 if [ "$1" == "debug" ]; then
-	PREFIX="gdb --args"
+  PREFIX="gdb --args"
 else
-	PREFIX=
+  PREFIX=
 fi
 
 NAME="rencap"
@@ -20,8 +20,11 @@ WS_URI="wss://dstream.$URI/ws"
 $PREFIX ./roq-binance-futures \
   --name "$NAME" \
   --config_file "$CONFIG_FILE" \
-  --client_listen_address $CWD/$NAME.sock \
-  --metrics_listen_address $CWD/metrics/${NAME}.sock \
+  --cache_dir "$HOME/var/lib/roq/cache" \
+  --event_log_dir "$HOME/var/lib/roq/data" \
+  --event_log_symlink true \
+  --client_listen_address "$HOME/run/$NAME.sock" \
+  --metrics_listen_address "$HOME/run/metrics/${NAME}.sock" \
   --ws_uri "$WS_URI" \
   --rest_uri "$REST_URI" \
   --api dapi \

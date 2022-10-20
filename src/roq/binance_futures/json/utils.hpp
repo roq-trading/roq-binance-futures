@@ -3,6 +3,9 @@
 #pragma once
 
 #include <chrono>
+#include <vector>
+
+#include "roq/oms/order.hpp"
 
 #include "roq/core/utility.hpp"
 
@@ -244,6 +247,30 @@ inline json::TimeInForce map(roq::TimeInForce time_in_force) {
 }
 
 extern roq::Error guess_error(int32_t code);
+
+extern std::string_view new_order(
+    std::vector<char> &buffer,
+    CreateOrder const &,
+    oms::Order const &,
+    std::string_view const &request_id,
+    std::chrono::milliseconds recv_window);
+
+extern std::string_view cancel_order(
+    std::vector<char> &buffer,
+    roq::CancelOrder const &,
+    oms::Order const &,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window);
+
+extern std::string_view cancel_all_open_orders(
+    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
+
+extern std::string_view countdown_cancel_all_open_orders(
+    std::vector<char> &buffer,
+    std::string_view const &symbol,
+    std::chrono::milliseconds countdown_time,
+    std::chrono::milliseconds recv_window);
 
 }  // namespace json
 }  // namespace binance_futures

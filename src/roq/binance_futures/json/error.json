@@ -9,6 +9,14 @@
     {
       "name": "msg",
       "type": "std::string_view"
+    },
+    {
+      "name": "timestamp",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "path",
+      "type": "std::string_view"
     }
   ]
 }

@@ -128,6 +128,17 @@ class OrderEntry final : public web::rest::Client::Handler {
   void auto_cancel_all_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::AutoCancelAllOpenOrders> const &);
 
+  template <typename Parse, typename ErrorHandler>
+  void process_response(web::rest::Response const &, Parse, ErrorHandler);
+
+  template <typename... Args>
+  void operator()(Trace<oms::Response> const &, uint8_t user_id, uint32_t order_id, Args &&...);
+
+  template <typename... Args>
+  void operator()(Trace<oms::OrderUpdate> const &, std::string_view const &client_order_id, Args &&...);
+
+  void waf_limit_violation();
+
  private:
   Handler &handler_;
   // config
@@ -170,6 +181,7 @@ class OrderEntry final : public web::rest::Client::Handler {
   bool download_balance_ = false;
   bool download_account_ = false;
   bool download_orders_ = false;
+  std::vector<char> encode_buffer_;
 };
 
 }  // namespace binance_futures

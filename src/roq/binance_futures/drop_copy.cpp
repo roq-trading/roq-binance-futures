@@ -153,7 +153,7 @@ void DropCopy::operator()(web::socket::Client::Close const &) {
 }
 
 void DropCopy::operator()(web::socket::Client::Latency const &latency) {
-  auto trace_info = server::create_trace_info();
+  TraceInfo trace_info;
   const ExternalLatency external_latency{
       .stream_id = stream_id_,
       .account = security_.get_account(),
@@ -173,7 +173,7 @@ void DropCopy::operator()(web::socket::Client::Binary const &) {
 
 void DropCopy::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
-    auto trace_info = server::create_trace_info();
+    TraceInfo trace_info;
     const StreamStatus stream_status{
         .stream_id = stream_id_,
         .account = security_.get_account(),
@@ -218,7 +218,7 @@ void DropCopy::parse(std::string_view const &message) {
   profile_.parse([&]() {
     try {
       log::debug(R"(message="{}")"sv, message);
-      auto trace_info = server::create_trace_info();
+      TraceInfo trace_info;
       core::json::Buffer buffer{decode_buffer_};
       json::UserStreamParser::dispatch(*this, message, buffer, trace_info);
     } catch (...) {
@@ -351,7 +351,7 @@ void DropCopy::operator()(Trace<json::MarginCall> const &event) {
 
 void DropCopy::request_balance() {
   log::info("Requesting balance download..."sv);
-  request_.request_balance = core::clock::GetSystem();
+  request_.request_balance = clock::get_system();
 }
 
 void DropCopy::check_response_balance() {
@@ -365,7 +365,7 @@ void DropCopy::check_response_balance() {
 
 void DropCopy::request_account() {
   log::info("Requesting account download..."sv);
-  request_.request_account = core::clock::GetSystem();
+  request_.request_account = clock::get_system();
 }
 
 void DropCopy::check_response_account() {
@@ -379,7 +379,7 @@ void DropCopy::check_response_account() {
 
 void DropCopy::request_orders() {
   log::info("Requesting order download..."sv);
-  request_.request_orders = core::clock::GetSystem();
+  request_.request_orders = clock::get_system();
 }
 
 void DropCopy::check_response_orders() {

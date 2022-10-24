@@ -13,12 +13,21 @@
 #include "roq/logging.hpp"
 #include "roq/server.hpp"
 
+#include "roq/binance_futures/flags.hpp"
+
 namespace roq {
 namespace binance_futures {
 
-class Config final : public server::Config, public server::ConfigReader::Handler {
- public:
-  Config();
+struct Config final : public server::Config, public server::ConfigReader::Handler {
+  struct Options final {
+    std::string_view exchange;
+    uint16_t mbp_max_depth = {};
+    bool mbp_allow_price_inversion = {};
+    bool mbp_checksum = {};
+  };
+
+  explicit Config(Options const &);
+  explicit Config(Flags2 const &);
 
   Account const &get_master_account() const;
 
@@ -35,6 +44,12 @@ class Config final : public server::Config, public server::ConfigReader::Handler
   void operator()(server::User &&) override;
   void operator()(server::RateLimit &&) override;
   void operator()(std::string_view const &key, toml::node &) override;
+
+ private:
+  std::string const exchange_;
+  uint16_t const mbp_max_depth_;
+  bool const mbp_allow_price_inversion_;
+  bool const mbp_checksum_;
 
  public:
   server::Users users;

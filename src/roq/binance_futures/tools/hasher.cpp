@@ -30,21 +30,19 @@ auto create_headers_helper(auto const &key) {
 // === IMPLEMENTATION ===
 
 Hasher::Hasher(std::string_view const &key, std::string_view const &secret)
-    : key_{key}, hmac_{secret}, headers_{create_headers_helper(key_)} {
+    : key_{key}, mac_{secret}, headers_{create_headers_helper(key_)} {
 }
 
 std::string Hasher::create_query(std::string_view const &body) {
   auto now = clock::get_realtime<std::chrono::milliseconds>();
   auto timestamp = fmt::format("timestamp={}"sv, now.count());
-  hmac_.clear();
-  hmac_.update(timestamp);
+  mac_.clear();
+  mac_.update(timestamp);
   if (!std::empty(body))
-    hmac_.update(body);
-  std::array<std::byte, 32> buffer;
-  auto length = hmac_.digest(buffer);
-  assert(length == std::size(buffer));
+    mac_.update(body);
+  auto digest = mac_.final(digest_);
   std::string signature;
-  core::binascii::Hex::encode(signature, buffer);
+  core::binascii::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, timestamp, signature);
 }
 

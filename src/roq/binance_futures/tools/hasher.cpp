@@ -11,7 +11,7 @@
 
 #include "roq/clock.hpp"
 
-#include "roq/core/binascii/hex.hpp"
+#include "roq/core/codec/hex.hpp"
 
 using namespace std::literals;
 
@@ -42,7 +42,7 @@ std::string Hasher::create_query(std::string_view const &body) {
     mac_.update(body);
   auto digest = mac_.final(digest_);
   std::string signature;
-  core::binascii::Hex::encode(signature, digest);
+  core::codec::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, timestamp, signature);
 }
 

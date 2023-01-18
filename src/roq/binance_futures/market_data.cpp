@@ -251,7 +251,7 @@ void MarketData::operator()(Trace<json::AggTrade> const &event) {
     log::info<3>("agg_trade={}"sv, agg_trade);
     (*connection_).touch(trace_info.source_receive_time);
     auto side = agg_trade.buyer_is_maker ? Side::BUY : Side::SELL;
-    Trade trade{
+    auto trade = Trade{
         .side = side,
         .price = agg_trade.price,
         .quantity = agg_trade.quantity,
@@ -277,7 +277,7 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
     auto &[trace_info, mini_ticker] = event;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
     (*connection_).touch(trace_info.source_receive_time);
-    Statistics statistics[] = {
+    auto statistics = std::array<Statistics, 4>{{
         {
             .type = StatisticsType::HIGHEST_TRADED_PRICE,
             .value = mini_ticker.high_price,
@@ -302,7 +302,7 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
             .begin_time_utc = {},
             .end_time_utc = {},
         },
-    };
+    }};
     auto statistics_update = StatisticsUpdate{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
@@ -386,7 +386,7 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
       auto publish_update = [&](auto &bids, auto &asks) {
         // log::debug(R"(PUBLISH UPDATE symbol="{}")"sv, symbol);
         auto market_by_price_update = create_update(bids, asks, UpdateType::INCREMENTAL, last_sequence);
-        create_trace_and_dispatch(handler_, trace_info, market_by_price_update, true, false);
+        create_trace_and_dispatch(handler_, trace_info, market_by_price_update, true);
       };
       auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence) {
         log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);

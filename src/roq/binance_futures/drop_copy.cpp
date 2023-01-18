@@ -52,7 +52,7 @@ auto create_uri(auto const &listen_key) {
 
 auto create_connection(auto &handler, auto &context, auto const &listen_key) {
   auto uri = create_uri(listen_key);
-  web::socket::Client::Config config{
+  auto config = web::socket::Client::Config{
       .always_reconnect = true,
       .connection_timeout = server::Flags::net_connection_timeout(),
       .disconnect_on_idle_timeout = {},
@@ -154,7 +154,7 @@ void DropCopy::operator()(web::socket::Client::Close const &) {
 
 void DropCopy::operator()(web::socket::Client::Latency const &latency) {
   TraceInfo trace_info;
-  const ExternalLatency external_latency{
+  auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
       .account = security_.get_account(),
       .latency = latency.sample,
@@ -174,7 +174,7 @@ void DropCopy::operator()(web::socket::Client::Binary const &) {
 void DropCopy::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
     TraceInfo trace_info;
-    const StreamStatus stream_status{
+    auto stream_status = StreamStatus{
         .stream_id = stream_id_,
         .account = security_.get_account(),
         .supports = SUPPORTS,
@@ -241,7 +241,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto order_type = json::map(execution_report.order_type);
     auto time_in_force = json::map(execution_report.time_in_force);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
-    oms::OrderUpdate order_update{
+    auto order_update = oms::OrderUpdate{
         .account = security_.get_account(),
         .exchange = Flags::exchange(),
         .symbol = execution_report.symbol,
@@ -271,13 +271,13 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     if (shared_.update_order(execution_report.client_order_id, stream_id_, trace_info, order_update, [&](auto &order) {
           if (execution_report.execution_type == json::ExecutionType::TRADE) {
             auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
-            Fill fill{
+            auto fill = Fill{
                 .external_trade_id = {},
                 .quantity = execution_report.last_filled_quantity,
                 .price = execution_report.last_filled_price,
                 .liquidity = {},
             };
-            const TradeUpdate trade_update{
+            auto trade_update = TradeUpdate{
                 .stream_id = stream_id_,
                 .account = order.account,
                 .order_id = order.order_id,
@@ -310,7 +310,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
     log::info<2>("account_update={}"sv, account_update);
     for (auto &item : account_update.data.balances) {
       log::debug("item={}"sv, item);
-      const FundsUpdate funds_update{
+      auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
           .account = security_.get_account(),
           .currency = item.asset,
@@ -326,7 +326,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
       log::debug("item={}"sv, item);
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
-      const PositionUpdate position_update{
+      auto position_update = PositionUpdate{
           .stream_id = stream_id_,
           .account = security_.get_account(),
           .exchange = Flags::exchange(),

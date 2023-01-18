@@ -44,7 +44,8 @@ struct Shared final {
 
  public:
   const API api;
-  std::vector<MBPUpdate> bids, asks, final_bids, final_asks;
+
+  std::vector<MBPUpdate> bids, asks;
 
   absl::flat_hash_map<Symbol, core::mbp::Sequencer> mbp_collector;
 

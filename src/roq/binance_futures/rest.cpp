@@ -120,7 +120,7 @@ void Rest::operator()(metrics::Writer &writer) {
       .write(latency_.ping, metrics::LATENCY);
 }
 
-void Rest::operator()(web::rest::Client::Connected const &) {
+void Rest::operator()(Trace<web::rest::Client::Connected> const &) {
   if (download_.downloading()) {
     download_.bump();
   } else {
@@ -129,15 +129,15 @@ void Rest::operator()(web::rest::Client::Connected const &) {
   }
 }
 
-void Rest::operator()(web::rest::Client::Disconnected const &) {
+void Rest::operator()(Trace<web::rest::Client::Disconnected> const &) {
   ++counter_.disconnect;
   (*this)(ConnectionStatus::DISCONNECTED);
   if (!download_.downloading())
     download_.reset();
 }
 
-void Rest::operator()(web::rest::Client::Latency const &latency) {
-  TraceInfo trace_info;
+void Rest::operator()(Trace<web::rest::Client::Latency> const &event) {
+  auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
       .account = {},
@@ -145,6 +145,10 @@ void Rest::operator()(web::rest::Client::Latency const &latency) {
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
   latency_.ping.update(latency.sample);
+}
+
+void Rest::operator()(
+    Trace<web::rest::Response> const &, [[maybe_unused]] uint64_t request_id, [[maybe_unused]] uint64_t opaque) {
 }
 
 void Rest::operator()(ConnectionStatus status) {

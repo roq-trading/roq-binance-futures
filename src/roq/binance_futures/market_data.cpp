@@ -348,8 +348,7 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
     auto first_sequence = depth_update.first_update_id;
     auto last_sequence = depth_update.final_update_id;
     auto previous_sequence = depth_update.final_update_id_in_last_stream;
-    shared_.bids.clear();
-    shared_.asks.clear();
+    auto &mbp = shared_.get_mbp();
     auto emplace_back = [](auto &result, auto &value) {
       auto mbp_update = MBPUpdate{
           .price = value.price,
@@ -362,10 +361,10 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
       result.emplace_back(std::move(mbp_update));
     };
     for (auto &item : depth_update.bids)
-      emplace_back(shared_.bids, item);
+      emplace_back(mbp.bids, item);
     for (auto &item : depth_update.asks)
-      emplace_back(shared_.asks, item);
-    auto &collector = shared_.mbp_collector[symbol];
+      emplace_back(mbp.asks, item);
+    auto &sequencer = shared_.mbp_sequencer[symbol];
     try {
       auto create_update =
           [&](auto &bids, auto &asks, auto update_type, auto exchange_sequence) -> MarketByPriceUpdate {
@@ -390,8 +389,8 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
       };
       auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence) {
         log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);
-        auto market_by_price_update = create_update(bids, asks, UpdateType::SNAPSHOT, collector.last_sequence());
-        auto apply_updates = [&](auto &market_by_price) { collector.apply(market_by_price, sequence, true); };
+        auto market_by_price_update = create_update(bids, asks, UpdateType::SNAPSHOT, sequencer.last_sequence());
+        auto apply_updates = [&](auto &market_by_price) { sequencer.apply(market_by_price, sequence, true); };
         Trace event{trace_info, market_by_price_update};
         shared_(event, true, apply_updates);
       };
@@ -402,9 +401,9 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
         }
         shared_.depth_request_queue.emplace_back(symbol);
       };
-      collector(
-          shared_.bids,
-          shared_.asks,
+      sequencer(
+          mbp.bids,
+          mbp.asks,
           first_sequence,
           last_sequence,
           previous_sequence,
@@ -414,7 +413,7 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
     } catch (BadState &) {
       log::warn(R"(RESUBSCRIBE symbol="{}")"sv, symbol);
       // XXX HANS publish stale
-      collector.clear();
+      sequencer.clear();
       shared_.depth_request_queue.emplace_back(symbol);
     }
   });

@@ -395,7 +395,8 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
   auto &depth = event.value;
   log::info<4>("depth={}"sv, depth);
   auto sequence = depth.last_update_id;
-  auto &sequencer = shared_.mbp_sequencer[symbol];
+  auto &instrument = shared_.instruments[symbol];
+  auto &sequencer = instrument.sequencer;
   auto &mbp = shared_.get_mbp();
   auto emplace_back = [](auto &result, auto &value) {
     auto mbp_update = MBPUpdate{

@@ -138,6 +138,12 @@
       "description": "request max retries"
     },
     {
+      "name": "ws_enable_secondary",
+      "type": "bool",
+      "default": false,
+      "description": "create secondary market data connection? (bool)"
+    },
+    {
       "name": "request_limit",
       "type": "uint32_t",
       "default": "8",

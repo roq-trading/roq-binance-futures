@@ -17,9 +17,9 @@
 
 #include "roq/server.hpp"
 
+#include "roq/binance_futures/authenticator.hpp"
 #include "roq/binance_futures/drop_copy_state.hpp"
 #include "roq/binance_futures/request.hpp"
-#include "roq/binance_futures/security.hpp"
 #include "roq/binance_futures/shared.hpp"
 
 #include "roq/binance_futures/json/user_stream_parser.hpp"
@@ -40,7 +40,7 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
       Handler &,
       io::Context &,
       uint16_t stream_id,
-      Security &,
+      Authenticator &,
       Shared &,
       Request &,
       std::string_view const &listen_key);
@@ -104,8 +104,8 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
   struct {
     core::metrics::Latency ping, heartbeat;
   } latency_;
-  // security
-  Security &security_;
+  // authentication
+  Authenticator &authenticator_;
   // shared
   Shared &shared_;
   Request &request_;

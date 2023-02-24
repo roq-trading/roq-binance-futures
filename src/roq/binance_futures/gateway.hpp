@@ -13,13 +13,13 @@
 
 #include "roq/io/context.hpp"
 
+#include "roq/binance_futures/authenticator.hpp"
 #include "roq/binance_futures/config.hpp"
 #include "roq/binance_futures/drop_copy.hpp"
 #include "roq/binance_futures/market_data.hpp"
 #include "roq/binance_futures/order_entry.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
-#include "roq/binance_futures/security.hpp"
 #include "roq/binance_futures/shared.hpp"
 
 namespace roq {
@@ -81,8 +81,8 @@ struct Gateway final : public server::Handler,
 
  private:
   server::Dispatcher &dispatcher_;
-  // security
-  absl::flat_hash_map<Account, std::unique_ptr<Security>> security_;
+  // authentication
+  absl::flat_hash_map<Account, std::unique_ptr<Authenticator>> authenticator_;
   // io
   io::Context &context_;
   // shared

@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2023, Hans Erik Thrane */
 
-#include "roq/binance_futures/tools/hasher.hpp"
+#include "roq/binance_futures/tools/crypto.hpp"
 
 #include <fmt/format.h>
 
@@ -29,11 +29,11 @@ auto create_headers_helper(auto const &key) {
 
 // === IMPLEMENTATION ===
 
-Hasher::Hasher(std::string_view const &key, std::string_view const &secret)
+Crypto::Crypto(std::string_view const &key, std::string_view const &secret)
     : key_{key}, mac_{secret}, headers_{create_headers_helper(key_)} {
 }
 
-std::string Hasher::create_query(std::string_view const &body) {
+std::string Crypto::create_query(std::string_view const &body) {
   auto now = clock::get_realtime<std::chrono::milliseconds>();
   auto timestamp = fmt::format("timestamp={}"sv, now.count());
   mac_.clear();

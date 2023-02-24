@@ -78,7 +78,7 @@ DropCopy::DropCopy(
     Handler &handler,
     io::Context &context,
     uint16_t stream_id,
-    Security &security,
+    Authenticator &authenticator,
     Shared &shared,
     Request &request,
     std::string_view const &listen_key)
@@ -97,8 +97,9 @@ DropCopy::DropCopy(
           .ping = create_metrics(name_, "ping"sv),
           .heartbeat = create_metrics(name_, "heartbeat"sv),
       },
-      security_{security}, shared_{shared}, request_{request}, download_{
-                                                                   {}, [this](auto state) { return download(state); }} {
+      authenticator_{authenticator}, shared_{shared}, request_{request}, download_{{}, [this](auto state) {
+                                                                                     return download(state);
+                                                                                   }} {
 }
 
 bool DropCopy::ready() const {
@@ -156,7 +157,7 @@ void DropCopy::operator()(web::socket::Client::Latency const &latency) {
   TraceInfo trace_info;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
-      .account = security_.get_account(),
+      .account = authenticator_.get_account(),
       .latency = latency.sample,
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
@@ -176,7 +177,7 @@ void DropCopy::operator()(ConnectionStatus status) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
         .stream_id = stream_id_,
-        .account = security_.get_account(),
+        .account = authenticator_.get_account(),
         .supports = SUPPORTS,
         .transport = Transport::TCP,
         .protocol = Protocol::WS,
@@ -242,7 +243,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto time_in_force = json::map(execution_report.time_in_force);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
     auto order_update = oms::OrderUpdate{
-        .account = security_.get_account(),
+        .account = authenticator_.get_account(),
         .exchange = Flags::exchange(),
         .symbol = execution_report.symbol,
         .side = side,
@@ -312,7 +313,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
       log::debug("item={}"sv, item);
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
-          .account = security_.get_account(),
+          .account = authenticator_.get_account(),
           .currency = item.asset,
           .balance = item.wallet_balance,
           .hold = NaN,  // note! we don't see this
@@ -328,7 +329,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
       auto short_quantity = std::max(0.0, -item.position_amount);
       auto position_update = PositionUpdate{
           .stream_id = stream_id_,
-          .account = security_.get_account(),
+          .account = authenticator_.get_account(),
           .exchange = Flags::exchange(),
           .symbol = item.symbol,
           .external_account{},

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Added
+
+* Support external trades (#320)
+
 ### Fixed
 
 * Unknown event-types `GRID_UPDATE` and `STRATEGY_UPDATE` (#319)

@@ -114,6 +114,7 @@ void MarketStreamParser::dispatch(
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:
             case GRID_UPDATE:
+            case STRATEGY_UPDATE:
               log::fatal("Unexpected"sv);
               break;
             case UNKNOWN:

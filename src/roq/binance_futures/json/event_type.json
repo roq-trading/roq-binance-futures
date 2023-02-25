@@ -28,6 +28,9 @@
     },
     {
       "name": "GRID_UPDATE"
+    },
+    {
+      "name": "STRATEGY_UPDATE"
     }
   ]
 }

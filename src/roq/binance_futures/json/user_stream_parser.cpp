@@ -67,8 +67,9 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
-    case GRID_UPDATE: {
-      log::warn(R"(Unknown: "{}")"sv, message);
+    case GRID_UPDATE:
+    case STRATEGY_UPDATE: {
+      log::warn<1>(R"(Unknown: "{}")"sv, message);
       break;
     }
     case UNKNOWN:

@@ -299,8 +299,6 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
           }
         })) {
     } else {
-      log::warn("*** EXTERNAL ORDER ***"sv);
-      log::warn("execution_report={}"sv, execution_report);
       if (Flags::test_external_trade_update() && execution_report.execution_type == json::ExecutionType::TRADE) {
         auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
         auto fill = Fill{
@@ -327,6 +325,9 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
             .user = {},
         };
         create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
+      } else {
+        log::warn("*** EXTERNAL ORDER ***"sv);
+        log::warn("execution_report={}"sv, execution_report);
       }
     }
   });

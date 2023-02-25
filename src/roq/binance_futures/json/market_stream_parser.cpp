@@ -7,6 +7,8 @@
 
 #include "roq/compat.hpp"
 
+#include "roq/binance_futures/flags/flags.hpp"
+
 #include "roq/binance_futures/json/field.hpp"
 #include "roq/binance_futures/json/stream.hpp"
 
@@ -108,12 +110,16 @@ void MarketStreamParser::dispatch(
               dispatched = true;
               break;
             case UNDEFINED:
-            case UNKNOWN:
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:
+            case GRID_UPDATE:
               log::fatal("Unexpected"sv);
               break;
+            case UNKNOWN:
+              if (!flags::Flags::continue_with_unknown_event_type())
+                log::fatal("Unexpected"sv);
+              return;
           }
           assert(dispatched);
           break;

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* Unknown event-type `GRID_TYPE` (#319)
+
 ## 0.9.2 &ndash; 2023-02-22
 
 ### Added

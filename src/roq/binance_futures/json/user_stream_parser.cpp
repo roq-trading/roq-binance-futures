@@ -6,6 +6,8 @@
 
 #include "roq/core/json/parser.hpp"
 
+#include "roq/binance_futures/flags/flags.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -40,7 +42,6 @@ bool UserStreamParser::try_dispatch(
   switch (event_type) {
     using enum EventType::type_t;
     case UNDEFINED:
-    case UNKNOWN:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
     case BOOK_TICKER:
@@ -66,6 +67,14 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
+    case GRID_UPDATE: {
+      log::warn(R"(Unknown: "{}")"sv, message);
+      break;
+    }
+    case UNKNOWN:
+      if (!flags::Flags::continue_with_unknown_event_type())
+        log::fatal("Unexpected"sv);
+      return false;
     default:
       return false;
   }

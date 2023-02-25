@@ -180,6 +180,12 @@
       "name": "mbp_max_depth",
       "type": "uint16_t",
       "description": "max depth levels (count)"
+    },
+    {
+      "name": "continue_with_unknown_event_type",
+      "type": "bool",
+      "default": false,
+      "description": "continue when getting updates for unknown event-types?"
     }
   ]
 }

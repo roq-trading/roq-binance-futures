@@ -25,6 +25,9 @@
     },
     {
       "name": "MARGIN_CALL"
+    },
+    {
+      "name": "GRID_UPDATE"
     }
   ]
 }

@@ -27,6 +27,7 @@ add_executable("${TARGET_NAME}" ${SOURCES})
 target_link_libraries(
   "${TARGET_NAME}"
   "${PROJECT_NAME}-json"
+  "${PROJECT_NAME}-flags"
   roq-server::roq-server
   roq-core::roq-core
   roq-io::roq-io

@@ -4,10 +4,11 @@ symbols = "BTCUSDT"
 
 [accounts]
 
+# only roq-trading.com
   [accounts.A1]
   master = true
-  login = "OYcSHp7Fqb8IK85SE1qYT0aEcnRKk07G6JqpUXo37YPh7wwRkqdER9o682YCy0uy"
-  secret = "Kh5MF4z3tiVR0sMxcPltqClqJ7bHKXpc4nMQjvJfHp66ZqdpcmPtxhO6Q9NnKwdd"
+  login = "433sxYUQQaP028vKMukdZ55hN2ANhIdilGJVO4qof6lO2U4lSnlDhBvy0onWf5pP"
+  secret = "myTPQjcaBZEFJBNgAkOOpNkHDQ66Aa30EiLl71h55LOH81YMU8bWHJ2XvtFImXoK"
   symbols = ".*"
 
 [users]

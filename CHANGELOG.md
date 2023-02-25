@@ -6,7 +6,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
-* Unknown event-type `GRID_TYPE` (#319)
+* Unknown event-types `GRID_UPDATE` and `STRATEGY_UPDATE` (#319)
 
 ## 0.9.2 &ndash; 2023-02-22
 

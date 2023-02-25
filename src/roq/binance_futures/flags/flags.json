@@ -186,6 +186,12 @@
       "type": "bool",
       "default": false,
       "description": "continue when getting updates for unknown event-types?"
+    },
+    {
+      "name": "test_external_trade_update",
+      "type": "bool",
+      "default": false,
+      "description": "allow external trade updates?"
     }
   ]
 }

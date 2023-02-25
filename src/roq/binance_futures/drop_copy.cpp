@@ -301,6 +301,33 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     } else {
       log::warn("*** EXTERNAL ORDER ***"sv);
       log::warn("execution_report={}"sv, execution_report);
+      if (Flags::test_external_trade_update() && execution_report.execution_type == json::ExecutionType::TRADE) {
+        auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
+        auto fill = Fill{
+            .external_trade_id = {},
+            .quantity = execution_report.last_filled_quantity,
+            .price = execution_report.last_filled_price,
+            .liquidity = {},
+        };
+        auto trade_update = TradeUpdate{
+            .stream_id = stream_id_,
+            .account = authenticator_.get_account(),
+            .order_id = ORDER_ID_NONE,
+            .exchange = Flags::exchange(),
+            .symbol = execution_report.symbol,
+            .side = side,
+            .position_effect = {},
+            .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
+            .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
+            .external_account = {},
+            .external_order_id = external_order_id,
+            .fills = {&fill, 1},
+            .routing_id = {},
+            .update_type = {},
+            .user = {},
+        };
+        create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
+      }
     }
   });
 }

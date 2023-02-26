@@ -27,10 +27,10 @@
       "name": "MARGIN_CALL"
     },
     {
-      "name": "GRID_UPDATE"
+      "name": "STRATEGY_UPDATE"
     },
     {
-      "name": "STRATEGY_UPDATE"
+      "name": "GRID_UPDATE"
     }
   ]
 }

@@ -92,6 +92,8 @@ DropCopy::DropCopy(
           .order_trade_update = create_metrics(name_, "order_trade_update"sv),
           .account_update = create_metrics(name_, "account_update"sv),
           .margin_call = create_metrics(name_, "margin_call"sv),
+          .strategy_update = create_metrics(name_, "strategy_update"sv),
+          .grid_update = create_metrics(name_, "grid_update"sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"sv),
@@ -130,6 +132,8 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(profile_.order_trade_update, metrics::PROFILE)
       .write(profile_.account_update, metrics::PROFILE)
       .write(profile_.margin_call, metrics::PROFILE)
+      .write(profile_.strategy_update, metrics::PROFILE)
+      .write(profile_.grid_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -375,6 +379,20 @@ void DropCopy::operator()(Trace<json::MarginCall> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);
+  });
+}
+
+void DropCopy::operator()(Trace<json::StrategyUpdate> const &event) {
+  profile_.strategy_update([&]() {
+    auto &[trace_info, strategy_update] = event;
+    log::debug("strategy_update={}"sv, strategy_update);
+  });
+}
+
+void DropCopy::operator()(Trace<json::GridUpdate> const &event) {
+  profile_.grid_update([&]() {
+    auto &[trace_info, grid_update] = event;
+    log::debug("grid_update={}"sv, grid_update);
   });
 }
 

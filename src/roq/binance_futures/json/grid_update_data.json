@@ -1,0 +1,56 @@
+{
+  "name": "GridUpdateData",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "si",
+      "name": "id",
+      "type": "int64_t"
+    },
+    {
+      "raw": "st",
+      "name": "type",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "ss",
+      "name": "status",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "r",
+      "name": "realized_pnl",
+      "type": "double"
+    },
+    {
+      "raw": "up",
+      "name": "unmatched_average_price",
+      "type": "double"
+    },
+    {
+      "raw": "uq",
+      "name": "unmatched_qty",
+      "type": "double"
+    },
+    {
+      "raw": "uf",
+      "name": "unmatched_fee",
+      "type": "double"
+    },
+    {
+      "raw": "mp",
+      "name": "matched_pnl",
+      "type": "double"
+    },
+    {
+      "raw": "ut",
+      "name": "update_time",
+      "type": "std::chrono::milliseconds"
+    }
+  ]
+}

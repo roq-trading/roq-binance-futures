@@ -1,0 +1,36 @@
+{
+  "name": "StrategyUpdateData",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "si",
+      "name": "id",
+      "type": "int64_t"
+    },
+    {
+      "raw": "st",
+      "name": "type",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "ss",
+      "name": "status",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "ut",
+      "name": "update_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "c",
+      "name": "opcode",
+      "type": "int32_t"
+    }
+  ]
+}

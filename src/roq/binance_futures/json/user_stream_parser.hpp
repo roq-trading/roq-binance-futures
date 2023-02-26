@@ -11,8 +11,10 @@
 #include "roq/binance_futures/json/event_type.hpp"
 
 #include "roq/binance_futures/json/account_update.hpp"
+#include "roq/binance_futures/json/grid_update.hpp"
 #include "roq/binance_futures/json/margin_call.hpp"
 #include "roq/binance_futures/json/order_trade_update.hpp"
+#include "roq/binance_futures/json/strategy_update.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -23,18 +25,15 @@ struct UserStreamParser final {
     virtual void operator()(Trace<OrderTradeUpdate> const &) = 0;
     virtual void operator()(Trace<AccountUpdate> const &) = 0;
     virtual void operator()(Trace<MarginCall> const &) = 0;
+    virtual void operator()(Trace<StrategyUpdate> const &) = 0;
+    virtual void operator()(Trace<GridUpdate> const &) = 0;
   };
 
-  static void dispatch(
-      Handler &handler, std::string_view const &message, core::json::Buffer &buffer, TraceInfo const &trace);
+  static void dispatch(Handler &, std::string_view const &message, core::json::Buffer &, TraceInfo const &);
 
  private:
   static bool try_dispatch(
-      UserStreamParser::Handler &handler,
-      std::string_view const &message,
-      core::json::Buffer &buffer,
-      EventType event_type,
-      TraceInfo const &trace);
+      UserStreamParser::Handler &, std::string_view const &message, core::json::Buffer &, EventType, TraceInfo const &);
 };
 
 }  // namespace json

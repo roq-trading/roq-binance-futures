@@ -12,12 +12,14 @@ set(SOURCES
     json_error.cpp
     json_exchange_info.cpp
     json_filters.cpp
+    json_grid_update.cpp
     json_listen_key.cpp
     json_margin_call.cpp
     json_mini_ticker.cpp
     json_new_order.cpp
     json_open_orders.cpp
     json_order_trade_update.cpp
+    json_strategy_update.cpp
     main.cpp)
 
 roq_gitignore(OUTPUT ".gitignore" SOURCES "${TARGET_NAME}")

@@ -50,26 +50,33 @@ bool UserStreamParser::try_dispatch(
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {
-      auto const order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
+      auto order_trade_update = core::json::Parser::create<OrderTradeUpdate>(message, buffer);
       Trace event{trace_info, order_trade_update};
       handler(event);
       break;
     }
     case ACCOUNT_UPDATE: {
-      auto const account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
+      auto account_update = core::json::Parser::create<AccountUpdate>(message, buffer);
       Trace event{trace_info, account_update};
       handler(event);
       break;
     }
     case MARGIN_CALL: {
-      auto const margin_call = core::json::Parser::create<MarginCall>(message, buffer);
+      auto margin_call = core::json::Parser::create<MarginCall>(message, buffer);
       Trace event{trace_info, margin_call};
       handler(event);
       break;
     }
-    case GRID_UPDATE:
     case STRATEGY_UPDATE: {
-      log::warn<1>(R"(Unknown: "{}")"sv, message);
+      auto strategy_update = core::json::Parser::create<StrategyUpdate>(message, buffer);
+      Trace event{trace_info, strategy_update};
+      handler(event);
+      break;
+    }
+    case GRID_UPDATE: {
+      auto grid_update = core::json::Parser::create<GridUpdate>(message, buffer);
+      Trace event{trace_info, grid_update};
+      handler(event);
       break;
     }
     case UNKNOWN:

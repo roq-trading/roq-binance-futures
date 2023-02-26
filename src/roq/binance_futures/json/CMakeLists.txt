@@ -6,39 +6,41 @@ include(RoqAutogen)
 
 set(AUTOGEN_SCHEMAS
     account.json
-    account_update.json
-    account_update_data.json
     account_update_data_balance.json
+    account_update_data.json
     account_update_data_position.json
+    account_update.json
     agg_trade.json
     asset.json
     auto_cancel_all_open_orders.json
-    balance.json
     balance_item.json
+    balance.json
     balances_item.json
     book_ticker.json
     cancel_all_open_orders.json
     cancel_order.json
     contract_type.json
-    depth.json
     depth_item.json
+    depth.json
     depth_update.json
     error.json
     event_reason.json
     event_type.json
-    exchange_info.json
     exchange_info_asset.json
+    exchange_info.json
     execution_report.json
     execution_type.json
     field.json
     fill.json
     filter.json
-    filter_type.json
     filters.json
+    filter_type.json
+    grid_update_data.json
+    grid_update.json
     interval.json
     listen_key.json
-    margin_call.json
     margin_call_item.json
+    margin_call.json
     mark_price_update.json
     mini_ticker.json
     new_order.json
@@ -53,6 +55,8 @@ set(AUTOGEN_SCHEMAS
     rate_limit_type.json
     result.json
     side.json
+    strategy_update_data.json
+    strategy_update.json
     stream.json
     symbol.json
     symbol_status.json

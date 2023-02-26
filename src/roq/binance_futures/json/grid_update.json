@@ -1,0 +1,26 @@
+{
+  "name": "GridUpdate",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "raw": "gu",
+      "name": "data",
+      "type": "GridUpdateData"
+    }
+  ]
+}

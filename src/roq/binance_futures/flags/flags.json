@@ -192,6 +192,12 @@
       "type": "bool",
       "default": false,
       "description": "allow external trade updates?"
+    },
+    {
+      "name": "test_download_trades",
+      "type": "bool",
+      "default": false,
+      "description": "download trades?"
     }
   ]
 }

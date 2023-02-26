@@ -1,0 +1,74 @@
+{
+  "name": "Trade",
+  "type": "item",
+  "values": [
+    {
+      "name": "buyer",
+      "type": "bool"
+    },
+    {
+      "name": "commission",
+      "type": "double"
+    },
+    {
+      "name": "commissionAsset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "id",
+      "type": "int64_t"
+    },
+    {
+      "name": "maker",
+      "type": "bool"
+    },
+    {
+      "name": "orderId",
+      "type": "int64_t"
+    },
+    {
+      "name": "price",
+      "type": "double"
+    },
+    {
+      "name": "qty",
+      "type": "double"
+    },
+    {
+      "name": "quoteQty",
+      "type": "double"
+    },
+    {
+      "name": "realizedPnl",
+      "type": "double"
+    },
+    {
+      "name": "side",
+      "type": "Side"
+    },
+    {
+      "name": "positionSide",
+      "type": "PositionSide"
+    },
+    {
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "name": "time",
+      "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "pair",
+      "type": "std::string_view"
+    },
+    {
+      "name": "marginAsset",
+      "type": "std::string_view"
+    },
+    {
+      "name": "baseQty",
+      "type": "double"
+    }
+  ]
+}

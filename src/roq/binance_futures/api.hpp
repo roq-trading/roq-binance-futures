@@ -16,6 +16,7 @@ struct API final {
   std::string_view get_balance;
   std::string_view get_account;
   std::string_view get_open_orders;
+  std::string_view get_trades;
   std::string_view order;
   std::string_view all_open_orders;
   std::string_view countdown_cancel_all;

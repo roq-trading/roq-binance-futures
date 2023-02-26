@@ -62,6 +62,8 @@ set(AUTOGEN_SCHEMAS
     symbol_status.json
     ticker.json
     time_in_force.json
+    trade.json
+    trades.json
     working_type.json)
 
 roq_autogen(

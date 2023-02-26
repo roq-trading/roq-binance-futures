@@ -121,6 +121,7 @@ void DropCopy::operator()(Event<Timer> const &event) {
   check_response_balance();
   check_response_account();
   check_response_orders();
+  check_response_trades();
 }
 
 void DropCopy::operator()(metrics::Writer &writer) {
@@ -209,6 +210,13 @@ uint32_t DropCopy::download(DropCopyState state) {
     case ORDERS:
       request_orders();
       return 1;
+    case TRADES:
+      if (flags::Flags::test_download_trades()) {
+        request_trades();
+        return 1;
+      } else {
+        return {};
+      }
     case DONE:
       (*this)(ConnectionStatus::READY);
       assert(!ready_);
@@ -275,13 +283,14 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     };
     if (shared_.update_order(execution_report.client_order_id, stream_id_, trace_info, order_update, [&](auto &order) {
           if (execution_report.execution_type == json::ExecutionType::TRADE) {
-            auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
+            auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
             auto fill = Fill{
                 .external_trade_id = {},
                 .quantity = execution_report.last_filled_quantity,
                 .price = execution_report.last_filled_price,
-                .liquidity = {},
+                .liquidity = liquidity,
             };
+            fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
             auto trade_update = TradeUpdate{
                 .stream_id = stream_id_,
                 .account = order.account,
@@ -304,13 +313,14 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         })) {
     } else {
       if (Flags::test_external_trade_update() && execution_report.execution_type == json::ExecutionType::TRADE) {
-        auto external_trade_id = fmt::format("{}"sv, execution_report.trade_id);
+        auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
         auto fill = Fill{
             .external_trade_id = {},
             .quantity = execution_report.last_filled_quantity,
             .price = execution_report.last_filled_price,
-            .liquidity = {},
+            .liquidity = liquidity,
         };
+        fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
         auto trade_update = TradeUpdate{
             .stream_id = stream_id_,
             .account = authenticator_.get_account(),
@@ -435,6 +445,20 @@ void DropCopy::check_response_orders() {
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
     download_.check(DropCopyState::ORDERS);
+  }
+}
+
+void DropCopy::request_trades() {
+  log::info("Requesting order download..."sv);
+  request_.request_trades = clock::get_system();
+}
+
+void DropCopy::check_response_trades() {
+  if (download_.state() != DropCopyState::TRADES)
+    return;
+  if (request_.request_trades < request_.respond_trades) {
+    log::info("Trades download has completed!"sv);
+    download_.check(DropCopyState::TRADES);
   }
 }
 

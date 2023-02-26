@@ -57,6 +57,8 @@ symbol.hpp
 symbol_status.hpp
 ticker.hpp
 time_in_force.hpp
+trade.hpp
+trades.hpp
 working_type.hpp
 account.cpp
 account_update_data_balance.cpp
@@ -115,4 +117,6 @@ symbol.cpp
 symbol_status.cpp
 ticker.cpp
 time_in_force.cpp
+trade.cpp
+trades.cpp
 working_type.cpp

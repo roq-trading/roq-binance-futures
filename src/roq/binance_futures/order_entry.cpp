@@ -97,6 +97,8 @@ OrderEntry::OrderEntry(
           .account_ack = create_metrics(name_, "account_ack"sv),
           .open_orders = create_metrics(name_, "open_orders"sv),
           .open_orders_ack = create_metrics(name_, "open_orders_ack"sv),
+          .trades = create_metrics(name_, "trades"sv),
+          .trades_ack = create_metrics(name_, "trades_ack"sv),
           .new_order = create_metrics(name_, "new_order"sv),
           .new_order_ack = create_metrics(name_, "new_order_ack"sv),
           .cancel_order = create_metrics(name_, "cancel_order"sv),
@@ -148,6 +150,11 @@ void OrderEntry::operator()(Event<Timer> const &event) {
       get_open_orders();
       download_orders_ = true;
     }
+    if (!downloading() && request_.respond_trades < request_.request_trades) {
+      log::info<1>("Download trades..."sv);
+      get_trades();
+      download_trades_ = true;
+    }
   }
 }
 
@@ -163,7 +170,9 @@ void OrderEntry::operator()(metrics::Writer &writer) {
       .write(profile_.account, metrics::PROFILE)
       .write(profile_.account_ack, metrics::PROFILE)
       .write(profile_.open_orders, metrics::PROFILE)
-      .write(profile_.open_orders, metrics::PROFILE)
+      .write(profile_.open_orders_ack, metrics::PROFILE)
+      .write(profile_.trades, metrics::PROFILE)
+      .write(profile_.trades_ack, metrics::PROFILE)
       .write(profile_.new_order, metrics::PROFILE)
       .write(profile_.new_order_ack, metrics::PROFILE)
       .write(profile_.cancel_order, metrics::PROFILE)
@@ -221,6 +230,7 @@ void OrderEntry::operator()(Trace<web::rest::Client::Disconnected> const &) {
   download_balance_ = false;
   download_account_ = false;
   download_orders_ = false;
+  download_trades_ = false;
 }
 
 void OrderEntry::operator()(Trace<web::rest::Client::Latency> const &event) {
@@ -548,6 +558,84 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
     };
     Trace event_2{trace_info, order_update};
     (*this)(event_2, order.client_order_id);
+  }
+}
+
+// trades
+
+void OrderEntry::get_trades() {
+  profile_.trades([&]() {
+    auto query = authenticator_.create_query();
+    auto headers = authenticator_.create_headers();
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.get_trades,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_trades_ack(event);
+    };
+    (*connection_)("trades"sv, request, callback);
+  });
+}
+
+void OrderEntry::get_trades_ack(Trace<web::rest::Response> const &event) {
+  profile_.trades_ack([&]() {
+    auto handle_success = [&](auto &body) {
+      json::Trades trades{body, decode_buffer_};
+      Trace event_2{event, trades};
+      (*this)(event_2);
+      request_.respond_trades = clock::get_system();  // completion
+      download_trades_ = false;
+    };
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
+      log::warn(R"(error={}, text="{}")"sv, error, text);
+      download_trades_ = false;
+    };
+    process_response(event, handle_success, handle_error);
+  });
+}
+
+void OrderEntry::operator()(Trace<json::Trades> const &event) {
+  auto &[trace_info, trades] = event;
+  log::info<2>("trades={}"sv, trades);
+  for (auto &trade : trades.data) {
+    log::info<2>("trade={}"sv, trade);
+    auto liquidity = trade.maker ? Liquidity::MAKER : Liquidity::TAKER;
+    auto fill = Fill{
+        .external_trade_id = {},
+        .quantity = trade.qty,
+        .price = trade.price,
+        .liquidity = liquidity,
+    };
+    fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);
+    auto external_order_id = fmt::format("{}"sv, trade.order_id);
+    auto side = json::map(trade.side);
+    auto trade_update = TradeUpdate{
+        .stream_id = stream_id_,
+        .account = authenticator_.get_account(),
+        .order_id = ORDER_ID_NONE,
+        .exchange = Flags::exchange(),
+        .symbol = trade.symbol,
+        .side = side,
+        .position_effect = {},
+        .create_time_utc = utils::safe_cast(trade.time),
+        .update_time_utc = utils::safe_cast(trade.time),
+        .external_account = {},
+        .external_order_id = external_order_id,
+        .fills = {&fill, 1},
+        .routing_id = {},
+        .update_type = {},
+        .user = {},
+    };
+    create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_SELF);
   }
 }
 

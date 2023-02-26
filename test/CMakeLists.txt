@@ -20,6 +20,7 @@ set(SOURCES
     json_open_orders.cpp
     json_order_trade_update.cpp
     json_strategy_update.cpp
+    json_trades.cpp
     main.cpp)
 
 roq_gitignore(OUTPUT ".gitignore" SOURCES "${TARGET_NAME}")

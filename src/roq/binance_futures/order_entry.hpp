@@ -33,6 +33,7 @@
 #include "roq/binance_futures/json/listen_key.hpp"
 #include "roq/binance_futures/json/new_order.hpp"
 #include "roq/binance_futures/json/open_orders.hpp"
+#include "roq/binance_futures/json/trades.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -46,6 +47,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
+    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
     virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
     // cross-communication
@@ -106,6 +108,10 @@ struct OrderEntry final : public web::rest::Client::Handler {
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::OpenOrders> const &);
 
+  void get_trades();
+  void get_trades_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<json::Trades> const &);
+
   void refresh_listen_key();
 
   void new_order(Event<CreateOrder> const &, oms::Order const &, std::string_view const &request_id);
@@ -157,6 +163,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
         balance, balance_ack,                                //
         account, account_ack,                                //
         open_orders, open_orders_ack,                        //
+        trades, trades_ack,                                  //
         new_order, new_order_ack,                            //
         cancel_order, cancel_order_ack,                      //
         cancel_all_open_orders, cancel_all_open_orders_ack,  //
@@ -181,6 +188,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
   bool download_balance_ = false;
   bool download_account_ = false;
   bool download_orders_ = false;
+  bool download_trades_ = false;
   std::vector<char> encode_buffer_;
 };
 

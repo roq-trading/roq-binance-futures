@@ -14,9 +14,26 @@ Error guess_error([[maybe_unused]] int32_t code) {
   return Error::UNKNOWN;
 }
 
-std::string_view trades(std::vector<char> &buffer, std::chrono::milliseconds now) {
+std::string_view trades(
+    std::vector<char> &buffer,
+    std::string_view const &symbol,
+    std::chrono::milliseconds start_time,
+    std::chrono::milliseconds end_time,
+    uint32_t limit,
+    std::chrono::milliseconds recv_window) {
   buffer.clear();
-  fmt::format_to(std::back_inserter(buffer), "timestamp={}"sv, now.count());
+  fmt::format_to(
+      std::back_inserter(buffer),
+      R"(symbol={}&)"
+      R"(startTime={}&)"
+      R"(endTime={}&)"
+      R"(limit={}&)"
+      R"(recvWindow={})"sv,
+      symbol,
+      start_time.count(),
+      end_time.count(),
+      limit,
+      recv_window.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;
 }

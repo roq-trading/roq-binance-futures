@@ -565,26 +565,36 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
 
 void OrderEntry::get_trades() {
   profile_.trades([&]() {
-    auto headers = authenticator_.create_headers();
-    auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto body = json::trades(encode_buffer_, now);
-    auto query = authenticator_.create_query(body);
-    auto request = web::rest::Request{
-        .method = web::http::Method::GET,
-        .path = shared_.api.get_trades,
-        .query = query,
-        .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = {},
-        .headers = headers,
-        .body = body,
-        .quality_of_service = {},
-    };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_trades_ack(event);
-    };
-    (*connection_)("trades"sv, request, callback);
+    auto &symbols = flags::Flags::download_symbols();
+    for (auto &symbol : symbols) {
+      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+      auto end_time = clock::get_realtime<std::chrono::milliseconds>();
+      auto start_time = end_time - 86400s;
+      auto limit = uint32_t{1000};
+      auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto query = authenticator_.create_query(body);
+      auto headers = authenticator_.create_headers();
+      log::debug(R"(path="{}")"sv, shared_.api.get_trades);
+      log::debug(R"(body="{}")"sv, body);
+      log::debug(R"(query="{}")"sv, query);
+      log::debug(R"(headers="{}")"sv, headers);
+      auto request = web::rest::Request{
+          .method = web::http::Method::GET,
+          .path = shared_.api.get_trades,
+          .query = query,
+          .accept = web::http::Accept::APPLICATION_JSON,
+          .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+          .headers = headers,
+          .body = body,
+          .quality_of_service = {},
+      };
+      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
+        TraceInfo trace_info;
+        Trace event{trace_info, response};
+        get_trades_ack(event);
+      };
+      (*connection_)("trades"sv, request, callback);
+    }
   });
 }
 

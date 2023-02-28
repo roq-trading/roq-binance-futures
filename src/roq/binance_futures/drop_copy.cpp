@@ -211,7 +211,7 @@ uint32_t DropCopy::download(DropCopyState state) {
       request_orders();
       return 1;
     case TRADES:
-      if (flags::Flags::download_trades()) {
+      if (flags::Flags::download_trades() && !std::empty(flags::Flags::download_symbols())) {
         request_trades();
         return 1;
       } else {
@@ -312,7 +312,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
           }
         })) {
     } else {
-      if (Flags::capture_external_trades() && execution_report.execution_type == json::ExecutionType::TRADE) {
+      if (Flags::include_external_trades() && execution_report.execution_type == json::ExecutionType::TRADE) {
         auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
         auto fill = Fill{
             .external_trade_id = {},

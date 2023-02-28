@@ -188,16 +188,21 @@
       "description": "continue when getting updates for unknown event-types?"
     },
     {
+      "name": "download_symbols",
+      "type": "std::vector<std::string>",
+      "description": "comma-separated list of symbols"
+    },
+    {
       "name": "download_trades",
       "type": "bool",
       "default": false,
       "description": "download trades?"
     },
     {
-      "name": "capture_external_trades",
+      "name": "include_external_trades",
       "type": "bool",
       "default": false,
-      "description": "capture external trades?"
+      "description": "include external trades?"
     }
   ]
 }

@@ -6,7 +6,8 @@ All notable changes will be documented in this file.
 
 ### Added
 
-* Support external trades (#320)
+* Download trade history (#321)
+* Capture external trades (#320)
 
 ### Fixed
 

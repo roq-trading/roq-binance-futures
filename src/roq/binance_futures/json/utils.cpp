@@ -14,6 +14,13 @@ Error guess_error([[maybe_unused]] int32_t code) {
   return Error::UNKNOWN;
 }
 
+std::string_view trades(std::vector<char> &buffer, std::chrono::milliseconds now) {
+  buffer.clear();
+  fmt::format_to(std::back_inserter(buffer), "timestamp={}"sv, now.count());
+  std::string_view result{std::data(buffer), std::size(buffer)};
+  return result;
+}
+
 std::string_view new_order(
     std::vector<char> &buffer,
     CreateOrder const &create_order,

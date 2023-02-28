@@ -188,16 +188,16 @@
       "description": "continue when getting updates for unknown event-types?"
     },
     {
-      "name": "test_external_trade_update",
-      "type": "bool",
-      "default": false,
-      "description": "allow external trade updates?"
-    },
-    {
-      "name": "test_download_trades",
+      "name": "download_trades",
       "type": "bool",
       "default": false,
       "description": "download trades?"
+    },
+    {
+      "name": "capture_external_trades",
+      "type": "bool",
+      "default": false,
+      "description": "capture external trades?"
     }
   ]
 }

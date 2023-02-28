@@ -565,8 +565,10 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
 
 void OrderEntry::get_trades() {
   profile_.trades([&]() {
-    auto query = authenticator_.create_query();
     auto headers = authenticator_.create_headers();
+    auto now = clock::get_realtime<std::chrono::milliseconds>();
+    auto body = json::trades(encode_buffer_, now);
+    auto query = authenticator_.create_query(body);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.get_trades,
@@ -574,7 +576,7 @@ void OrderEntry::get_trades() {
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = headers,
-        .body = {},
+        .body = body,
         .quality_of_service = {},
     };
     auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {

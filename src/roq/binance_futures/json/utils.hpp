@@ -246,6 +246,8 @@ inline json::TimeInForce map(roq::TimeInForce time_in_force) {
 
 extern roq::Error guess_error(int32_t code);
 
+extern std::string_view trades(std::vector<char> &buffer, std::chrono::milliseconds now);
+
 extern std::string_view new_order(
     std::vector<char> &buffer,
     CreateOrder const &,

@@ -60,7 +60,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
   OrderEntry(OrderEntry const &) = delete;
 
   bool ready() const { return status_ == ConnectionStatus::READY; }
-  bool downloading() const { return download_balance_ || download_account_ || download_orders_; }
+  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
 
   void operator()(Event<Start> const &);
   void operator()(Event<Stop> const &);

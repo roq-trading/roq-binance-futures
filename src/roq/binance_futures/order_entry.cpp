@@ -130,7 +130,7 @@ void OrderEntry::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (next_auto_cancel_ < now) {
+  if (Flags::rest_order_countdown().count() && next_auto_cancel_ < now) {
     next_auto_cancel_ = now + Flags::rest_order_countdown() / 4;
     auto_cancel_all_open_orders();
   }

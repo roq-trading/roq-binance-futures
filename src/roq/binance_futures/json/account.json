@@ -73,6 +73,10 @@
     {
       "name": "positions",
       "type": "std::span<Position>"
+    },
+    {
+      "name": "multiAssetsMargin",
+      "type": "bool"
     }
   ]
 }

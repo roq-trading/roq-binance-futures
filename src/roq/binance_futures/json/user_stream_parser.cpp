@@ -80,7 +80,9 @@ bool UserStreamParser::try_dispatch(
       break;
     }
     case ACCOUNT_CONFIG_UPDATE: {
-      // XXX need parsing
+      auto account_config_update = core::json::Parser::create<AccountConfigUpdate>(message, buffer);
+      Trace event{trace_info, account_config_update};
+      handler(event);
       break;
     }
     case LISTEN_KEY_EXPIRED: {

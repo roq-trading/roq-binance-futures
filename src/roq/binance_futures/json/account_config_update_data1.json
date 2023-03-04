@@ -1,0 +1,16 @@
+{
+  "name": "AccountConfigUpdateData1",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "l",
+      "name": "leverage",
+      "type": "double"
+    }
+  ]
+}

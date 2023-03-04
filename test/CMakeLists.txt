@@ -1,6 +1,7 @@
 set(TARGET_NAME "${PROJECT_NAME}-test")
 
 set(SOURCES
+    json_account_config_update.cpp
     json_account.cpp
     json_account_update.cpp
     json_auto_cancel_all_open_orders.cpp

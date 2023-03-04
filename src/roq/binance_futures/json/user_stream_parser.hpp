@@ -10,6 +10,7 @@
 
 #include "roq/binance_futures/json/event_type.hpp"
 
+#include "roq/binance_futures/json/account_config_update.hpp"
 #include "roq/binance_futures/json/account_update.hpp"
 #include "roq/binance_futures/json/grid_update.hpp"
 #include "roq/binance_futures/json/margin_call.hpp"
@@ -27,6 +28,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<MarginCall> const &) = 0;
     virtual void operator()(Trace<StrategyUpdate> const &) = 0;
     virtual void operator()(Trace<GridUpdate> const &) = 0;
+    virtual void operator()(Trace<AccountConfigUpdate> const &) = 0;
   };
 
   static void dispatch(Handler &, std::string_view const &message, core::json::Buffer &, TraceInfo const &);

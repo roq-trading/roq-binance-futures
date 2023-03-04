@@ -94,6 +94,7 @@ DropCopy::DropCopy(
           .margin_call = create_metrics(name_, "margin_call"sv),
           .strategy_update = create_metrics(name_, "strategy_update"sv),
           .grid_update = create_metrics(name_, "grid_update"sv),
+          .account_config_update = create_metrics(name_, "account_config_update"sv),
       },
       latency_{
           .ping = create_metrics(name_, "ping"sv),
@@ -135,6 +136,7 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(profile_.margin_call, metrics::PROFILE)
       .write(profile_.strategy_update, metrics::PROFILE)
       .write(profile_.grid_update, metrics::PROFILE)
+      .write(profile_.account_config_update, metrics::PROFILE)
       // latency
       .write(latency_.ping, metrics::LATENCY)
       .write(latency_.heartbeat, metrics::LATENCY);
@@ -406,6 +408,12 @@ void DropCopy::operator()(Trace<json::GridUpdate> const &event) {
   });
 }
 
+void DropCopy::operator()(Trace<json::AccountConfigUpdate> const &event) {
+  profile_.account_config_update([&]() {
+    auto &[trace_info, account_config_update] = event;
+    log::debug("account_config_update={}"sv, account_config_update);
+  });
+}
 void DropCopy::request_balance() {
   log::info("Requesting balance download..."sv);
   request_.request_balance = clock::get_system();

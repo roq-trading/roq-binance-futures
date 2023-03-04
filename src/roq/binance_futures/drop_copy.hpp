@@ -77,6 +77,7 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
   void operator()(Trace<json::MarginCall> const &) override;
   void operator()(Trace<json::StrategyUpdate> const &) override;
   void operator()(Trace<json::GridUpdate> const &) override;
+  void operator()(Trace<json::AccountConfigUpdate> const &) override;
 
   void request_balance();
   void check_response_balance();
@@ -104,7 +105,8 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
     core::metrics::Counter disconnect;
   } counter_;
   struct {
-    core::metrics::Profile parse, order_trade_update, account_update, margin_call, strategy_update, grid_update;
+    core::metrics::Profile parse, order_trade_update, account_update, margin_call, strategy_update, grid_update,
+        account_config_update;
   } profile_;
   struct {
     core::metrics::Latency ping, heartbeat;

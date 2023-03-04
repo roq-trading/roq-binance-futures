@@ -1,5 +1,8 @@
 !!! THIS FILE HAS BEEN AUTO-GENERATED !!!
 roq-binance-futures-json
+account_config_update_data1.hpp
+account_config_update_data2.hpp
+account_config_update.hpp
 account.hpp
 account_update_data_balance.hpp
 account_update_data.hpp
@@ -60,6 +63,9 @@ time_in_force.hpp
 trade.hpp
 trades.hpp
 working_type.hpp
+account_config_update_data1.cpp
+account_config_update_data2.cpp
+account_config_update.cpp
 account.cpp
 account_update_data_balance.cpp
 account_update_data.cpp

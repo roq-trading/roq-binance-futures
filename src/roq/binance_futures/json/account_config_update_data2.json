@@ -1,0 +1,11 @@
+{
+  "name": "AccountConfigUpdateData2",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "j",
+      "name": "multi_asset_mode",
+      "type": "bool"
+    }
+  ]
+}

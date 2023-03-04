@@ -79,6 +79,14 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
+    case ACCOUNT_CONFIG_UPDATE: {
+      // XXX need parsing
+      break;
+    }
+    case LISTEN_KEY_EXPIRED: {
+      // XXX need parsing
+      break;
+    }
     case UNKNOWN:
       if (!flags::Flags::continue_with_unknown_event_type())
         log::fatal("Unexpected"sv);

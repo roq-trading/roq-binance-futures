@@ -115,8 +115,13 @@ void MarketStreamParser::dispatch(
             case MARGIN_CALL:
             case GRID_UPDATE:
             case STRATEGY_UPDATE:
+            case ACCOUNT_CONFIG_UPDATE:
               log::fatal("Unexpected"sv);
               break;
+            case LISTEN_KEY_EXPIRED: {
+              // XXX need parsing
+              break;
+            }
             case UNKNOWN:
               if (!flags::Flags::continue_with_unknown_event_type())
                 log::fatal("Unexpected"sv);

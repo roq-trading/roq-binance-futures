@@ -615,6 +615,7 @@ void OrderEntry::get_trades_ack(Trace<web::rest::Response> const &event) {
   });
 }
 
+// note! always external because we don't get ClOrdID
 void OrderEntry::operator()(Trace<json::Trades> const &event) {
   auto &[trace_info, trades] = event;
   log::info<2>("trades={}"sv, trades);
@@ -630,8 +631,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);
     auto external_order_id = fmt::format("{}"sv, trade.order_id);
     auto side = json::map(trade.side);
-    auto trade_update = TradeUpdate{
-        .stream_id = stream_id_,
+    auto trade_update = oms::TradeUpdate{
         .account = authenticator_.get_account(),
         .order_id = ORDER_ID_NONE,
         .exchange = Flags::exchange(),
@@ -643,11 +643,9 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .external_account = {},
         .external_order_id = external_order_id,
         .fills = {&fill, 1},
-        .routing_id = {},
         .update_type = {},
-        .user = {},
     };
-    create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_SELF);
+    create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, SOURCE_SELF);
   }
 }
 

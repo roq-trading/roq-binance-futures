@@ -293,8 +293,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
                 .liquidity = liquidity,
             };
             fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
-            auto trade_update = TradeUpdate{
-                .stream_id = stream_id_,
+            auto trade_update = oms::TradeUpdate{
                 .account = order.account,
                 .order_id = order.order_id,
                 .exchange = order.exchange,
@@ -306,11 +305,9 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
                 .external_account = order.external_account,
                 .external_order_id = order.external_order_id,
                 .fills = {&fill, 1},
-                .routing_id = order.routing_id,
                 .update_type = {},
-                .user = shared_.get_user_name(order.user_id),
             };
-            create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
+            create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, order.user_id);
           }
         })) {
     } else {
@@ -323,8 +320,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
             .liquidity = liquidity,
         };
         fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
-        auto trade_update = TradeUpdate{
-            .stream_id = stream_id_,
+        auto trade_update = oms::TradeUpdate{
             .account = authenticator_.get_account(),
             .order_id = ORDER_ID_NONE,
             .exchange = Flags::exchange(),
@@ -336,11 +332,9 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
             .external_account = {},
             .external_order_id = external_order_id,
             .fills = {&fill, 1},
-            .routing_id = {},
             .update_type = {},
-            .user = {},
         };
-        create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_SELF);
+        create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, SOURCE_SELF);
       } else {
         log::warn("*** EXTERNAL ORDER ***"sv);
         log::warn("execution_report={}"sv, execution_report);

@@ -16,6 +16,7 @@ symbols = "BTCUSDT"
   [users.test]
   password = "1234"
   symbols = ".*"
+  drop_copy = true
 
   [users.trader]
   password = "secret"

@@ -197,12 +197,6 @@
       "type": "bool",
       "default": false,
       "description": "download trades?"
-    },
-    {
-      "name": "include_external_trades",
-      "type": "bool",
-      "default": false,
-      "description": "include external trades?"
     }
   ]
 }

@@ -283,16 +283,20 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .last_liquidity = liquidity,
         .update_type = UpdateType::INCREMENTAL,
     };
+    auto is_trade = execution_report.execution_type == json::ExecutionType::TRADE;
+    auto create_fill = [&](auto &execution_report) {
+      auto result = Fill{
+          .external_trade_id = {},
+          .quantity = execution_report.last_filled_quantity,
+          .price = execution_report.last_filled_price,
+          .liquidity = liquidity,
+      };
+      fmt::format_to(std::back_inserter(result.external_trade_id), "{}"sv, execution_report.trade_id);
+      return result;
+    };
     if (shared_.update_order(execution_report.client_order_id, stream_id_, trace_info, order_update, [&](auto &order) {
-          if (execution_report.execution_type == json::ExecutionType::TRADE) {
-            auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
-            auto fill = Fill{
-                .external_trade_id = {},
-                .quantity = execution_report.last_filled_quantity,
-                .price = execution_report.last_filled_price,
-                .liquidity = liquidity,
-            };
-            fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
+          if (is_trade) {
+            auto fill = create_fill(execution_report);
             auto trade_update = oms::TradeUpdate{
                 .account = order.account,
                 .order_id = order.order_id,
@@ -311,15 +315,8 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
           }
         })) {
     } else {
-      if (Flags::include_external_trades() && execution_report.execution_type == json::ExecutionType::TRADE) {
-        auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
-        auto fill = Fill{
-            .external_trade_id = {},
-            .quantity = execution_report.last_filled_quantity,
-            .price = execution_report.last_filled_price,
-            .liquidity = liquidity,
-        };
-        fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
+      if (is_trade) {
+        auto fill = create_fill(execution_report);
         auto trade_update = oms::TradeUpdate{
             .account = authenticator_.get_account(),
             .order_id = ORDER_ID_NONE,

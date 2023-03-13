@@ -299,8 +299,9 @@ void MarketData::operator()(Trace<json::AggTrade> const &event) {
         .exchange = Flags::exchange(),
         .symbol = agg_trade.symbol,
         .trades = {&trade, 1},
-        .exchange_time_utc = agg_trade.event_time,
+        .exchange_time_utc = agg_trade.trade_time,
         .exchange_sequence = {},
+        .sending_time_utc = agg_trade.event_time,
     };
     create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
   });
@@ -343,7 +344,9 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
         .symbol = mini_ticker.symbol,
         .statistics = statistics,
         .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = mini_ticker.event_time,
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = mini_ticker.event_time,
     };
     create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
   });
@@ -368,8 +371,9 @@ void MarketData::operator()(Trace<json::BookTicker> const &event) {
             .ask_quantity = book_ticker.best_ask_qty,
         },
         .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = book_ticker.event_time,
+        .exchange_time_utc = book_ticker.transaction_time,
         .exchange_sequence = book_ticker.order_book_update_id,
+        .sending_time_utc = book_ticker.event_time,
     };
     create_trace_and_dispatch(handler_, event.trace_info, top_of_book, true);
   });
@@ -415,8 +419,9 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
             .bids = bids,
             .asks = asks,
             .update_type = update_type,
-            .exchange_time_utc = depth_update.event_time,
+            .exchange_time_utc = depth_update.transaction_time,
             .exchange_sequence = exchange_sequence,
+            .sending_time_utc = depth_update.event_time,
             .price_decimals = {},
             .quantity_decimals = {},
             .checksum = {},
@@ -497,7 +502,9 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
         .symbol = mark_price.symbol,
         .statistics = statistics,
         .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = mark_price.event_time,
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = mark_price.event_time,
     };
     create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
   });

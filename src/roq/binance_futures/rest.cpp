@@ -8,7 +8,6 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/compare.hpp"
-#include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/core/charconv.hpp"
@@ -413,7 +412,6 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
     emplace_back(mbp.bids, item);
   for (auto &item : depth.asks)
     emplace_back(mbp.asks, item);
-  auto exchange_time_utc = depth.transaction_time;
   try {
     auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence) {
       log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);
@@ -424,8 +422,9 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
           .bids = bids,
           .asks = asks,
           .update_type = UpdateType::SNAPSHOT,
-          .exchange_time_utc = exchange_time_utc,
+          .exchange_time_utc = depth.transaction_time,
           .exchange_sequence = sequencer.last_sequence(),
+          .sending_time_utc = depth.message_output_time,
           .price_decimals = {},
           .quantity_decimals = {},
           .checksum = {},

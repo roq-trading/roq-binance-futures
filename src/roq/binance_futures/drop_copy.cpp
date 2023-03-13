@@ -6,7 +6,6 @@
 
 #include "roq/mask.hpp"
 
-#include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/core/metrics/factory.hpp"
@@ -268,7 +267,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .execution_instructions = {},
         .order_template = {},
         .create_time_utc = {},
-        .update_time_utc = utils::safe_cast(order_trade_update.event_time),
+        .update_time_utc = order_trade_update.transaction_time,
         .external_account = {},
         .external_order_id = external_order_id,
         .status = order_status,
@@ -304,8 +303,8 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
                 .symbol = order.symbol,
                 .side = order.side,
                 .position_effect = order.position_effect,
-                .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
-                .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
+                .create_time_utc = execution_report.order_trade_time,
+                .update_time_utc = execution_report.order_trade_time,
                 .external_account = order.external_account,
                 .external_order_id = order.external_order_id,
                 .fills = {&fill, 1},
@@ -324,8 +323,8 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
             .symbol = execution_report.symbol,
             .side = side,
             .position_effect = {},
-            .create_time_utc = utils::safe_cast(execution_report.order_trade_time),
-            .update_time_utc = utils::safe_cast(execution_report.order_trade_time),
+            .create_time_utc = execution_report.order_trade_time,
+            .update_time_utc = execution_report.order_trade_time,
             .external_account = {},
             .external_order_id = external_order_id,
             .fills = {&fill, 1},

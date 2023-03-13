@@ -9,7 +9,6 @@
 
 #include "roq/utils/compare.hpp"
 #include "roq/utils/number.hpp"
-#include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/core/charconv.hpp"
@@ -638,8 +637,8 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .symbol = trade.symbol,
         .side = side,
         .position_effect = {},
-        .create_time_utc = utils::safe_cast(trade.time),
-        .update_time_utc = utils::safe_cast(trade.time),
+        .create_time_utc = trade.time,
+        .update_time_utc = trade.time,
         .external_account = {},
         .external_order_id = external_order_id,
         .fills = {&fill, 1},
@@ -756,7 +755,7 @@ void OrderEntry::operator()(Trace<json::NewOrder> const &event, uint8_t user_id,
       .execution_instructions = {},
       .order_template = {},
       .create_time_utc = {},
-      .update_time_utc = utils::safe_cast(new_order.update_time),
+      .update_time_utc = new_order.update_time,
       .external_account = {},
       .external_order_id = external_order_id,
       .status = order_status,
@@ -871,7 +870,7 @@ void OrderEntry::operator()(
       .execution_instructions = {},
       .order_template = {},
       .create_time_utc = {},
-      .update_time_utc = {},
+      .update_time_utc = cancel_order.update_time,
       .external_account = {},
       .external_order_id = external_order_id,
       .status = order_status,

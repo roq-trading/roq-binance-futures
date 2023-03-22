@@ -115,6 +115,10 @@ void Config::operator()(server::RateLimit &&rate_limit) {
   rate_limits.emplace(rate_limit.name, std::move(rate_limit));
 }
 
+void Config::operator()(server::RequestTemplate, [[maybe_unused]] std::string_view const &label, toml::table &) {
+  log::fatal("Unexpected: request templates not supported"sv);
+}
+
 void Config::operator()(std::string_view const &key, toml::node &) {
   log::warn(R"(Unexpected: key="{}")"sv, key);
 }

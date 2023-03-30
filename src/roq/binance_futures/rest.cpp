@@ -49,18 +49,26 @@ auto create_connection(auto &handler, auto &context) {
   auto uri = Flags::rest_uri();
   auto ping_path = fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path());
   auto config = web::rest::Client::Config{
-      .validate_certificate = server::Flags::net_tls_validate_certificate(),
+      // connection
       .interface = {},
-      .proxy = Flags::rest_proxy(),
       .uris = {&uri, 1},
-      .user_agent = ROQ_PACKAGE_NAME,
+      .validate_certificate = server::Flags::net_tls_validate_certificate(),
+      // connection manager
+      .connection_timeout = {},
+      .disconnect_on_idle_timeout = {},
       .connection = web::http::Connection::KEEP_ALIVE,
-      .allow_pipelining = false,
+      // proxy
+      .proxy = Flags::rest_proxy(),
+      // http
+      .query = {},
+      .user_agent = ROQ_PACKAGE_NAME,
       .request_timeout = Flags::rest_request_timeout(),
       .ping_frequency = Flags::rest_ping_freq(),
       .ping_path = ping_path,
+      // implementation
       .decode_buffer_size = Flags::decode_buffer_size(),
       .encode_buffer_size = Flags::encode_buffer_size(),
+      .allow_pipelining = false,
   };
   return web::rest::ClientFactory::create(handler, context, config);
 }
@@ -74,9 +82,9 @@ struct create_metrics final : public core::metrics::Factory {
 // === IMPLEMENTATION ===
 
 Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(
-                                                                                    *this, context)},
-      decode_buffer_{Flags::decode_buffer_size()}, decode_buffer_2_{Flags::decode_buffer_size()},
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
+      connection_{create_connection(*this, context)}, decode_buffer_{Flags::decode_buffer_size()},
+      decode_buffer_2_{Flags::decode_buffer_size()},
       counter_{
           .disconnect = create_metrics(name_, "disconnect"sv),
       },

@@ -69,9 +69,9 @@ auto create_drop_copy(auto &authenticator_by_account) {
 // === IMPLEMENTATION ===
 
 Gateway::Gateway(server::Dispatcher &dispatcher, Config const &config, io::Context &context)
-    : dispatcher_{dispatcher},
-      authenticator_{create_authenticator<decltype(authenticator_)>(config)}, context_{context}, shared_{dispatcher},
-      request_{create_request<decltype(request_)>(config)}, rest_{*this, context_, ++stream_id_, shared_},
+    : dispatcher_{dispatcher}, authenticator_{create_authenticator<decltype(authenticator_)>(config)},
+      context_{context}, shared_{dispatcher}, request_{create_request<decltype(request_)>(config)},
+      rest_{*this, context_, ++stream_id_, shared_},
       order_entry_{
           create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, authenticator_, shared_, request_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(authenticator_)} {

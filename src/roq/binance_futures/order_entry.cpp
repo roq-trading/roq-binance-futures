@@ -411,6 +411,9 @@ void OrderEntry::operator()(Trace<json::Balance> const &event) {
         .balance = item.balance,
         .hold = hold,
         .external_account = {},
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = item.update_time,
+        .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, funds_update, true);
   }
@@ -475,8 +478,9 @@ void OrderEntry::operator()(Trace<json::Account> const &event) {
         .external_account{},
         .long_quantity = long_quantity,
         .short_quantity = short_quantity,
-        .long_quantity_begin = NaN,
-        .short_quantity_begin = NaN,
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = account.update_time,
+        .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, position_update, true);
   }
@@ -563,6 +567,7 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
         .last_traded_price = {},
         .last_liquidity = {},
         .update_type = UpdateType::SNAPSHOT,
+        .sending_time_utc = {},
     };
     Trace event_2{trace_info, order_update};
     (*this)(event_2, order.client_order_id);
@@ -652,6 +657,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .external_order_id = external_order_id,
         .fills = {&fill, 1},
         .update_type = {},
+        .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, SOURCE_SELF);
   }
@@ -777,6 +783,7 @@ void OrderEntry::operator()(Trace<json::NewOrder> const &event, uint8_t user_id,
       .last_traded_price = NaN,
       .last_liquidity = {},
       .update_type = UpdateType::INCREMENTAL,
+      .sending_time_utc = {},
   };
   Trace event_2{trace_info, response};
   (*this)(event_2, user_id, order_id, order_update);
@@ -891,6 +898,7 @@ void OrderEntry::operator()(
       .last_traded_price = NaN,
       .last_liquidity = {},
       .update_type = UpdateType::INCREMENTAL,
+      .sending_time_utc = {},
   };
   Trace event_2{trace_info, response};
   (*this)(event_2, user_id, order_id, order_update);

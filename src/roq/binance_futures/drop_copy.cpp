@@ -292,6 +292,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .last_traded_price = execution_report.last_filled_price,
         .last_liquidity = liquidity,
         .update_type = UpdateType::INCREMENTAL,
+        .sending_time_utc = order_trade_update.event_time,
     };
     auto is_trade = execution_report.execution_type == json::ExecutionType::TRADE;
     auto create_fill = [&](auto &execution_report) {
@@ -315,11 +316,13 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
                 .side = order.side,
                 .position_effect = order.position_effect,
                 .create_time_utc = execution_report.order_trade_time,
-                .update_time_utc = execution_report.order_trade_time,
+                .update_time_utc =
+                    execution_report.order_trade_time,  // XXX same as order_trade_update.transaction_time ???
                 .external_account = order.external_account,
                 .external_order_id = order.external_order_id,
                 .fills = {&fill, 1},
                 .update_type = {},
+                .sending_time_utc = order_trade_update.event_time,
             };
             create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, order.user_id);
           }
@@ -340,6 +343,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
             .external_order_id = external_order_id,
             .fills = {&fill, 1},
             .update_type = {},
+            .sending_time_utc = order_trade_update.event_time,
         };
         create_trace_and_dispatch(handler_, trace_info, trade_update, stream_id_, true, SOURCE_SELF);
       } else {
@@ -363,6 +367,9 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
           .balance = item.wallet_balance,
           .hold = NaN,  // note! we don't see this
           .external_account = {},
+          .update_type = UpdateType::INCREMENTAL,
+          .exchange_time_utc = account_update.transaction_time,
+          .sending_time_utc = account_update.event_time,
       };
       create_trace_and_dispatch(handler_, trace_info, funds_update, true);
     }
@@ -380,8 +387,9 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
           .external_account{},
           .long_quantity = long_quantity,
           .short_quantity = short_quantity,
-          .long_quantity_begin = NaN,
-          .short_quantity_begin = NaN,
+          .update_type = UpdateType::INCREMENTAL,
+          .exchange_time_utc = account_update.transaction_time,
+          .sending_time_utc = account_update.event_time,
       };
       create_trace_and_dispatch(handler_, trace_info, position_update, true);
     }

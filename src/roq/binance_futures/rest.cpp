@@ -301,12 +301,13 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
           break;
       }
     }
+    auto security_type = json::map(item.contract_type);
     auto reference_data = ReferenceData{
         .stream_id = stream_id_,
         .exchange = Flags::exchange(),
         .symbol = item.symbol,
         .description = {},
-        .security_type = {},
+        .security_type = security_type,
         .base_currency = item.base_asset,
         .quote_currency = item.quote_asset,
         .margin_currency = item.margin_asset,

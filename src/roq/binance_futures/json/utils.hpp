@@ -11,6 +11,7 @@
 
 #include "roq/core/charconv/datetime.hpp"
 
+#include "roq/binance_futures/json/contract_type.hpp"
 #include "roq/binance_futures/json/order_status.hpp"
 #include "roq/binance_futures/json/order_type.hpp"
 #include "roq/binance_futures/json/side.hpp"
@@ -41,6 +42,23 @@ inline void update(std::chrono::milliseconds &result, core::json::Value const &v
           [](core::json::Array const &) { throw std::bad_cast{}; },
       },
       value);
+}
+
+inline roq::SecurityType map(json::ContractType value) {
+  switch (value) {
+    using enum json::ContractType::type_t;
+    case UNDEFINED:
+      break;
+    case UNKNOWN:
+      break;
+    case PERPETUAL:
+      return roq::SecurityType::SWAP;
+    case CURRENT_QUARTER:
+      return roq::SecurityType::FUTURES;
+    case NEXT_QUARTER:
+      return roq::SecurityType::FUTURES;
+  }
+  return {};
 }
 
 inline roq::OrderStatus map(json::OrderStatus side) {

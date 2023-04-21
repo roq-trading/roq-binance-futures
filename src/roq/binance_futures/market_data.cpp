@@ -383,7 +383,7 @@ void MarketData::operator()(Trace<json::BookTicker> const &event) {
             .ask_price = book_ticker.best_ask_price,
             .ask_quantity = book_ticker.best_ask_qty,
         },
-        .update_type = UpdateType::INCREMENTAL,
+        .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = book_ticker.transaction_time,
         .exchange_sequence = book_ticker.order_book_update_id,
         .sending_time_utc = book_ticker.event_time,

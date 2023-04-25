@@ -50,10 +50,10 @@ void MarketStreamParser::dispatch(
       auto field = Field(key);
       switch (field) {
         using enum Field::type_t;
-        case UNDEFINED:
+        case UNDEFINED__:
           log::fatal("Unexpected"sv);
           break;
-        case UNKNOWN:
+        case UNKNOWN__:
 #ifndef NDEBUG
           log::fatal(R"(Unknown key="{}")"sv, key);
 #endif
@@ -109,7 +109,7 @@ void MarketStreamParser::dispatch(
               dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case UNDEFINED:
+            case UNDEFINED__:
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:
@@ -122,7 +122,7 @@ void MarketStreamParser::dispatch(
               // XXX need parsing
               break;
             }
-            case UNKNOWN:
+            case UNKNOWN__:
               if (!flags::Flags::continue_with_unknown_event_type())
                 log::fatal("Unexpected"sv);
               return;

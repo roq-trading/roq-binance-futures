@@ -41,7 +41,7 @@ bool UserStreamParser::try_dispatch(
     TraceInfo const &trace_info) {
   switch (event_type) {
     using enum EventType::type_t;
-    case UNDEFINED:
+    case UNDEFINED__:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
     case BOOK_TICKER:
@@ -89,7 +89,7 @@ bool UserStreamParser::try_dispatch(
       // XXX need parsing
       break;
     }
-    case UNKNOWN:
+    case UNKNOWN__:
       if (!flags::Flags::continue_with_unknown_event_type())
         log::fatal("Unexpected"sv);
       return false;

@@ -47,9 +47,8 @@ inline void update(std::chrono::milliseconds &result, core::json::Value const &v
 inline roq::SecurityType map(json::ContractType value) {
   switch (value) {
     using enum json::ContractType::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case PERPETUAL:
       return roq::SecurityType::SWAP;
@@ -64,9 +63,8 @@ inline roq::SecurityType map(json::ContractType value) {
 inline roq::OrderStatus map(json::OrderStatus side) {
   switch (side) {
     using enum json::OrderStatus::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case NEW:
       return roq::OrderStatus::WORKING;
@@ -83,7 +81,7 @@ inline roq::OrderStatus map(json::OrderStatus side) {
     case NEW_ADL:
       break;
   }
-  return roq::OrderStatus::UNDEFINED;
+  return {};
 }
 
 inline json::OrderStatus map(roq::OrderStatus side) {
@@ -111,15 +109,14 @@ inline json::OrderStatus map(roq::OrderStatus side) {
     case REJECTED:
       break;
   }
-  return json::OrderStatus::UNDEFINED;
+  return {};
 }
 
 inline roq::OrderType map(json::OrderType side) {
   switch (side) {
     using enum json::OrderType::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case MARKET:
       return roq::OrderType::MARKET;
@@ -132,7 +129,7 @@ inline roq::OrderType map(json::OrderType side) {
     case LIQUIDATION:
       break;
   }
-  return roq::OrderType::UNDEFINED;
+  return {};
 }
 
 inline json::OrderType map(roq::OrderType side) {
@@ -145,22 +142,21 @@ inline json::OrderType map(roq::OrderType side) {
     case LIMIT:
       return json::OrderType::LIMIT;
   }
-  return json::OrderType::UNDEFINED;
+  return {};
 }
 
 inline roq::Side map(json::Side side) {
   switch (side) {
     using enum json::Side::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case BUY:
       return roq::Side::BUY;
     case SELL:
       return roq::Side::SELL;
   }
-  return roq::Side::UNDEFINED;
+  return {};
 }
 
 inline json::Side map(roq::Side side) {
@@ -173,15 +169,14 @@ inline json::Side map(roq::Side side) {
     case SELL:
       return json::Side::SELL;
   }
-  return json::Side::UNDEFINED;
+  return {};
 }
 
 inline roq::TradingStatus map(json::SymbolStatus symbol_status) {
   switch (symbol_status) {
     using enum json::SymbolStatus::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case TRADING:
       return roq::TradingStatus::OPEN;
@@ -211,9 +206,8 @@ inline roq::TradingStatus map(json::SymbolStatus symbol_status) {
 inline roq::TimeInForce map(json::TimeInForce time_in_force) {
   switch (time_in_force) {
     using enum json::TimeInForce::type_t;
-    case UNDEFINED:
-      break;
-    case UNKNOWN:
+    case UNDEFINED__:
+    case UNKNOWN__:
       break;
     case GTC:
       return roq::TimeInForce::GTC;
@@ -224,7 +218,7 @@ inline roq::TimeInForce map(json::TimeInForce time_in_force) {
     case GTX:
       return roq::TimeInForce::GTX;
   }
-  return roq::TimeInForce::UNDEFINED;
+  return {};
 }
 
 inline json::TimeInForce map(roq::TimeInForce time_in_force) {
@@ -259,7 +253,7 @@ inline json::TimeInForce map(roq::TimeInForce time_in_force) {
     case GFM:
       break;
   }
-  return json::TimeInForce::UNDEFINED;
+  return {};
 }
 
 extern roq::Error guess_error(int32_t code);

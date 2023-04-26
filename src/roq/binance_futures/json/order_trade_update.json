@@ -1,6 +1,6 @@
 {
   "name": "OrderTradeUpdate",
-  "type": "item",
+  "type": "comp",
   "values": [
     {
       "raw": "e",

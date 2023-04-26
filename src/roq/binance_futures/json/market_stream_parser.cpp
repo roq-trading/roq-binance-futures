@@ -27,9 +27,7 @@ void dispatch_helper(
     std::string_view const &message,
     core::json::Buffer &buffer,
     TraceInfo const &trace_info) {
-  core::json::Parser parser{message};
-  auto root = parser.root();
-  const T value{root, buffer};
+  T value{message, buffer};
   create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
@@ -64,16 +62,16 @@ void MarketStreamParser::dispatch(
           break;
         case ERROR:
           if (id >= 0) {
-            const Error error{value};
-            Trace event(trace_info, error);
+            Error error{value};
+            Trace event{trace_info, error};
             dispatched = true;
             handler(event, id);
           }
           break;
         case RESULT:
           if (id >= 0) {
-            const Result result{value, buffer};
-            Trace event(trace_info, result);
+            Result result{value, buffer};
+            Trace event{trace_info, result};
             dispatched = true;
             handler(event, id);
           }

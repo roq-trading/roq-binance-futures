@@ -48,7 +48,7 @@ auto create_options(auto &flags) {
 Config::Config(Options const &options)
     : exchange_{options.exchange}, mbp_max_depth_{options.mbp_max_depth},
       mbp_allow_price_inversion_{options.mbp_allow_price_inversion}, mbp_checksum_{options.mbp_checksum} {
-  server::ConfigReader::parse_file(*this);
+  server::config::Reader::parse_file(*this);
   log::info<1>("config={}"sv, *this);
 }
 
@@ -73,7 +73,7 @@ std::string const &Config::get_secret(Account const &account) const {
   return (*iter).second.secret;
 }
 
-void Config::dispatch(server::Config::Handler &handler) const {
+void Config::dispatch(server::config::Dispatcher::Handler &handler) const {
   handler(exchange_);
   handler(symbols);
   for (auto &iter : accounts)
@@ -97,25 +97,26 @@ void Config::dispatch(server::Config::Handler &handler) const {
     handler(iter.second);
 }
 
-void Config::operator()(server::Symbols &&symbols) {
+void Config::operator()(server::config::Symbols &&symbols) {
   (*this).symbols = std::move(symbols);
 }
 
-void Config::operator()(server::Account &&account) {
+void Config::operator()(server::config::Account &&account) {
   if (account.master)
     master_account_ = account.name;
   accounts.emplace(account.name, std::move(account));
 }
 
-void Config::operator()(server::User &&user) {
+void Config::operator()(server::config::User &&user) {
   users.emplace_back(std::move(user));
 }
 
-void Config::operator()(server::RateLimit &&rate_limit) {
+void Config::operator()(server::config::RateLimit &&rate_limit) {
   rate_limits.emplace(rate_limit.name, std::move(rate_limit));
 }
 
-void Config::operator()(server::RequestTemplate, [[maybe_unused]] std::string_view const &label, toml::table &) {
+void Config::operator()(
+    server::config::RequestTemplate, [[maybe_unused]] std::string_view const &label, toml::table &) {
   log::fatal("Unexpected: request templates not supported"sv);
 }
 

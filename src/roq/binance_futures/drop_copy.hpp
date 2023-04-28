@@ -17,7 +17,7 @@
 
 #include "roq/server.hpp"
 
-#include "roq/binance_futures/authenticator.hpp"
+#include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/drop_copy_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
@@ -37,13 +37,7 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
   };
 
   DropCopy(
-      Handler &,
-      io::Context &,
-      uint16_t stream_id,
-      Authenticator &,
-      Shared &,
-      Request &,
-      std::string_view const &listen_key);
+      Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
   DropCopy(DropCopy &&) = delete;
   DropCopy(DropCopy const &) = delete;
@@ -94,10 +88,10 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
  private:
   Handler &handler_;
   // config
-  const uint16_t stream_id_;
-  const std::string name_;
+  uint16_t const stream_id_;
+  std::string const name_;
   // web socket
-  std::unique_ptr<web::socket::Client> connection_;
+  std::unique_ptr<web::socket::Client> const connection_;
   // buffers
   core::Buffer decode_buffer_;
   // metrics
@@ -112,7 +106,7 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
     core::metrics::Latency ping, heartbeat;
   } latency_;
   // authentication
-  Authenticator &authenticator_;
+  Account &account_;
   // shared
   Shared &shared_;
   Request &request_;

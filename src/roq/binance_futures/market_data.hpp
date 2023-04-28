@@ -95,7 +95,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
   std::string const name_;
   size_t const index_;
   // web socket
-  std::unique_ptr<web::socket::Client> connection_;
+  std::unique_ptr<web::socket::Client> const connection_;
   // buffers
   core::Buffer decode_buffer_;
   // session

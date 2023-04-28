@@ -14,13 +14,13 @@
 namespace roq {
 namespace binance_futures {
 
-struct Authenticator final {
-  Authenticator(Config const &, std::string_view const &account);
+struct Account final {
+  Account(Config const &, std::string_view const &name);
 
-  Authenticator(Authenticator &&) = delete;
-  Authenticator(Authenticator const &) = delete;
+  Account(Account &&) = delete;
+  Account(Account const &) = delete;
 
-  std::string_view get_account() const { return account_; }
+  std::string_view get_name() const { return name_; }
 
   std::string create_query(std::string_view const &body) { return crypto_.create_query(body); }
   std::string create_query() { return create_query({}); }
@@ -28,7 +28,7 @@ struct Authenticator final {
   std::string_view create_headers() const { return crypto_.create_headers(); }
 
  private:
-  std::string const account_;
+  std::string const name_;
   tools::Crypto crypto_;
 };
 

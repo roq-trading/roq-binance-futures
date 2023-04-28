@@ -25,16 +25,18 @@ namespace binance_futures {
 
 namespace {
 template <typename R>
-auto create_authenticator(auto const &config) {
-  R result;
+auto create_accounts(auto &config) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
   for (auto &[_, account] : config.accounts)
-    result.try_emplace(account.name, std::make_unique<Authenticator>(config, account.name));
+    result.try_emplace(account.name, std::make_unique<Account>(config, account.name));
   return result;
 }
 
 template <typename R>
-auto create_request(auto const &config) {
-  R result;
+auto create_request(auto &config) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
   for (auto &[_, account] : config.accounts)
     result.try_emplace(account.name, Request{});
   return result;
@@ -42,26 +44,21 @@ auto create_request(auto const &config) {
 
 template <typename R>
 auto create_order_entry(
-    auto &gateway,
-    auto &context,
-    auto &stream_id,
-    auto &authenticator_by_account,
-    auto &shared,
-    auto &request_by_account) {
-  R result;
-  for (auto &[account, authenticator] : authenticator_by_account) {
-    auto &request = request_by_account[account];
-    result.try_emplace(
-        account, std::make_unique<OrderEntry>(gateway, context, ++stream_id, *authenticator, shared, request));
+    auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
+  for (auto &[name, account] : accounts) {
+    auto &request = request_by_account[name];
+    result.try_emplace(name, std::make_unique<OrderEntry>(gateway, context, ++stream_id, *account, shared, request));
   }
   return result;
 }
 
 template <typename R>
-auto create_drop_copy(auto &authenticator_by_account) {
+auto create_drop_copy(auto &accounts) {
   R result;
-  for (auto &[account, authenticator] : authenticator_by_account)
-    result.try_emplace(account, nullptr);
+  for (auto &[name, account] : accounts)
+    result.try_emplace(name, nullptr);
   return result;
 }
 }  // namespace
@@ -69,12 +66,11 @@ auto create_drop_copy(auto &authenticator_by_account) {
 // === IMPLEMENTATION ===
 
 Gateway::Gateway(server::Dispatcher &dispatcher, Config const &config, io::Context &context)
-    : dispatcher_{dispatcher}, authenticator_{create_authenticator<decltype(authenticator_)>(config)},
-      context_{context}, shared_{dispatcher}, request_{create_request<decltype(request_)>(config)},
-      rest_{*this, context_, ++stream_id_, shared_},
-      order_entry_{
-          create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, authenticator_, shared_, request_)},
-      drop_copy_{create_drop_copy<decltype(drop_copy_)>(authenticator_)} {
+    : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context},
+      shared_{dispatcher}, request_{create_request<decltype(request_)>(config)},
+      rest_{*this, context_, ++stream_id_, shared_}, order_entry_{create_order_entry<decltype(order_entry_)>(
+                                                         *this, context_, stream_id_, accounts_, shared_, request_)},
+      drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
   if (Flags::rest_cancel_on_disconnect())
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
 }
@@ -116,7 +112,7 @@ void Gateway::operator()(Event<Disconnected> const &event) {
       for (auto &[account, order_entry] : order_entry_) {
         if (dispatcher_.can_user_trade_account(account, message_info.source)) {
           log::warn(R"(- account="{}")"sv, account);
-          CancelAllOrders cancel_all_orders{
+          auto cancel_all_orders = CancelAllOrders{
               .account = account,
           };
           Event event(message_info, cancel_all_orders);
@@ -217,7 +213,7 @@ void Gateway::operator()(OrderEntry::ListenKeyUpdate const &listen_key_update) {
         *this,
         context_,
         ++stream_id_,
-        *authenticator_[account],
+        *accounts_.at(account),
         shared_,
         request_[account],
         listen_key_update.listen_key);
@@ -265,16 +261,17 @@ void Gateway::operator()(metrics::Writer &writer) {
 
 template <typename... Args>
 void Gateway::dispatch(Args &&...args) {
-  rest_(std::forward<Args>(args)...);
+  auto helper = [&](auto &target) { target(std::forward<Args>(args)...); };
+  helper(rest_);
   for (auto &[_, item] : order_entry_)
-    (*item)(std::forward<Args>(args)...);
+    helper(*item);
   for (auto &[_, item] : drop_copy_)
     if (static_cast<bool>(item))
-      (*item)(std::forward<Args>(args)...);
+      helper(*item);
   for (auto &item : market_data_1_)
-    (*item)(std::forward<Args>(args)...);
+    helper(*item);
   for (auto &item : market_data_2_)
-    (*item)(std::forward<Args>(args)...);
+    helper(*item);
 }
 
 OrderEntry &Gateway::get_order_entry(std::string_view const &account) {

@@ -25,7 +25,7 @@ namespace binance_futures {
 
 namespace {
 template <typename R>
-auto create_accounts(auto &config) {
+R create_accounts(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[_, account] : config.accounts)
@@ -34,7 +34,7 @@ auto create_accounts(auto &config) {
 }
 
 template <typename R>
-auto create_request(auto &config) {
+R create_request(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[_, account] : config.accounts)
@@ -43,7 +43,7 @@ auto create_request(auto &config) {
 }
 
 template <typename R>
-auto create_order_entry(
+R create_order_entry(
     auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
@@ -55,8 +55,9 @@ auto create_order_entry(
 }
 
 template <typename R>
-auto create_drop_copy(auto &accounts) {
-  R result;
+R create_drop_copy(auto &accounts) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
   for (auto &[name, account] : accounts)
     result.try_emplace(name, nullptr);
   return result;

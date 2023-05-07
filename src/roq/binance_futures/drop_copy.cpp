@@ -49,15 +49,15 @@ auto create_uri(auto const &listen_key) {
   return io::web::URI{result};
 }
 
-auto create_connection(auto &handler, auto &context, auto const &listen_key) {
+auto create_connection(auto &handler, auto &settings, auto &context, auto const &listen_key) {
   auto uri = create_uri(listen_key);
   auto config = web::socket::Client::Config{
       // connection
       .interface = {},
       .uris = {&uri, 1},
-      .validate_certificate = server::Flags::net_tls_validate_certificate(),
+      .validate_certificate = settings.net.tls_validate_certificate,
       // connection manager
-      .connection_timeout = server::Flags::net_connection_timeout(),
+      .connection_timeout = settings.net.connection_timeout,
       .disconnect_on_idle_timeout = {},
       .always_reconnect = true,
       // proxy
@@ -75,8 +75,8 @@ auto create_connection(auto &handler, auto &context, auto const &listen_key) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(auto const &group, auto const &function)
-      : core::metrics::Factory(server::Flags::name(), group, function) {}
+  explicit create_metrics(auto &settings, auto const &group, auto const &function)
+      : core::metrics::Factory(settings.app.name, group, function) {}
 };
 }  // namespace
 
@@ -91,22 +91,23 @@ DropCopy::DropCopy(
     Request &request,
     std::string_view const &listen_key)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
-      connection_{create_connection(*this, context, listen_key)}, decode_buffer_{Flags::decode_buffer_size()},
+      connection_{create_connection(*this, shared.settings, context, listen_key)},
+      decode_buffer_{Flags::decode_buffer_size()},
       counter_{
-          .disconnect = create_metrics(name_, "disconnect"sv),
+          .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
       profile_{
-          .parse = create_metrics(name_, "parse"sv),
-          .order_trade_update = create_metrics(name_, "order_trade_update"sv),
-          .account_update = create_metrics(name_, "account_update"sv),
-          .margin_call = create_metrics(name_, "margin_call"sv),
-          .strategy_update = create_metrics(name_, "strategy_update"sv),
-          .grid_update = create_metrics(name_, "grid_update"sv),
-          .account_config_update = create_metrics(name_, "account_config_update"sv),
+          .parse = create_metrics(shared.settings, name_, "parse"sv),
+          .order_trade_update = create_metrics(shared.settings, name_, "order_trade_update"sv),
+          .account_update = create_metrics(shared.settings, name_, "account_update"sv),
+          .margin_call = create_metrics(shared.settings, name_, "margin_call"sv),
+          .strategy_update = create_metrics(shared.settings, name_, "strategy_update"sv),
+          .grid_update = create_metrics(shared.settings, name_, "grid_update"sv),
+          .account_config_update = create_metrics(shared.settings, name_, "account_config_update"sv),
       },
       latency_{
-          .ping = create_metrics(name_, "ping"sv),
-          .heartbeat = create_metrics(name_, "heartbeat"sv),
+          .ping = create_metrics(shared.settings, name_, "ping"sv),
+          .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
       account_{account}, shared_{shared}, request_{request},
       download_{{}, [this](auto state) { return download(state); }} {

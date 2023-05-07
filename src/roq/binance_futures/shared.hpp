@@ -20,12 +20,13 @@
 #include "roq/core/mbp/sequencer.hpp"
 
 #include "roq/binance_futures/api.hpp"
+#include "roq/binance_futures/settings.hpp"
 
 namespace roq {
 namespace binance_futures {
 
 struct Shared final {
-  explicit Shared(server::Dispatcher &);
+  Shared(server::Dispatcher &, Settings const &);
 
   Shared(Shared &&) = default;
   Shared(Shared const &) = delete;
@@ -43,6 +44,7 @@ struct Shared final {
   }
 
  public:
+  Settings const &settings;
   API const api;
 
  private:

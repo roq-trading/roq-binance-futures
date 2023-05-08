@@ -4,8 +4,6 @@
 
 #include "roq/exceptions.hpp"
 
-#include "roq/binance_futures/flags.hpp"
-
 using namespace std::literals;
 
 namespace roq {
@@ -13,8 +11,8 @@ namespace binance_futures {
 
 // === IMPLEMENTATION ===
 
-API API::create() {
-  auto api = Flags::api();
+API API::create(Settings const &settings) {
+  auto api = settings.app.api;
   if (api.compare("dapi"sv) == 0) {
     return {
         .get_exchange_info = "/dapi/v1/exchangeInfo"sv,

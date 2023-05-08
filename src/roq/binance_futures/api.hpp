@@ -4,6 +4,8 @@
 
 #include <string_view>
 
+#include "roq/binance_futures/settings.hpp"
+
 namespace roq {
 namespace binance_futures {
 
@@ -21,7 +23,7 @@ struct API final {
   std::string_view all_open_orders;
   std::string_view countdown_cancel_all;
   // factory
-  static API create();
+  static API create(Settings const &);
 };
 
 }  // namespace binance_futures

@@ -16,8 +16,6 @@
 
 #include "roq/web/rest/client_factory.hpp"
 
-#include "roq/binance_futures/flags.hpp"
-
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/filters.hpp"
 #include "roq/binance_futures/json/utils.hpp"
@@ -46,8 +44,8 @@ auto create_name(auto stream_id) {
 }
 
 auto create_connection(auto &handler, auto &settings, auto &context) {
-  auto uri = Flags::rest_uri();
-  auto ping_path = fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path());
+  auto uri = settings.rest.uri;
+  auto ping_path = fmt::format("/{}{}"sv, settings.app.api, settings.rest.ping_path);
   auto config = web::rest::Client::Config{
       // connection
       .interface = {},
@@ -58,16 +56,16 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
       .disconnect_on_idle_timeout = {},
       .connection = web::http::Connection::KEEP_ALIVE,
       // proxy
-      .proxy = Flags::rest_proxy(),
+      .proxy = settings.rest.proxy,
       // http
       .query = {},
       .user_agent = ROQ_PACKAGE_NAME,
-      .request_timeout = Flags::rest_request_timeout(),
-      .ping_frequency = Flags::rest_ping_freq(),
+      .request_timeout = settings.rest.request_timeout,
+      .ping_frequency = settings.rest.ping_freq,
       .ping_path = ping_path,
       // implementation
-      .decode_buffer_size = Flags::decode_buffer_size(),
-      .encode_buffer_size = Flags::encode_buffer_size(),
+      .decode_buffer_size = settings.common.decode_buffer_size,
+      .encode_buffer_size = settings.common.encode_buffer_size,
       .allow_pipelining = false,
   };
   return web::rest::ClientFactory::create(handler, context, config);
@@ -83,8 +81,9 @@ struct create_metrics final : public core::metrics::Factory {
 
 Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
-      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_{Flags::decode_buffer_size()},
-      decode_buffer_2_{Flags::decode_buffer_size()},
+      connection_{create_connection(*this, shared.settings, context)},
+      decode_buffer_{shared.settings.common.decode_buffer_size},
+      decode_buffer_2_{shared.settings.common.decode_buffer_size},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -97,7 +96,7 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
-      shared_{shared}, download_{Flags::rest_request_timeout(), [this](auto state) { return download(state); }} {
+      shared_{shared}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
 }
 
 void Rest::operator()(Event<Start> const &) {
@@ -303,7 +302,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     auto security_type = json::map(item.contract_type);
     auto reference_data = ReferenceData{
         .stream_id = stream_id_,
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .description = {},
         .security_type = security_type,
@@ -345,7 +344,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     auto trading_status = json::map(item.status);
     auto market_status = MarketStatus{
         .stream_id = stream_id_,
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .trading_status = trading_status,
     };
@@ -364,7 +363,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
 
 void Rest::get_depth(std::string_view const &symbol) {
   profile_.depth([&]() {
-    auto query = fmt::format("?symbol={}&limit={}"sv, symbol, Flags::ws_subscribe_depth_levels());
+    auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.ws.subscribe_depth_levels);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.get_depth,
@@ -430,7 +429,7 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
       log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);
       auto market_by_price_update = MarketByPriceUpdate{
           .stream_id = stream_id_,
-          .exchange = Flags::exchange(),
+          .exchange = shared_.settings.exchange,
           .symbol = symbol,
           .bids = bids,
           .asks = asks,
@@ -448,7 +447,7 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
     };
     auto request_snapshot = [&](auto retries) {
       log::debug(R"(REQUEST symbol="{}" (retries={}))"sv, symbol, retries);
-      if (Flags::ws_mbp_request_max_retries() && Flags::ws_mbp_request_max_retries() < retries) {
+      if (shared_.settings.ws.mbp_request_max_retries && shared_.settings.ws.mbp_request_max_retries < retries) {
         log::fatal(R"(Unexpected: symbol="{}", retries={})"sv, symbol, retries);
       }
       shared_.depth_request_queue.emplace_back(symbol);
@@ -522,11 +521,11 @@ void Rest::process_response(
 }
 
 void Rest::waf_limit_violation() {
-  if (Flags::rest_terminate_on_403()) {
+  if (shared_.settings.rest.terminate_on_403) {
     log::fatal("WAF limit violation"sv);
   } else {
     log::warn("WAF limit violation"sv);
-    (*connection_).suspend(Flags::rest_back_off_delay());
+    (*connection_).suspend(shared_.settings.rest.back_off_delay);
   }
 }
 

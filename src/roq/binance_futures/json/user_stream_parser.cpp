@@ -6,8 +6,6 @@
 
 #include "roq/core/json/parser.hpp"
 
-#include "roq/binance_futures/flags/flags.hpp"
-
 using namespace std::literals;
 
 namespace roq {
@@ -18,14 +16,15 @@ void UserStreamParser::dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
     core::json::Buffer &buffer,
-    TraceInfo const &trace_info) {
+    TraceInfo const &trace_info,
+    bool continue_with_unknown_event_type) {
   core::json::Parser parser{message};
   auto root = parser.root();
   for (auto [key, value] : std::get<core::json::Object>(root)) {
     if (key.compare("e"sv) != 0)
       continue;
     EventType event_type{value};
-    if (try_dispatch(handler, message, buffer, event_type, trace_info))
+    if (try_dispatch(handler, message, buffer, event_type, trace_info, continue_with_unknown_event_type))
       return;
     break;
   }
@@ -38,7 +37,8 @@ bool UserStreamParser::try_dispatch(
     std::string_view const &message,
     core::json::Buffer &buffer,
     EventType event_type,
-    TraceInfo const &trace_info) {
+    TraceInfo const &trace_info,
+    bool continue_with_unknown_event_type) {
   switch (event_type) {
     using enum EventType::type_t;
     case UNDEFINED__:
@@ -90,7 +90,7 @@ bool UserStreamParser::try_dispatch(
       break;
     }
     case UNKNOWN__:
-      if (!flags::Flags::continue_with_unknown_event_type())
+      if (!continue_with_unknown_event_type)
         log::fatal("Unexpected"sv);
       return false;
     default:

@@ -17,8 +17,6 @@
 
 #include "roq/web/rest/client_factory.hpp"
 
-#include "roq/binance_futures/flags.hpp"
-
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/utils.hpp"
 
@@ -49,8 +47,8 @@ auto create_name(auto stream_id, auto const &account) {
 }
 
 auto create_connection(auto &handler, auto &settings, auto &context) {
-  auto uri = Flags::rest_uri();
-  auto ping_path = fmt::format("/{}{}"sv, Flags::api(), Flags::rest_ping_path());
+  auto uri = settings.rest.uri;
+  auto ping_path = fmt::format("/{}{}"sv, settings.app.api, settings.rest.ping_path);
   auto config = web::rest::Client::Config{
       // connection
       .interface = {},
@@ -61,16 +59,16 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
       .disconnect_on_idle_timeout = {},
       .connection = web::http::Connection::KEEP_ALIVE,
       // proxy
-      .proxy = Flags::rest_proxy(),
+      .proxy = settings.rest.proxy,
       // http
       .query = {},
       .user_agent = ROQ_PACKAGE_NAME,
-      .request_timeout = Flags::rest_request_timeout(),
-      .ping_frequency = Flags::rest_ping_freq(),
+      .request_timeout = settings.rest.request_timeout,
+      .ping_frequency = settings.rest.ping_freq,
       .ping_path = ping_path,
       // implementation
-      .decode_buffer_size = Flags::decode_buffer_size(),
-      .encode_buffer_size = Flags::encode_buffer_size(),
+      .decode_buffer_size = settings.common.decode_buffer_size,
+      .encode_buffer_size = settings.common.encode_buffer_size,
       .allow_pipelining = false,
   };
   return web::rest::ClientFactory::create(handler, context, config);
@@ -87,7 +85,8 @@ struct create_metrics final : public core::metrics::Factory {
 OrderEntry::OrderEntry(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.get_name())},
-      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_{Flags::decode_buffer_size()},
+      connection_{create_connection(*this, shared.settings, context)},
+      decode_buffer_{shared.settings.common.decode_buffer_size},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -116,7 +115,7 @@ OrderEntry::OrderEntry(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
       account_{account}, shared_{shared}, request_{request},
-      download_{Flags::rest_request_timeout(), [this](auto state) { return download(state); }} {
+      download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
 }
 
 void OrderEntry::operator()(Event<Start> const &) {
@@ -131,8 +130,8 @@ void OrderEntry::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (Flags::rest_order_countdown().count() && next_auto_cancel_ < now) {
-    next_auto_cancel_ = now + Flags::rest_order_countdown() / 4;
+  if (shared_.settings.rest.order_countdown.count() && next_auto_cancel_ < now) {
+    next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
     auto_cancel_all_open_orders();
   }
   if (ready() && !downloading()) {
@@ -349,7 +348,7 @@ void OrderEntry::operator()(Trace<json::ListenKey> const &event) {
     }
   }
   auto now = clock::get_system();
-  listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
+  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
 }
 
 // balance
@@ -469,7 +468,7 @@ void OrderEntry::operator()(Trace<json::Account> const &event) {
     auto position_update = PositionUpdate{
         .stream_id = stream_id_,
         .account = account_.get_name(),
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .external_account{},
         .long_quantity = long_quantity,
@@ -540,7 +539,7 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
     auto order_status = json::map(order.status);
     auto order_update = oms::OrderUpdate{
         .account = account_.get_name(),
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = order.symbol,
         .side = side,
         .position_effect = {},
@@ -574,9 +573,9 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
 
 void OrderEntry::get_trades() {
   profile_.trades([&]() {
-    auto &symbols = flags::Flags::download_symbols();
+    auto &symbols = shared_.settings.common.download_symbols;
     for (auto &symbol : symbols) {
-      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = end_time - 86400s;
       auto limit = uint32_t{1000};
@@ -644,7 +643,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .stream_id = stream_id_,
         .account = account_.get_name(),
         .order_id = ORDER_ID_NONE,
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = trade.symbol,
         .side = side,
         .position_effect = {},
@@ -672,7 +671,7 @@ void OrderEntry::refresh_listen_key() {
   if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
     return;
   log::info("Refreshing listen key..."sv);
-  listen_key_refresh_ = now + Flags::rest_listen_key_refresh();
+  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
   get_listen_key();
 }
 
@@ -685,7 +684,7 @@ void OrderEntry::new_order(
       throw oms::NotReady{"not ready"sv};
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
-    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::new_order(encode_buffer_, create_order, order, request_id, recv_window);
     log::debug(R"(body="{}")"sv, body);
     auto query = account_.create_query(body);
@@ -760,7 +759,7 @@ void OrderEntry::operator()(Trace<json::NewOrder> const &event, uint8_t user_id,
   };
   auto order_update = oms::OrderUpdate{
       .account = account_.get_name(),
-      .exchange = Flags::exchange(),
+      .exchange = shared_.settings.exchange,
       .symbol = new_order.symbol,
       .side = side,
       .position_effect = {},
@@ -800,7 +799,7 @@ void OrderEntry::cancel_order(
     if (!ready())
       throw oms::NotReady{"not ready"sv};
     auto &[message_info, cancel_order] = event;
-    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
     log::debug(R"(body="{}")"sv, body);
     auto query = account_.create_query(body);
@@ -875,7 +874,7 @@ void OrderEntry::operator()(
   };
   auto order_update = oms::OrderUpdate{
       .account = account_.get_name(),
-      .exchange = Flags::exchange(),
+      .exchange = shared_.settings.exchange,
       .symbol = cancel_order.symbol,
       .side = side,
       .position_effect = {},
@@ -909,7 +908,7 @@ void OrderEntry::operator()(
 void OrderEntry::cancel_all_open_orders(
     Event<CancelAllOrders> const &, [[maybe_unused]] std::string_view const &request_id) {
   profile_.cancel_all_open_orders([&]() {
-    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
       auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
       log::debug(R"(body="{}")"sv, body);
@@ -960,8 +959,9 @@ void OrderEntry::operator()(Trace<json::CancelAllOpenOrders> const &event) {
 void OrderEntry::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
-      auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_countdown());
-      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(Flags::rest_order_recv_window());
+      auto countdown_time =
+          std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
+      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto body = json::countdown_cancel_all_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
       log::debug(R"(body="{}")"sv, body);
       auto query = account_.create_query(body);
@@ -1084,11 +1084,11 @@ void OrderEntry::operator()(Trace<oms::OrderUpdate> const &event, std::string_vi
 }
 
 void OrderEntry::waf_limit_violation() {
-  if (Flags::rest_terminate_on_403()) {
+  if (shared_.settings.rest.terminate_on_403) {
     log::fatal("WAF limit violation"sv);
   } else {
     log::warn("WAF limit violation"sv);
-    (*connection_).suspend(Flags::rest_back_off_delay());
+    (*connection_).suspend(shared_.settings.rest.back_off_delay);
   }
 }
 

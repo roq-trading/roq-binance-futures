@@ -7,8 +7,6 @@
 
 #include "roq/compat.hpp"
 
-#include "roq/binance_futures/flags/flags.hpp"
-
 #include "roq/binance_futures/json/field.hpp"
 #include "roq/binance_futures/json/stream.hpp"
 
@@ -36,7 +34,8 @@ void MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     std::string_view const &message,
     core::json::Buffer &buffer,
-    TraceInfo const &trace_info) {
+    TraceInfo const &trace_info,
+    bool continue_with_unknown_event_type) {
   int64_t id = -1;
   std::string symbol;  // allocating because we need uppercase
   // auto stream = Stream::UNDEFINED;
@@ -79,7 +78,8 @@ void MarketStreamParser::dispatch(
         case STREAM:
           break;
         case DATA: {
-          dispatch(handler, core::json::get<std::string_view>(value), buffer, trace_info);
+          dispatch(
+              handler, core::json::get<std::string_view>(value), buffer, trace_info, continue_with_unknown_event_type);
           return;
         }
         case EVENT_TYPE: {
@@ -121,7 +121,7 @@ void MarketStreamParser::dispatch(
               break;
             }
             case UNKNOWN__:
-              if (!flags::Flags::continue_with_unknown_event_type())
+              if (!continue_with_unknown_event_type)
                 log::fatal("Unexpected"sv);
               return;
           }

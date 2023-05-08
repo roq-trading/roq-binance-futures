@@ -31,11 +31,21 @@ struct UserStreamParser final {
     virtual void operator()(Trace<AccountConfigUpdate> const &) = 0;
   };
 
-  static void dispatch(Handler &, std::string_view const &message, core::json::Buffer &, TraceInfo const &);
+  static void dispatch(
+      Handler &,
+      std::string_view const &message,
+      core::json::Buffer &,
+      TraceInfo const &,
+      bool continue_with_unknown_event_type = false);
 
  private:
   static bool try_dispatch(
-      UserStreamParser::Handler &, std::string_view const &message, core::json::Buffer &, EventType, TraceInfo const &);
+      UserStreamParser::Handler &,
+      std::string_view const &message,
+      core::json::Buffer &,
+      EventType,
+      TraceInfo const &,
+      bool continue_with_unknown_event_type);
 };
 
 }  // namespace json

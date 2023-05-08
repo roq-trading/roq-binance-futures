@@ -35,7 +35,11 @@ struct MarketStreamParser final {
   };
 
   static void dispatch(
-      Handler &handler, std::string_view const &message, core::json::Buffer &buffer, TraceInfo const &);
+      Handler &handler,
+      std::string_view const &message,
+      core::json::Buffer &buffer,
+      TraceInfo const &,
+      bool continue_with_unknown_event_type = false);
 };
 
 }  // namespace json

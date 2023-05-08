@@ -1,0 +1,61 @@
+{
+  "name": "Common",
+  "type": "flags",
+  "values": [
+    {
+      "name": "request_limit",
+      "type": "uint32_t",
+      "default": "8",
+      "description": "request limit per interval"
+    },
+    {
+      "name": "request_limit_interval",
+      "type": "std::chrono::nanoseconds",
+      "validator": "roq::core::flags::TimePeriod",
+      "default": "5s",
+      "description": "request limit monitor interval"
+    },
+    {
+      "name": "encode_buffer_size",
+      "type": "uint32_t",
+      "validator": "roq::core::flags::NonZero<uint32_t>",
+      "default": 1048576,
+      "description": "encode buffer size"
+    },
+    {
+      "name": "decode_buffer_size",
+      "type": "uint32_t",
+      "validator": "roq::core::flags::NonZero<uint32_t>",
+      "default": 10485760,
+      "description": "decode buffer size"
+    },
+    {
+      "name": "mbp_allow_price_inversion",
+      "type": "bool",
+      "default": false,
+      "description": "allow price inversion?"
+    },
+    {
+      "name": "mbp_max_depth",
+      "type": "uint16_t",
+      "description": "max depth levels (count)"
+    },
+    {
+      "name": "continue_with_unknown_event_type",
+      "type": "bool",
+      "default": false,
+      "description": "continue when getting updates for unknown event-types?"
+    },
+    {
+      "name": "download_symbols",
+      "type": "std::vector<std::string>",
+      "description": "comma-separated list of symbols"
+    },
+    {
+      "name": "download_trades",
+      "type": "bool",
+      "default": false,
+      "description": "download trades?"
+    }
+  ]
+}

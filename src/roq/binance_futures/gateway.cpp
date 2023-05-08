@@ -12,8 +12,6 @@
 #include "roq/core/charconv.hpp"
 #include "roq/core/utils.hpp"
 
-#include "roq/binance_futures/flags.hpp"
-
 #include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
@@ -72,7 +70,7 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
       rest_{*this, context_, ++stream_id_, shared_}, order_entry_{create_order_entry<decltype(order_entry_)>(
                                                          *this, context_, stream_id_, accounts_, shared_, request_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
-  if (Flags::rest_cancel_on_disconnect())
+  if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
 }
 
@@ -189,7 +187,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
     create_event_and_dispatch(*market_data, message_info, start);
     market_data_1_.emplace_back(std::move(market_data));
   }
-  if (!Flags::ws_enable_secondary())
+  if (shared_.settings.ws.enable_secondary)
     return;
   while (std::size(market_data_2_) < size) {
     auto stream_id = ++stream_id_;

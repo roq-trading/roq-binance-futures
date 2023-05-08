@@ -12,8 +12,6 @@
 
 #include "roq/web/socket/client_factory.hpp"
 
-#include "roq/binance_futures/flags.hpp"
-
 #include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
@@ -42,15 +40,15 @@ auto create_name(auto stream_id) {
   return fmt::format("{}:{}"sv, stream_id, NAME);
 }
 
-auto create_uri(auto const &listen_key) {
+auto create_uri(auto &settings, auto const &listen_key) {
   assert(!std::empty(listen_key));
-  auto &uri = Flags::ws_uri();
+  auto &uri = settings.ws.uri;
   auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
   return io::web::URI{result};
 }
 
 auto create_connection(auto &handler, auto &settings, auto &context, auto const &listen_key) {
-  auto uri = create_uri(listen_key);
+  auto uri = create_uri(settings, listen_key);
   auto config = web::socket::Client::Config{
       // connection
       .interface = {},
@@ -66,10 +64,10 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto const 
       .query = {},
       .user_agent = ROQ_PACKAGE_NAME,
       .request_timeout = {},
-      .ping_frequency = Flags::ws_ping_freq(),
+      .ping_frequency = settings.ws.ping_freq,
       // implementation
-      .decode_buffer_size = Flags::decode_buffer_size(),
-      .encode_buffer_size = Flags::encode_buffer_size(),
+      .decode_buffer_size = settings.common.decode_buffer_size,
+      .encode_buffer_size = settings.common.encode_buffer_size,
   };
   return web::socket::ClientFactory::create(handler, context, config, []() { return std::string(); });
 }
@@ -92,7 +90,7 @@ DropCopy::DropCopy(
     std::string_view const &listen_key)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
       connection_{create_connection(*this, shared.settings, context, listen_key)},
-      decode_buffer_{Flags::decode_buffer_size()},
+      decode_buffer_{shared.settings.common.decode_buffer_size},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -225,7 +223,7 @@ uint32_t DropCopy::download(DropCopyState state) {
       request_orders();
       return 1;
     case TRADES:
-      if (flags::Flags::download_trades() && !std::empty(flags::Flags::download_symbols())) {
+      if (shared_.settings.common.download_trades && !std::empty(shared_.settings.common.download_symbols)) {
         request_trades();
         return 1;
       } else {
@@ -247,7 +245,8 @@ void DropCopy::parse(std::string_view const &message) {
       log::debug(R"(message="{}")"sv, message);
       TraceInfo trace_info;
       core::json::Buffer buffer{decode_buffer_};
-      json::UserStreamParser::dispatch(*this, message, buffer, trace_info);
+      json::UserStreamParser::dispatch(
+          *this, message, buffer, trace_info, shared_.settings.common.continue_with_unknown_event_type);
     } catch (...) {
       log::warn(R"(message="{}")"sv, message);
       core::tools::UnhandledException::terminate();
@@ -270,7 +269,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
     auto order_update = oms::OrderUpdate{
         .account = account_.get_name(),
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
         .side = side,
         .position_effect = {},
@@ -318,7 +317,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .stream_id = stream_id_,
         .account = account_.get_name(),
         .order_id = order_id,
-        .exchange = Flags::exchange(),
+        .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
         .side = side,
         .position_effect = {},
@@ -364,7 +363,7 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
       auto position_update = PositionUpdate{
           .stream_id = stream_id_,
           .account = account_.get_name(),
-          .exchange = Flags::exchange(),
+          .exchange = shared_.settings.exchange,
           .symbol = item.symbol,
           .external_account{},
           .long_quantity = long_quantity,

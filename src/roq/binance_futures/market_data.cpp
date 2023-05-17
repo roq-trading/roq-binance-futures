@@ -429,8 +429,8 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
             .stream_id = stream_id_,
             .exchange = shared_.settings.exchange,
             .symbol = symbol,
-            .bids = bids,
-            .asks = asks,
+            .bids = {const_cast<MBPUpdate *>(std::data(bids)), std::size(bids)},  // FIXME
+            .asks = {const_cast<MBPUpdate *>(std::data(asks)), std::size(asks)},  // FIXME
             .update_type = update_type,
             .exchange_time_utc = depth_update.transaction_time,
             .exchange_sequence = exchange_sequence,

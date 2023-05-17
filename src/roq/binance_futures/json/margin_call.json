@@ -20,7 +20,7 @@
     {
       "raw": "p",
       "name": "positions",
-      "type": "std::span<MarginCallItem>"
+      "type": "std::span<MarginCallItem const>"
     }
   ]
 }

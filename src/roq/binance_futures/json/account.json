@@ -68,11 +68,11 @@
     },
     {
       "name": "assets",
-      "type": "std::span<Asset>"
+      "type": "std::span<Asset const>"
     },
     {
       "name": "positions",
-      "type": "std::span<Position>"
+      "type": "std::span<Position const>"
     },
     {
       "name": "multiAssetsMargin",

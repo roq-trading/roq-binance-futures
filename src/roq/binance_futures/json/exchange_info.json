@@ -12,14 +12,14 @@
     },
     {
       "name": "rateLimits",
-      "type": "std::span<RateLimit>"
+      "type": "std::span<RateLimit const>"
     },
     {
       "name": "exchangeFilters"
     },
     {
       "name": "symbols",
-      "type": "std::span<Symbol>"
+      "type": "std::span<Symbol const>"
     },
     {
       "name": "futuresType",
@@ -28,7 +28,7 @@
     },
     {
       "name": "assets",
-      "type": "std::span<ExchangeInfoAsset>"
+      "type": "std::span<ExchangeInfoAsset const>"
     }
   ]
 }

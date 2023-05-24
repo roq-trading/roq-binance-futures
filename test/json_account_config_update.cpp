@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/account_config_update.hpp"
 
 using namespace roq;
@@ -24,9 +22,8 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"("l":25)"
                  R"(})"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::AccountConfigUpdate>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::AccountConfigUpdate::create(message, buffer);
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);
   CHECK(obj.transaction_time == 1611646737476ms);
@@ -44,9 +41,8 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"("j":true)"
                  R"(})"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::AccountConfigUpdate>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::AccountConfigUpdate::create(message, buffer);
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);
   CHECK(obj.transaction_time == 1611646737476ms);

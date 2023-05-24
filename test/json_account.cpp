@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/account.hpp"
 
 using namespace roq;
@@ -177,9 +175,8 @@ TEST_CASE("json_account_simple_usd_m", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Account>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Account::create(message, buffer);
   CHECK(obj.fee_tier == 0);
   CHECK(obj.can_trade == true);
   CHECK(obj.can_deposit == true);
@@ -311,9 +308,8 @@ TEST_CASE("json_account_simple_coin_m", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  [[maybe_unused]] auto obj = core::json::Parser::create<json::Account>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  [[maybe_unused]] auto obj = json::Account::create(message, buffer);
 }
 
 TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
@@ -404,7 +400,6 @@ TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  [[maybe_unused]] auto obj = core::json::Parser::create<json::Account>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  [[maybe_unused]] auto obj = json::Account::create(message, buffer);
 }

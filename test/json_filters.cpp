@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/filters.hpp"
 
 using namespace roq;
@@ -46,9 +44,8 @@ TEST_CASE("json_filters_simple_1", "[json_filters]") {
                  R"("filterType":"PERCENT_PRICE")"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Filters>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Filters::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 7);
   auto &d0 = data[0];

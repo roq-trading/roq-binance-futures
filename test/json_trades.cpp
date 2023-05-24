@@ -16,9 +16,8 @@ using namespace Catch::literals;
 
 TEST_CASE("empty", "[json_trades]") {
   auto message = R"([])";
-  core::Buffer buffer_(8192);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Trades>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Trades::create(message, buffer);
   REQUIRE(std::size(obj.data) == 0);
 }
 
@@ -40,9 +39,8 @@ TEST_CASE("fapi", "[json_trades]") {
                  R"("time": 1569514978020)"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(8192);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Trades>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Trades::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];
@@ -82,9 +80,8 @@ TEST_CASE("dapi", "[json_trades]") {
                  R"("maker": false)"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(8192);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Trades>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Trades::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];

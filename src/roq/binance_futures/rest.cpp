@@ -82,8 +82,8 @@ struct create_metrics final : public core::metrics::Factory {
 Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
       connection_{create_connection(*this, shared.settings, context)},
-      decode_buffer_{shared.settings.common.decode_buffer_size},
-      decode_buffer_2_{shared.settings.common.decode_buffer_size},
+      decode_buffer_(shared.settings.common.decode_buffer_size),
+      decode_buffer_2_(shared.settings.common.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -227,7 +227,7 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
       if (download_.skip(sequence, STATE)) {
         log::info("Download state={} has already been processed"sv, STATE);
       } else {
-        json::ExchangeInfo exchange_info{body, decode_buffer_};
+        auto exchange_info = json::ExchangeInfo::create(body, decode_buffer_);
         Trace event_2{event, exchange_info};
         (*this)(event_2);
         download_.check(STATE);
@@ -261,7 +261,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     auto max_trade_vol = NaN;
     auto trade_vol_step_size = min_trade_vol;
     // parse filters and update
-    json::Filters filters{item.filters, decode_buffer_2_};
+    auto filters = json::Filters::create(item.filters, decode_buffer_2_);
     for (auto &filter : filters.data) {
       switch (filter.filter_type) {
         using enum json::FilterType::type_t;
@@ -386,7 +386,7 @@ void Rest::get_depth(std::string_view const &symbol) {
 void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
   profile_.depth_ack([&]() {
     auto handle_success = [&](auto &body) {
-      json::Depth depth{body, decode_buffer_};
+      auto depth = json::Depth::create(body, decode_buffer_);
       Trace event_2{event, depth};
       (*this)(event_2, symbol);
     };

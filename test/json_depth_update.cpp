@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/depth_update.hpp"
 
 using namespace roq;
@@ -38,7 +36,6 @@ TEST_CASE("json_depth_update_simple_coin_m", "[json_depth_update]") {
                  R"(["49527.2","74"])"
                  R"(])"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  [[maybe_unused]] auto obj = core::json::Parser::create<json::DepthUpdate>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  [[maybe_unused]] auto obj = json::DepthUpdate::create(message, buffer);
 }

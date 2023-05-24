@@ -86,7 +86,7 @@ OrderEntry::OrderEntry(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.get_name())},
       connection_{create_connection(*this, shared.settings, context)},
-      decode_buffer_{shared.settings.common.decode_buffer_size},
+      decode_buffer_(shared.settings.common.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -379,7 +379,7 @@ void OrderEntry::get_balance() {
 void OrderEntry::get_balance_ack(Trace<web::rest::Response> const &event) {
   profile_.balance_ack([&]() {
     auto handle_success = [&](auto &body) {
-      json::Balance balance{body, decode_buffer_};
+      auto balance = json::Balance::create(body, decode_buffer_);
       Trace event_2{event, balance};
       (*this)(event_2);
       request_.respond_balance = clock::get_system();  // completion
@@ -442,7 +442,7 @@ void OrderEntry::get_account() {
 void OrderEntry::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto handle_success = [&](auto &body) {
-      json::Account account{body, decode_buffer_};
+      auto account = json::Account::create(body, decode_buffer_);
       Trace event_2{event, account};
       (*this)(event_2);
       request_.respond_account = clock::get_system();  // completion
@@ -509,7 +509,7 @@ void OrderEntry::get_open_orders() {
 void OrderEntry::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
-      json::OpenOrders open_orders{body, decode_buffer_};
+      auto open_orders = json::OpenOrders::create(body, decode_buffer_);
       Trace event_2{event, open_orders};
       (*this)(event_2);
       request_.respond_orders = clock::get_system();  // completion
@@ -609,7 +609,7 @@ void OrderEntry::get_trades() {
 void OrderEntry::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
     auto handle_success = [&](auto &body) {
-      json::Trades trades{body, decode_buffer_};
+      auto trades = json::Trades::create(body, decode_buffer_);
       Trace event_2{event, trades};
       (*this)(event_2);
       request_.respond_trades = clock::get_system();  // completion

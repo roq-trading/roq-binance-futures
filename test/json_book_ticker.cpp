@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/market_stream_parser.hpp"
 
 using namespace roq;
@@ -26,9 +24,8 @@ TEST_CASE("json_book_ticker_simple", "[json_book_ticker]") {
                  R"("T":1634288226709,)"
                  R"("E":1634288226716)"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::BookTicker::create(message, buffer);
   CHECK(obj.event_type == json::EventType::BOOK_TICKER);
   CHECK(obj.order_book_update_id == 847033385825);
   CHECK(obj.symbol == "BTCUSDT"sv);
@@ -52,8 +49,7 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
                  R"("T":1634288226709,)"
                  R"("E":1634288226716)"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
+  std::vector<std::byte> buffer(8192);
   TraceInfo trace_info;
   struct MyHandler final : public json::MarketStreamParser::Handler {
     void operator()(Trace<json::Error> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
@@ -88,8 +84,7 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
                  R"("E":1634288226716)"
                  R"(})"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
+  std::vector<std::byte> buffer(8192);
   TraceInfo trace_info;
   struct MyHandler final : public json::MarketStreamParser::Handler {
     void operator()(Trace<json::Error> const &, [[maybe_unused]] int32_t id) override { FAIL(); }
@@ -122,9 +117,8 @@ TEST_CASE("json_book_ticker_simple_coin_m", "[json_book_ticker]") {
                  R"("T":1640247707198,)"
                  R"("E":1640247707203)"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::BookTicker>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::BookTicker::create(message, buffer);
   CHECK(obj.order_book_update_id == 300683916630);
   CHECK(obj.event_type == json::EventType::BOOK_TICKER);
   CHECK(obj.symbol == "BTCUSD_220325"sv);

@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/margin_call.hpp"
 
 using namespace roq;
@@ -31,9 +29,8 @@ TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::MarginCall>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::MarginCall::create(message, buffer);
   CHECK(obj.event_type == json::EventType::MARGIN_CALL);
   CHECK(obj.event_time == 1587727187525ms);
   CHECK(obj.cross_wallet_balance == 3.16812045_a);

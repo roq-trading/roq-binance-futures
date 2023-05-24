@@ -124,9 +124,8 @@ TEST_CASE("json_exchange_info_simple_usd_m", "[json_exchange_info]") {
       R"(})"
       R"(])"
       R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::ExchangeInfo>(message, buffer);
+  std::vector<std::byte> buffer(65536);
+  auto obj = json::ExchangeInfo::create(message, buffer);
   CHECK(obj.timezone == "UTC"sv);
   CHECK(obj.server_time == 1634122324532ms);
   CHECK(obj.futures_type == "U_MARGINED"sv);
@@ -303,7 +302,6 @@ TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
       R"(})"
       R"(])"
       R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  [[maybe_unused]] auto obj = core::json::Parser::create<json::ExchangeInfo>(message, buffer);
+  std::vector<std::byte> buffer(65536);
+  [[maybe_unused]] auto obj = json::ExchangeInfo::create(message, buffer);
 }

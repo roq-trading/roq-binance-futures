@@ -15,7 +15,7 @@ namespace json {
 void UserStreamParser::dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
-    core::json::Buffer &buffer,
+    std::span<std::byte> const &buffer,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
   core::json::Parser parser{message};
@@ -35,7 +35,7 @@ void UserStreamParser::dispatch(
 bool UserStreamParser::try_dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
-    core::json::Buffer &buffer,
+    std::span<std::byte> const &buffer,
     EventType event_type,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
@@ -50,37 +50,37 @@ bool UserStreamParser::try_dispatch(
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {
-      OrderTradeUpdate order_trade_update{message, buffer};
+      auto order_trade_update = OrderTradeUpdate::create(message, buffer);
       Trace event{trace_info, order_trade_update};
       handler(event);
       break;
     }
     case ACCOUNT_UPDATE: {
-      AccountUpdate account_update{message, buffer};
+      auto account_update = AccountUpdate::create(message, buffer);
       Trace event{trace_info, account_update};
       handler(event);
       break;
     }
     case MARGIN_CALL: {
-      MarginCall margin_call{message, buffer};
+      auto margin_call = MarginCall::create(message, buffer);
       Trace event{trace_info, margin_call};
       handler(event);
       break;
     }
     case STRATEGY_UPDATE: {
-      StrategyUpdate strategy_update{message, buffer};
+      auto strategy_update = StrategyUpdate::create(message, buffer);
       Trace event{trace_info, strategy_update};
       handler(event);
       break;
     }
     case GRID_UPDATE: {
-      GridUpdate grid_update{message, buffer};
+      auto grid_update = GridUpdate::create(message, buffer);
       Trace event{trace_info, grid_update};
       handler(event);
       break;
     }
     case ACCOUNT_CONFIG_UPDATE: {
-      AccountConfigUpdate account_config_update{message, buffer};
+      auto account_config_update = AccountConfigUpdate::create(message, buffer);
       Trace event{trace_info, account_config_update};
       handler(event);
       break;

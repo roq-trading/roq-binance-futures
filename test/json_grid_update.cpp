@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/grid_update.hpp"
 
 using namespace roq;
@@ -32,9 +30,8 @@ TEST_CASE("simple", "[json_grid_update]") {
                  R"("ut":1669262908197)"
                  R"(})"
                  R"(})";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::GridUpdate>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::GridUpdate::create(message, buffer);
   CHECK(obj.event_type == json::EventType::GRID_UPDATE);
   CHECK(obj.transaction_time == 1669262908216ms);
   CHECK(obj.event_time == 1669262908218ms);

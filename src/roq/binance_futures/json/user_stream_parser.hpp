@@ -4,9 +4,7 @@
 
 #include <string_view>
 
-#include "roq/core/json/buffer.hpp"
-
-#include "roq/server.hpp"
+#include "roq/trace_info.hpp"
 
 #include "roq/binance_futures/json/event_type.hpp"
 
@@ -34,7 +32,7 @@ struct UserStreamParser final {
   static void dispatch(
       Handler &,
       std::string_view const &message,
-      core::json::Buffer &,
+      std::span<std::byte> const &,
       TraceInfo const &,
       bool continue_with_unknown_event_type = false);
 
@@ -42,7 +40,7 @@ struct UserStreamParser final {
   static bool try_dispatch(
       UserStreamParser::Handler &,
       std::string_view const &message,
-      core::json::Buffer &,
+      std::span<std::byte> const &,
       EventType,
       TraceInfo const &,
       bool continue_with_unknown_event_type);

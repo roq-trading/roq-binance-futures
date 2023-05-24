@@ -23,9 +23,9 @@ template <typename T>
 void dispatch_helper(
     MarketStreamParser::Handler &handler,
     std::string_view const &message,
-    core::json::Buffer &buffer,
+    std::span<std::byte> const &buffer,
     TraceInfo const &trace_info) {
-  T value{message, buffer};
+  auto value = T::create(message, buffer);
   create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
@@ -33,7 +33,7 @@ void dispatch_helper(
 void MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     std::string_view const &message,
-    core::json::Buffer &buffer,
+    std::span<std::byte> const &buffer,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
   int64_t id = -1;
@@ -69,7 +69,8 @@ void MarketStreamParser::dispatch(
           break;
         case RESULT:
           if (id >= 0) {
-            Result result{value, buffer};
+            core::json::Buffer buffer_2{buffer};
+            Result result{value, buffer_2};
             Trace event{trace_info, result};
             dispatched = true;
             handler(event, id);

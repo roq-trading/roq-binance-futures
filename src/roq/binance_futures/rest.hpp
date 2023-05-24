@@ -8,7 +8,6 @@
 #include <string_view>
 #include <vector>
 
-#include "roq/core/buffer.hpp"
 #include "roq/core/download.hpp"
 
 #include "roq/core/metrics/counter.hpp"
@@ -94,8 +93,8 @@ struct Rest final : public web::rest::Client::Handler {
   // connection
   std::unique_ptr<web::rest::Client> const connection_;
   // buffers
-  core::Buffer decode_buffer_;
-  core::Buffer decode_buffer_2_;  // note! decode nested arrays (ExchangeInfo)
+  std::vector<std::byte> decode_buffer_;
+  std::vector<std::byte> decode_buffer_2_;  // note! decode nested arrays (ExchangeInfo)
   // metrics
   struct {
     core::metrics::Counter disconnect;

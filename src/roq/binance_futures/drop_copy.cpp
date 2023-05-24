@@ -90,7 +90,7 @@ DropCopy::DropCopy(
     std::string_view const &listen_key)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
       connection_{create_connection(*this, shared.settings, context, listen_key)},
-      decode_buffer_{shared.settings.common.decode_buffer_size},
+      decode_buffer_(shared.settings.common.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -244,9 +244,8 @@ void DropCopy::parse(std::string_view const &message) {
     try {
       log::debug(R"(message="{}")"sv, message);
       TraceInfo trace_info;
-      core::json::Buffer buffer{decode_buffer_};
       json::UserStreamParser::dispatch(
-          *this, message, buffer, trace_info, shared_.settings.common.continue_with_unknown_event_type);
+          *this, message, decode_buffer_, trace_info, shared_.settings.common.continue_with_unknown_event_type);
     } catch (...) {
       log::warn(R"(message="{}")"sv, message);
       core::tools::UnhandledException::terminate();

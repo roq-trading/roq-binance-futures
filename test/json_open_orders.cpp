@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/open_orders.hpp"
 
 using namespace roq;
@@ -16,9 +14,8 @@ using namespace Catch::literals;
 
 TEST_CASE("json_open_orders_simple_empty", "[json_open_orders]") {
   auto message = R"([])";
-  core::Buffer buffer_(8192);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::OpenOrders>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::OpenOrders::create(message, buffer);
   REQUIRE(std::size(obj.data) == 0);
 }
 
@@ -47,9 +44,8 @@ TEST_CASE("json_open_orders_simple_1", "[json_open_orders]") {
                  R"("updateTime":1634546562277)"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(8192);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::OpenOrders>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::OpenOrders::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];

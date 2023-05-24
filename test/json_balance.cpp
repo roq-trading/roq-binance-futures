@@ -2,8 +2,6 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/parser.hpp"
-
 #include "roq/binance_futures/json/balance.hpp"
 
 using namespace roq;
@@ -67,9 +65,8 @@ TEST_CASE("json_balance_simple_usd_m", "[json_balance]") {
                  R"("updateTime":0)"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Balance>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Balance::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 5);
   auto &a0 = data[0];
@@ -154,9 +151,8 @@ TEST_CASE("json_balance_simple_coinm", "[json_balance]") {
                  R"("availableBalance":"0.00000000")"
                  R"(})"
                  R"(])";
-  core::Buffer buffer_(65536);
-  core::json::Buffer buffer(buffer_);
-  auto obj = core::json::Parser::create<json::Balance>(message, buffer);
+  std::vector<std::byte> buffer(8192);
+  auto obj = json::Balance::create(message, buffer);
   auto &data = obj.data;
   REQUIRE(std::size(data) == 3);
 }

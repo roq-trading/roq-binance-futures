@@ -5,14 +5,14 @@
     {
       "name": "exchange",
       "type": "std::string",
-      "validator": "roq::core::flags::NonEmpty",
+      "validator": "roq::flags::validators::NonEmpty",
       "default": "binance-futures",
       "description": "exchange identifier (string)"
     },
     {
       "name": "api",
       "type": "std::string",
-      "validator": "roq::core::flags::NonEmpty",
+      "validator": "roq::flags::validators::NonEmpty",
       "default": "fapi",
       "description": "what api to use (fapi, dapi)"
     }

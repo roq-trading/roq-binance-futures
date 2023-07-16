@@ -8,20 +8,22 @@
 #include "roq/server/flags/settings.hpp"
 
 #include "roq/binance_futures/flags/common.hpp"
+#include "roq/binance_futures/flags/flags.hpp"
 #include "roq/binance_futures/flags/rest.hpp"
 #include "roq/binance_futures/flags/ws.hpp"
 
 namespace roq {
 namespace binance_futures {
 
-struct Settings final : public server::flags::Settings {
+struct Settings final : public server::flags::Settings, public flags::Flags {
   explicit Settings(args::Parser const &);
 
-  std::string_view exchange;
+  flags::Common common;
+  flags::REST rest;
+  flags::WS ws;
 
-  flags::Common__flags common;
-  flags::REST__flags rest;
-  flags::WS__flags ws;
+ private:
+  Settings(args::Parser const &, flags::Flags const &);
 };
 
 }  // namespace binance_futures

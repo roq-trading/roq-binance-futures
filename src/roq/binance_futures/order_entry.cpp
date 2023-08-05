@@ -643,7 +643,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
         .account = account_.get_name(),
-        .order_id = ORDER_ID_NONE,
+        .order_id = {},
         .exchange = shared_.settings.exchange,
         .symbol = trade.symbol,
         .side = side,
@@ -657,6 +657,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .update_type = UpdateType::SNAPSHOT,
         .sending_time_utc = {},
         .user = {},
+        .strategy_id = {},
     };
     std::string_view client_order_id;  // note! unavailable
     create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_order_id);

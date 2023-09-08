@@ -652,6 +652,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
         .update_time_utc = trade.time,
         .external_account = {},
         .external_order_id = external_order_id,
+        .client_order_id = {},
         .fills = {&fill, 1},
         .routing_id = {},
         .update_type = UpdateType::SNAPSHOT,

@@ -9,9 +9,9 @@
 
 #include "roq/utils/safe_cast.hpp"
 
-#include "roq/clock.hpp"
+#include "roq/utils/codec/hex.hpp"
 
-#include "roq/core/codec/hex.hpp"
+#include "roq/clock.hpp"
 
 using namespace std::literals;
 
@@ -42,7 +42,7 @@ std::string Crypto::create_query(std::string_view const &body) {
     mac_.update(body);
   auto digest = mac_.final(digest_);
   std::string signature;
-  core::codec::Hex::encode(signature, digest);
+  utils::codec::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, timestamp, signature);
 }
 

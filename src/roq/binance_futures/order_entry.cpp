@@ -562,6 +562,7 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
         .last_traded_quantity = {},
         .last_traded_price = {},
         .last_liquidity = {},
+        .routing_id = {},
         .update_type = UpdateType::SNAPSHOT,
         .sending_time_utc = {},
     };
@@ -785,6 +786,7 @@ void OrderEntry::operator()(Trace<json::NewOrder> const &event, uint8_t user_id,
       .last_traded_quantity = NaN,
       .last_traded_price = NaN,
       .last_liquidity = {},
+      .routing_id = {},
       .update_type = UpdateType::INCREMENTAL,
       .sending_time_utc = {},
   };
@@ -901,6 +903,7 @@ void OrderEntry::operator()(
       .last_traded_quantity = NaN,
       .last_traded_price = NaN,
       .last_liquidity = {},
+      .routing_id = {},
       .update_type = UpdateType::INCREMENTAL,
       .sending_time_utc = {},
   };

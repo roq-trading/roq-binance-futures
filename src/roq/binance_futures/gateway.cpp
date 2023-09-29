@@ -187,7 +187,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
     log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::PRIMARY, shared_, index);
     MessageInfo message_info;
-    const Start start;
+    Start const start;
     create_event_and_dispatch(*market_data, message_info, start);
     market_data_1_.emplace_back(std::move(market_data));
   }
@@ -199,7 +199,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
     log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::SECONDARY, shared_, index);
     MessageInfo message_info;
-    const Start start;
+    Start const start;
     create_event_and_dispatch(*market_data, message_info, start);
     market_data_2_.emplace_back(std::move(market_data));
   }
@@ -222,7 +222,7 @@ void Gateway::operator()(OrderEntry::ListenKeyUpdate const &listen_key_update) {
         request_[account],
         listen_key_update.listen_key);
     MessageInfo message_info;
-    const Start start;
+    Start const start;
     create_event_and_dispatch(*drop_copy, message_info, start);
     (*iter).second = std::move(drop_copy);
   }

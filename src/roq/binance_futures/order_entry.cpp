@@ -922,9 +922,9 @@ void OrderEntry::operator()(
 
 // cancel-all-orders
 
-void OrderEntry::cancel_all_open_orders(
-    Event<CancelAllOrders> const &, [[maybe_unused]] std::string_view const &request_id) {
+void OrderEntry::cancel_all_open_orders(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.cancel_all_open_orders([&]() {
+    auto &cancel_all_orders = event.value;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
       auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
@@ -941,23 +941,45 @@ void OrderEntry::cancel_all_open_orders(
           .body = body,
           .quality_of_service = io::QualityOfService::IMMEDIATE,
       };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
+      auto callback = [this](auto &request_id, auto &response) {
         TraceInfo trace_info;
         Trace event{trace_info, response};
-        cancel_all_open_orders_ack(event);
+        cancel_all_open_orders_ack(event, request_id);
       };
       (*connection_)(request_id, request, callback);
+      auto cancel_all_orders_ack = CancelAllOrdersAck{
+          .stream_id = stream_id_,
+          .account = account_.get_name(),
+          .order_id = {},
+          .exchange = cancel_all_orders.exchange,
+          .symbol = cancel_all_orders.symbol,
+          .side = cancel_all_orders.side,
+          .origin = Origin::GATEWAY,
+          .status = RequestStatus::FORWARDED,
+          .error = {},
+          .text = {},
+          .request_id = request_id,
+          .external_account = {},
+          .number_of_affected_orders = {},
+          .round_trip_latency = {},
+          .user = {},
+          .strategy_id = {},
+      };
+      TraceInfo trace_info;
+      Trace event_2{trace_info, cancel_all_orders_ack};
+      shared_(event_2);
     }
   });
 }
 
-void OrderEntry::cancel_all_open_orders_ack(Trace<web::rest::Response> const &event) {
+void OrderEntry::cancel_all_open_orders_ack(
+    Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.cancel_all_open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelAllOpenOrders cancel_all_open_orders{body};
       log::debug("cancel_all_open_orders={}"sv, cancel_all_open_orders);
       Trace event_2{event, cancel_all_open_orders};
-      (*this)(event_2);
+      (*this)(event_2, request_id);
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
       log::warn(R"(Failed to cancel all open orders: error={}, text="{}")"sv, error, text);
@@ -966,9 +988,35 @@ void OrderEntry::cancel_all_open_orders_ack(Trace<web::rest::Response> const &ev
   });
 }
 
-void OrderEntry::operator()(Trace<json::CancelAllOpenOrders> const &event) {
+void OrderEntry::operator()(Trace<json::CancelAllOpenOrders> const &event, std::string_view const &request_id) {
   auto &[trace_info, cancel_all_open_orders] = event;
   log::debug("cancel_all_open_orders={}"sv, cancel_all_open_orders);
+  auto status = [&]() {
+    if (cancel_all_open_orders.code == 200)
+      return RequestStatus::ACCEPTED;
+    return RequestStatus::REJECTED;
+  }();
+  auto error = json::guess_error(cancel_all_open_orders.code);
+  auto cancel_all_orders_ack = CancelAllOrdersAck{
+      .stream_id = stream_id_,
+      .account = account_.get_name(),
+      .order_id = {},
+      .exchange = {},
+      .symbol = {},
+      .side = {},
+      .origin = Origin::EXCHANGE,
+      .status = status,
+      .error = error,
+      .text = cancel_all_open_orders.msg,
+      .request_id = request_id,
+      .external_account = {},
+      .number_of_affected_orders = {},
+      .round_trip_latency = {},
+      .user = {},
+      .strategy_id = {},
+  };
+  Trace event_2{trace_info, cancel_all_orders_ack};
+  shared_(event_2);
 }
 
 // auto-cancel-all-orders

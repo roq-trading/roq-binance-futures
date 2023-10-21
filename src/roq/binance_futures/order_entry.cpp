@@ -636,6 +636,7 @@ void OrderEntry::operator()(Trace<json::Trades> const &event) {
     log::info<2>("trade={}"sv, trade);
     auto liquidity = trade.maker ? Liquidity::MAKER : Liquidity::TAKER;
     auto fill = Fill{
+        .exchange_time_utc = trade.time,
         .external_trade_id = {},
         .quantity = trade.qty,
         .price = trade.price,

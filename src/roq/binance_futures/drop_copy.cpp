@@ -313,6 +313,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     if (execution_report.execution_type != json::ExecutionType::TRADE)
       return;
     auto fill = Fill{
+        .exchange_time_utc = execution_report.order_trade_time,
         .external_trade_id = {},
         .quantity = execution_report.last_filled_quantity,
         .price = execution_report.last_filled_price,

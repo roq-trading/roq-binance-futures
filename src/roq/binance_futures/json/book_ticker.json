@@ -10,7 +10,7 @@
     {
       "raw": "u",
       "name": "order_book_update_id",
-      "type": "int64_t"
+      "type": "uint64_t"
     },
     {
       "raw": "E",

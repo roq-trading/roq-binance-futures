@@ -30,17 +30,17 @@
     {
       "raw": "U",
       "name": "first_update_id",
-      "type": "int64_t"
+      "type": "uint64_t"
     },
     {
       "raw": "u",
       "name": "final_update_id",
-      "type": "int64_t"
+      "type": "uint64_t"
     },
     {
       "raw": "pu",
       "name": "final_update_id_in_last_stream",
-      "type": "int64_t"
+      "type": "uint64_t"
     },
     {
       "raw": "b",

@@ -27,4 +27,6 @@ $PREFIX ./roq-binance-futures \
   --service_listen_address "$HOME/run/metrics/${NAME}.sock" \
   --ws_uri "$WS_URI" \
   --rest_uri "$REST_URI" \
+  --download_symbols="BTCUSDT,ETHUSDT" \
+  --download_trades_count=1000 \
   $@

@@ -576,14 +576,16 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
 
 // trades
 
+// XXX FIXME download_trades_count
 void OrderEntry::get_trades() {
   profile_.trades([&]() {
     auto &symbols = shared_.settings.common.download_symbols;
     for (auto &symbol : symbols) {
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
-      auto start_time = end_time - 86400s;
-      auto limit = uint32_t{1000};
+      auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+          end_time - shared_.settings.common.download_trades_lookback);
+      auto limit = shared_.settings.common.download_trades_limit;
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();

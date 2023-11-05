@@ -223,7 +223,8 @@ uint32_t DropCopy::download(DropCopyState state) {
       request_orders();
       return 1;
     case TRADES:
-      if (shared_.settings.common.download_trades && !std::empty(shared_.settings.common.download_symbols)) {
+      if ((shared_.settings.common.download_trades_lookback.count() || shared_.settings.common.download_trades_count) &&
+          !std::empty(shared_.settings.common.download_symbols)) {
         request_trades();
         return 1;
       } else {

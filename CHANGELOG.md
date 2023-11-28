@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Support `ModifyOrder` (#423)
+
 ## 0.9.8 &ndash; 2023-11-20
 
 ## 0.9.7 &ndash; 2023-09-18

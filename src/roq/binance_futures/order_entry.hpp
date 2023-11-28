@@ -30,6 +30,7 @@
 #include "roq/binance_futures/json/cancel_all_open_orders.hpp"
 #include "roq/binance_futures/json/cancel_order.hpp"
 #include "roq/binance_futures/json/listen_key.hpp"
+#include "roq/binance_futures/json/modify_order.hpp"
 #include "roq/binance_futures/json/new_order.hpp"
 #include "roq/binance_futures/json/open_orders.hpp"
 #include "roq/binance_futures/json/trades.hpp"
@@ -118,6 +119,14 @@ struct OrderEntry final : public web::rest::Client::Handler {
   void new_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<json::NewOrder> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
+  void modify_order(
+      Event<ModifyOrder> const &,
+      oms::Order const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
+  void modify_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<json::ModifyOrder> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+
   void cancel_order(
       Event<CancelOrder> const &,
       oms::Order const &,
@@ -164,6 +173,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
         open_orders, open_orders_ack,                        //
         trades, trades_ack,                                  //
         new_order, new_order_ack,                            //
+        modify_order, modify_order_ack,                      //
         cancel_order, cancel_order_ack,                      //
         cancel_all_open_orders, cancel_all_open_orders_ack,  //
         auto_cancel_all_open_orders, auto_cancel_all_open_orders_ack;

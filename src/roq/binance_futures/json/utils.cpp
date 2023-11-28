@@ -4,6 +4,8 @@
 
 #include "roq/utils/number.hpp"
 
+#include "roq/oms/exceptions.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -78,12 +80,74 @@ std::string_view new_order(
   return result;
 }
 
+std::string_view modify_order(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &modify_order,
+    oms::Order const &order,
+    [[maybe_unused]] std::string_view const &request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    bool modify_order_full) {
+  buffer.clear();
+  auto side = map(order.side).as_raw_text();
+  if (modify_order_full) {  // fapi
+    auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
+    auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
+    fmt::format_to(
+        std::back_inserter(buffer),
+        R"(symbol={}&)"
+        R"(origClientOrderId={}&)"
+        R"(side={}&)"
+        R"(quantity={}&)"
+        R"(price={}&)"
+        R"(recvWindow={})"sv,
+        order.symbol,
+        order.client_order_id,
+        side,
+        utils::Number{quantity, order.quantity_decimals},
+        utils::Number{price, order.price_decimals},
+        recv_window.count());
+  } else {  // dapi
+    if (std::isnan(modify_order.price)) {
+      fmt::format_to(
+          std::back_inserter(buffer),
+          R"(symbol={}&)"
+          R"(origClientOrderId={}&)"
+          R"(side={}&)"
+          R"(quantity={}&)"
+          R"(recvWindow={})"sv,
+          order.symbol,
+          order.client_order_id,
+          side,
+          utils::Number{modify_order.quantity, order.quantity_decimals},
+          recv_window.count());
+    } else if (std::isnan(modify_order.quantity)) {
+      fmt::format_to(
+          std::back_inserter(buffer),
+          R"(symbol={}&)"
+          R"(origClientOrderId={}&)"
+          R"(side={}&)"
+          R"(price={}&)"
+          R"(recvWindow={})"sv,
+          order.symbol,
+          order.client_order_id,
+          side,
+          utils::Number{modify_order.price, order.price_decimals},
+          recv_window.count());
+    } else {
+      throw oms::Rejected{Origin::GATEWAY, Error::INVALID_REQUEST_ARGS, "Missing quantity or price"sv};
+    }
+  }
+  std::string_view result{std::data(buffer), std::size(buffer)};
+  return result;
+}
+
 std::string_view cancel_order(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
     oms::Order const &order,
     [[maybe_unused]] std::string_view const &request_id,
-    std::string_view const &previous_request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
@@ -92,7 +156,7 @@ std::string_view cancel_order(
       R"(origClientOrderId={}&)"
       R"(recvWindow={})"sv,
       order.symbol,
-      previous_request_id,
+      order.client_order_id,
       recv_window.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;

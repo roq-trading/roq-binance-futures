@@ -275,6 +275,15 @@ extern std::string_view new_order(
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window);
 
+extern std::string_view modify_order(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &,
+    oms::Order const &,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    bool modify_order_full);
+
 extern std::string_view cancel_order(
     std::vector<char> &buffer,
     roq::CancelOrder const &,

@@ -41,6 +41,7 @@ margin_call_item.hpp
 margin_call.hpp
 mark_price_update.hpp
 mini_ticker.hpp
+modify_order.hpp
 new_order.hpp
 open_orders.hpp
 order.hpp
@@ -104,6 +105,7 @@ margin_call_item.cpp
 margin_call.cpp
 mark_price_update.cpp
 mini_ticker.cpp
+modify_order.cpp
 new_order.cpp
 open_orders.cpp
 order.cpp

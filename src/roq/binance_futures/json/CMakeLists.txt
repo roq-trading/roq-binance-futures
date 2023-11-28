@@ -46,6 +46,7 @@ set(AUTOGEN_SCHEMAS
     margin_call.json
     mark_price_update.json
     mini_ticker.json
+    modify_order.json
     new_order.json
     open_orders.json
     order.json

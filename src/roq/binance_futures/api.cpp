@@ -25,6 +25,7 @@ API API::create(Settings const &settings) {
         .order = "/dapi/v1/order"sv,
         .all_open_orders = "/dapi/v1/allOpenOrders"sv,
         .countdown_cancel_all = "/dapi/v1/countdownCancelAll"sv,
+        .modify_order_full = false,
     };
   }
   if (api.compare("fapi"sv) == 0) {
@@ -39,6 +40,7 @@ API API::create(Settings const &settings) {
         .order = "/fapi/v1/order"sv,
         .all_open_orders = "/fapi/v1/allOpenOrders"sv,
         .countdown_cancel_all = "/fapi/v1/countdownCancelAll"sv,
+        .modify_order_full = true,
     };
   }
   throw RuntimeError{R"(Unknown api="{}")"sv, api};

@@ -22,6 +22,8 @@ struct API final {
   std::string_view order;
   std::string_view all_open_orders;
   std::string_view countdown_cancel_all;
+  // oms
+  bool modify_order_full = {};
   // factory
   static API create(Settings const &);
 };

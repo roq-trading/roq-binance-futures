@@ -1063,6 +1063,8 @@ void OrderEntry::cancel_all_open_orders(Event<CancelAllOrders> const &event, std
     auto &cancel_all_orders = event.value;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
+      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol)
+        continue;
       auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
       log::debug(R"(body="{}")"sv, body);
       auto query = account_.create_query(body);

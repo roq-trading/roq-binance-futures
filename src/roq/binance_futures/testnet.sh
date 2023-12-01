@@ -8,7 +8,7 @@ fi
 
 NAME="binance-futures"
 
-CONFIG="${CONFIG:-$NAME}"
+CONFIG="${CONFIG:-$NAME}-testnet"
 
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 

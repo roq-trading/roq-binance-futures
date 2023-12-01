@@ -79,6 +79,10 @@
       "name": "notionalValue",
       "type": "double",
       "comment": "COIN-M"
+    },
+    {
+      "name": "breakEvenPrice",
+      "type": "double"
     }
   ]
 }

@@ -77,6 +77,10 @@
     {
       "name": "multiAssetsMargin",
       "type": "bool"
+    },
+    {
+      "name": "tradeGroupId",
+      "type": "int32_t"
     }
   ]
 }

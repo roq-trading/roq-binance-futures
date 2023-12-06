@@ -181,6 +181,22 @@
       "name": "unknown_4",
       "type": "std::string_view",
       "comment": "UNDOC have seen value GRID"
+    },
+    {
+      "raw": "V",
+      "name": "self_trade_prevention_mode",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "pm",
+      "name": "price_match_mode",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "gtd",
+      "name": "good_till_date",
+      "type": "std::chrono::milliseconds",
+      "comment": "XXX 20231206 not sure about milliseconds"
     }
   ]
 }

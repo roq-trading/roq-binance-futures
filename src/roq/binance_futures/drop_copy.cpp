@@ -267,6 +267,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto order_type = json::map(execution_report.order_type);
     auto time_in_force = json::map(execution_report.time_in_force);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
+    // XXX HANS execution_report.execution_type ==> OrderAck ???
     auto order_update = oms::OrderUpdate{
         .account = account_.get_name(),
         .exchange = shared_.settings.exchange,

@@ -95,6 +95,19 @@
     {
       "name": "updateTime",
       "type": "std::chrono::milliseconds"
+    },
+    {
+      "name": "priceMatch",
+      "type": "std::string_view"
+    },
+    {
+      "name": "selfTradePreventionMode",
+      "type": "std::string_view"
+    },
+    {
+      "name": "goodTillDate",
+      "type": "std::chrono::milliseconds",
+      "comment": "XXX 20231206 not sure about milliseconds"
     }
   ]
 }

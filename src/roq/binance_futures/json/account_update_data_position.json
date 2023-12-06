@@ -46,6 +46,11 @@
       "raw": "ma",
       "name": "unknown_1",
       "type": "std::string_view"
+    },
+    {
+      "raw": "bep",
+      "name": "break_even_price",
+      "type": "double"
     }
   ]
 }

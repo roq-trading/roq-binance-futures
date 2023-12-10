@@ -325,6 +325,9 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .settlement_date = {},
         .expiry_datetime = {},
         .expiry_datetime_utc = {},
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = exchange_info.server_time,
         .discard = discard,
     };
     create_trace_and_dispatch(handler_, trace_info, reference_data, false);
@@ -347,6 +350,9 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .trading_status = trading_status,
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = exchange_info.server_time,
     };
     create_trace_and_dispatch(handler_, trace_info, market_status, true);
   }

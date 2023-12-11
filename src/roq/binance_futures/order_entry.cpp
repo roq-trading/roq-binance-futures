@@ -79,6 +79,14 @@ struct create_metrics final : public core::metrics::Factory {
   explicit create_metrics(auto &settings, auto const &group, auto const &function)
       : core::metrics::Factory(settings.app.name, group, function) {}
 };
+
+auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
+  if (download_trades_is_first) {
+    if (settings.common.download_trades_lookback_on_restart.count())
+      return settings.common.download_trades_lookback_on_restart;
+  }
+  return settings.common.download_trades_lookback;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -587,10 +595,11 @@ void OrderEntry::get_trades() {
   profile_.trades([&]() {
     auto &symbols = shared_.settings.common.download_symbols;
     for (auto &symbol : symbols) {
+      auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
+      log::info<1>("Download trades: lookback={}"sv, lookback);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
-      auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-          end_time - shared_.settings.common.download_trades_lookback);
+      auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.common.download_trades_limit;
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query(body);
@@ -627,6 +636,7 @@ void OrderEntry::get_trades_ack(Trace<web::rest::Response> const &event) {
       (*this)(event_2);
       request_.respond_trades = clock::get_system();  // completion
       download_trades_ = false;
+      download_trades_is_first_ = false;
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
       log::warn(R"(error={}, text="{}")"sv, error, text);

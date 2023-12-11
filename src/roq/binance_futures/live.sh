@@ -28,5 +28,5 @@ $PREFIX ./roq-binance-futures \
   --ws_uri "$WS_URI" \
   --rest_uri "$REST_URI" \
   --download_symbols="BTCUSDT,ETHUSDT" \
-  --download_trades_lookback=24h \
+  --download_trades_lookback=300s \
   $@

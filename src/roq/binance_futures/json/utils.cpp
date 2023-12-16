@@ -63,7 +63,7 @@ std::string_view new_order(
       utils::Number{create_order.quantity, order.quantity_decimals},
       reduce_only);
   switch (create_order.order_type) {
-    using enum OrderType;
+    using enum roq::OrderType;
     case UNDEFINED:
       assert(false);
       break;

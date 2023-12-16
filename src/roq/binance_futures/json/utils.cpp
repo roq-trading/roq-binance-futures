@@ -48,7 +48,6 @@ std::string_view new_order(
     std::chrono::milliseconds recv_window) {
   auto side = map(create_order.side).as_raw_text();
   auto type = map(create_order.order_type).as_raw_text();
-  auto time_in_force = map(create_order.time_in_force).as_raw_text();
   auto reduce_only = false;
   buffer.clear();
   fmt::format_to(
@@ -56,17 +55,33 @@ std::string_view new_order(
       R"(symbol={}&)"
       R"(side={}&)"
       R"(type={}&)"
-      R"(timeInForce={}&)"
       R"(quantity={}&)"
-      R"(reduceOnly={}&)"
-      R"(price={}&)"sv,
+      R"(reduceOnly={}&)"sv,
       create_order.symbol,
       side,
       type,
-      time_in_force,
       utils::Number{create_order.quantity, order.quantity_decimals},
-      reduce_only,
-      utils::Number{create_order.price, order.price_decimals});
+      reduce_only);
+  switch (create_order.order_type) {
+    using enum OrderType;
+    case UNDEFINED:
+      assert(false);
+      break;
+    case MARKET:
+      assert(std::isnan(create_order.price));
+      break;
+    case LIMIT: {
+      assert(!std::isnan(create_order.price));
+      auto time_in_force = map(create_order.time_in_force).as_raw_text();
+      fmt::format_to(
+          std::back_inserter(buffer),
+          R"(timeInForce={}&)"
+          R"(price={}&)"sv,
+          time_in_force,
+          utils::Number{create_order.price, order.price_decimals});
+      break;
+    }
+  }
   if (!std::isnan(create_order.stop_price))
     fmt::format_to(
         std::back_inserter(buffer), R"(stopPrice={}&)"sv, utils::Number{create_order.stop_price, order.price_decimals});

@@ -416,8 +416,8 @@ void OrderEntry::operator()(Trace<json::Balance> const &event) {
     auto funds_update = FundsUpdate{
         .stream_id = stream_id_,
         .account = account_.get_name(),
-        .margin_mode = {},
         .currency = item.asset,
+        .margin_mode = {},
         .balance = item.balance,
         .hold = hold,
         .external_account = {},
@@ -426,6 +426,21 @@ void OrderEntry::operator()(Trace<json::Balance> const &event) {
         .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+    if (!std::isnan(item.cross_wallet_balance)) {
+      auto funds_update = FundsUpdate{
+          .stream_id = stream_id_,
+          .account = account_.get_name(),
+          .currency = item.asset,
+          .margin_mode = MarginMode::CROSS,
+          .balance = item.cross_wallet_balance,
+          .hold = NaN,  // ???
+          .external_account = {},
+          .update_type = UpdateType::SNAPSHOT,
+          .exchange_time_utc = item.update_time,
+          .sending_time_utc = {},
+      };
+      create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+    }
   }
 }
 
@@ -478,14 +493,15 @@ void OrderEntry::operator()(Trace<json::Account> const &event) {
     if (shared_.discard_symbol(item.symbol))
       continue;
     log::debug("item={}"sv, item);
+    auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
     auto long_quantity = std::max(0.0, item.notional);
     auto short_quantity = std::max(0.0, -item.notional);
     auto position_update = PositionUpdate{
         .stream_id = stream_id_,
         .account = account_.get_name(),
-        .margin_mode = {},
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
+        .margin_mode = margin_mode,
         .external_account{},
         .long_quantity = long_quantity,
         .short_quantity = short_quantity,

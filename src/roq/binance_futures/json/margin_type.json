@@ -1,0 +1,12 @@
+{
+  "name": "MarginType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "isolated"
+    },
+    {
+      "name": "cross"
+    }
+  ]
+}

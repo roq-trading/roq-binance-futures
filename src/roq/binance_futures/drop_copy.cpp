@@ -355,8 +355,8 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
           .account = account_.get_name(),
-          .margin_mode = {},
           .currency = item.asset,
+          .margin_mode = {},  // XXX TODO maybe this should be MarginMode::ISOLATED?
           .balance = item.wallet_balance,
           .hold = NaN,  // note! we don't see this
           .external_account = {},
@@ -365,19 +365,47 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
           .sending_time_utc = account_update.event_time,
       };
       create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+      if (!std::isnan(item.cross_wallet_balance)) {
+        auto funds_update = FundsUpdate{
+            .stream_id = stream_id_,
+            .account = account_.get_name(),
+            .currency = item.asset,
+            .margin_mode = MarginMode::CROSS,
+            .balance = item.cross_wallet_balance,
+            .hold = NaN,  // note! we don't see this
+            .external_account = {},
+            .update_type = UpdateType::INCREMENTAL,
+            .exchange_time_utc = account_update.transaction_time,
+            .sending_time_utc = account_update.event_time,
+        };
+        create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+      }
     }
     for (auto &item : account_update.data.positions) {
       if (shared_.discard_symbol(item.symbol))
         continue;
       log::debug("item={}"sv, item);
+      auto margin_mode = [&]() {
+        switch (item.margin_type) {
+          using enum json::MarginType::type_t;
+          case UNDEFINED__:
+          case UNKNOWN__:
+            break;
+          case ISOLATED:
+            return MarginMode::ISOLATED;
+          case CROSS:
+            return MarginMode::CROSS;
+        }
+        return MarginMode{};
+      }();
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
       auto position_update = PositionUpdate{
           .stream_id = stream_id_,
           .account = account_.get_name(),
-          .margin_mode = {},
           .exchange = shared_.settings.exchange,
           .symbol = item.symbol,
+          .margin_mode = margin_mode,
           .external_account{},
           .long_quantity = long_quantity,
           .short_quantity = short_quantity,

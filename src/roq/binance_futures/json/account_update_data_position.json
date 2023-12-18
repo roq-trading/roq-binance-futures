@@ -30,7 +30,7 @@
     {
       "raw": "mt",
       "name": "margin_type",
-      "type": "std::string_view"
+      "type": "MarginType"
     },
     {
       "raw": "iw",

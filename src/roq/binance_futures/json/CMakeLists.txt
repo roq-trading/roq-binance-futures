@@ -44,6 +44,7 @@ set(AUTOGEN_SCHEMAS
     listen_key.json
     margin_call_item.json
     margin_call.json
+    margin_type.json
     mark_price_update.json
     mini_ticker.json
     modify_order.json

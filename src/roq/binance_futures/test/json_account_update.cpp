@@ -61,7 +61,7 @@ TEST_CASE("json_account_update_order", "[json_account_update]") {
   CHECK(p0.entry_price == 1.15540_a);
   CHECK(p0.accumulated_realized == 0.0_a);
   CHECK(p0.unrealized_pnl == 0.001_a);
-  CHECK(p0.margin_type == "cross"sv);
+  CHECK(p0.margin_type == json::MarginType::CROSS);
   CHECK(p0.isolated_wallet == 0.0_a);
   CHECK(p0.position_side == json::PositionSide::BOTH);
   CHECK(p0.unknown_1 == "USDT"sv);

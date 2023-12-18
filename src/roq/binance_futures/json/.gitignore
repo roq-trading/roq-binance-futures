@@ -39,6 +39,7 @@ interval.hpp
 listen_key.hpp
 margin_call_item.hpp
 margin_call.hpp
+margin_type.hpp
 mark_price_update.hpp
 mini_ticker.hpp
 modify_order.hpp
@@ -103,6 +104,7 @@ interval.cpp
 listen_key.cpp
 margin_call_item.cpp
 margin_call.cpp
+margin_type.cpp
 mark_price_update.cpp
 mini_ticker.cpp
 modify_order.cpp

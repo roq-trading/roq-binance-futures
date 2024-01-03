@@ -58,6 +58,10 @@ inline roq::SecurityType map(json::ContractType value) {
       return roq::SecurityType::FUTURES;
     case NEXT_QUARTER:
       return roq::SecurityType::FUTURES;
+    case CURRENT_QUARTER_DELIVERING:
+      return roq::SecurityType::FUTURES;
+    case PERPETUAL_DELIVERING:
+      return roq::SecurityType::FUTURES;
   }
   return {};
 }
@@ -201,6 +205,8 @@ inline roq::TradingStatus map(json::SymbolStatus symbol_status) {
       return roq::TradingStatus::PRE_CLOSE;  // XXX REVIEW
     case PENDING_TRADING:                    // note! no idea what this is for
       return roq::TradingStatus::PRE_OPEN;   // XXX REVIEW
+    case DELIVERING:
+      return roq::TradingStatus::UNDEFINED;
   }
   return {};
 }

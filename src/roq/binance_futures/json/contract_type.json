@@ -10,6 +10,14 @@
     },
     {
       "name": "NEXT_QUARTER"
+    },
+    {
+      "raw": "CURRENT_QUARTER DELIVERING",
+      "name": "CURRENT_QUARTER_DELIVERING"
+    },
+    {
+      "raw": "PERPETUAL DELIVERING",
+      "name": "PERPETUAL_DELIVERING"
     }
   ]
 }

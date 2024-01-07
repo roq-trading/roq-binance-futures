@@ -141,7 +141,8 @@ void OrderEntry::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (shared_.settings.rest.order_countdown.count() && next_auto_cancel_ < now) {
+  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() &&
+      next_auto_cancel_ < now) {
     next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
     auto_cancel_all_open_orders();
   }
@@ -583,7 +584,7 @@ void OrderEntry::operator()(Trace<json::OpenOrders> const &event) {
         .update_time_utc = order.update_time,
         .external_account = {},
         .external_order_id = external_order_id,
-        .client_order_id = {},
+        .client_order_id = order.client_order_id,
         .status = order_status,
         .quantity = order.orig_qty,
         .price = order.price,

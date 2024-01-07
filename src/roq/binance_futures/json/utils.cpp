@@ -110,44 +110,50 @@ std::string_view modify_order(
   if (modify_order_full) {  // fapi
     auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
     auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
+    fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
+    if (!std::empty(order.client_order_id)) {
+      fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
+    } else {
+      fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+    }
     fmt::format_to(
         std::back_inserter(buffer),
-        R"(symbol={}&)"
-        R"(origClientOrderId={}&)"
         R"(side={}&)"
         R"(quantity={}&)"
         R"(price={}&)"
         R"(recvWindow={})"sv,
-        order.symbol,
-        order.client_order_id,
         side,
         utils::Number{quantity, order.quantity_precision.decimals},
         utils::Number{price, order.price_precision.decimals},
         recv_window.count());
   } else {  // dapi
     if (std::isnan(modify_order.price)) {
+      fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
+      if (!std::empty(order.client_order_id)) {
+        fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
+      } else {
+        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+      }
       fmt::format_to(
           std::back_inserter(buffer),
-          R"(symbol={}&)"
-          R"(origClientOrderId={}&)"
           R"(side={}&)"
           R"(quantity={}&)"
           R"(recvWindow={})"sv,
-          order.symbol,
-          order.client_order_id,
           side,
           utils::Number{modify_order.quantity, order.quantity_precision.decimals},
           recv_window.count());
     } else if (std::isnan(modify_order.quantity)) {
+      fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
+      if (!std::empty(order.client_order_id)) {
+        fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
+      } else {
+        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+      }
       fmt::format_to(
           std::back_inserter(buffer),
-          R"(symbol={}&)"
-          R"(origClientOrderId={}&)"
           R"(side={}&)"
           R"(price={}&)"
           R"(recvWindow={})"sv,
-          order.symbol,
-          order.client_order_id,
           side,
           utils::Number{modify_order.price, order.price_precision.decimals},
           recv_window.count());
@@ -167,14 +173,13 @@ std::string_view cancel_order(
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window) {
   buffer.clear();
-  fmt::format_to(
-      std::back_inserter(buffer),
-      R"(symbol={}&)"
-      R"(origClientOrderId={}&)"
-      R"(recvWindow={})"sv,
-      order.symbol,
-      order.client_order_id,
-      recv_window.count());
+  fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
+  if (!std::empty(order.client_order_id)) {
+    fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
+  } else {
+    fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+  }
+  fmt::format_to(std::back_inserter(buffer), R"(recvWindow={})"sv, recv_window.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;
 }

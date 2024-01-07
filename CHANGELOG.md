@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* `OrderUpdate.client_order_id` was not populated during download (#435)
+
 ### Changed
 
 * Support `ModifyOrder` (#423)

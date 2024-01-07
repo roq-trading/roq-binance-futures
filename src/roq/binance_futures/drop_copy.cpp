@@ -282,7 +282,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .update_time_utc = order_trade_update.transaction_time,
         .external_account = {},
         .external_order_id = external_order_id,
-        .client_order_id = {},
+        .client_order_id = execution_report.client_order_id,
         .status = order_status,
         .quantity = execution_report.original_quantity,
         .price = execution_report.original_price,

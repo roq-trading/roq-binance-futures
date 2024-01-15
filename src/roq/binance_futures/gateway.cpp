@@ -40,6 +40,8 @@ R create_request(auto &config) {
   return result;
 }
 
+// fapi/dapi
+
 template <typename R>
 R create_order_entry_1(
     auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
@@ -54,13 +56,15 @@ R create_order_entry_1(
 }
 
 template <typename R>
-R create_drop_copy(auto &accounts) {
+R create_drop_copy_1(auto &accounts) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[name, account] : accounts)
     result.try_emplace(name, nullptr);
   return result;
 }
+
+// papi
 
 template <typename R>
 R create_order_entry_2(
@@ -83,6 +87,16 @@ R create_order_entry_2(
   return result;
 }
 
+template <typename R>
+R create_drop_copy_2(auto &settings, auto &accounts) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
+  if (settings.enable_portfolio_margin) {
+    for (auto &[name, account] : accounts)
+      result.try_emplace(name, nullptr);
+  }
+  return result;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -92,9 +106,10 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
       shared_{dispatcher, settings}, request_{create_request<decltype(request_)>(config)},
       rest_{*this, context_, ++stream_id_, shared_}, order_entry_1_{create_order_entry_1<decltype(order_entry_1_)>(
                                                          *this, context_, stream_id_, accounts_, shared_, request_)},
-      drop_copy_1_{create_drop_copy<decltype(drop_copy_1_)>(accounts_)},
+      drop_copy_1_{create_drop_copy_1<decltype(drop_copy_1_)>(accounts_)},
       order_entry_2_{create_order_entry_2<decltype(order_entry_2_)>(
-          *this, settings, context_, stream_id_, accounts_, shared_, request_)} {
+          *this, settings, context_, stream_id_, accounts_, shared_, request_)},
+      drop_copy_2_{create_drop_copy_2<decltype(drop_copy_2_)>(settings, accounts_)} {
   if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
 }
@@ -225,15 +240,14 @@ void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_upd
 }
 
 void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
-  /*
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
-  auto iter = drop_copy_.find(account);
-  if (iter == std::end(drop_copy_)) {
+  auto iter = drop_copy_2_.find(account);
+  if (iter == std::end(drop_copy_2_)) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<DropCopySimple>(
+    auto drop_copy = std::make_unique<DropCopyPortfolio>(
         *this,
         context_,
         ++stream_id_,
@@ -246,7 +260,6 @@ void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_
     create_event_and_dispatch(*drop_copy, message_info, start);
     (*iter).second = std::move(drop_copy);
   }
-  */
 }
 
 uint16_t Gateway::operator()(

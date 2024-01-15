@@ -47,8 +47,8 @@ auto create_name(auto stream_id, auto const &account) {
 }
 
 auto create_connection(auto &handler, auto &settings, auto &context) {
-  auto uri = settings.rest.uri;
-  auto ping_path = fmt::format("/{}{}"sv, settings.app.api, settings.rest.ping_path);
+  auto uri = settings.rest.pm_uri;
+  auto ping_path = fmt::format("/papi{}"sv, settings.rest.ping_path);
   auto config = web::rest::Client::Config{
       // connection
       .interface = {},

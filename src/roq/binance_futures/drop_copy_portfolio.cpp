@@ -42,7 +42,7 @@ auto create_name(auto stream_id) {
 
 auto create_uri(auto &settings, auto const &listen_key) {
   assert(!std::empty(listen_key));
-  auto &uri = settings.ws.uri;
+  auto &uri = settings.ws.pm_uri;
   auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
   return io::web::URI{result};
 }

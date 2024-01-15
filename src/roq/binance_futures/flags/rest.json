@@ -11,6 +11,12 @@
       "description": "REST end-point (URI)"
     },
     {
+      "name": "pm_uri",
+      "type": "roq::io::web::URI",
+      "validator": "roq::core::flags::URI",
+      "description": "REST end-point for portfolio margin (URI)"
+    },
+    {
       "name": "proxy",
       "type": "roq::io::web::URI",
       "validator": "roq::core::flags::URI",

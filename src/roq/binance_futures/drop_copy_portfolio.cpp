@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2024, Hans Erik Thrane */
 
-#include "roq/binance_futures/drop_copy.hpp"
+#include "roq/binance_futures/drop_copy_portfolio.hpp"
 
 #include <algorithm>
 
@@ -80,7 +80,7 @@ struct create_metrics final : public core::metrics::Factory {
 
 // === IMPLEMENTATION ===
 
-DropCopy::DropCopy(
+DropCopyPortfolio::DropCopyPortfolio(
     Handler &handler,
     io::Context &context,
     uint16_t stream_id,
@@ -111,19 +111,19 @@ DropCopy::DropCopy(
       download_{{}, [this](auto state) { return download(state); }} {
 }
 
-bool DropCopy::ready() const {
+bool DropCopyPortfolio::ready() const {
   return (*connection_).ready();
 }
 
-void DropCopy::operator()(Event<Start> const &) {
+void DropCopyPortfolio::operator()(Event<Start> const &) {
   (*connection_).start();
 }
 
-void DropCopy::operator()(Event<Stop> const &) {
+void DropCopyPortfolio::operator()(Event<Stop> const &) {
   (*connection_).stop();
 }
 
-void DropCopy::operator()(Event<Timer> const &event) {
+void DropCopyPortfolio::operator()(Event<Timer> const &event) {
   (*connection_).refresh(event.value.now);
   check_response_balance();
   check_response_account();
@@ -131,7 +131,7 @@ void DropCopy::operator()(Event<Timer> const &event) {
   check_response_trades();
 }
 
-void DropCopy::operator()(metrics::Writer &writer) {
+void DropCopyPortfolio::operator()(metrics::Writer &writer) {
   writer
       // counter
       .write(counter_.disconnect, metrics::COUNTER)
@@ -148,25 +148,25 @@ void DropCopy::operator()(metrics::Writer &writer) {
       .write(latency_.heartbeat, metrics::LATENCY);
 }
 
-void DropCopy::operator()(web::socket::Client::Connected const &) {
+void DropCopyPortfolio::operator()(web::socket::Client::Connected const &) {
 }
 
-void DropCopy::operator()(web::socket::Client::Disconnected const &) {
+void DropCopyPortfolio::operator()(web::socket::Client::Disconnected const &) {
   ++counter_.disconnect;
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   download_.reset();
 }
 
-void DropCopy::operator()(web::socket::Client::Ready const &) {
+void DropCopyPortfolio::operator()(web::socket::Client::Ready const &) {
   (*this)(ConnectionStatus::DOWNLOADING);
   download_.begin();
 }
 
-void DropCopy::operator()(web::socket::Client::Close const &) {
+void DropCopyPortfolio::operator()(web::socket::Client::Close const &) {
 }
 
-void DropCopy::operator()(web::socket::Client::Latency const &latency) {
+void DropCopyPortfolio::operator()(web::socket::Client::Latency const &latency) {
   TraceInfo trace_info;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
@@ -177,15 +177,15 @@ void DropCopy::operator()(web::socket::Client::Latency const &latency) {
   latency_.ping.update(latency.sample);
 }
 
-void DropCopy::operator()(web::socket::Client::Text const &text) {
+void DropCopyPortfolio::operator()(web::socket::Client::Text const &text) {
   parse(text.payload);
 }
 
-void DropCopy::operator()(web::socket::Client::Binary const &) {
+void DropCopyPortfolio::operator()(web::socket::Client::Binary const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopy::operator()(ConnectionStatus status) {
+void DropCopyPortfolio::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
@@ -207,7 +207,7 @@ void DropCopy::operator()(ConnectionStatus status) {
   }
 }
 
-uint32_t DropCopy::download(DropCopyState state) {
+uint32_t DropCopyPortfolio::download(DropCopyState state) {
   switch (state) {
     using enum DropCopyState;
     case UNDEFINED:
@@ -240,7 +240,7 @@ uint32_t DropCopy::download(DropCopyState state) {
   return {};
 }
 
-void DropCopy::parse(std::string_view const &message) {
+void DropCopyPortfolio::parse(std::string_view const &message) {
   profile_.parse([&]() {
     try {
       log::debug(R"(message="{}")"sv, message);
@@ -254,7 +254,7 @@ void DropCopy::parse(std::string_view const &message) {
   });
 }
 
-void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
@@ -348,7 +348,7 @@ void DropCopy::operator()(Trace<json::OrderTradeUpdate> const &event) {
   });
 }
 
-void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::AccountUpdate> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
@@ -420,39 +420,39 @@ void DropCopy::operator()(Trace<json::AccountUpdate> const &event) {
   });
 }
 
-void DropCopy::operator()(Trace<json::MarginCall> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::MarginCall> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::debug("margin_call={}"sv, margin_call);
   });
 }
 
-void DropCopy::operator()(Trace<json::StrategyUpdate> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::StrategyUpdate> const &event) {
   profile_.strategy_update([&]() {
     auto &[trace_info, strategy_update] = event;
     log::debug("strategy_update={}"sv, strategy_update);
   });
 }
 
-void DropCopy::operator()(Trace<json::GridUpdate> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::GridUpdate> const &event) {
   profile_.grid_update([&]() {
     auto &[trace_info, grid_update] = event;
     log::debug("grid_update={}"sv, grid_update);
   });
 }
 
-void DropCopy::operator()(Trace<json::AccountConfigUpdate> const &event) {
+void DropCopyPortfolio::operator()(Trace<json::AccountConfigUpdate> const &event) {
   profile_.account_config_update([&]() {
     auto &[trace_info, account_config_update] = event;
     log::debug("account_config_update={}"sv, account_config_update);
   });
 }
-void DropCopy::request_balance() {
+void DropCopyPortfolio::request_balance() {
   log::info("Requesting balance download..."sv);
   request_.request_balance = clock::get_system();
 }
 
-void DropCopy::check_response_balance() {
+void DropCopyPortfolio::check_response_balance() {
   if (download_.state() != DropCopyState::BALANCE)
     return;
   if (request_.request_balance < request_.respond_balance) {
@@ -461,12 +461,12 @@ void DropCopy::check_response_balance() {
   }
 }
 
-void DropCopy::request_account() {
+void DropCopyPortfolio::request_account() {
   log::info("Requesting account download..."sv);
   request_.request_account = clock::get_system();
 }
 
-void DropCopy::check_response_account() {
+void DropCopyPortfolio::check_response_account() {
   if (download_.state() != DropCopyState::ACCOUNT)
     return;
   if (request_.request_account < request_.respond_account) {
@@ -475,12 +475,12 @@ void DropCopy::check_response_account() {
   }
 }
 
-void DropCopy::request_orders() {
+void DropCopyPortfolio::request_orders() {
   log::info("Requesting order download..."sv);
   request_.request_orders = clock::get_system();
 }
 
-void DropCopy::check_response_orders() {
+void DropCopyPortfolio::check_response_orders() {
   if (download_.state() != DropCopyState::ORDERS)
     return;
   if (request_.request_orders < request_.respond_orders) {
@@ -489,12 +489,12 @@ void DropCopy::check_response_orders() {
   }
 }
 
-void DropCopy::request_trades() {
+void DropCopyPortfolio::request_trades() {
   log::info("Requesting trades download..."sv);
   request_.request_trades = clock::get_system();
 }
 
-void DropCopy::check_response_trades() {
+void DropCopyPortfolio::check_response_trades() {
   if (download_.state() != DropCopyState::TRADES)
     return;
   if (request_.request_trades < request_.respond_trades) {

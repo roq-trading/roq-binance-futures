@@ -24,6 +24,10 @@ struct API final {
   std::string_view countdown_cancel_all;
   // oms
   bool modify_order_full = {};
+  // papi
+  std::string_view papi_get_listen_key;
+  std::string_view papi_order;
+  std::string_view papi_all_open_orders;
   // factory
   static API create(Settings const &);
 };

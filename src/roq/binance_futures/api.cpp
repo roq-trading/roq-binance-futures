@@ -13,21 +13,7 @@ namespace binance_futures {
 
 API API::create(Settings const &settings) {
   auto api = settings.app.api;
-  if (api.compare("dapi"sv) == 0) {
-    return {
-        .get_exchange_info = "/dapi/v1/exchangeInfo"sv,
-        .get_depth = "/dapi/v1/depth"sv,
-        .get_listen_key = "/dapi/v1/listenKey"sv,
-        .get_balance = "/dapi/v1/balance"sv,
-        .get_account = "/dapi/v1/account"sv,
-        .get_open_orders = "/dapi/v1/openOrders"sv,
-        .get_trades = "/dapi/v1/userTrades"sv,
-        .order = "/dapi/v1/order"sv,
-        .all_open_orders = "/dapi/v1/allOpenOrders"sv,
-        .countdown_cancel_all = "/dapi/v1/countdownCancelAll"sv,
-        .modify_order_full = false,
-    };
-  }
+  // USD-M futures
   if (api.compare("fapi"sv) == 0) {
     return {
         .get_exchange_info = "/fapi/v1/exchangeInfo"sv,
@@ -41,6 +27,28 @@ API API::create(Settings const &settings) {
         .all_open_orders = "/fapi/v1/allOpenOrders"sv,
         .countdown_cancel_all = "/fapi/v1/countdownCancelAll"sv,
         .modify_order_full = true,
+        .papi_get_listen_key = "/papi/v1/listenKey"sv,
+        .papi_order = "/papi/v1/um/order"sv,
+        .papi_all_open_orders = "/papi/v1/um/allOpenOrders"sv,
+    };
+  }
+  // COIN-M futures
+  if (api.compare("dapi"sv) == 0) {
+    return {
+        .get_exchange_info = "/dapi/v1/exchangeInfo"sv,
+        .get_depth = "/dapi/v1/depth"sv,
+        .get_listen_key = "/dapi/v1/listenKey"sv,
+        .get_balance = "/dapi/v1/balance"sv,
+        .get_account = "/dapi/v1/account"sv,
+        .get_open_orders = "/dapi/v1/openOrders"sv,
+        .get_trades = "/dapi/v1/userTrades"sv,
+        .order = "/dapi/v1/order"sv,
+        .all_open_orders = "/dapi/v1/allOpenOrders"sv,
+        .countdown_cancel_all = "/dapi/v1/countdownCancelAll"sv,
+        .modify_order_full = false,
+        .papi_get_listen_key = "/papi/v1/listenKey"sv,
+        .papi_order = "/papi/v1/cm/order"sv,
+        .papi_all_open_orders = "/papi/v1/cm/allOpenOrders"sv,
     };
   }
   throw RuntimeError{R"(Unknown api="{}")"sv, api};

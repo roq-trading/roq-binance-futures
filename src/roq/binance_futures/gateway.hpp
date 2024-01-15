@@ -15,9 +15,11 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/config.hpp"
-#include "roq/binance_futures/drop_copy.hpp"
+#include "roq/binance_futures/drop_copy_portfolio.hpp"
+#include "roq/binance_futures/drop_copy_simple.hpp"
 #include "roq/binance_futures/market_data.hpp"
-#include "roq/binance_futures/order_entry.hpp"
+#include "roq/binance_futures/order_entry_portfolio.hpp"
+#include "roq/binance_futures/order_entry_simple.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
 #include "roq/binance_futures/settings.hpp"
@@ -29,8 +31,10 @@ namespace binance_futures {
 struct Gateway final : public server::Handler,
                        public Rest::Handler,
                        public MarketData::Handler,
-                       public OrderEntry::Handler,
-                       public DropCopy::Handler {
+                       public OrderEntrySimple::Handler,
+                       public DropCopySimple::Handler,
+                       public OrderEntryPortfolio::Handler,
+                       public DropCopyPortfolio::Handler {
   Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
  protected:
@@ -75,14 +79,18 @@ struct Gateway final : public server::Handler,
 
   void ensure_symbol_slices(size_t size);
 
-  void operator()(OrderEntry::ListenKeyUpdate const &) override;
+  void operator()(OrderEntrySimple::ListenKeyUpdate const &) override;
+  void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
   // utilities
 
   template <typename... Args>
   void dispatch(Args &&...);
 
-  OrderEntry &get_order_entry(std::string_view const &account);
+  OrderEntry &get_order_entry(std::string_view const &account, MarginMode);
+
+  OrderEntry &get_order_entry_1(std::string_view const &account);
+  OrderEntry &get_order_entry_2(std::string_view const &account);
 
  private:
   server::Dispatcher &dispatcher_;
@@ -97,9 +105,13 @@ struct Gateway final : public server::Handler,
   uint16_t stream_id_ = {};
   // streams
   Rest rest_;
-  absl::flat_hash_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
-  absl::flat_hash_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   std::vector<std::unique_ptr<MarketData>> market_data_1_, market_data_2_;
+  // - fapi/dapi
+  absl::flat_hash_map<std::string, std::unique_ptr<OrderEntrySimple>> order_entry_1_;
+  absl::flat_hash_map<std::string, std::unique_ptr<DropCopySimple>> drop_copy_1_;
+  // - papi
+  absl::flat_hash_map<std::string, std::unique_ptr<OrderEntryPortfolio>> order_entry_2_;
+  absl::flat_hash_map<std::string, std::unique_ptr<DropCopyPortfolio>> drop_copy_2_;
   // cache
   std::vector<MBPUpdate> bids_, asks_;
 };

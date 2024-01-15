@@ -15,6 +15,12 @@
       "required": true,
       "default": "fapi",
       "description": "what api to use (fapi, dapi)"
+    },
+    {
+      "name": "enable_portfolio_margin",
+      "type": "bool",
+      "default": false,
+      "description": "enable portfolio margin mode? (papi)"
     }
   ]
 }

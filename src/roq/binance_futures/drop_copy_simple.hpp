@@ -27,7 +27,7 @@
 namespace roq {
 namespace binance_futures {
 
-struct DropCopy final : public web::socket::Client::Handler, public json::UserStreamParser::Handler {
+struct DropCopySimple final : public web::socket::Client::Handler, public json::UserStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -37,11 +37,11 @@ struct DropCopy final : public web::socket::Client::Handler, public json::UserSt
     virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
   };
 
-  DropCopy(
+  DropCopySimple(
       Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
-  DropCopy(DropCopy &&) = delete;
-  DropCopy(DropCopy const &) = delete;
+  DropCopySimple(DropCopySimple &&) = delete;
+  DropCopySimple(DropCopySimple const &) = delete;
 
   bool ready() const;
 

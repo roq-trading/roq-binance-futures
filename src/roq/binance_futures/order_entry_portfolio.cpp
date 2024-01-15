@@ -201,10 +201,10 @@ uint16_t OrderEntryPortfolio::operator()(
 }
 
 uint16_t OrderEntryPortfolio::operator()(
-    Event<ModifyOrder> const &event,
-    oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &,
+    oms::Order const &,
+    [[maybe_unused]] std::string_view const &request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id) {
   throw oms::NotSupported{"not supported"sv};
   return stream_id_;
 }

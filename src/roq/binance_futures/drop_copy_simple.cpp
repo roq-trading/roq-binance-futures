@@ -284,7 +284,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .external_account = {},
         .external_order_id = external_order_id,
         .client_order_id = execution_report.client_order_id,
-        .status = order_status,
+        .order_status = order_status,
         .quantity = execution_report.original_quantity,
         .price = execution_report.original_price,
         .stop_price = execution_report.stop_price,

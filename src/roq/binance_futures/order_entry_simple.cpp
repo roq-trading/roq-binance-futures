@@ -586,7 +586,7 @@ void OrderEntrySimple::operator()(Trace<json::OpenOrders> const &event) {
         .external_account = {},
         .external_order_id = external_order_id,
         .client_order_id = order.client_order_id,
-        .status = order_status,
+        .order_status = order_status,
         .quantity = order.orig_qty,
         .price = order.price,
         .stop_price = order.stop_price,
@@ -768,9 +768,9 @@ void OrderEntrySimple::new_order_ack(
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
       auto response = oms::Response{
-          .type = RequestType::CREATE_ORDER,
+          .request_type = RequestType::CREATE_ORDER,
           .origin = origin,
-          .status = status,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = version,
@@ -795,9 +795,9 @@ void OrderEntrySimple::operator()(
   auto order_status = json::map(new_order.status);
   auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // alloc
   auto response = oms::Response{
-      .type = RequestType::CREATE_ORDER,
+      .request_type = RequestType::CREATE_ORDER,
       .origin = Origin::EXCHANGE,
-      .status = RequestStatus::ACCEPTED,
+      .request_status = RequestStatus::ACCEPTED,
       .error = {},
       .text = {},
       .version = version,
@@ -821,7 +821,7 @@ void OrderEntrySimple::operator()(
       .external_account = {},
       .external_order_id = external_order_id,
       .client_order_id = {},
-      .status = order_status,
+      .order_status = order_status,
       .quantity = new_order.orig_qty,
       .price = new_order.price,
       .stop_price = new_order.stop_price,
@@ -896,9 +896,9 @@ void OrderEntrySimple::modify_order_ack(
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
       auto response = oms::Response{
-          .type = RequestType::MODIFY_ORDER,
+          .request_type = RequestType::MODIFY_ORDER,
           .origin = origin,
-          .status = status,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = version,
@@ -923,9 +923,9 @@ void OrderEntrySimple::operator()(
   auto external_order_id = fmt::format("{}"sv, modify_order.order_id);  // alloc
   auto order_status = json::map(modify_order.status);
   auto response = oms::Response{
-      .type = RequestType::MODIFY_ORDER,
+      .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
-      .status = RequestStatus::ACCEPTED,
+      .request_status = RequestStatus::ACCEPTED,
       .error = {},
       .text = {},
       .version = version,
@@ -949,7 +949,7 @@ void OrderEntrySimple::operator()(
       .external_account = {},
       .external_order_id = external_order_id,
       .client_order_id = {},
-      .status = order_status,
+      .order_status = order_status,
       .quantity = modify_order.orig_qty,
       .price = modify_order.price,
       .stop_price = modify_order.stop_price,
@@ -1017,9 +1017,9 @@ void OrderEntrySimple::cancel_order_ack(
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
       auto response = oms::Response{
-          .type = RequestType::CANCEL_ORDER,
+          .request_type = RequestType::CANCEL_ORDER,
           .origin = origin,
-          .status = status,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = version,
@@ -1044,9 +1044,9 @@ void OrderEntrySimple::operator()(
   auto external_order_id = fmt::format("{}"sv, cancel_order.order_id);  // alloc
   auto order_status = json::map(cancel_order.status);
   auto response = oms::Response{
-      .type = RequestType::CANCEL_ORDER,
+      .request_type = RequestType::CANCEL_ORDER,
       .origin = Origin::EXCHANGE,
-      .status = RequestStatus::ACCEPTED,
+      .request_status = RequestStatus::ACCEPTED,
       .error = {},
       .text = {},
       .version = version,
@@ -1070,7 +1070,7 @@ void OrderEntrySimple::operator()(
       .external_account = {},
       .external_order_id = external_order_id,
       .client_order_id = {},
-      .status = order_status,
+      .order_status = order_status,
       .quantity = cancel_order.orig_qty,
       .price = cancel_order.price,
       .stop_price = cancel_order.stop_price,
@@ -1128,7 +1128,7 @@ void OrderEntrySimple::cancel_all_open_orders(Event<CancelAllOrders> const &even
           .symbol = cancel_all_orders.symbol,
           .side = cancel_all_orders.side,
           .origin = Origin::GATEWAY,
-          .status = RequestStatus::FORWARDED,
+          .request_status = RequestStatus::FORWARDED,
           .error = {},
           .text = {},
           .request_id = request_id,
@@ -1178,7 +1178,7 @@ void OrderEntrySimple::operator()(Trace<json::CancelAllOpenOrders> const &event,
       .symbol = {},
       .side = {},
       .origin = Origin::EXCHANGE,
-      .status = status,
+      .request_status = status,
       .error = error,
       .text = cancel_all_open_orders.msg,
       .request_id = request_id,

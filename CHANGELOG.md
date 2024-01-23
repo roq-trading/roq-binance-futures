@@ -4,6 +4,8 @@ All notable changes will be documented in this file.
 
 ## Head
 
+## 0.9.9 &ndash; 2024-01-28
+
 ### Fixed
 
 * `OrderUpdate.client_order_id` was not populated during download (#435)

@@ -8,7 +8,6 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/compare.hpp"
-#include "roq/utils/number.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/core/charconv.hpp"

@@ -2,7 +2,7 @@
 
 #include "roq/binance_futures/json/utils.hpp"
 
-#include "roq/utils/number.hpp"
+#include "roq/decimal.hpp"
 
 #include "roq/oms/exceptions.hpp"
 
@@ -60,7 +60,7 @@ std::string_view new_order(
       create_order.symbol,
       side,
       type,
-      utils::Number{create_order.quantity, order.quantity_precision.decimals},
+      Decimal{create_order.quantity, order.quantity_precision.precision},
       reduce_only);
   switch (create_order.order_type) {
     using enum roq::OrderType;
@@ -78,7 +78,7 @@ std::string_view new_order(
           R"(timeInForce={}&)"
           R"(price={}&)"sv,
           time_in_force,
-          utils::Number{create_order.price, order.price_precision.decimals});
+          Decimal{create_order.price, order.price_precision.precision});
       break;
     }
   }
@@ -86,7 +86,7 @@ std::string_view new_order(
     fmt::format_to(
         std::back_inserter(buffer),
         R"(stopPrice={}&)"sv,
-        utils::Number{create_order.stop_price, order.price_precision.decimals});
+        Decimal{create_order.stop_price, order.price_precision.precision});
   fmt::format_to(
       std::back_inserter(buffer),
       R"(newClientOrderId={}&)"
@@ -123,8 +123,8 @@ std::string_view modify_order(
         R"(price={}&)"
         R"(recvWindow={})"sv,
         side,
-        utils::Number{quantity, order.quantity_precision.decimals},
-        utils::Number{price, order.price_precision.decimals},
+        Decimal{quantity, order.quantity_precision.precision},
+        Decimal{price, order.price_precision.precision},
         recv_window.count());
   } else {  // dapi
     if (std::isnan(modify_order.price)) {
@@ -140,7 +140,7 @@ std::string_view modify_order(
           R"(quantity={}&)"
           R"(recvWindow={})"sv,
           side,
-          utils::Number{modify_order.quantity, order.quantity_precision.decimals},
+          Decimal{modify_order.quantity, order.quantity_precision.precision},
           recv_window.count());
     } else if (std::isnan(modify_order.quantity)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
@@ -155,7 +155,7 @@ std::string_view modify_order(
           R"(price={}&)"
           R"(recvWindow={})"sv,
           side,
-          utils::Number{modify_order.price, order.price_precision.decimals},
+          Decimal{modify_order.price, order.price_precision.precision},
           recv_window.count());
     } else {
       throw oms::Rejected{Origin::GATEWAY, Error::INVALID_REQUEST_ARGS, "Missing quantity or price"sv};

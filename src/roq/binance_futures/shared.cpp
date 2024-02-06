@@ -5,12 +5,39 @@
 namespace roq {
 namespace binance_futures {
 
+// === HELPERS ===
+
+namespace {
+auto create_sequencer(auto &settings) {
+  auto options = market::mbp::Sequencer::Options{
+      .timeout = settings.common.mbp_sequencer_timeout,
+      .max_updates = {},
+  };
+  return market::mbp::Sequencer{options};
+}
+}  // namespace
+
 // === IMPLEMENTATION ===
 
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
     : settings{settings}, api{API::create(settings)}, dispatcher_{dispatcher},
       rate_limiter{settings.common.request_limit, settings.common.request_limit_interval},
       symbols{settings.ws.max_subscriptions_per_stream}, depth_request_queue{settings.ws.mbp_request_delay} {
+}
+
+Shared::Instrument &Shared::get_instrument(std::string_view const &symbol) {
+  auto iter = instruments_.find(symbol);
+  if (iter == std::end(instruments_)) [[unlikely]] {
+    auto res = instruments_.try_emplace(symbol, settings);
+    assert(res.second);
+    iter = res.first;
+  }
+  return (*iter).second;
+}
+
+// instrument
+
+Shared::Instrument::Instrument(Settings const &settings) : sequencer{create_sequencer(settings)} {
 }
 
 }  // namespace binance_futures

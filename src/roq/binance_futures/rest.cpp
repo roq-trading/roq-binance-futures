@@ -412,7 +412,7 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
   auto &depth = event.value;
   log::info<4>("depth={}"sv, depth);
   auto sequence = depth.last_update_id;
-  auto &instrument = shared_.instruments[symbol];
+  auto &instrument = shared_.get_instrument(symbol);
   auto &sequencer = instrument.sequencer;
   auto &mbp = shared_.get_mbp();
   auto emplace_back = [](auto &result, auto &value) {
@@ -431,14 +431,19 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
   for (auto &item : depth.asks)
     emplace_back(mbp.asks, item);
   try {
-    auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence) {
-      log::debug(R"(PUBLISH SNAPSHOT symbol="{}", sequence={})"sv, symbol, sequence);
+    auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence, auto retries, auto delay) {
+      log::info(
+          R"(DEBUG PUBLISH SNAPSHOT symbol="{}", sequence={}, retries={}, delay={})"sv,
+          symbol,
+          sequence,
+          retries,
+          std::chrono::duration_cast<std::chrono::milliseconds>(delay));
       auto market_by_price_update = MarketByPriceUpdate{
           .stream_id = stream_id_,
           .exchange = shared_.settings.exchange,
           .symbol = symbol,
-          .bids = {const_cast<MBPUpdate *>(std::data(bids)), std::size(bids)},  // FIXME
-          .asks = {const_cast<MBPUpdate *>(std::data(asks)), std::size(asks)},  // FIXME
+          .bids = bids,
+          .asks = asks,
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = depth.transaction_time,
           .exchange_sequence = sequencer.last_sequence(),
@@ -452,7 +457,7 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
       shared_(event, true, apply_updates);
     };
     auto request_snapshot = [&](auto retries) {
-      log::debug(R"(REQUEST symbol="{}" (retries={}))"sv, symbol, retries);
+      log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, symbol, retries);
       if (shared_.settings.ws.mbp_request_max_retries && shared_.settings.ws.mbp_request_max_retries < retries) {
         log::fatal(R"(Unexpected: symbol="{}", retries={})"sv, symbol, retries);
       }

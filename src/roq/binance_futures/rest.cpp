@@ -7,6 +7,7 @@
 
 #include "roq/mask.hpp"
 
+#include "roq/utils/charconv.hpp"
 #include "roq/utils/compare.hpp"
 #include "roq/utils/update.hpp"
 
@@ -96,6 +97,9 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
+      rate_limiter_{
+          .minute = create_metrics(shared.settings, name_, "1m"sv),
+      },
       shared_{shared}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
 }
 
@@ -124,7 +128,9 @@ void Rest::operator()(metrics::Writer &writer) {
       .write(profile_.depth, metrics::Type::PROFILE)
       .write(profile_.depth_ack, metrics::Type::PROFILE)
       // latency
-      .write(latency_.ping, metrics::Type::LATENCY);
+      .write(latency_.ping, metrics::Type::LATENCY)
+      // rate limiter
+      .write(rate_limiter_.minute, metrics::Type::RATE_LIMITER);
 }
 
 void Rest::operator()(Trace<web::rest::Client::Connected> const &) {
@@ -141,6 +147,19 @@ void Rest::operator()(Trace<web::rest::Client::Disconnected> const &) {
   (*this)(ConnectionStatus::DISCONNECTED);
   if (!download_.downloading())
     download_.reset();
+}
+
+void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
+  auto &header = event.value;
+  if (header.name == "x-mbx-used-weight-1m"sv) {
+    log::info("DEBUG header={}"sv, header);
+    try {
+      auto value = utils::from_string_relaxed<int64_t>(header.value);
+      rate_limiter_.minute.set(value);
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
+    }
+  }
 }
 
 void Rest::operator()(Trace<web::rest::Client::Latency> const &event) {
@@ -478,12 +497,28 @@ void Rest::check_request_queue(std::chrono::nanoseconds now) {
       now);
 }
 
+namespace {
+auto get_retry_after(auto &response) {
+  std::chrono::nanoseconds result = {};
+  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
+    try {
+      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
+      auto seconds = utils::from_string_relaxed<int64_t>(value);
+      result = std::chrono::seconds{seconds};
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
+    }
+  });
+  return result;
+}
+}  // namespace
+
 template <typename SuccessHandler, typename ErrorHandler>
 void Rest::process_response(
     web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
-    log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
+    // log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
     switch (category) {
       using enum web::http::Category;
       case SUCCESS:  // 2xx
@@ -497,6 +532,9 @@ void Rest::process_response(
             [[fallthrough]];
           case I_AM_A_TEAPOT:        // 418
           case TOO_MANY_REQUESTS: {  // 429
+            auto retry_after = get_retry_after(response);
+            if (retry_after.count())
+              (*connection_).suspend(retry_after);
             auto text = fmt::format("{}"sv, status);
             error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::REQUEST_RATE_LIMIT_REACHED, text);
             break;

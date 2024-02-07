@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "roq/utils/metrics/counter.hpp"
+#include "roq/utils/metrics/gauge.hpp"
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
 
@@ -61,8 +62,10 @@ struct Rest final : public web::rest::Client::Handler {
   void operator()(metrics::Writer &);
 
  protected:
+  // web::rest::Client::Handler
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
+  void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
 
   void operator()(ConnectionStatus);
@@ -104,6 +107,9 @@ struct Rest final : public web::rest::Client::Handler {
   struct {
     utils::metrics::Latency ping;
   } latency_;
+  struct {
+    utils::metrics::Gauge minute;
+  } rate_limiter_;
   // cache
   Shared &shared_;
   absl::flat_hash_set<Symbol> all_symbols_;

@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "roq/utils/metrics/counter.hpp"
+#include "roq/utils/metrics/gauge.hpp"
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
 
@@ -84,8 +85,10 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
+  // web::rest::Client::Handler
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
+  void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
 
   void operator()(ConnectionStatus);
@@ -171,6 +174,9 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   struct {
     utils::metrics::Latency ping;
   } latency_;
+  struct {
+    utils::metrics::Gauge minute;
+  } rate_limiter_;
   // account
   Account &account_;
   // shared

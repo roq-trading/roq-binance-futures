@@ -14,7 +14,7 @@
 
 #include "roq/core/metrics/factory.hpp"
 
-#include "roq/web/rest/client_factory.hpp"
+#include "roq/web/rest/client.hpp"
 
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/utils.hpp"
@@ -70,7 +70,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
       .encode_buffer_size = settings.common.encode_buffer_size,
       .allow_pipelining = false,
   };
-  return web::rest::ClientFactory::create(handler, context, config);
+  return web::rest::Client::create(handler, context, config);
 }
 
 struct create_metrics final : public core::metrics::Factory {
@@ -251,10 +251,6 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Latency> const &ev
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
   latency_.ping.update(latency.sample);
-}
-
-void OrderEntryPortfolio::operator()(
-    Trace<web::rest::Response> const &, [[maybe_unused]] uint64_t request_id, [[maybe_unused]] uint64_t opaque) {
 }
 
 void OrderEntryPortfolio::operator()(ConnectionStatus status) {

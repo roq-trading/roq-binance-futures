@@ -26,7 +26,7 @@ TEST_CASE("json_mini_ticker_simple_coin_m", "[json_mini_ticker]") {
                  R"("q":"3833.39491534")"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::MiniTicker::create(message, buffer);
+  json::MiniTicker obj{message, buffer};
   CHECK(obj.event_type == json::EventType::_24HR_MINI_TICKER);
   CHECK(obj.event_time == 1640248670092ms);
   CHECK(obj.symbol == "BTCUSD_220325"sv);

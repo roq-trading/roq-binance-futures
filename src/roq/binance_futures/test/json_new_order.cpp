@@ -38,7 +38,7 @@ TEST_CASE("json_new_order_simple", "[json_new_order]") {
                  R"("origType":"LIMIT",)"
                  R"("updateTime":1634543725791)"
                  R"(})";
-  auto obj = core::json::Parser::create<json::NewOrder>(message);
+  json::NewOrder obj{message};
   CHECK(obj.order_id == 17759343290);
   CHECK(obj.symbol == "XRPUSDT"sv);
   CHECK(obj.status == json::OrderStatus::NEW);

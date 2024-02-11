@@ -31,7 +31,7 @@ TEST_CASE("simple", "[json_grid_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::GridUpdate::create(message, buffer);
+  json::GridUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::GRID_UPDATE);
   CHECK(obj.transaction_time == 1669262908216ms);
   CHECK(obj.event_time == 1669262908218ms);

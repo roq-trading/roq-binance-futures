@@ -27,7 +27,7 @@ TEST_CASE("simple", "[json_strategy_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::StrategyUpdate::create(message, buffer);
+  json::StrategyUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::STRATEGY_UPDATE);
   CHECK(obj.transaction_time == 1669261797627ms);
   CHECK(obj.event_time == 1669261797628ms);

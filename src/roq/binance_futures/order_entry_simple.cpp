@@ -7,6 +7,8 @@
 
 #include "roq/mask.hpp"
 
+#include "roq/oms/exceptions.hpp"
+
 #include "roq/utils/charconv.hpp"
 #include "roq/utils/compare.hpp"
 #include "roq/utils/update.hpp"
@@ -406,7 +408,7 @@ void OrderEntrySimple::get_balance() {
 void OrderEntrySimple::get_balance_ack(Trace<web::rest::Response> const &event) {
   profile_.balance_ack([&]() {
     auto handle_success = [&](auto &body) {
-      auto balance = json::Balance::create(body, decode_buffer_);
+      json::Balance balance{body, decode_buffer_};
       Trace event_2{event, balance};
       (*this)(event_2);
       request_.respond_balance = clock::get_system();  // completion
@@ -485,7 +487,7 @@ void OrderEntrySimple::get_account() {
 void OrderEntrySimple::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto handle_success = [&](auto &body) {
-      auto account = json::Account::create(body, decode_buffer_);
+      json::Account account{body, decode_buffer_};
       Trace event_2{event, account};
       (*this)(event_2);
       request_.respond_account = clock::get_system();  // completion
@@ -554,7 +556,7 @@ void OrderEntrySimple::get_open_orders() {
 void OrderEntrySimple::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
-      auto open_orders = json::OpenOrders::create(body, decode_buffer_);
+      json::OpenOrders open_orders{body, decode_buffer_};
       Trace event_2{event, open_orders};
       (*this)(event_2);
       request_.respond_orders = clock::get_system();  // completion
@@ -663,7 +665,7 @@ void OrderEntrySimple::get_trades() {
 void OrderEntrySimple::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
     auto handle_success = [&](auto &body) {
-      auto trades = json::Trades::create(body, decode_buffer_);
+      json::Trades trades{body, decode_buffer_};
       Trace event_2{event, trades};
       (*this)(event_2);
       request_.respond_trades = clock::get_system();  // completion

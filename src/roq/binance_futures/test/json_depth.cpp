@@ -30,5 +30,5 @@ TEST_CASE("json_depth_simple_coin_m", "[json_depth]") {
                  R"(])"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  [[maybe_unused]] auto obj = json::Depth::create(message, buffer);
+  [[maybe_unused]] json::Depth obj{message, buffer};
 }

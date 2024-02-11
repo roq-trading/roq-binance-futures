@@ -17,6 +17,6 @@ TEST_CASE("json_listen_key_simple", "[json_listen_key]") {
   auto message = R"({)"
                  R"("listenKey":"JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY")"
                  R"(})";
-  auto obj = core::json::Parser::create<json::ListenKey>(message);
+  json::ListenKey obj{message};
   CHECK(obj.listen_key == "JRNjbBr3bWns94f71afrzHXwsfZgVczUWTD02hBmO03OFHQh08YsuwmkpewsrdNY"sv);
 }

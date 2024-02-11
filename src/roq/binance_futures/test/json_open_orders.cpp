@@ -15,7 +15,7 @@ using namespace Catch::literals;
 TEST_CASE("json_open_orders_simple_empty", "[json_open_orders]") {
   auto message = R"([])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OpenOrders::create(message, buffer);
+  json::OpenOrders obj{message, buffer};
   REQUIRE(std::size(obj.data) == 0);
 }
 
@@ -45,7 +45,7 @@ TEST_CASE("json_open_orders_simple_1", "[json_open_orders]") {
                  R"(})"
                  R"(])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OpenOrders::create(message, buffer);
+  json::OpenOrders obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];

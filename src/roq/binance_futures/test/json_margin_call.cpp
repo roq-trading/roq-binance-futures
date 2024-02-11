@@ -30,7 +30,7 @@ TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
                  R"(])"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::MarginCall::create(message, buffer);
+  json::MarginCall obj{message, buffer};
   CHECK(obj.event_type == json::EventType::MARGIN_CALL);
   CHECK(obj.event_time == 1587727187525ms);
   CHECK(obj.cross_wallet_balance == 3.16812045_a);

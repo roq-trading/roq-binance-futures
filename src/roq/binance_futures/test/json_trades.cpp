@@ -17,7 +17,7 @@ using namespace Catch::literals;
 TEST_CASE("empty", "[json_trades]") {
   auto message = R"([])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::Trades::create(message, buffer);
+  json::Trades obj{message, buffer};
   REQUIRE(std::size(obj.data) == 0);
 }
 
@@ -40,7 +40,7 @@ TEST_CASE("fapi", "[json_trades]") {
                  R"(})"
                  R"(])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::Trades::create(message, buffer);
+  json::Trades obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];
@@ -81,7 +81,7 @@ TEST_CASE("dapi", "[json_trades]") {
                  R"(})"
                  R"(])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::Trades::create(message, buffer);
+  json::Trades obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
   auto &d0 = data[0];

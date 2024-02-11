@@ -38,7 +38,7 @@ TEST_CASE("json_cancel_order_simple", "[json_cancel_order]") {
                  R"("origType":"LIMIT",)"
                  R"("updateTime":1634545259912)"
                  R"(})";
-  auto obj = core::json::Parser::create<json::CancelOrder>(message);
+  json::CancelOrder obj{message};
   CHECK(obj.order_id == 17759646892);
   CHECK(obj.symbol == "XRPUSDT"sv);
   CHECK(obj.status == json::OrderStatus::CANCELED);

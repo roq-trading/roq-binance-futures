@@ -16,7 +16,7 @@ TEST_CASE("json_auto_cancel_all_open_orders_simple", "[json_auto_cancel_all_open
                  R"("symbol":"XRPUSDT",)"
                  R"("countdownTime":"30000")"
                  R"(})";
-  auto obj = core::json::Parser::create<json::AutoCancelAllOpenOrders>(message);
+  json::AutoCancelAllOpenOrders obj{message};
   CHECK(obj.symbol == "XRPUSDT"sv);
   CHECK(obj.countdown_time == 30000);
 }

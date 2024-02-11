@@ -41,7 +41,7 @@ TEST_CASE("json_account_update_order", "[json_account_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::AccountUpdate::create(message, buffer);
+  json::AccountUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
   CHECK(obj.transaction_time == 1634811213699ms);
   CHECK(obj.event_time == 1634811213707ms);
@@ -84,7 +84,7 @@ TEST_CASE("json_account_update_withdraw", "[json_account_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::AccountUpdate::create(message, buffer);
+  json::AccountUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
   CHECK(obj.transaction_time == 1634827654378ms);
   CHECK(obj.event_time == 1634827654387ms);

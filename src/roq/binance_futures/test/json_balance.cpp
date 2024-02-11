@@ -66,7 +66,7 @@ TEST_CASE("json_balance_simple_usd_m", "[json_balance]") {
                  R"(})"
                  R"(])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::Balance::create(message, buffer);
+  json::Balance obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 5);
   auto &a0 = data[0];
@@ -152,7 +152,7 @@ TEST_CASE("json_balance_simple_coinm", "[json_balance]") {
                  R"(})"
                  R"(])";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::Balance::create(message, buffer);
+  json::Balance obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 3);
 }

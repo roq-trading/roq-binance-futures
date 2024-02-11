@@ -50,37 +50,37 @@ bool UserStreamParser::try_dispatch(
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {
-      auto order_trade_update = OrderTradeUpdate::create(message, buffer);
+      OrderTradeUpdate order_trade_update{message, buffer};
       Trace event{trace_info, order_trade_update};
       handler(event);
       break;
     }
     case ACCOUNT_UPDATE: {
-      auto account_update = AccountUpdate::create(message, buffer);
+      AccountUpdate account_update{message, buffer};
       Trace event{trace_info, account_update};
       handler(event);
       break;
     }
     case MARGIN_CALL: {
-      auto margin_call = MarginCall::create(message, buffer);
+      MarginCall margin_call{message, buffer};
       Trace event{trace_info, margin_call};
       handler(event);
       break;
     }
     case STRATEGY_UPDATE: {
-      auto strategy_update = StrategyUpdate::create(message, buffer);
+      StrategyUpdate strategy_update{message, buffer};
       Trace event{trace_info, strategy_update};
       handler(event);
       break;
     }
     case GRID_UPDATE: {
-      auto grid_update = GridUpdate::create(message, buffer);
+      GridUpdate grid_update{message, buffer};
       Trace event{trace_info, grid_update};
       handler(event);
       break;
     }
     case ACCOUNT_CONFIG_UPDATE: {
-      auto account_config_update = AccountConfigUpdate::create(message, buffer);
+      AccountConfigUpdate account_config_update{message, buffer};
       Trace event{trace_info, account_config_update};
       handler(event);
       break;

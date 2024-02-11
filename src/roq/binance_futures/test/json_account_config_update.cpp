@@ -23,7 +23,7 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::AccountConfigUpdate::create(message, buffer);
+  json::AccountConfigUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);
   CHECK(obj.transaction_time == 1611646737476ms);
@@ -42,7 +42,7 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::AccountConfigUpdate::create(message, buffer);
+  json::AccountConfigUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);
   CHECK(obj.transaction_time == 1611646737476ms);

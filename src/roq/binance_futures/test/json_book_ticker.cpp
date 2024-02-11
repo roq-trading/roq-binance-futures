@@ -25,7 +25,7 @@ TEST_CASE("json_book_ticker_simple", "[json_book_ticker]") {
                  R"("E":1634288226716)"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::BookTicker::create(message, buffer);
+  json::BookTicker obj{message, buffer};
   CHECK(obj.event_type == json::EventType::BOOK_TICKER);
   CHECK(obj.order_book_update_id == 847033385825);
   CHECK(obj.symbol == "BTCUSDT"sv);
@@ -118,7 +118,7 @@ TEST_CASE("json_book_ticker_simple_coin_m", "[json_book_ticker]") {
                  R"("E":1640247707203)"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::BookTicker::create(message, buffer);
+  json::BookTicker obj{message, buffer};
   CHECK(obj.order_book_update_id == 300683916630);
   CHECK(obj.event_type == json::EventType::BOOK_TICKER);
   CHECK(obj.symbol == "BTCUSD_220325"sv);

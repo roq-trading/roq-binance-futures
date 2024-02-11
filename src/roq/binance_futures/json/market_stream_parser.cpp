@@ -25,7 +25,7 @@ void dispatch_helper(
     std::string_view const &message,
     std::span<std::byte> const &buffer,
     TraceInfo const &trace_info) {
-  auto value = T::create(message, buffer);
+  T value{message, buffer};
   create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace

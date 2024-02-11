@@ -50,7 +50,7 @@ TEST_CASE("json_order_trade_update_simple_new", "[json_order_trade_update]") {
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OrderTradeUpdate::create(message, buffer);
+  json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634553049579ms);
   CHECK(obj.event_time == 1634553049581ms);
@@ -122,7 +122,7 @@ TEST_CASE("json_order_trade_update_simple_canceled", "[json_order_trade_update]"
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OrderTradeUpdate::create(message, buffer);
+  json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634561771964ms);
   CHECK(obj.event_time == 1634561771970ms);
@@ -196,7 +196,7 @@ TEST_CASE("json_order_trade_update_simple_filled_maker", "[json_order_trade_upda
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OrderTradeUpdate::create(message, buffer);
+  json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634812374563ms);
   CHECK(obj.event_time == 1634812374567ms);
@@ -272,7 +272,7 @@ TEST_CASE("json_order_trade_update_simple_filled_taker", "[json_order_trade_upda
                  R"(})"
                  R"(})";
   std::vector<std::byte> buffer(8192);
-  auto obj = json::OrderTradeUpdate::create(message, buffer);
+  json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634814520988ms);
   CHECK(obj.event_time == 1634814520998ms);

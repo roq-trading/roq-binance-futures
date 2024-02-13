@@ -160,7 +160,7 @@ void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
   if (header.name == "x-mbx-used-weight-1m"sv) {
     log::info("DEBUG header={}"sv, header);
     try {
-      auto value = utils::from_string_relaxed<int64_t>(header.value);
+      auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{
           .type = RateLimitType::REQUEST,
           .period = 1min,

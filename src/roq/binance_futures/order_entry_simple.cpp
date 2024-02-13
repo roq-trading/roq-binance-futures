@@ -7,7 +7,7 @@
 
 #include "roq/mask.hpp"
 
-#include "roq/oms/exceptions.hpp"
+#include "roq/server/oms/exceptions.hpp"
 
 #include "roq/utils/charconv.hpp"
 #include "roq/utils/compare.hpp"
@@ -207,14 +207,14 @@ void OrderEntrySimple::operator()(metrics::Writer &writer) {
 }
 
 uint16_t OrderEntrySimple::operator()(
-    Event<CreateOrder> const &event, oms::Order const &order, std::string_view const &request_id) {
+    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   new_order(event, order, request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntrySimple::operator()(
     Event<ModifyOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   modify_order(event, order, request_id, previous_request_id);
@@ -223,7 +223,7 @@ uint16_t OrderEntrySimple::operator()(
 
 uint16_t OrderEntrySimple::operator()(
     Event<CancelOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   cancel_order(event, order, request_id, previous_request_id);
@@ -586,7 +586,7 @@ void OrderEntrySimple::operator()(Trace<json::OpenOrders> const &event) {
     auto time_in_force = json::map(order.time_in_force);
     auto external_order_id = fmt::format("{}"sv, order.order_id);  // alloc
     auto order_status = json::map(order.status);
-    auto order_update = oms::OrderUpdate{
+    auto order_update = server::oms::OrderUpdate{
         .account = account_.get_name(),
         .exchange = shared_.settings.exchange,
         .symbol = order.symbol,
@@ -741,10 +741,10 @@ void OrderEntrySimple::refresh_listen_key() {
 // new-order
 
 void OrderEntrySimple::new_order(
-    Event<CreateOrder> const &event, oms::Order const &order, std::string_view const &request_id) {
+    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.new_order([&]() {
     if (!ready())
-      throw oms::NotReady{"not ready"sv};
+      throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
@@ -783,7 +783,7 @@ void OrderEntrySimple::new_order_ack(
       (*this)(event_2, user_id, order_id, version);
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
-      auto response = oms::Response{
+      auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
           .origin = origin,
           .request_status = status,
@@ -810,7 +810,7 @@ void OrderEntrySimple::operator()(
   auto time_in_force = json::map(new_order.time_in_force);
   auto order_status = json::map(new_order.status);
   auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // alloc
-  auto response = oms::Response{
+  auto response = server::oms::Response{
       .request_type = RequestType::CREATE_ORDER,
       .origin = Origin::EXCHANGE,
       .request_status = RequestStatus::ACCEPTED,
@@ -821,7 +821,7 @@ void OrderEntrySimple::operator()(
       .quantity = new_order.orig_qty,
       .price = new_order.price,
   };
-  auto order_update = oms::OrderUpdate{
+  auto order_update = server::oms::OrderUpdate{
       .account = account_.get_name(),
       .exchange = shared_.settings.exchange,
       .symbol = new_order.symbol,
@@ -862,12 +862,12 @@ void OrderEntrySimple::operator()(
 
 void OrderEntrySimple::modify_order(
     Event<ModifyOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   profile_.modify_order([&]() {
     if (!ready())
-      throw oms::NotReady{"not ready"sv};
+      throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::modify_order(
@@ -911,7 +911,7 @@ void OrderEntrySimple::modify_order_ack(
       (*this)(event_2, user_id, order_id, version);
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
-      auto response = oms::Response{
+      auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = origin,
           .request_status = status,
@@ -938,7 +938,7 @@ void OrderEntrySimple::operator()(
   auto time_in_force = json::map(modify_order.time_in_force);
   auto external_order_id = fmt::format("{}"sv, modify_order.order_id);  // alloc
   auto order_status = json::map(modify_order.status);
-  auto response = oms::Response{
+  auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
       .request_status = RequestStatus::ACCEPTED,
@@ -949,7 +949,7 @@ void OrderEntrySimple::operator()(
       .quantity = modify_order.orig_qty,
       .price = modify_order.price,
   };
-  auto order_update = oms::OrderUpdate{
+  auto order_update = server::oms::OrderUpdate{
       .account = account_.get_name(),
       .exchange = shared_.settings.exchange,
       .symbol = modify_order.symbol,
@@ -990,12 +990,12 @@ void OrderEntrySimple::operator()(
 
 void OrderEntrySimple::cancel_order(
     Event<CancelOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
-      throw oms::NotReady{"not ready"sv};
+      throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
@@ -1032,7 +1032,7 @@ void OrderEntrySimple::cancel_order_ack(
       (*this)(event_2, user_id, order_id, version);
     };
     auto handle_error = [&](auto origin, auto status, auto error, auto text) {
-      auto response = oms::Response{
+      auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
           .origin = origin,
           .request_status = status,
@@ -1059,7 +1059,7 @@ void OrderEntrySimple::operator()(
   auto time_in_force = json::map(cancel_order.time_in_force);
   auto external_order_id = fmt::format("{}"sv, cancel_order.order_id);  // alloc
   auto order_status = json::map(cancel_order.status);
-  auto response = oms::Response{
+  auto response = server::oms::Response{
       .request_type = RequestType::CANCEL_ORDER,
       .origin = Origin::EXCHANGE,
       .request_status = RequestStatus::ACCEPTED,
@@ -1070,7 +1070,7 @@ void OrderEntrySimple::operator()(
       .quantity = cancel_order.orig_qty,
       .price = cancel_order.price,
   };
-  auto order_update = oms::OrderUpdate{
+  auto order_update = server::oms::OrderUpdate{
       .account = account_.get_name(),
       .exchange = shared_.settings.exchange,
       .symbol = cancel_order.symbol,
@@ -1319,7 +1319,7 @@ void OrderEntrySimple::process_response(
       default:
         response.expect(web::http::Status::OK);  // throws
     }
-  } catch (oms::Exception &e) {
+  } catch (server::oms::Exception &e) {
     log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     error_handler(e.origin, e.status, e.error, e.what());
   } catch (NetworkError &e) {
@@ -1333,7 +1333,7 @@ void OrderEntrySimple::process_response(
 
 template <typename... Args>
 void OrderEntrySimple::operator()(
-    Trace<oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
+    Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
   auto &[trace_info, response] = event;
   if (shared_.update_order(
           user_id,
@@ -1348,7 +1348,8 @@ void OrderEntrySimple::operator()(
   }
 }
 
-void OrderEntrySimple::operator()(Trace<oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void OrderEntrySimple::operator()(
+    Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
   auto &[trace_info, order_update] = event;
   if (shared_.update_order(
           client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {

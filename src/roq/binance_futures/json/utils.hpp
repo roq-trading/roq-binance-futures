@@ -5,7 +5,7 @@
 #include <chrono>
 #include <vector>
 
-#include "roq/oms/order.hpp"
+#include "roq/server/oms/order.hpp"
 
 #include "roq/utils/patterns.hpp"
 
@@ -277,14 +277,14 @@ extern std::string_view trades(
 extern std::string_view new_order(
     std::vector<char> &buffer,
     CreateOrder const &,
-    oms::Order const &,
+    server::oms::Order const &,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window);
 
 extern std::string_view modify_order(
     std::vector<char> &buffer,
     roq::ModifyOrder const &,
-    oms::Order const &,
+    server::oms::Order const &,
     std::string_view const &request_id,
     std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
@@ -293,7 +293,7 @@ extern std::string_view modify_order(
 extern std::string_view cancel_order(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
-    oms::Order const &,
+    server::oms::Order const &,
     std::string_view const &request_id,
     std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window);

@@ -70,15 +70,16 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   void operator()(metrics::Writer &) override;
 
-  uint16_t operator()(Event<CreateOrder> const &, oms::Order const &, std::string_view const &request_id) override;
+  uint16_t operator()(
+      Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id) override;
   uint16_t operator()(
       Event<ModifyOrder> const &,
-      oms::Order const &,
+      server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(
       Event<CancelOrder> const &,
-      oms::Order const &,
+      server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
 
@@ -117,13 +118,13 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   void refresh_listen_key();
 
-  void new_order(Event<CreateOrder> const &, oms::Order const &, std::string_view const &request_id);
+  void new_order(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
   void new_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<json::NewOrder> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   void cancel_order(
       Event<CancelOrder> const &,
-      oms::Order const &,
+      server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
   void cancel_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
@@ -141,9 +142,9 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void process_response(web::rest::Response const &, SuccessHandler, ErrorHandler);
 
   template <typename... Args>
-  void operator()(Trace<oms::Response> const &, uint8_t user_id, uint64_t order_id, Args &&...);
+  void operator()(Trace<server::oms::Response> const &, uint8_t user_id, uint64_t order_id, Args &&...);
 
-  void operator()(Trace<oms::OrderUpdate> const &, std::string_view const &client_order_id);
+  void operator()(Trace<server::oms::OrderUpdate> const &, std::string_view const &client_order_id);
 
   void waf_limit_violation();
 

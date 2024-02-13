@@ -263,7 +263,7 @@ void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_
 }
 
 uint16_t Gateway::operator()(
-    Event<CreateOrder> const &event, oms::Order const &order, std::string_view const &request_id) {
+    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   auto &create_order = event.value;
   assert(!std::empty(create_order.account));
   return get_order_entry(create_order.account, create_order.margin_mode)(event, order, request_id);
@@ -271,7 +271,7 @@ uint16_t Gateway::operator()(
 
 uint16_t Gateway::operator()(
     Event<ModifyOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   auto &modify_order = event.value;
@@ -282,7 +282,7 @@ uint16_t Gateway::operator()(
 
 uint16_t Gateway::operator()(
     Event<CancelOrder> const &event,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   auto &cancel_order = event.value;

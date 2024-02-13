@@ -4,7 +4,7 @@
 
 #include "roq/decimal.hpp"
 
-#include "roq/oms/exceptions.hpp"
+#include "roq/server/oms/exceptions.hpp"
 
 using namespace std::literals;
 
@@ -43,7 +43,7 @@ std::string_view trades(
 std::string_view new_order(
     std::vector<char> &buffer,
     CreateOrder const &create_order,
-    oms::Order const &order,
+    server::oms::Order const &order,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window) {
   auto side = map(create_order.side).as_raw_text();
@@ -100,7 +100,7 @@ std::string_view new_order(
 std::string_view modify_order(
     std::vector<char> &buffer,
     roq::ModifyOrder const &modify_order,
-    oms::Order const &order,
+    server::oms::Order const &order,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
@@ -158,7 +158,7 @@ std::string_view modify_order(
           Decimal{modify_order.price, order.price_precision.precision},
           recv_window.count());
     } else {
-      throw oms::Rejected{Origin::GATEWAY, Error::INVALID_REQUEST_ARGS, "Missing quantity or price"sv};
+      throw server::oms::Rejected{Origin::GATEWAY, Error::INVALID_REQUEST_ARGS, "Missing quantity or price"sv};
     }
   }
   std::string_view result{std::data(buffer), std::size(buffer)};
@@ -168,7 +168,7 @@ std::string_view modify_order(
 std::string_view cancel_order(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
-    oms::Order const &order,
+    server::oms::Order const &order,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window) {

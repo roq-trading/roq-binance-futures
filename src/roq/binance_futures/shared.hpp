@@ -95,6 +95,7 @@ struct Shared final {
   core::limit::RateLimiter rate_limiter;
   core::Symbols symbols;
   core::TimerQueue<std::string> depth_request_queue;
+  std::vector<RateLimit> rate_limits;
 };
 
 }  // namespace binance_futures

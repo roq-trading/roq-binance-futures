@@ -49,6 +49,7 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
+    virtual void operator()(Trace<RateLimitsUpdate> const &) = 0;
     virtual void operator()(
         Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
@@ -90,8 +91,10 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
   // web::rest::Client::Handler
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
-  void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
+  void operator()(Trace<web::rest::Client::MessageBegin> const &) override;
+  void operator()(Trace<web::rest::Client::Header> const &) override;
+  void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
 
   void operator()(ConnectionStatus);
 
@@ -186,7 +189,7 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
     utils::metrics::Latency ping;
   } latency_;
   struct {
-    utils::metrics::Gauge minute;
+    utils::metrics::Gauge request_weight_1m, order_count_1m;
   } rate_limiter_;
   // account
   Account &account_;

@@ -78,8 +78,10 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(auto &settings, auto const &group, auto const &function)
+  create_metrics(auto &settings, auto const &group, auto const &function)
       : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
+      : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
 
 auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
@@ -128,8 +130,8 @@ OrderEntrySimple::OrderEntrySimple(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
       rate_limiter_{
-          .request_weight_1m = create_metrics(shared.settings, name_, "1m"sv),
-          .order_count_1m = create_metrics(shared.settings, name_, "1m"sv),
+          .requests_1m = create_metrics(shared.settings, name_, "requests"sv, "1m"sv),
+          .orders_1m = create_metrics(shared.settings, name_, "orders"sv, "1m"sv),
       },
       account_{account}, shared_{shared}, request_{request},
       download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
@@ -204,8 +206,8 @@ void OrderEntrySimple::operator()(metrics::Writer &writer) {
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
-      .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
-      .write(rate_limiter_.order_count_1m, metrics::Type::RATE_LIMITER);
+      .write(rate_limiter_.requests_1m, metrics::Type::RATE_LIMITER)
+      .write(rate_limiter_.orders_1m, metrics::Type::RATE_LIMITER);
 }
 
 uint16_t OrderEntrySimple::operator()(
@@ -285,7 +287,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .value = value,
       };
       shared_.rate_limits.emplace_back(std::move(rate_limit));
-      rate_limiter_.request_weight_1m.set(value);
+      rate_limiter_.requests_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }
@@ -301,7 +303,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .value = value,
       };
       shared_.rate_limits.emplace_back(std::move(rate_limit));
-      rate_limiter_.order_count_1m.set(value);
+      rate_limiter_.orders_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }

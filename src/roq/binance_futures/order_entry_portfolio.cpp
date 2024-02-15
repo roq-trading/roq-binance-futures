@@ -77,8 +77,10 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(auto &settings, auto const &group, auto const &function)
+  create_metrics(auto &settings, auto const &group, auto const &function)
       : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
+      : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
 
 auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
@@ -125,7 +127,7 @@ OrderEntryPortfolio::OrderEntryPortfolio(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
       rate_limiter_{
-          .minute = create_metrics(shared.settings, name_, "1m"sv),
+          .requests_1m = create_metrics(shared.settings, name_, "requests"sv, "1m"sv),
       },
       account_{account}, shared_{shared}, request_{request},
       download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
@@ -198,7 +200,7 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
-      .write(rate_limiter_.minute, metrics::Type::RATE_LIMITER);
+      .write(rate_limiter_.requests_1m, metrics::Type::RATE_LIMITER);
 }
 
 uint16_t OrderEntryPortfolio::operator()(
@@ -256,7 +258,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &eve
     log::info("DEBUG header={}"sv, header);
     try {
       auto value = utils::from_string_relaxed<int64_t>(header.value);
-      rate_limiter_.minute.set(value);
+      rate_limiter_.requests_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }

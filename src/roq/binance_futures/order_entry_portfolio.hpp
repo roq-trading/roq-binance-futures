@@ -176,7 +176,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
     utils::metrics::Latency ping;
   } latency_;
   struct {
-    utils::metrics::Gauge minute;
+    utils::metrics::Gauge requests_1m;
   } rate_limiter_;
   // account
   Account &account_;

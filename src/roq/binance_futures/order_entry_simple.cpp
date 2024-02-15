@@ -283,7 +283,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .type = RateLimitType::REQUEST,
           .period = 1min,
           .end_time_utc = {},
-          .limit = {},
+          .limit = shared_.limits.requests_1m,
           .value = value,
       };
       shared_.rate_limits.emplace_back(std::move(rate_limit));
@@ -299,7 +299,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .type = RateLimitType::CREATE_ORDER,
           .period = 1min,
           .end_time_utc = {},
-          .limit = {},
+          .limit = shared_.limits.orders_1m,
           .value = value,
       };
       shared_.rate_limits.emplace_back(std::move(rate_limit));

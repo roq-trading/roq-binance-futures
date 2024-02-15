@@ -177,7 +177,7 @@ void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
           .type = RateLimitType::REQUEST,
           .period = 1min,
           .end_time_utc = {},
-          .limit = {},
+          .limit = shared_.limits.requests_1m,
           .value = value,
       };
       shared_.rate_limits.emplace_back(std::move(rate_limit));
@@ -291,8 +291,21 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
 void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
   auto &[trace_info, exchange_info] = event;
   log::info<2>("exchange_info={}"sv, exchange_info);
-  for (auto &item : exchange_info.rate_limits)
+  // rate-limits
+  for (auto &item : exchange_info.rate_limits) {
     log::debug("rate_limit={}"sv, item);
+    if (item.rate_limit_type == json::RateLimitType::REQUEST_WEIGHT) {
+      if (item.interval == json::Interval::MINUTE && item.interval_num == 1)
+        shared_.limits.requests_1m = item.limit;
+    }
+    if (item.rate_limit_type == json::RateLimitType::ORDERS) {
+      if (item.interval == json::Interval::SECOND && item.interval_num == 10)
+        shared_.limits.orders_10s = item.limit;
+      if (item.interval == json::Interval::MINUTE && item.interval_num == 1)
+        shared_.limits.orders_1m = item.limit;
+    }
+  }
+  // symbols
   std::vector<Symbol> symbols;
   size_t counter = {};
   for (auto const &item : exchange_info.symbols) {

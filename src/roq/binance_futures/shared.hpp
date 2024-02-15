@@ -96,6 +96,12 @@ struct Shared final {
   core::Symbols symbols;
   core::TimerQueue<std::string> depth_request_queue;
   std::vector<RateLimit> rate_limits;
+
+  struct {
+    uint32_t requests_1m = {};
+    uint32_t orders_10s = {};
+    uint32_t orders_1m = {};
+  } limits;
 };
 
 }  // namespace binance_futures

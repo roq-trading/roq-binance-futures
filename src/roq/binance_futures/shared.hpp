@@ -98,9 +98,9 @@ struct Shared final {
   std::vector<RateLimit> rate_limits;
 
   struct {
-    uint32_t requests_1m = {};
-    uint32_t orders_10s = {};
-    uint32_t orders_1m = {};
+    uint32_t request_weight_1m = {};
+    uint32_t create_order_10s = {};
+    uint32_t create_order_1m = {};
   } limits;
 };
 

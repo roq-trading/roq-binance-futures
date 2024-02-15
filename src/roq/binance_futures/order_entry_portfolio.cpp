@@ -127,7 +127,7 @@ OrderEntryPortfolio::OrderEntryPortfolio(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
       rate_limiter_{
-          .requests_1m = create_metrics(shared.settings, name_, "requests"sv, "1m"sv),
+          .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
       },
       account_{account}, shared_{shared}, request_{request},
       download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
@@ -200,7 +200,7 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
-      .write(rate_limiter_.requests_1m, metrics::Type::RATE_LIMITER);
+      .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER);
 }
 
 uint16_t OrderEntryPortfolio::operator()(
@@ -258,7 +258,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &eve
     log::info("DEBUG header={}"sv, header);
     try {
       auto value = utils::from_string_relaxed<int64_t>(header.value);
-      rate_limiter_.requests_1m.set(value);
+      rate_limiter_.request_weight_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }

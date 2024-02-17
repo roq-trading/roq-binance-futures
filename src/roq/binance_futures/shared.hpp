@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <absl/container/flat_hash_map.h>
-
 #include <chrono>
 #include <string>
 #include <utility>
@@ -11,6 +9,8 @@
 
 #include "roq/api.hpp"
 #include "roq/server.hpp"
+
+#include "roq/utils/container.hpp"
 
 #include "roq/core/symbols.hpp"
 #include "roq/core/timer_queue.hpp"
@@ -86,7 +86,7 @@ struct Shared final {
   Instrument &get_instrument(std::string_view const &symbol);
 
  private:
-  absl::flat_hash_map<Symbol, Instrument> instruments_;
+  utils::unordered_map<std::string, Instrument> instruments_;
 
  private:
   server::Dispatcher &dispatcher_;

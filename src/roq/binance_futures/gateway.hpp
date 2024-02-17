@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <absl/container/flat_hash_map.h>
-
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "roq/server.hpp"
+
+#include "roq/utils/container.hpp"
 
 #include "roq/io/context.hpp"
 
@@ -97,23 +97,23 @@ struct Gateway final : public server::Handler,
  private:
   server::Dispatcher &dispatcher_;
   // authentication
-  absl::flat_hash_map<std::string, std::unique_ptr<Account>> const accounts_;
+  utils::unordered_map<std::string, std::unique_ptr<Account>> const accounts_;
   // io
   io::Context &context_;
   // shared
   Shared shared_;
-  absl::flat_hash_map<std::string, Request> request_;
+  utils::unordered_map<std::string, Request> request_;
   // seed
   uint16_t stream_id_ = {};
   // streams
   Rest rest_;
   std::vector<std::unique_ptr<MarketData>> market_data_1_, market_data_2_;
   // - fapi/dapi
-  absl::flat_hash_map<std::string, std::unique_ptr<OrderEntrySimple>> order_entry_1_;
-  absl::flat_hash_map<std::string, std::unique_ptr<DropCopySimple>> drop_copy_1_;
+  utils::unordered_map<std::string, std::unique_ptr<OrderEntrySimple>> order_entry_1_;
+  utils::unordered_map<std::string, std::unique_ptr<DropCopySimple>> drop_copy_1_;
   // - papi
-  absl::flat_hash_map<std::string, std::unique_ptr<OrderEntryPortfolio>> order_entry_2_;
-  absl::flat_hash_map<std::string, std::unique_ptr<DropCopyPortfolio>> drop_copy_2_;
+  utils::unordered_map<std::string, std::unique_ptr<OrderEntryPortfolio>> order_entry_2_;
+  utils::unordered_map<std::string, std::unique_ptr<DropCopyPortfolio>> drop_copy_2_;
   // cache
   std::vector<MBPUpdate> bids_, asks_;
 };

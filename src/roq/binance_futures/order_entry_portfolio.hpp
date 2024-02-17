@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <absl/container/flat_hash_set.h>
-
 #include <string>
 #include <string_view>
+
+#include "roq/utils/container.hpp"
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/gauge.hpp"
@@ -189,7 +189,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   ConnectionStatus status_ = {};
   core::Download<OrderEntryState> download_;
   // experimental
-  absl::flat_hash_set<Symbol> open_orders_symbols_;
+  utils::unordered_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};
   bool download_balance_ = false;
   bool download_account_ = false;

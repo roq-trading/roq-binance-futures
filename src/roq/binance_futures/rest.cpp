@@ -505,8 +505,8 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
           .exchange_time_utc = depth.transaction_time,
           .exchange_sequence = sequencer.last_sequence(),
           .sending_time_utc = depth.message_output_time,
-          .price_decimals = {},
-          .quantity_decimals = {},
+          .price_precision = {},
+          .quantity_precision = {},
           .checksum = {},
       };
       auto apply_updates = [&](auto &market_by_price) { sequencer.apply(market_by_price, sequence, true); };

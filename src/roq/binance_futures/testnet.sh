@@ -15,7 +15,7 @@ CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 URI="binancefuture.com"
 
 REST_URI="https://testnet.$URI"
-WS_URI="wss://stream.$URI/ws"
+WS_URI="wss://fstream.$URI/ws"
 
 $PREFIX ./roq-binance-futures \
   --name "$NAME" \

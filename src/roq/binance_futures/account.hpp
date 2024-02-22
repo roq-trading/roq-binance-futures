@@ -15,7 +15,7 @@ namespace roq {
 namespace binance_futures {
 
 struct Account final {
-  Account(Config const &, std::string_view const &name);
+  Account(Config const &, std::string_view const &name, MarginMode);
 
   Account(Account &&) = delete;
   Account(Account const &) = delete;
@@ -29,6 +29,7 @@ struct Account final {
 
  private:
   std::string const name_;
+  MarginMode const margin_mode_;
   tools::Crypto crypto_;
 };
 

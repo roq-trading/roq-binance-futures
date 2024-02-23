@@ -42,61 +42,36 @@ R create_request(auto &config) {
   return result;
 }
 
-// fapi/dapi
-
 template <typename R>
-R create_order_entry_1(
+R create_order_entry(
     auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[name, account] : accounts) {
     auto &request = request_by_account[name];
-    result.try_emplace(
-        name, std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, *account, shared, request));
-  }
-  return result;
-}
-
-template <typename R>
-R create_drop_copy_1(auto &accounts) {
-  using result_type = std::remove_cvref<R>::type;
-  result_type result;
-  for (auto &[name, account] : accounts)
-    result.try_emplace(name, nullptr);
-  return result;
-}
-
-// papi
-
-template <typename R>
-R create_order_entry_2(
-    auto &gateway,
-    auto &settings,
-    auto &context,
-    auto &stream_id,
-    auto &accounts,
-    auto &shared,
-    auto &request_by_account) {
-  using result_type = std::remove_cvref<R>::type;
-  result_type result;
-  if (settings.enable_portfolio_margin) {
-    for (auto &[name, account] : accounts) {
-      auto &request = request_by_account[name];
-      result.try_emplace(
-          name, std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, *account, shared, request));
+    switch ((*account).margin_mode) {
+      using enum MarginMode;
+      case UNDEFINED:
+      case ISOLATED:
+      case CROSS:
+        result.try_emplace(
+            name, std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, *account, shared, request));
+        break;
+      case PORTFOLIO:
+        result.try_emplace(
+            name, std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, *account, shared, request));
+        break;
     }
   }
   return result;
 }
 
 template <typename R>
-R create_drop_copy_2(auto &settings, auto &accounts) {
+R create_drop_copy(auto &accounts) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  if (settings.enable_portfolio_margin) {
-    for (auto &[name, account] : accounts)
-      result.try_emplace(name, nullptr);
-  }
+  for (auto &[name, account] : accounts)
+    result.try_emplace(name, nullptr);
   return result;
 }
 }  // namespace
@@ -106,12 +81,9 @@ R create_drop_copy_2(auto &settings, auto &accounts) {
 Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
     : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context},
       shared_{dispatcher, settings}, request_{create_request<decltype(request_)>(config)},
-      rest_{*this, context_, ++stream_id_, shared_}, order_entry_1_{create_order_entry_1<decltype(order_entry_1_)>(
+      rest_{*this, context_, ++stream_id_, shared_}, order_entry_{create_order_entry<decltype(order_entry_)>(
                                                          *this, context_, stream_id_, accounts_, shared_, request_)},
-      drop_copy_1_{create_drop_copy_1<decltype(drop_copy_1_)>(accounts_)},
-      order_entry_2_{create_order_entry_2<decltype(order_entry_2_)>(
-          *this, settings, context_, stream_id_, accounts_, shared_, request_)},
-      drop_copy_2_{create_drop_copy_2<decltype(drop_copy_2_)>(settings, accounts_)} {
+      drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
   if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
 }
@@ -225,8 +197,8 @@ void Gateway::ensure_symbol_slices(size_t size) {
 void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
-  auto iter = drop_copy_1_.find(account);
-  if (iter == std::end(drop_copy_1_)) {
+  auto iter = drop_copy_.find(account);
+  if (iter == std::end(drop_copy_)) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
@@ -248,8 +220,8 @@ void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_upd
 void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
-  auto iter = drop_copy_2_.find(account);
-  if (iter == std::end(drop_copy_2_)) {
+  auto iter = drop_copy_.find(account);
+  if (iter == std::end(drop_copy_)) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
@@ -272,7 +244,7 @@ uint16_t Gateway::operator()(
     Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   auto &create_order = event.value;
   assert(!std::empty(create_order.account));
-  return get_order_entry(create_order.account, create_order.margin_mode)(event, order, request_id);
+  return get_order_entry(create_order.account)(event, order, request_id);
 }
 
 uint16_t Gateway::operator()(
@@ -283,7 +255,7 @@ uint16_t Gateway::operator()(
   auto &modify_order = event.value;
   assert(!std::empty(modify_order.account));
   assert(modify_order.account == order.account);
-  return get_order_entry(modify_order.account, order.margin_mode)(event, order, request_id, previous_request_id);
+  return get_order_entry(modify_order.account)(event, order, request_id, previous_request_id);
 }
 
 uint16_t Gateway::operator()(
@@ -294,14 +266,13 @@ uint16_t Gateway::operator()(
   auto &cancel_order = event.value;
   assert(!std::empty(cancel_order.account));
   assert(cancel_order.account == order.account);
-  return get_order_entry(cancel_order.account, order.margin_mode)(event, order, request_id, previous_request_id);
+  return get_order_entry(cancel_order.account)(event, order, request_id, previous_request_id);
 }
 
 uint16_t Gateway::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   auto &cancel_all_orders = event.value;
   assert(!std::empty(cancel_all_orders.account));
-  return get_order_entry_1(cancel_all_orders.account)(event, request_id);
-  return get_order_entry_2(cancel_all_orders.account)(event, request_id);
+  return get_order_entry(cancel_all_orders.account)(event, request_id);
 }
 
 void Gateway::operator()(metrics::Writer &writer) {
@@ -316,38 +287,16 @@ void Gateway::dispatch(Args &&...args) {
     helper(*item);
   for (auto &item : market_data_2_)
     helper(*item);
-  for (auto &[_, item] : order_entry_1_)
+  for (auto &[_, item] : order_entry_)
     helper(*item);
-  for (auto &[_, item] : drop_copy_1_)
+  for (auto &[_, item] : drop_copy_)
     if (static_cast<bool>(item))
       helper(*item);
-  for (auto &[_, item] : order_entry_2_)
-    helper(*item);
 }
 
-OrderEntry &Gateway::get_order_entry(std::string_view const &account, MarginMode margin_mode) {
-  switch (margin_mode) {
-    using enum MarginMode;
-    case UNDEFINED:
-    case ISOLATED:
-    case CROSS:
-      return get_order_entry_1(account);
-    case PORTFOLIO:
-      return get_order_entry_2(account);
-  }
-  log::fatal("Unexpected"sv);
-}
-
-OrderEntry &Gateway::get_order_entry_1(std::string_view const &account) {
-  auto iter = order_entry_1_.find(account);
-  if (iter != std::end(order_entry_1_))
-    return *(*iter).second;
-  throw RuntimeError{R"(Unknown account="{}")"sv, account};
-}
-
-OrderEntry &Gateway::get_order_entry_2(std::string_view const &account) {
-  auto iter = order_entry_2_.find(account);
-  if (iter != std::end(order_entry_2_))
+OrderEntry &Gateway::get_order_entry(std::string_view const &account) {
+  auto iter = order_entry_.find(account);
+  if (iter != std::end(order_entry_))
     return *(*iter).second;
   throw RuntimeError{R"(Unknown account="{}")"sv, account};
 }

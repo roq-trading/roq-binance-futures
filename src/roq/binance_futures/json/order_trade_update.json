@@ -24,6 +24,12 @@
       "comment": "COIN-M"
     },
     {
+      "raw": "fs",
+      "name": "fs",
+      "type": "std::string_view",
+      "comment": "papi"
+    },
+    {
       "raw": "o",
       "name": "execution_report",
       "type": "ExecutionReport"

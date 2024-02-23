@@ -89,10 +89,7 @@ struct Gateway final : public server::Handler,
   template <typename... Args>
   void dispatch(Args &&...);
 
-  OrderEntry &get_order_entry(std::string_view const &account, MarginMode);
-
-  OrderEntry &get_order_entry_1(std::string_view const &account);
-  OrderEntry &get_order_entry_2(std::string_view const &account);
+  OrderEntry &get_order_entry(std::string_view const &account);
 
  private:
   server::Dispatcher &dispatcher_;
@@ -108,12 +105,8 @@ struct Gateway final : public server::Handler,
   // streams
   Rest rest_;
   std::vector<std::unique_ptr<MarketData>> market_data_1_, market_data_2_;
-  // - fapi/dapi
-  utils::unordered_map<std::string, std::unique_ptr<OrderEntrySimple>> order_entry_1_;
-  utils::unordered_map<std::string, std::unique_ptr<DropCopySimple>> drop_copy_1_;
-  // - papi
-  utils::unordered_map<std::string, std::unique_ptr<OrderEntryPortfolio>> order_entry_2_;
-  utils::unordered_map<std::string, std::unique_ptr<DropCopyPortfolio>> drop_copy_2_;
+  utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
+  utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   // cache
   std::vector<MBPUpdate> bids_, asks_;
 };

@@ -172,7 +172,7 @@ void DropCopySimple::operator()(web::socket::Client::Latency const &latency) {
   TraceInfo trace_info;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .latency = latency.sample,
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
@@ -192,7 +192,7 @@ void DropCopySimple::operator()(ConnectionStatus status) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .supports = SUPPORTS,
         .transport = Transport::TCP,
         .protocol = Protocol::WS,
@@ -271,7 +271,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
     // XXX HANS execution_report.execution_type ==> OrderAck ???
     auto order_update = server::oms::OrderUpdate{
-        .account = account_.get_name(),
+        .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
         .side = side,
@@ -327,7 +327,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .order_id = order_id,
         .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
@@ -358,7 +358,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
       log::debug("item={}"sv, item);
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .currency = item.asset,
           .margin_mode = {},  // XXX TODO maybe this should be MarginMode::ISOLATED?
           .balance = item.wallet_balance,
@@ -372,7 +372,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
       if (!std::isnan(item.cross_wallet_balance)) {
         auto funds_update = FundsUpdate{
             .stream_id = stream_id_,
-            .account = account_.get_name(),
+            .account = account_.name,
             .currency = item.asset,
             .margin_mode = MarginMode::CROSS,
             .balance = item.cross_wallet_balance,
@@ -406,7 +406,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
       auto short_quantity = std::max(0.0, -item.position_amount);
       auto position_update = PositionUpdate{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .exchange = shared_.settings.exchange,
           .symbol = item.symbol,
           .margin_mode = margin_mode,

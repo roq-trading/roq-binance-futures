@@ -12,6 +12,8 @@ namespace roq {
 namespace binance_futures {
 
 struct OrderEntry {
+  virtual ~OrderEntry() {}
+
   virtual void operator()(Event<Start> const &) = 0;
   virtual void operator()(Event<Stop> const &) = 0;
   virtual void operator()(Event<Timer> const &) = 0;

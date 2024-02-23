@@ -18,7 +18,7 @@ REST_URI="https://fapi.$URI"
 WS_URI="wss://fstream.$URI/ws"
 
 REST_PM_URI="https://papi.$URI"
-WS_PM_URI="wss://fstream.$URI/pm"
+WS_PM_URI="wss://fstream.$URI/pm/ws"
 
 $PREFIX ./roq-binance-futures \
   --name "$NAME" \

@@ -33,7 +33,7 @@ auto create_crypto(auto &config, auto &name) -> tools::Crypto {
 // === IMPLEMENTATION ===
 
 Account::Account(Config const &config, std::string_view const &name, MarginMode margin_mode)
-    : name_{name}, margin_mode_{margin_mode}, crypto_{create_crypto(config, name_)} {
+    : name{name}, margin_mode{margin_mode}, crypto_{create_crypto(config, name)} {
 }
 
 }  // namespace binance_futures

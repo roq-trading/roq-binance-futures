@@ -22,6 +22,7 @@ set(SOURCES
     json_new_order.cpp
     json_open_orders.cpp
     json_order_trade_update.cpp
+    json_order_trade_update_papi.cpp
     json_strategy_update.cpp
     json_trades.cpp
     main.cpp)

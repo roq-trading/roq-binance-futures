@@ -18,6 +18,7 @@
 #include "roq/server.hpp"
 
 #include "roq/binance_futures/account.hpp"
+#include "roq/binance_futures/drop_copy.hpp"
 #include "roq/binance_futures/drop_copy_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
@@ -27,7 +28,9 @@
 namespace roq {
 namespace binance_futures {
 
-struct DropCopySimple final : public web::socket::Client::Handler, public json::UserStreamParser::Handler {
+struct DropCopySimple final : public DropCopy,
+                              public web::socket::Client::Handler,
+                              public json::UserStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -45,11 +48,11 @@ struct DropCopySimple final : public web::socket::Client::Handler, public json::
 
   bool ready() const;
 
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
+  void operator()(Event<Start> const &) override;
+  void operator()(Event<Stop> const &) override;
+  void operator()(Event<Timer> const &) override;
 
-  void operator()(metrics::Writer &);
+  void operator()(metrics::Writer &) override;
 
  protected:
   void operator()(web::socket::Client::Connected const &) override;

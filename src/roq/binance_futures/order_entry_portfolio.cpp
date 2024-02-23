@@ -96,7 +96,7 @@ auto get_download_trades_lookback(auto const &settings, auto download_trades_is_
 
 OrderEntryPortfolio::OrderEntryPortfolio(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.get_name())},
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)},
       connection_{create_connection(*this, shared.settings, context)},
       decode_buffer_(shared.settings.common.decode_buffer_size),
       counter_{
@@ -269,7 +269,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Latency> const &ev
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .latency = latency.sample,
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
@@ -281,7 +281,7 @@ void OrderEntryPortfolio::operator()(ConnectionStatus status) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .supports = SUPPORTS,
         .transport = Transport::TCP,
         .protocol = Protocol::HTTP,
@@ -367,7 +367,7 @@ void OrderEntryPortfolio::operator()(Trace<json::ListenKey> const &event) {
     if (initial) {
       log::info(R"(Listen key has been acquired (value="{}"))"sv, listen_key_);
       auto listen_key_update = ListenKeyUpdate{
-          .account = account_.get_name(),
+          .account = account_.name,
           .listen_key = listen_key.listen_key,
       };
       create_trace_and_dispatch(handler_, trace_info, listen_key_update);
@@ -388,7 +388,7 @@ void OrderEntryPortfolio::get_balance() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.get_balance,
+        .path = "/papi/v1/balance"sv,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -430,7 +430,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
     auto hold = item.balance - item.available_balance;
     auto funds_update = FundsUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .currency = item.asset,
         .margin_mode = {},
         .balance = item.balance,
@@ -444,7 +444,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
     if (!std::isnan(item.cross_wallet_balance)) {
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .currency = item.asset,
           .margin_mode = MarginMode::PORTFOLIO,
           .balance = item.cross_wallet_balance,
@@ -467,7 +467,7 @@ void OrderEntryPortfolio::get_account() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.get_account,
+        .path = "/papi/v1/account"sv,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -513,7 +513,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Account> const &event) {
     auto short_quantity = std::max(0.0, -item.notional);
     auto position_update = PositionUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .margin_mode = margin_mode,
@@ -536,7 +536,7 @@ void OrderEntryPortfolio::get_open_orders() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.get_open_orders,
+        .path = "/papi/v1/um/openOrders"sv,  // XXX FIXME um vs cm ???
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -585,7 +585,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
     auto external_order_id = fmt::format("{}"sv, order.order_id);  // alloc
     auto order_status = json::map(order.status);
     auto order_update = server::oms::OrderUpdate{
-        .account = account_.get_name(),
+        .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = order.symbol,
         .side = side,
@@ -627,6 +627,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
 // XXX FIXME download_trades_count
 void OrderEntryPortfolio::get_trades() {
   profile_.trades([&]() {
+    auto path = "/papi/v1/um/userTrades"sv;  // XXX FIXME um or cm ???
     auto &symbols = shared_.settings.common.download_symbols;
     for (auto &symbol : symbols) {
       auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
@@ -638,13 +639,13 @@ void OrderEntryPortfolio::get_trades() {
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
-      log::debug(R"(path="{}")"sv, shared_.api.get_trades);
+      log::debug(R"(path="{}")"sv, path);
       log::debug(R"(body="{}")"sv, body);
       log::debug(R"(query="{}")"sv, query);
       log::debug(R"(headers="{}")"sv, headers);
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
-          .path = shared_.api.get_trades,
+          .path = path,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -699,7 +700,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
     auto side = json::map(trade.side);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .order_id = {},
         .exchange = shared_.settings.exchange,
         .symbol = trade.symbol,
@@ -752,7 +753,7 @@ void OrderEntryPortfolio::new_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
-        .path = shared_.api.papi_order,
+        .path = "/papi/v1/um/order"sv,  // XXX FIXME um or cme ???
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -820,7 +821,7 @@ void OrderEntryPortfolio::operator()(
       .price = new_order.price,
   };
   auto order_update = server::oms::OrderUpdate{
-      .account = account_.get_name(),
+      .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = new_order.symbol,
       .side = side,
@@ -874,7 +875,7 @@ void OrderEntryPortfolio::cancel_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::DELETE,
-        .path = shared_.api.papi_order,
+        .path = "/papi/v1/um/order"sv,  // XXX FIXME um or cm ???
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -941,7 +942,7 @@ void OrderEntryPortfolio::operator()(
       .price = cancel_order.price,
   };
   auto order_update = server::oms::OrderUpdate{
-      .account = account_.get_name(),
+      .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = cancel_order.symbol,
       .side = side,
@@ -993,7 +994,7 @@ void OrderEntryPortfolio::cancel_all_open_orders(
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
-          .path = shared_.api.papi_all_open_orders,
+          .path = "/papi/v1/um/allOpenOrders"sv,  // XXX FIXME um or cm ???
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -1009,7 +1010,7 @@ void OrderEntryPortfolio::cancel_all_open_orders(
       (*connection_)(request_id, request, callback);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .order_id = {},
           .exchange = cancel_all_orders.exchange,
           .symbol = cancel_all_orders.symbol,
@@ -1060,7 +1061,7 @@ void OrderEntryPortfolio::operator()(
   auto error = json::guess_error(cancel_all_open_orders.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .order_id = {},
       .exchange = {},
       .symbol = {},

@@ -97,7 +97,7 @@ auto get_download_trades_lookback(auto const &settings, auto download_trades_is_
 
 OrderEntrySimple::OrderEntrySimple(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.get_name())},
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)},
       connection_{create_connection(*this, shared.settings, context)},
       decode_buffer_(shared.settings.common.decode_buffer_size),
       counter_{
@@ -267,7 +267,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Latency> const &event
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .latency = latency.sample,
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
@@ -316,7 +316,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::MessageEnd> const &ev
     return;
   auto rate_limits_update = RateLimitsUpdate{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .origin = Origin::EXCHANGE,
       .rate_limits = shared_.rate_limits,
   };
@@ -329,7 +329,7 @@ void OrderEntrySimple::operator()(ConnectionStatus status) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .supports = SUPPORTS,
         .transport = Transport::TCP,
         .protocol = Protocol::HTTP,
@@ -414,7 +414,7 @@ void OrderEntrySimple::operator()(Trace<json::ListenKey> const &event) {
     if (initial) {
       log::info(R"(Listen key has been acquired (value="{}"))"sv, listen_key_);
       auto listen_key_update = ListenKeyUpdate{
-          .account = account_.get_name(),
+          .account = account_.name,
           .listen_key = listen_key.listen_key,
       };
       create_trace_and_dispatch(handler_, trace_info, listen_key_update);
@@ -477,7 +477,7 @@ void OrderEntrySimple::operator()(Trace<json::Balance> const &event) {
     auto hold = item.balance - item.available_balance;
     auto funds_update = FundsUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .currency = item.asset,
         .margin_mode = {},
         .balance = item.balance,
@@ -491,7 +491,7 @@ void OrderEntrySimple::operator()(Trace<json::Balance> const &event) {
     if (!std::isnan(item.cross_wallet_balance)) {
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .currency = item.asset,
           .margin_mode = MarginMode::CROSS,
           .balance = item.cross_wallet_balance,
@@ -560,7 +560,7 @@ void OrderEntrySimple::operator()(Trace<json::Account> const &event) {
     auto short_quantity = std::max(0.0, -item.notional);
     auto position_update = PositionUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .margin_mode = margin_mode,
@@ -632,7 +632,7 @@ void OrderEntrySimple::operator()(Trace<json::OpenOrders> const &event) {
     auto external_order_id = fmt::format("{}"sv, order.order_id);  // alloc
     auto order_status = json::map(order.status);
     auto order_update = server::oms::OrderUpdate{
-        .account = account_.get_name(),
+        .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = order.symbol,
         .side = side,
@@ -746,7 +746,7 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
     auto side = json::map(trade.side);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
-        .account = account_.get_name(),
+        .account = account_.name,
         .order_id = {},
         .exchange = shared_.settings.exchange,
         .symbol = trade.symbol,
@@ -867,7 +867,7 @@ void OrderEntrySimple::operator()(
       .price = new_order.price,
   };
   auto order_update = server::oms::OrderUpdate{
-      .account = account_.get_name(),
+      .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = new_order.symbol,
       .side = side,
@@ -995,7 +995,7 @@ void OrderEntrySimple::operator()(
       .price = modify_order.price,
   };
   auto order_update = server::oms::OrderUpdate{
-      .account = account_.get_name(),
+      .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = modify_order.symbol,
       .side = side,
@@ -1116,7 +1116,7 @@ void OrderEntrySimple::operator()(
       .price = cancel_order.price,
   };
   auto order_update = server::oms::OrderUpdate{
-      .account = account_.get_name(),
+      .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = cancel_order.symbol,
       .side = side,
@@ -1183,7 +1183,7 @@ void OrderEntrySimple::cancel_all_open_orders(Event<CancelAllOrders> const &even
       (*connection_)(request_id, request, callback);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
-          .account = account_.get_name(),
+          .account = account_.name,
           .order_id = {},
           .exchange = cancel_all_orders.exchange,
           .symbol = cancel_all_orders.symbol,
@@ -1233,7 +1233,7 @@ void OrderEntrySimple::operator()(Trace<json::CancelAllOpenOrders> const &event,
   auto error = json::guess_error(cancel_all_open_orders.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
-      .account = account_.get_name(),
+      .account = account_.name,
       .order_id = {},
       .exchange = {},
       .symbol = {},

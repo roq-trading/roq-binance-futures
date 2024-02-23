@@ -20,16 +20,16 @@ struct Account final {
   Account(Account &&) = delete;
   Account(Account const &) = delete;
 
-  std::string_view get_name() const { return name_; }
-
   std::string create_query(std::string_view const &body) { return crypto_.create_query(body); }
   std::string create_query() { return create_query({}); }
 
   std::string_view create_headers() const { return crypto_.create_headers(); }
 
+ public:
+  std::string const name;
+  MarginMode const margin_mode;
+
  private:
-  std::string const name_;
-  MarginMode const margin_mode_;
   tools::Crypto crypto_;
 };
 

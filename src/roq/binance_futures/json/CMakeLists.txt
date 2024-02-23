@@ -55,6 +55,7 @@ set(AUTOGEN_SCHEMAS
     order_trade_update.json
     order_type.json
     position.json
+    position_list.json
     position_side.json
     rate_limit.json
     rate_limit_type.json

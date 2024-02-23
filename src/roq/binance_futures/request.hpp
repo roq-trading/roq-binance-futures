@@ -14,6 +14,9 @@ struct Request final {
   // account
   std::chrono::nanoseconds request_account = {};
   std::chrono::nanoseconds respond_account = {};
+  // position
+  std::chrono::nanoseconds request_position = {};
+  std::chrono::nanoseconds respond_position = {};
   // orders
   std::chrono::nanoseconds request_orders = {};
   std::chrono::nanoseconds respond_orders = {};

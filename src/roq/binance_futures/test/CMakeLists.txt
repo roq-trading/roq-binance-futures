@@ -6,6 +6,7 @@ set(SOURCES
     json_account_config_update.cpp
     json_account.cpp
     json_account_update.cpp
+    json_account_update_papi.cpp
     json_auto_cancel_all_open_orders.cpp
     json_balance.cpp
     json_book_ticker.cpp
@@ -23,6 +24,7 @@ set(SOURCES
     json_open_orders.cpp
     json_order_trade_update.cpp
     json_order_trade_update_papi.cpp
+    json_position_papi.cpp
     json_strategy_update.cpp
     json_trades.cpp
     main.cpp)

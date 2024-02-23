@@ -19,7 +19,7 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/drop_copy.hpp"
-#include "roq/binance_futures/drop_copy_state.hpp"
+#include "roq/binance_futures/drop_copy_portfolio_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
 
@@ -66,7 +66,7 @@ struct DropCopyPortfolio final : public DropCopy,
  private:
   void operator()(ConnectionStatus);
 
-  uint32_t download(DropCopyState);
+  uint32_t download(DropCopyPortfolioState);
 
   void parse(std::string_view const &message);
 
@@ -82,6 +82,9 @@ struct DropCopyPortfolio final : public DropCopy,
 
   void request_account();
   void check_response_account();
+
+  void request_position();
+  void check_response_position();
 
   void request_orders();
   void check_response_orders();
@@ -117,7 +120,7 @@ struct DropCopyPortfolio final : public DropCopy,
   // state
   bool ready_ = false;
   ConnectionStatus status_ = {};
-  core::Download<DropCopyState> download_;
+  core::Download<DropCopyPortfolioState> download_;
 };
 
 }  // namespace binance_futures

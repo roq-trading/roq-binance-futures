@@ -83,6 +83,22 @@
     {
       "name": "breakEvenPrice",
       "type": "double"
+    },
+    {
+      "name": "markPrice",
+      "type": "double"
+    },
+    {
+      "name": "unRealizedProfit",
+      "type": "double"
+    },
+    {
+      "name": "liquidationPrice",
+      "type": "double"
+    },
+    {
+      "name": "maxNotionalValue",
+      "type": "double"
     }
   ]
 }

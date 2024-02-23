@@ -1,3 +1,12 @@
+papi
+-- no auto-cancel
+-- something weird with funds
+-- can't download trades
+
+
+
+
+
 
 MAKER
 ```

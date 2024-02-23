@@ -61,3 +61,26 @@ TEST_CASE("json_cancel_order_simple", "[json_cancel_order]") {
   CHECK(obj.orig_type == json::OrderType::LIMIT);
   CHECK(obj.update_time == 1634545259912ms);
 }
+
+TEST_CASE("json_cancel_order_papi_cm", "[json_cancel_order]") {
+  auto message = R"({)"
+                 R"("avgPrice":"0.0",)"
+                 R"("clientOrderId":"HAICAAxDgZUBAQAAAAAA",)"
+                 R"("cumQty":"0",)"
+                 R"("cumBase":"0",)"
+                 R"("executedQty":"0",)"
+                 R"("orderId":117308066172,)"
+                 R"("price":"32000",)"
+                 R"("reduceOnly":false,)"
+                 R"("side":"BUY",)"
+                 R"("positionSide":"BOTH",)"
+                 R"("status":"CANCELED",)"
+                 R"("symbol":"BTCUSD_PERP",)"
+                 R"("pair":"BTCUSD",)"
+                 R"("timeInForce":"GTC",)"
+                 R"("type":"LIMIT",)"
+                 R"("updateTime":1708696325480,)"
+                 R"("origQty":"1")"
+                 R"(})";
+  json::CancelOrder obj{message};
+}

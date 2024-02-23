@@ -1,0 +1,56 @@
+{
+  "name": "AccountUpdateDataPosition",
+  "type": "item",
+  "values": [
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "pa",
+      "name": "position_amount",
+      "type": "double"
+    },
+    {
+      "raw": "ep",
+      "name": "entry_price",
+      "type": "double"
+    },
+    {
+      "raw": "cr",
+      "name": "accumulated_realized",
+      "type": "double"
+    },
+    {
+      "raw": "up",
+      "name": "unrealized_pnl",
+      "type": "double"
+    },
+    {
+      "raw": "mt",
+      "name": "margin_type",
+      "type": "MarginType"
+    },
+    {
+      "raw": "iw",
+      "name": "isolated_wallet",
+      "type": "double"
+    },
+    {
+      "raw": "ps",
+      "name": "position_side",
+      "type": "PositionSide"
+    },
+    {
+      "raw": "ma",
+      "name": "unknown_1",
+      "type": "std::string_view"
+    },
+    {
+      "raw": "bep",
+      "name": "break_even_price",
+      "type": "double"
+    }
+  ]
+}

@@ -18,6 +18,18 @@
       "type": "std::chrono::milliseconds"
     },
     {
+      "raw": "i",
+      "name": "i",
+      "type": "std::string_view",
+      "comment": "papi ???"
+    },
+    {
+      "raw": "fs",
+      "name": "fs",
+      "type": "std::string_view",
+      "comment": "papi"
+    },
+    {
       "raw": "a",
       "name": "data",
       "type": "AccountUpdateData"

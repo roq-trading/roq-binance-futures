@@ -28,6 +28,9 @@ API API::create(Settings const &settings) {
         .countdown_cancel_all = "/fapi/v1/countdownCancelAll"sv,
         .modify_order_full = true,
         .papi_get_listen_key = "/papi/v1/listenKey"sv,
+        .papi_get_position = "/papi/v1/um/positionRisk"sv,
+        .papi_get_open_orders = "/papi/v1/um/openOrders"sv,
+        .papi_get_trades = "/papi/v1/um/userTrades"sv,
         .papi_order = "/papi/v1/um/order"sv,
         .papi_all_open_orders = "/papi/v1/um/allOpenOrders"sv,
     };
@@ -47,6 +50,9 @@ API API::create(Settings const &settings) {
         .countdown_cancel_all = "/dapi/v1/countdownCancelAll"sv,
         .modify_order_full = false,
         .papi_get_listen_key = "/papi/v1/listenKey"sv,
+        .papi_get_position = "/papi/v1/cm/positionRisk"sv,
+        .papi_get_open_orders = "/papi/v1/cm/openOrders"sv,
+        .papi_get_trades = "/papi/v1/cm/userTrades"sv,
         .papi_order = "/papi/v1/cm/order"sv,
         .papi_all_open_orders = "/papi/v1/cm/allOpenOrders"sv,
     };

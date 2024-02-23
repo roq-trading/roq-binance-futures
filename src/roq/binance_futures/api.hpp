@@ -26,6 +26,9 @@ struct API final {
   bool modify_order_full = {};
   // papi
   std::string_view papi_get_listen_key;
+  std::string_view papi_get_position;
+  std::string_view papi_get_open_orders;
+  std::string_view papi_get_trades;
   std::string_view papi_order;
   std::string_view papi_all_open_orders;
   // factory

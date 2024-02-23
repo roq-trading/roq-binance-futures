@@ -50,6 +50,7 @@ order_status.hpp
 order_trade_update.hpp
 order_type.hpp
 position.hpp
+position_list.hpp
 position_side.hpp
 rate_limit.hpp
 rate_limit_type.hpp
@@ -115,6 +116,7 @@ order_status.cpp
 order_trade_update.cpp
 order_type.cpp
 position.cpp
+position_list.cpp
 position_side.cpp
 rate_limit.cpp
 rate_limit_type.cpp

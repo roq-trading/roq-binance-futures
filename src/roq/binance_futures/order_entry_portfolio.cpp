@@ -109,6 +109,8 @@ OrderEntryPortfolio::OrderEntryPortfolio(
           .balance_ack = create_metrics(shared.settings, name_, "balance_ack"sv),
           .account = create_metrics(shared.settings, name_, "account"sv),
           .account_ack = create_metrics(shared.settings, name_, "account_ack"sv),
+          .position = create_metrics(shared.settings, name_, "position"sv),
+          .position_ack = create_metrics(shared.settings, name_, "position_ack"sv),
           .open_orders = create_metrics(shared.settings, name_, "open_orders"sv),
           .open_orders_ack = create_metrics(shared.settings, name_, "open_orders_ack"sv),
           .trades = create_metrics(shared.settings, name_, "trades"sv),
@@ -119,9 +121,6 @@ OrderEntryPortfolio::OrderEntryPortfolio(
           .cancel_order_ack = create_metrics(shared.settings, name_, "cancel_order_ack"sv),
           .cancel_all_open_orders = create_metrics(shared.settings, name_, "cancel_all_open_orders"sv),
           .cancel_all_open_orders_ack = create_metrics(shared.settings, name_, "cancel_all_open_orders_ack"sv),
-          .auto_cancel_all_open_orders = create_metrics(shared.settings, name_, "auto_cancel_all_open_orders"sv),
-          .auto_cancel_all_open_orders_ack =
-              create_metrics(shared.settings, name_, "auto_cancel_all_open_orders_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -145,11 +144,6 @@ void OrderEntryPortfolio::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() &&
-      next_auto_cancel_ < now) {
-    next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
-    auto_cancel_all_open_orders();
-  }
   if (ready() && !downloading()) {
     if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
@@ -160,6 +154,11 @@ void OrderEntryPortfolio::operator()(Event<Timer> const &event) {
       log::info<1>("Download account..."sv);
       get_account();
       download_account_ = true;
+    }
+    if (!downloading() && request_.respond_position < request_.request_position) {
+      log::info<1>("Download position..."sv);
+      get_position();
+      download_position_ = true;
     }
     if (!downloading() && request_.respond_orders < request_.request_orders) {
       log::info<1>("Download orders..."sv);
@@ -185,6 +184,8 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       .write(profile_.balance_ack, metrics::Type::PROFILE)
       .write(profile_.account, metrics::Type::PROFILE)
       .write(profile_.account_ack, metrics::Type::PROFILE)
+      .write(profile_.position, metrics::Type::PROFILE)
+      .write(profile_.position_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders, metrics::Type::PROFILE)
       .write(profile_.open_orders_ack, metrics::Type::PROFILE)
       .write(profile_.trades, metrics::Type::PROFILE)
@@ -195,8 +196,6 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       .write(profile_.cancel_order_ack, metrics::Type::PROFILE)
       .write(profile_.cancel_all_open_orders, metrics::Type::PROFILE)
       .write(profile_.cancel_all_open_orders_ack, metrics::Type::PROFILE)
-      .write(profile_.auto_cancel_all_open_orders, metrics::Type::PROFILE)
-      .write(profile_.auto_cancel_all_open_orders_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
@@ -248,6 +247,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Disconnected> cons
     download_.reset();
   download_balance_ = false;
   download_account_ = false;
+  download_position_ = false;
   download_orders_ = false;
   download_trades_ = false;
 }
@@ -432,8 +432,8 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
         .stream_id = stream_id_,
         .account = account_.name,
         .currency = item.asset,
-        .margin_mode = {},
-        .balance = item.balance,
+        .margin_mode = MarginMode::PORTFOLIO,
+        .balance = item.um_wallet_balance,
         .hold = hold,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
@@ -441,6 +441,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
         .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+    /*
     if (!std::isnan(item.cross_wallet_balance)) {
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
@@ -456,6 +457,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
       };
       create_trace_and_dispatch(handler_, trace_info, funds_update, true);
     }
+    */
   }
 }
 
@@ -517,11 +519,79 @@ void OrderEntryPortfolio::operator()(Trace<json::Account> const &event) {
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .margin_mode = margin_mode,
-        .external_account{},
+        .external_account = {},
         .long_quantity = long_quantity,
         .short_quantity = short_quantity,
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = account.update_time,
+        .sending_time_utc = {},
+    };
+    create_trace_and_dispatch(handler_, trace_info, position_update, true);
+  }
+}
+
+// position
+
+void OrderEntryPortfolio::get_position() {
+  profile_.position([&]() {
+    auto query = account_.create_query();
+    auto headers = account_.create_headers();
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.papi_get_position,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_position_ack(event);
+    };
+    (*connection_)("position"sv, request, callback);
+  });
+}
+
+void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &event) {
+  profile_.position_ack([&]() {
+    auto handle_success = [&](auto &body) {
+      json::PositionList position{body, decode_buffer_};
+      Trace event_2{event, position};
+      (*this)(event_2);
+      request_.respond_position = clock::get_system();  // completion
+      download_position_ = false;
+    };
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
+      log::warn(R"(error={}, text="{}")"sv, error, text);
+      download_position_ = false;
+    };
+    process_response(event, handle_success, handle_error);
+  });
+}
+
+void OrderEntryPortfolio::operator()(Trace<json::PositionList> const &event) {
+  auto &[trace_info, position] = event;
+  log::info<2>("position={}"sv, position);
+  for (auto &item : position.data) {
+    if (shared_.discard_symbol(item.symbol))
+      continue;
+    log::debug("item={}"sv, item);
+    auto long_quantity = std::max(0.0, item.position_amt);
+    auto short_quantity = std::max(0.0, -item.position_amt);
+    auto position_update = PositionUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = item.symbol,
+        .margin_mode = MarginMode::PORTFOLIO,
+        .external_account = {},
+        .long_quantity = long_quantity,
+        .short_quantity = short_quantity,
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = item.update_time,
         .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, position_update, true);
@@ -536,7 +606,7 @@ void OrderEntryPortfolio::get_open_orders() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = "/papi/v1/um/openOrders"sv,  // XXX FIXME um vs cm ???
+        .path = shared_.api.papi_get_open_orders,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -627,7 +697,6 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
 // XXX FIXME download_trades_count
 void OrderEntryPortfolio::get_trades() {
   profile_.trades([&]() {
-    auto path = "/papi/v1/um/userTrades"sv;  // XXX FIXME um or cm ???
     auto &symbols = shared_.settings.common.download_symbols;
     for (auto &symbol : symbols) {
       auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
@@ -639,13 +708,12 @@ void OrderEntryPortfolio::get_trades() {
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
-      log::debug(R"(path="{}")"sv, path);
       log::debug(R"(body="{}")"sv, body);
       log::debug(R"(query="{}")"sv, query);
       log::debug(R"(headers="{}")"sv, headers);
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
-          .path = path,
+          .path = shared_.api.papi_get_trades,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -753,7 +821,7 @@ void OrderEntryPortfolio::new_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
-        .path = "/papi/v1/um/order"sv,  // XXX FIXME um or cme ???
+        .path = shared_.api.papi_order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -875,7 +943,7 @@ void OrderEntryPortfolio::cancel_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::DELETE,
-        .path = "/papi/v1/um/order"sv,  // XXX FIXME um or cm ???
+        .path = shared_.api.papi_order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -994,7 +1062,7 @@ void OrderEntryPortfolio::cancel_all_open_orders(
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
-          .path = "/papi/v1/um/allOpenOrders"sv,  // XXX FIXME um or cm ???
+          .path = shared_.api.papi_all_open_orders,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -1079,58 +1147,6 @@ void OrderEntryPortfolio::operator()(
   };
   Trace event_2{trace_info, cancel_all_orders_ack};
   shared_(event_2);
-}
-
-// auto-cancel-all-orders
-
-void OrderEntryPortfolio::auto_cancel_all_open_orders() {
-  profile_.auto_cancel_all_open_orders([&]() {
-    for (auto &symbol : open_orders_symbols_) {
-      auto countdown_time =
-          std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
-      auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-      auto body = json::countdown_cancel_all_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
-      log::debug(R"(body="{}")"sv, body);
-      auto query = account_.create_query(body);
-      auto headers = account_.create_headers();
-      auto request = web::rest::Request{
-          .method = web::http::Method::POST,
-          .path = shared_.api.countdown_cancel_all,
-          .query = query,
-          .accept = web::http::Accept::APPLICATION_JSON,
-          .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
-          .headers = headers,
-          .body = body,
-          .quality_of_service = io::QualityOfService::IMMEDIATE,
-      };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        auto_cancel_all_open_orders_ack(event);
-      };
-      (*connection_)("auto_cancel"sv, request, callback);
-    }
-  });
-}
-
-void OrderEntryPortfolio::auto_cancel_all_open_orders_ack(Trace<web::rest::Response> const &event) {
-  profile_.auto_cancel_all_open_orders_ack([&]() {
-    auto handle_success = [&](auto &body) {
-      json::AutoCancelAllOpenOrders auto_cancel_all_open_orders{body};
-      log::debug("auto_cancel_all_open_orders={}"sv, auto_cancel_all_open_orders);
-      Trace event_2{event, auto_cancel_all_open_orders};
-      (*this)(event_2);
-    };
-    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
-      log::warn(R"(Failed to auto cancel all open orders: error={}, text="{}")"sv, error, text);
-    };
-    process_response(event, handle_success, handle_error);
-  });
-}
-
-void OrderEntryPortfolio::operator()(Trace<json::AutoCancelAllOpenOrders> const &event) {
-  auto &[trace_info, auto_cancel_all_open_orders] = event;
-  log::info<2>("auto_cancel_all_open_orders={}"sv, auto_cancel_all_open_orders);
 }
 
 namespace {

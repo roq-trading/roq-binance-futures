@@ -98,6 +98,14 @@
       "name": "goodTillDate",
       "type": "std::chrono::milliseconds",
       "comment": "XXX 20231206 not sure about milliseconds"
+    },
+    {
+      "name": "cumBase",
+      "type": "double"
+    },
+    {
+      "name": "pair",
+      "type": "std::string_view"
     }
   ]
 }

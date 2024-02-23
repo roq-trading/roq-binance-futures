@@ -1,0 +1,24 @@
+{
+  "name": "DropCopyPortfolioState",
+  "type": "enum",
+  "values": [
+    {
+      "name": "balance"
+    },
+    {
+      "name": "account"
+    },
+    {
+      "name": "position"
+    },
+    {
+      "name": "orders"
+    },
+    {
+      "name": "trades"
+    },
+    {
+      "name": "done"
+    }
+  ]
+}

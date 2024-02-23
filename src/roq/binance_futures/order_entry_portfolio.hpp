@@ -27,13 +27,13 @@
 #include "roq/binance_futures/shared.hpp"
 
 #include "roq/binance_futures/json/account.hpp"
-#include "roq/binance_futures/json/auto_cancel_all_open_orders.hpp"
 #include "roq/binance_futures/json/balance.hpp"
 #include "roq/binance_futures/json/cancel_all_open_orders.hpp"
 #include "roq/binance_futures/json/cancel_order.hpp"
 #include "roq/binance_futures/json/listen_key.hpp"
 #include "roq/binance_futures/json/new_order.hpp"
 #include "roq/binance_futures/json/open_orders.hpp"
+#include "roq/binance_futures/json/position_list.hpp"
 #include "roq/binance_futures/json/trades.hpp"
 
 namespace roq {
@@ -62,7 +62,9 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   OrderEntryPortfolio(OrderEntryPortfolio const &) = delete;
 
   bool ready() const { return status_ == ConnectionStatus::READY; }
-  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
+  bool downloading() const {
+    return download_balance_ || download_account_ || download_position_ || download_orders_ || download_trades_;
+  }
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
@@ -108,6 +110,10 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void get_account_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::Account> const &);
 
+  void get_position();
+  void get_position_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<json::PositionList> const &);
+
   void get_open_orders();
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::OpenOrders> const &);
@@ -134,10 +140,6 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void cancel_all_open_orders_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
   void operator()(Trace<json::CancelAllOpenOrders> const &, std::string_view const &request_id);
 
-  void auto_cancel_all_open_orders();
-  void auto_cancel_all_open_orders_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::AutoCancelAllOpenOrders> const &);
-
   template <typename SuccessHandler, typename ErrorHandler>
   void process_response(web::rest::Response const &, SuccessHandler, ErrorHandler);
 
@@ -162,15 +164,15 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile listen_key, listen_key_ack,      //
-        balance, balance_ack,                                //
-        account, account_ack,                                //
-        open_orders, open_orders_ack,                        //
-        trades, trades_ack,                                  //
-        new_order, new_order_ack,                            //
-        cancel_order, cancel_order_ack,                      //
-        cancel_all_open_orders, cancel_all_open_orders_ack,  //
-        auto_cancel_all_open_orders, auto_cancel_all_open_orders_ack;
+    utils::metrics::Profile listen_key, listen_key_ack,  //
+        balance, balance_ack,                            //
+        account, account_ack,                            //
+        position, position_ack,                          //
+        open_orders, open_orders_ack,                    //
+        trades, trades_ack,                              //
+        new_order, new_order_ack,                        //
+        cancel_order, cancel_order_ack,                  //
+        cancel_all_open_orders, cancel_all_open_orders_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
@@ -190,9 +192,9 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   core::Download<OrderEntryState> download_;
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
-  std::chrono::nanoseconds next_auto_cancel_ = {};
   bool download_balance_ = false;
   bool download_account_ = false;
+  bool download_position_ = false;
   bool download_orders_ = false;
   bool download_trades_ = false;
   std::vector<char> encode_buffer_;

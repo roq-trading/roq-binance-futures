@@ -2,6 +2,8 @@ papi
 -- no auto-cancel
 -- something weird with funds
 -- can't download trades
+-- failures
+-- validate CreateOrder.margin_mode
 
 
 

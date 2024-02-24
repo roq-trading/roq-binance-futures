@@ -11,10 +11,20 @@
       "description": "WebSocket end-point (URI)"
     },
     {
+      "name": "host",
+      "type": "std::string",
+      "description": "host (http header) in case uri uses an IP address"
+    },
+    {
       "name": "pm_uri",
       "type": "roq::io::web::URI",
       "validator": "roq::core::flags::URI",
       "description": "WebSocket end-point (URI)"
+    },
+    {
+      "name": "pm_host",
+      "type": "std::string",
+      "description": "host (http header) in case uri uses an IP address"
     },
     {
       "name": "ping_freq",

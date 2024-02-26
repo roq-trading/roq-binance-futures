@@ -23,6 +23,9 @@ struct Account final {
   std::string create_query(std::string_view const &body) { return crypto_.create_query(body); }
   std::string create_query() { return create_query({}); }
 
+  // XXX
+  std::string create_query_2(std::string_view const &body) { return crypto_.create_query_2(body); }
+
   std::string_view create_headers() const { return crypto_.create_headers(); }
 
  public:

@@ -749,8 +749,9 @@ void OrderEntryPortfolio::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.common.download_trades_limit;
+      // XXX [20240226] must send parameters as query string (doesn't work like other requests)
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
-      auto query = account_.create_query(body);
+      auto query = account_.create_query_2(body);  // XXX
       auto headers = account_.create_headers();
       log::debug(R"(body="{}")"sv, body);
       log::debug(R"(query="{}")"sv, query);
@@ -762,7 +763,7 @@ void OrderEntryPortfolio::get_trades() {
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
           .headers = headers,
-          .body = body,
+          .body = {},  // XXX
           .quality_of_service = {},
       };
       auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {

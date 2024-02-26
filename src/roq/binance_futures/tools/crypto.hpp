@@ -19,6 +19,7 @@ struct Crypto final {
   Crypto(Crypto const &) = delete;
 
   std::string create_query(std::string_view const &body);
+  std::string create_query_2(std::string_view const &body);
 
   std::string_view create_headers() const { return headers_; }
 

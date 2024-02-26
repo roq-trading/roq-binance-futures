@@ -35,6 +35,6 @@ $PREFIX ./roq-binance-futures \
   --rest_uri "$REST_URI" \
   --ws_pm_uri "$WS_PM_URI" \
   --rest_pm_uri "$REST_PM_URI" \
-  --download_symbols="BTCUSDT,ETHUSDT" \
+  --download_symbols="BTCUSD_PERP" \
   --download_trades_lookback=300s \
   $@

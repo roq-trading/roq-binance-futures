@@ -684,7 +684,7 @@ void OrderEntrySimple::get_trades() {
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.common.download_trades_limit;
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
-      auto query = account_.create_query(body);
+      auto query = account_.create_query_2(body);
       auto headers = account_.create_headers();
       log::debug(R"(path="{}")"sv, shared_.api.get_trades);
       log::debug(R"(body="{}")"sv, body);
@@ -697,7 +697,7 @@ void OrderEntrySimple::get_trades() {
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
           .headers = headers,
-          .body = body,
+          .body = {},  // body,
           .quality_of_service = {},
       };
       auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {

@@ -61,7 +61,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
       .disconnect_on_idle_timeout = {},
       .connection = web::http::Connection::KEEP_ALIVE,
       // request
-      .allow_pipelining = false,
+      .allow_pipelining = true,
       .request_timeout = settings.rest.request_timeout,
       // response
       .suspend_on_retry_after = true,

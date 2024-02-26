@@ -48,6 +48,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
+    virtual void operator()(Trace<RateLimitsUpdate> const &) = 0;
     virtual void operator()(
         Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
@@ -91,8 +92,10 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   // web::rest::Client::Handler
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
-  void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
+  void operator()(Trace<web::rest::Client::MessageBegin> const &) override;
+  void operator()(Trace<web::rest::Client::Header> const &) override;
+  void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
 
   void operator()(ConnectionStatus);
 
@@ -164,21 +167,23 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile listen_key, listen_key_ack,  //
-        balance, balance_ack,                            //
-        account, account_ack,                            //
-        position, position_ack,                          //
-        open_orders, open_orders_ack,                    //
-        trades, trades_ack,                              //
-        new_order, new_order_ack,                        //
-        cancel_order, cancel_order_ack,                  //
+    utils::metrics::Profile  //
+        listen_key,
+        listen_key_ack,                  //
+        balance, balance_ack,            //
+        account, account_ack,            //
+        position, position_ack,          //
+        open_orders, open_orders_ack,    //
+        trades, trades_ack,              //
+        new_order, new_order_ack,        //
+        cancel_order, cancel_order_ack,  //
         cancel_all_open_orders, cancel_all_open_orders_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
   } latency_;
   struct {
-    utils::metrics::Gauge request_weight_1m;
+    utils::metrics::Gauge request_weight_1m, create_order_1m;
   } rate_limiter_;
   // account
   Account &account_;

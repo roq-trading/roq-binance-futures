@@ -128,6 +128,7 @@ OrderEntryPortfolio::OrderEntryPortfolio(
       },
       rate_limiter_{
           .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
+          .create_order_1m = create_metrics(shared.settings, name_, "create_order"sv, "1m"sv),
       },
       account_{account}, shared_{shared}, request_{request},
       download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
@@ -200,7 +201,8 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
-      .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER);
+      .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
+      .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
 uint16_t OrderEntryPortfolio::operator()(
@@ -253,19 +255,6 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Disconnected> cons
   download_trades_ = false;
 }
 
-void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &event) {
-  auto &header = event.value;
-  if (header.name == "x-mbx-used-weight-1m"sv) {
-    log::info("DEBUG header={}"sv, header);
-    try {
-      auto value = utils::from_string_relaxed<int64_t>(header.value);
-      rate_limiter_.request_weight_1m.set(value);
-    } catch (RuntimeError &) {
-      log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
-    }
-  }
-}
-
 void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
@@ -275,6 +264,60 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Latency> const &ev
   };
   create_trace_and_dispatch(handler_, trace_info, external_latency);
   latency_.ping.update(latency.sample);
+}
+
+void OrderEntryPortfolio::operator()(Trace<web::rest::Client::MessageBegin> const &) {
+  shared_.rate_limits.clear();
+}
+
+void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &event) {
+  auto &header = event.value;
+  if (utils::case_insensitive_compare(header.name, "x-mbx-used-weight-1m"sv) == 0) {
+    try {
+      auto value = utils::from_string_relaxed<uint32_t>(header.value);
+      auto rate_limit = RateLimit{
+          .type = RateLimitType::REQUEST_WEIGHT,
+          .period = 1min,
+          .end_time_utc = {},
+          .limit = shared_.limits.request_weight_1m,
+          .value = value,
+      };
+      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      rate_limiter_.request_weight_1m.set(value);
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
+    }
+  }
+  if (utils::case_insensitive_compare(header.name, "x-mbx-order-count-1m"sv) == 0) {
+    try {
+      auto value = utils::from_string_relaxed<uint32_t>(header.value);
+      auto rate_limit = RateLimit{
+          .type = RateLimitType::CREATE_ORDER,
+          .period = 1min,
+          .end_time_utc = {},
+          .limit = shared_.limits.create_order_1m,
+          .value = value,
+      };
+      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      rate_limiter_.create_order_1m.set(value);
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
+    }
+  }
+}
+
+void OrderEntryPortfolio::operator()(Trace<web::rest::Client::MessageEnd> const &event) {
+  auto &trace_info = event.trace_info;
+  if (std::empty(shared_.rate_limits))
+    return;
+  auto rate_limits_update = RateLimitsUpdate{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .origin = Origin::EXCHANGE,
+      .rate_limits = shared_.rate_limits,
+  };
+  create_trace_and_dispatch(handler_, trace_info, rate_limits_update);
+  shared_.rate_limits.clear();
 }
 
 void OrderEntryPortfolio::operator()(ConnectionStatus status) {

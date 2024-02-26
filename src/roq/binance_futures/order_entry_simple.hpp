@@ -174,7 +174,9 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile listen_key, listen_key_ack,      //
+    utils::metrics::Profile  //
+        listen_key,
+        listen_key_ack,                                      //
         balance, balance_ack,                                //
         account, account_ack,                                //
         open_orders, open_orders_ack,                        //

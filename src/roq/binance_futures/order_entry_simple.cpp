@@ -260,10 +260,6 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Disconnected> const &
   download_trades_ = false;
 }
 
-void OrderEntrySimple::operator()(Trace<web::rest::Client::MessageBegin> const &) {
-  shared_.rate_limits.clear();
-}
-
 void OrderEntrySimple::operator()(Trace<web::rest::Client::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
@@ -275,9 +271,13 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Latency> const &event
   latency_.ping.update(latency.sample);
 }
 
+void OrderEntrySimple::operator()(Trace<web::rest::Client::MessageBegin> const &) {
+  shared_.rate_limits.clear();
+}
+
 void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event) {
   auto &header = event.value;
-  if (header.name == "x-mbx-used-weight-1m"sv) {
+  if (utils::case_insensitive_compare(header.name, "x-mbx-used-weight-1m"sv) == 0) {
     try {
       auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{
@@ -293,7 +293,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }
   }
-  if (header.name == "x-mbx-order-count-1m"sv) {
+  if (utils::case_insensitive_compare(header.name, "x-mbx-order-count-1m"sv) == 0) {
     try {
       auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{

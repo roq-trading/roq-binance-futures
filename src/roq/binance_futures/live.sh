@@ -14,7 +14,7 @@ CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
 URI="binance.com"
 
-API="dapi"
+API="fapi"
 
 REST_URI="https://$API.$URI"
 WS_URI="wss://${API:0:1}stream.$URI/ws"
@@ -35,6 +35,6 @@ $PREFIX ./roq-binance-futures \
   --rest_uri "$REST_URI" \
   --ws_pm_uri "$WS_PM_URI" \
   --rest_pm_uri "$REST_PM_URI" \
-  --download_symbols="BTCUSD_PERP" \
-  --download_trades_lookback=100h \
+  --download_symbols="BTCUSDT" \
+  --download_trades_lookback=30s \
   $@

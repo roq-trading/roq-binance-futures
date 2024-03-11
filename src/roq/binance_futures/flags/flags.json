@@ -7,14 +7,14 @@
       "type": "std::string",
       "required": true,
       "default": "binance-futures",
-      "description": "exchange identifier (string)"
+      "description": "Exchange identifier (string)"
     },
     {
       "name": "api",
       "type": "std::string",
       "required": true,
       "default": "fapi",
-      "description": "what api to use (fapi, dapi)"
+      "description": "What api to use (fapi, dapi)"
     }
   ]
 }

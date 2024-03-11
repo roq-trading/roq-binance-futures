@@ -13,7 +13,7 @@
     {
       "name": "host",
       "type": "std::string",
-      "description": "host (http header) in case uri uses an IP address"
+      "description": "Host (http header) in case uri uses an IP address"
     },
     {
       "name": "pm_uri",
@@ -24,20 +24,20 @@
     {
       "name": "pm_host",
       "type": "std::string",
-      "description": "host (http header) in case uri uses an IP address"
+      "description": "Host (http header) in case uri uses an IP address"
     },
     {
       "name": "proxy",
       "type": "roq::io::web::URI",
       "validator": "roq::core::flags::URI",
-      "description": "proxy end-point (URI)"
+      "description": "Proxy end-point (URI)"
     },
     {
       "name": "ping_freq",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "5s",
-      "description": "ping frequency"
+      "description": "Ping frequency"
     },
     {
       "name": "ping_path",
@@ -51,47 +51,47 @@
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "30s",
-      "description": "request: timeout"
+      "description": "Request: timeout"
     },
     {
       "name": "terminate_on_403",
       "type": "bool",
       "default": false,
-      "description": "terminate when getting a 403 response code"
+      "description": "Terminate when getting a 403 response code"
     },
     {
       "name": "back_off_delay",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "300s",
-      "description": "time to wait before retrying a rejected request"
+      "description": "Time to wait before retrying a rejected request"
     },
     {
       "name": "listen_key_refresh",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "1800s",
-      "description": "listen key refresh period"
+      "description": "Listen key refresh period"
     },
     {
       "name": "order_countdown",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "30s",
-      "description": "auto-cancel countdown time"
+      "description": "Auto-cancel countdown time"
     },
     {
       "name": "order_recv_window",
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "5000ms",
-      "description": "receive window, please refer to Binance documentation!"
+      "description": "Receive window, please refer to Binance documentation!"
     },
     {
       "name": "cancel_on_disconnect",
       "type": "bool",
       "default": false,
-      "description": "cancel orders on disconnect? (bool)"
+      "description": "Cancel orders on disconnect? (bool)"
     }
   ]
 }

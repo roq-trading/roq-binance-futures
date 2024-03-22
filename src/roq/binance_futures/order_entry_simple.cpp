@@ -87,10 +87,10 @@ struct create_metrics final : public core::metrics::Factory {
 
 auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
   if (download_trades_is_first) {
-    if (settings.common.download_trades_lookback_on_restart.count())
-      return settings.common.download_trades_lookback_on_restart;
+    if (settings.download.trades_lookback_on_restart.count())
+      return settings.download.trades_lookback_on_restart;
   }
-  return settings.common.download_trades_lookback;
+  return settings.download.trades_lookback;
 }
 }  // namespace
 
@@ -675,14 +675,14 @@ void OrderEntrySimple::operator()(Trace<json::OpenOrders> const &event) {
 // XXX FIXME download_trades_count
 void OrderEntrySimple::get_trades() {
   profile_.trades([&]() {
-    auto &symbols = shared_.settings.common.download_symbols;
+    auto &symbols = shared_.settings.download.symbols;
     for (auto &symbol : symbols) {
       auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
       log::info<1>("Download trades: lookback={}"sv, lookback);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
-      auto limit = shared_.settings.common.download_trades_limit;
+      auto limit = shared_.settings.download.trades_limit;
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);
       auto headers = account_.create_headers();

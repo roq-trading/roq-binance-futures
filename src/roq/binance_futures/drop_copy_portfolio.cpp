@@ -230,8 +230,7 @@ uint32_t DropCopyPortfolio::download(DropCopyPortfolioState state) {
       request_orders();
       return 1;
     case TRADES:
-      if (shared_.settings.common.download_trades_lookback.count() &&
-          !std::empty(shared_.settings.common.download_symbols)) {
+      if (shared_.settings.download.trades_lookback.count() && !std::empty(shared_.settings.download.symbols)) {
         request_trades();
         return 1;
       } else {

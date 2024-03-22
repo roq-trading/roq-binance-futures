@@ -3,19 +3,6 @@
   "type": "flags",
   "values": [
     {
-      "name": "request_limit",
-      "type": "uint32_t",
-      "default": "8",
-      "description": "Request limit per interval"
-    },
-    {
-      "name": "request_limit_interval",
-      "type": "std::chrono::nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
-      "default": "5s",
-      "description": "Request limit monitor interval"
-    },
-    {
       "name": "encode_buffer_size",
       "type": "uint32_t",
       "required": true,
@@ -30,53 +17,10 @@
       "description": "Decode buffer size"
     },
     {
-      "name": "mbp_allow_price_inversion",
-      "type": "bool",
-      "default": false,
-      "description": "Allow price inversion?"
-    },
-    {
-      "name": "mbp_max_depth",
-      "type": "uint16_t",
-      "description": "Max depth levels (count)"
-    },
-    {
-      "name": "mbp_sequencer_timeout",
-      "type": "std::chrono::nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
-      "default": "120s",
-      "description": "MbP sequencer timeout"
-    },
-    {
       "name": "continue_with_unknown_event_type",
       "type": "bool",
       "default": false,
       "description": "Continue when getting updates for unknown event-types?"
-    },
-    {
-      "name": "download_symbols",
-      "type": "std::vector<std::string>",
-      "description": "Comma-separated list of symbols"
-    },
-    {
-      "name": "download_trades_lookback",
-      "type": "std::chrono::nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
-      "default": "300s",
-      "description": "Download trades lookback period"
-    },
-    {
-      "name": "download_trades_lookback_on_restart",
-      "type": "std::chrono::nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
-      "default": "{}",
-      "description": "Download trades lookback period"
-    },
-    {
-      "name": "download_trades_limit",
-      "type": "uint32_t",
-      "default": 1000,
-      "description": "Download trades limit"
     }
   ]
 }

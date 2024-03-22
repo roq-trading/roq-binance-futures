@@ -7,7 +7,10 @@
 #include "roq/server/flags/settings.hpp"
 
 #include "roq/binance_futures/flags/common.hpp"
+#include "roq/binance_futures/flags/download.hpp"
 #include "roq/binance_futures/flags/flags.hpp"
+#include "roq/binance_futures/flags/mbp.hpp"
+#include "roq/binance_futures/flags/request.hpp"
 #include "roq/binance_futures/flags/rest.hpp"
 #include "roq/binance_futures/flags/ws.hpp"
 
@@ -20,6 +23,9 @@ struct Settings final : public server::flags::Settings, public flags::Flags {
   flags::Common common;
   flags::REST rest;
   flags::WS ws;
+  flags::Download download;
+  flags::MBP mbp;
+  flags::Request request;
 
  private:
   Settings(args::Parser const &, flags::Flags const &);
@@ -40,12 +46,18 @@ struct fmt::formatter<roq::binance_futures::Settings> {
         R"(common={}, )"
         R"(rest={}, )"
         R"(ws={}, )"
+        R"(download={}, )"
+        R"(mbp={}, )"
+        R"(request={}, )"
         R"(server={})"
         R"(}})"sv,
         value.exchange,
         value.common,
         value.rest,
         value.ws,
+        value.download,
+        value.mbp,
+        value.request,
         static_cast<roq::server::Settings const &>(value));
   }
 };

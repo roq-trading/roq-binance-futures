@@ -81,8 +81,8 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
       .request_timeout = {},
       .ping_frequency = settings.ws.ping_freq,
       // implementation
-      .decode_buffer_size = settings.common.decode_buffer_size,
-      .encode_buffer_size = settings.common.encode_buffer_size,
+      .decode_buffer_size = settings.misc.decode_buffer_size,
+      .encode_buffer_size = settings.misc.encode_buffer_size,
   };
   return web::socket::Client::create(handler, context, config, []() { return std::string(); });
 }
@@ -113,7 +113,7 @@ MarketData::MarketData(
     Handler &handler, io::Context &context, uint16_t stream_id, Priority priority, Shared &shared, size_t index)
     : handler_{handler}, stream_id_{stream_id}, priority_{priority}, name_{create_name(stream_id_, priority_)},
       index_{index}, connection_{create_connection(*this, shared.settings, context)},
-      decode_buffer_(shared.settings.common.decode_buffer_size),
+      decode_buffer_(shared.settings.misc.decode_buffer_size),
       request_id_{static_cast<uint64_t>(stream_id_) * 1000000},  // scale (debugging)
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -270,7 +270,7 @@ void MarketData::parse(std::string_view const &message) {
     try {
       TraceInfo trace_info;
       json::MarketStreamParser::dispatch(
-          *this, message, decode_buffer_, trace_info, shared_.settings.common.continue_with_unknown_event_type);
+          *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type);
     } catch (...) {
       log::warn(R"(message="{}")"sv, message);
       core::tools::UnhandledException::terminate();

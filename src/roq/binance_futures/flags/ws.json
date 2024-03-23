@@ -8,23 +8,23 @@
       "type": "roq::io::web::URI",
       "validator": "roq::core::flags::URI",
       "default": "wss://stream.binancefuture.com",
-      "description": "WebSocket end-point (URI)"
+      "description": "Exchange end-point"
     },
     {
       "name": "host",
       "type": "std::string",
-      "description": "Host (http header) in case uri uses an IP address"
+      "description": "Host (when URI is an IP address)"
     },
     {
       "name": "pm_uri",
       "type": "roq::io::web::URI",
       "validator": "roq::core::flags::URI",
-      "description": "WebSocket end-point (URI)"
+      "description": "Exchange end-point (portfolio margin)"
     },
     {
       "name": "pm_host",
       "type": "std::string",
-      "description": "Host (http header) in case uri uses an IP address"
+      "description": "Host (when URI is an IP address)"
     },
     {
       "name": "ping_freq",
@@ -38,13 +38,13 @@
       "type": "uint32_t",
       "required": true,
       "default": 40,
-      "description": "Max symbols per connection (count)"
+      "description": "Maximum number of symbols per connection"
     },
     {
       "name": "subscribe_depth_levels",
       "type": "uint32_t",
       "default": 1000,
-      "description": "Depth levels (count)"
+      "description": "Depth levels to subscribe"
     },
     {
       "name": "subscribe_depth_freq",
@@ -58,19 +58,19 @@
       "type": "std::chrono::nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "10s",
-      "description": "Request delay"
+      "description": "Delay before requesting depth snapshot"
     },
     {
       "name": "mbp_request_max_retries",
       "type": "uint32_t",
       "default": 0,
-      "description": "Request max retries"
+      "description": "Maximum number of retries before giving up"
     },
     {
       "name": "enable_secondary",
       "type": "bool",
       "default": false,
-      "description": "Create secondary market data connection? (bool)"
+      "description": "Create secondary market data connection?"
     }
   ]
 }

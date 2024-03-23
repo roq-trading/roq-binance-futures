@@ -1,5 +1,5 @@
 {
-  "name": "Common",
+  "name": "Misc",
   "type": "flags",
   "values": [
     {
@@ -20,7 +20,7 @@
       "name": "continue_with_unknown_event_type",
       "type": "bool",
       "default": false,
-      "description": "Continue when getting updates for unknown event-types?"
+      "description": "Continue when receiving updates for unexpected event-types?"
     }
   ]
 }

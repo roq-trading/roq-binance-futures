@@ -5,13 +5,6 @@
 roq-binance-futures
 ===================
 
-.. important::
-   There are different network end-points required for USD-M and COIN-M futures.
-   The API's are different but sufficiently similar to allow this gateway to
-   support both. (The :code:`--api` flag controls which API will be used.)
-   The implication of this is that you will need more instances of this gateway
-   if you need support for both product groups.
-
 
 Links
 -----
@@ -19,19 +12,10 @@ Links
 * `Website <https://www.binance.com/en/futures/BTCUSDT>`__
 * `Testnet <https://testnet.binancefuture.com/en/futures/BTCUSDT>`__
 * `Support <https://www.binance.com/en/support-center>`__
-* `API <https://binance-docs.github.io/apidocs/futures/en/>`__
+* `Documentation <https://binance-docs.github.io/apidocs/futures/en/>`__
 
 
-Purpose
--------
-
-* Maintain network connectivity with the Binance Futures exchange
-* Route exchange updates to connected clients
-* Route client requests to the relevant exchange accounts
-* Stream all messages to an event-log
-
-
-Overview
+Supports
 --------
 
 .. grid::  2
@@ -48,9 +32,8 @@ Overview
         - |checkmark|
       * - Options
         -
-
-    .. note::
-       Crypto and USDT margined products are **NOT** supported by the same API.
+      * - Combos
+        -
 
   .. grid-item-card::  Market Data
 
@@ -63,9 +46,9 @@ Overview
         - |checkmark|
       * - Top of Book
         - |checkmark|
-      * - Market by Price (L2)
+      * - Market by Price
         - |checkmark|
-      * - Market by Order (L3)
+      * - Market by Order
         -
       * - Trade Summary
         - |checkmark|
@@ -80,13 +63,13 @@ Overview
       * - Create
         - |checkmark|
       * - Modify
-        -
+        - (|checkmark|)
       * - Cancel
         - |checkmark|
       * - Cancel All
         - |checkmark|
-      * - Auto Cancellation
-        - |checkmark| (*)
+      * - Auto-Cancel
+        - (|checkmark|)
 
   .. grid-item-card::  Account Management
 
@@ -98,48 +81,43 @@ Overview
       * - Funds
         - |checkmark|
 
-* Data center located in Japan (to be confirmed)
-* No test environment
-* Auto-cancel is not possible with PAPI
+.. note::
+
+   * Modify and Auto-Cancel not possible with PAPI.
 
 
-Conda
------
+Installing
+----------
 
 * :ref:`Using Conda <tutorial-conda>`
 
-.. tab:: Install
+.. tab:: Stable
 
-  .. code-block:: bash
+  .. code-block:: shell
 
-    $ mamba install \
-      --channel https://roq-trading.com/conda/stable \
-      roq-binance-futures
+     $ mamba install \
+           --channel https://roq-trading.com/conda/stable \
+           roq-binance-futures
 
-.. tab:: Configure
+.. tab:: Unstable
 
-  .. code-block:: bash
+  .. code-block:: shell
 
-    $ cp $CONDA_PREFIX/share/roq-binance-futures/config.toml $CONFIG_FILE_PATH
-
-    # Then modify $CONFIG_FILE_PATH to match your specific configuration
-
-.. tab:: Run
-
-  .. code-block:: bash
-
-    $ roq-binance-futures \
-          --name "binance-futures" \
-          --config_file "$CONFIG_FILE_PATH" \
-          --client_listen_address "$UNIX_SOCKET_PATH" \
-          --service_listen_address "$TCP_LISTEN_PORT" \
-          --flagfile "$FLAG_FILE"
+     $ mamba install \
+           --channel https://roq-trading.com/conda/unstable \
+           roq-binance-futures
 
 
-Config
-------
+Using
+-----
 
-* :ref:`Common Config <gateway-config>`
+.. code-block:: shell
+
+  $ roq-binance-futures \
+        --name "binance-futures" \
+        --config_file $CONFIG_FILE_PATH \
+        --client_listen_address $UNIX_SOCKET_PATH \
+        --flagfile $ENVIRONMENT_FLAGFILE
 
 
 .. _roq-binance-futures-flags:
@@ -148,9 +126,9 @@ Flags
 -----
 
 * :ref:`Using Flags <abseil-cpp>`
-* :ref:`Common Flags <gateway-flags>`
+* :ref:`Gateway Flags <gateway-flags>`
 
-.. code-block:: bash
+.. code-block:: shell
 
    $ roq-binance-futures --help
 
@@ -178,43 +156,67 @@ Flags
 
    .. include:: flags/request.rstinc
 
-.. tab:: Common
+.. tab:: Misc
 
-   .. include:: flags/common.rstinc
+   .. include:: flags/misc.rstinc
 
 
 Environments
 ------------
 
-.. code-block:: bash
+.. tab:: Prod (USD-M)
 
-  $ $CONDA_PREFIX/share/roq-binance-futures/flags
+   .. code-block:: shell
 
-USD-M Futures
-~~~~~~~~~~~~~
-
-.. tab:: Prod
+      $ $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-fapi.cfg
 
    .. include:: flags/prod/flags-fapi.cfg
      :code: ini
 
-.. tab:: Test
+.. tab:: Prod (COIN-M)
 
-   .. include:: flags/test/flags-fapi.cfg
-     :code: ini
+   .. code-block:: shell
 
-COIN-M Futures
-~~~~~~~~~~~~~~
-
-.. tab:: Prod
+      $ $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-dapi.cfg
 
    .. include:: flags/prod/flags-dapi.cfg
      :code: ini
 
-.. tab:: Test
+.. tab:: Test (USD-M)
+
+   .. code-block:: shell
+
+      $ $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-fapi.cfg
+
+   .. include:: flags/test/flags-fapi.cfg
+     :code: ini
+
+.. tab:: Test (COIN-M)
+
+   .. code-block:: shell
+
+      $ $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-dapi.cfg
 
    .. include:: flags/test/flags-dapi.cfg
      :code: ini
+
+
+Configuration
+-------------
+
+* :ref:`Gateway Config <gateway-config>`
+
+.. code-block:: shell
+
+   $ $CONDA_PREFIX/share/roq-binance-futures/config.toml
+
+.. important::
+
+   The template will be replaced when the software is upgraded.
+   Make a copy and modify to your needs.
+
+.. include:: config.toml
+   :code: toml
 
 
 Market Data

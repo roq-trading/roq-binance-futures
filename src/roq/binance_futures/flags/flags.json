@@ -14,7 +14,7 @@
       "type": "std::string",
       "required": true,
       "default": "fapi",
-      "description": "API to use (:code:`fapi` or :code:`dapi`)"
+      "description": "API (:code:`fapi` or :code:`dapi`)"
     }
   ]
 }

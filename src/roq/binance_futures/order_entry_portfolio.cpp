@@ -366,7 +366,7 @@ void OrderEntryPortfolio::get_listen_key() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
-        .path = shared_.api.papi_get_listen_key,
+        .path = shared_.api.papi.get_listen_key,
         .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -582,7 +582,7 @@ void OrderEntryPortfolio::get_position() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.papi_get_position,
+        .path = shared_.api.papi.get_position,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -650,7 +650,7 @@ void OrderEntryPortfolio::get_open_orders() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.papi_get_open_orders,
+        .path = shared_.api.papi.get_open_orders,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -749,7 +749,6 @@ void OrderEntryPortfolio::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit;
-      // XXX [20240226] must send parameters as query string (doesn't work like other requests)
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);  // XXX
       auto headers = account_.create_headers();
@@ -758,7 +757,7 @@ void OrderEntryPortfolio::get_trades() {
       log::debug(R"(headers="{}")"sv, headers);
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
-          .path = shared_.api.papi_get_trades,
+          .path = shared_.api.papi.get_trades,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -866,7 +865,7 @@ void OrderEntryPortfolio::new_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
-        .path = shared_.api.papi_order,
+        .path = shared_.api.papi.order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -988,7 +987,7 @@ void OrderEntryPortfolio::cancel_order(
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::DELETE,
-        .path = shared_.api.papi_order,
+        .path = shared_.api.papi.order,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -1107,7 +1106,7 @@ void OrderEntryPortfolio::cancel_all_open_orders(
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
-          .path = shared_.api.papi_all_open_orders,
+          .path = shared_.api.papi.all_open_orders,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,

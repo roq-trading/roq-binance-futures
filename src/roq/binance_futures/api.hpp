@@ -24,13 +24,16 @@ struct API final {
   std::string_view countdown_cancel_all;
   // oms
   bool modify_order_full = {};
-  // papi
-  std::string_view papi_get_listen_key;
-  std::string_view papi_get_position;
-  std::string_view papi_get_open_orders;
-  std::string_view papi_get_trades;
-  std::string_view papi_order;
-  std::string_view papi_all_open_orders;
+
+  struct {
+    std::string_view get_listen_key;
+    std::string_view get_position;
+    std::string_view get_open_orders;
+    std::string_view get_trades;
+    std::string_view order;
+    std::string_view all_open_orders;
+  } papi;
+
   // factory
   static API create(Settings const &);
 };

@@ -704,7 +704,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
         .symbol = order.symbol,
         .side = side,
         .position_effect = {},
-        .margin_mode = {},
+        .margin_mode = MarginMode::PORTFOLIO,
         .max_show_quantity = NaN,
         .order_type = order_type,
         .time_in_force = time_in_force,
@@ -762,7 +762,7 @@ void OrderEntryPortfolio::get_trades() {
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
           .headers = headers,
-          .body = {},  // XXX
+          .body = {},  // note! can't use body with GET
           .quality_of_service = {},
       };
       auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
@@ -796,7 +796,6 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
 // note! always external because we don't get ClOrdID
 void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
   auto &[trace_info, trades] = event;
-  log::info<2>("trades={}"sv, trades);
   for (auto &trade : trades.data) {
     log::info<2>("trade={}"sv, trade);
     auto liquidity = trade.maker ? Liquidity::MAKER : Liquidity::TAKER;
@@ -818,7 +817,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
         .symbol = trade.symbol,
         .side = side,
         .position_effect = {},
-        .margin_mode = {},
+        .margin_mode = MarginMode::PORTFOLIO,
         .create_time_utc = trade.time,
         .update_time_utc = trade.time,
         .external_account = {},
@@ -938,7 +937,7 @@ void OrderEntryPortfolio::operator()(
       .symbol = new_order.symbol,
       .side = side,
       .position_effect = {},
-      .margin_mode = {},
+      .margin_mode = MarginMode::PORTFOLIO,
       .max_show_quantity = NaN,
       .order_type = order_type,
       .time_in_force = time_in_force,
@@ -1059,7 +1058,7 @@ void OrderEntryPortfolio::operator()(
       .symbol = cancel_order.symbol,
       .side = side,
       .position_effect = {},
-      .margin_mode = {},
+      .margin_mode = MarginMode::PORTFOLIO,
       .max_show_quantity = NaN,
       .order_type = order_type,
       .time_in_force = time_in_force,

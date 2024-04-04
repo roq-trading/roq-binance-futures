@@ -698,6 +698,8 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
     auto time_in_force = json::map(order.time_in_force);
     auto external_order_id = fmt::format("{}"sv, order.order_id);  // alloc
     auto order_status = json::map(order.status);
+    auto remaining_quantity = order.orig_qty - order.executed_qty;
+    auto average_traded_price = utils::compare(order.executed_qty, 0.0) == 0 ? NaN : order.avg_price;
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
         .exchange = shared_.settings.exchange,
@@ -718,9 +720,9 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
         .quantity = order.orig_qty,
         .price = order.price,
         .stop_price = order.stop_price,
-        .remaining_quantity = NaN,
+        .remaining_quantity = remaining_quantity,
         .traded_quantity = order.executed_qty,
-        .average_traded_price = order.avg_price,
+        .average_traded_price = average_traded_price,
         .last_traded_quantity = {},
         .last_traded_price = {},
         .last_liquidity = {},

@@ -28,7 +28,6 @@ struct Account final {
 
   std::string_view create_headers() const { return crypto_.create_headers(); }
 
- public:
   std::string const name;
   MarginMode const margin_mode;
 

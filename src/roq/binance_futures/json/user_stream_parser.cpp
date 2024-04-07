@@ -12,7 +12,7 @@ namespace roq {
 namespace binance_futures {
 namespace json {
 
-void UserStreamParser::dispatch(
+bool UserStreamParser::dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
     std::span<std::byte> const &buffer,
@@ -25,11 +25,10 @@ void UserStreamParser::dispatch(
       continue;
     EventType event_type{value};
     if (try_dispatch(handler, message, buffer, event_type, trace_info, continue_with_unknown_event_type))
-      return;
+      return true;
     break;
   }
-  log::warn(R"(message="{}")"sv, message);
-  log::fatal("Unexpected"sv);
+  return false;
 }
 
 bool UserStreamParser::try_dispatch(

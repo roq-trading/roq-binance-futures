@@ -261,18 +261,19 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols, std::string_v
       fmt::join(symbols, separator),
       channel,
       id);
-  log::debug("message={}"sv, message);
   subscribe_queue_.emplace_back(message);
 }
 
 void MarketData::parse(std::string_view const &message) {
   profile_.parse([&]() {
+    auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      json::MarketStreamParser::dispatch(
-          *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type);
+      if (!json::MarketStreamParser::dispatch(
+              *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+        log_message();
     } catch (...) {
-      log::warn(R"(message="{}")"sv, message);
+      log_message();
       core::tools::UnhandledException::terminate();
     }
   });
@@ -325,7 +326,7 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
     auto &[trace_info, mini_ticker] = event;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
     (*connection_).touch(trace_info.source_receive_time);
-    auto statistics = std::array<Statistics, 4>{{
+    std::array<Statistics, 4> statistics{{
         {
             .type = StatisticsType::HIGHEST_TRADED_PRICE,
             .value = mini_ticker.high_price,
@@ -487,7 +488,7 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
     log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
     (*connection_).touch(trace_info.source_receive_time);
     auto &mark_price = event.value;
-    auto statistics = std::array<Statistics, 4>{{
+    std::array<Statistics, 4> statistics{{
         {
             .type = StatisticsType::SETTLEMENT_PRICE,
             .value = mark_price.mark_price,
@@ -527,13 +528,12 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
   });
 }
 
+// request
+
 void MarketData::check_subscribe_queue(std::chrono::nanoseconds now) {
   subscribe_queue_.dispatch(
       [&](auto now) { return shared_.rate_limiter.can_request(now); },
-      [&](auto &message) {
-        log::debug(R"(Subscribe: "{}")"sv, message);
-        (*connection_).send_text(message);
-      },
+      [&](auto &message) { (*connection_).send_text(message); },
       now);
 }
 

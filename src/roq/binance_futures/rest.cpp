@@ -35,6 +35,8 @@ auto const SUPPORTS = Mask{
     SupportType::REFERENCE_DATA,
     SupportType::MARKET_STATUS,
 };
+
+auto const X_MBX_USED_WEIGHT_1M = "x-mbx-used-weight-1m"sv;
 }  // namespace
 
 // === HELPERS ===
@@ -81,6 +83,20 @@ struct create_metrics final : public core::metrics::Factory {
   create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
       : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
+
+auto get_retry_after(auto &response) {
+  std::chrono::nanoseconds result = {};
+  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
+    try {
+      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
+      auto seconds = utils::from_string_relaxed<int64_t>(value);
+      result = std::chrono::seconds{seconds};
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
+    }
+  });
+  return result;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -171,7 +187,7 @@ void Rest::operator()(Trace<web::rest::Client::MessageBegin> const &) {
 
 void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
   auto &header = event.value;
-  if (utils::case_insensitive_compare(header.name, "x-mbx-used-weight-1m"sv) == 0) {
+  if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
     try {
       auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{
@@ -236,10 +252,10 @@ uint32_t Rest::download(RestState state) {
       return 1;
     case DONE:
       (*this)(ConnectionStatus::READY);
-      return {};
+      return 0;
   }
   assert(false);
-  return {};
+  return 0;
 }
 
 // exchange-info
@@ -248,7 +264,7 @@ void Rest::get_exchange_info() {
   profile_.exchange_info([&]() {
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.get_exchange_info,
+        .path = shared_.api.market_data.exchange_info,
         .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -261,7 +277,7 @@ void Rest::get_exchange_info() {
       Trace event{trace_info, response};
       get_exchange_info_ack(event, sequence);
     };
-    (*connection_)("exchange_info"sv, request, callback);
+    (*connection_)("exchange-info"sv, request, callback);
   });
 }
 
@@ -294,7 +310,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
   log::info<2>("exchange_info={}"sv, exchange_info);
   // rate-limits
   for (auto &item : exchange_info.rate_limits) {
-    log::debug("rate_limit={}"sv, item);
+    log::info<2>("item={}"sv, item);
     if (item.rate_limit_type == json::RateLimitType::REQUEST_WEIGHT) {
       if (item.interval == json::Interval::MINUTE && item.interval_num == 1)
         shared_.limits.request_weight_1m = item.limit;
@@ -430,7 +446,7 @@ void Rest::get_depth(std::string_view const &symbol) {
     auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.ws.subscribe_depth_levels);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.get_depth,
+        .path = shared_.api.market_data.depth,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -530,38 +546,20 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
   }
 }
 
+// request
+
 void Rest::check_request_queue(std::chrono::nanoseconds now) {
   shared_.depth_request_queue.dispatch(
-      [&](auto now) { return shared_.rate_limiter.can_request(now); },
-      [&](auto &symbol) {
-        log::debug(R"(Requesting order book snapshot symbol="{}")"sv, symbol);
-        get_depth(symbol);
-      },
-      now);
+      [&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_depth(symbol); }, now);
 }
 
-namespace {
-auto get_retry_after(auto &response) {
-  std::chrono::nanoseconds result = {};
-  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
-    try {
-      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
-      auto seconds = utils::from_string_relaxed<int64_t>(value);
-      result = std::chrono::seconds{seconds};
-    } catch (RuntimeError &) {
-      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
-    }
-  });
-  return result;
-}
-}  // namespace
+// helpers
 
 template <typename SuccessHandler, typename ErrorHandler>
 void Rest::process_response(
     web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
-    // log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
     switch (category) {
       using enum web::http::Category;
       case SUCCESS:  // 2xx

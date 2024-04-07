@@ -78,18 +78,15 @@ struct DropCopyPortfolio final : public DropCopy,
   void operator()(Trace<json::AccountConfigUpdate> const &) override;
 
   void request_balance();
-  void check_response_balance();
-
   void request_account();
-  void check_response_account();
-
   void request_position();
-  void check_response_position();
-
   void request_orders();
-  void check_response_orders();
-
   void request_trades();
+
+  void check_response_balance();
+  void check_response_account();
+  void check_response_position();
+  void check_response_orders();
   void check_response_trades();
 
  private:

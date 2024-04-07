@@ -32,7 +32,7 @@ struct MarketStreamParser final {
     virtual void operator()(Trace<MarkPriceUpdate> const &) = 0;
   };
 
-  static void dispatch(
+  static bool dispatch(
       Handler &handler,
       std::string_view const &message,
       std::span<std::byte> const &buffer,

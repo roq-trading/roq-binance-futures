@@ -37,12 +37,15 @@ auto const SUPPORTS = Mask{
     SupportType::FUNDS,
     SupportType::POSITION,
 };
+
+auto const X_MBX_USED_WEIGHT_1M = "x-mbx-used-weight-1m"sv;
+auto const X_MBX_ORDER_COUNT_1M = "x-mbx-order-count-1m"sv;
 }  // namespace
 
 // === HELPERS ===
 
 namespace {
-auto create_name(auto stream_id, auto const &account) {
+auto create_name(auto stream_id, auto &account) {
   return fmt::format("{}:{}:{}"sv, stream_id, NAME, account);
 }
 
@@ -84,12 +87,26 @@ struct create_metrics final : public core::metrics::Factory {
       : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
 
-auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
+auto get_download_trades_lookback(auto &settings, auto download_trades_is_first) {
   if (download_trades_is_first) {
     if (settings.download.trades_lookback_on_restart.count())
       return settings.download.trades_lookback_on_restart;
   }
   return settings.download.trades_lookback;
+}
+
+auto get_retry_after(auto &response) {
+  std::chrono::nanoseconds result = {};
+  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
+    try {
+      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
+      auto seconds = utils::from_string_relaxed<int64_t>(value);
+      result = std::chrono::seconds{seconds};
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
+    }
+  });
+  return result;
 }
 }  // namespace
 
@@ -272,7 +289,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::MessageBegin> cons
 
 void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &event) {
   auto &header = event.value;
-  if (utils::case_insensitive_compare(header.name, "x-mbx-used-weight-1m"sv) == 0) {
+  if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
     try {
       auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{
@@ -288,7 +305,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &eve
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
     }
   }
-  if (utils::case_insensitive_compare(header.name, "x-mbx-order-count-1m"sv) == 0) {
+  if (utils::case_insensitive_compare(header.name, X_MBX_ORDER_COUNT_1M) == 0) {
     try {
       auto value = utils::from_string_relaxed<uint32_t>(header.value);
       auto rate_limit = RateLimit{
@@ -353,10 +370,10 @@ uint32_t OrderEntryPortfolio::download(OrderEntryState state) {
       return 1;
     case DONE:
       (*this)(ConnectionStatus::READY);
-      return {};
+      return 0;
   }
   assert(false);
-  return {};
+  return 0;
 }
 
 // listen-key
@@ -366,7 +383,7 @@ void OrderEntryPortfolio::get_listen_key() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
-        .path = shared_.api.papi.get_listen_key,
+        .path = shared_.api.papi.listen_key,
         .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -379,7 +396,7 @@ void OrderEntryPortfolio::get_listen_key() {
       Trace event{trace_info, response};
       get_listen_key_ack(event, sequence);
     };
-    (*connection_)("listen_key"sv, request, callback);
+    (*connection_)("listen-key"sv, request, callback);
   });
 }
 
@@ -389,7 +406,6 @@ void OrderEntryPortfolio::get_listen_key_ack(
   profile_.listen_key_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::ListenKey listen_key{body};
-      log::debug("listen_key={}"sv, listen_key);
       Trace event_2{event, listen_key};
       (*this)(event_2);
       download_.check_relaxed(STATE);
@@ -432,7 +448,7 @@ void OrderEntryPortfolio::get_balance() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = "/papi/v1/balance"sv,
+        .path = shared_.api.papi.balance,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -455,7 +471,8 @@ void OrderEntryPortfolio::get_balance_ack(Trace<web::rest::Response> const &even
       json::Balance balance{body, decode_buffer_};
       Trace event_2{event, balance};
       (*this)(event_2);
-      request_.respond_balance = clock::get_system();  // completion
+      // completion
+      request_.respond_balance = clock::get_system();
       download_balance_ = false;
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
@@ -470,7 +487,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
   auto &[trace_info, balance] = event;
   log::info<2>("balance={}"sv, balance);
   for (auto &item : balance.data) {
-    log::debug("item={}"sv, item);
+    log::info<2>("item={}"sv, item);
     auto hold = item.balance - item.available_balance;
     auto funds_update = FundsUpdate{
         .stream_id = stream_id_,
@@ -513,7 +530,7 @@ void OrderEntryPortfolio::get_account() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = "/papi/v1/account"sv,
+        .path = shared_.api.papi.account,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -536,7 +553,8 @@ void OrderEntryPortfolio::get_account_ack(Trace<web::rest::Response> const &even
       json::Account account{body, decode_buffer_};
       Trace event_2{event, account};
       (*this)(event_2);
-      request_.respond_account = clock::get_system();  // completion
+      // completion
+      request_.respond_account = clock::get_system();
       download_account_ = false;
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
@@ -553,7 +571,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Account> const &event) {
   for (auto &item : account.positions) {
     if (shared_.discard_symbol(item.symbol))
       continue;
-    log::debug("item={}"sv, item);
+    log::info<2>("item={}"sv, item);
     auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::PORTFOLIO;
     auto long_quantity = std::max(0.0, item.notional);
     auto short_quantity = std::max(0.0, -item.notional);
@@ -582,7 +600,7 @@ void OrderEntryPortfolio::get_position() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.papi.get_position,
+        .path = shared_.api.papi.position_risk,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -605,7 +623,8 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
       json::PositionList position{body, decode_buffer_};
       Trace event_2{event, position};
       (*this)(event_2);
-      request_.respond_position = clock::get_system();  // completion
+      // completion
+      request_.respond_position = clock::get_system();
       download_position_ = false;
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
@@ -622,7 +641,7 @@ void OrderEntryPortfolio::operator()(Trace<json::PositionList> const &event) {
   for (auto &item : position.data) {
     if (shared_.discard_symbol(item.symbol))
       continue;
-    log::debug("item={}"sv, item);
+    log::info<2>("item={}"sv, item);
     auto long_quantity = std::max(0.0, item.position_amt);
     auto short_quantity = std::max(0.0, -item.position_amt);
     auto position_update = PositionUpdate{
@@ -650,7 +669,7 @@ void OrderEntryPortfolio::get_open_orders() {
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.papi.get_open_orders,
+        .path = shared_.api.papi.open_orders,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -663,7 +682,7 @@ void OrderEntryPortfolio::get_open_orders() {
       Trace event{trace_info, response};
       get_open_orders_ack(event);
     };
-    (*connection_)("open_orders"sv, request, callback);
+    (*connection_)("open-orders"sv, request, callback);
   });
 }
 
@@ -673,7 +692,8 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
       json::OpenOrders open_orders{body, decode_buffer_};
       Trace event_2{event, open_orders};
       (*this)(event_2);
-      request_.respond_orders = clock::get_system();  // completion
+      // completion
+      request_.respond_orders = clock::get_system();
       download_orders_ = false;
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
@@ -687,23 +707,22 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
 void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
   auto &[trace_info, open_orders] = event;
   log::info<2>("open_orders={}"sv, open_orders);
-  for (auto &order : open_orders.data) {
-    log::debug("order={}"sv, order);
-    log::info<2>("order={}"sv, order);
-    if (std::empty(order.client_order_id))
+  for (auto &item : open_orders.data) {
+    log::info<2>("item={}"sv, item);
+    if (std::empty(item.client_order_id))
       continue;
-    open_orders_symbols_.emplace(order.symbol);
-    auto side = json::map(order.side);
-    auto order_type = json::map(order.type);
-    auto time_in_force = json::map(order.time_in_force);
-    auto external_order_id = fmt::format("{}"sv, order.order_id);  // alloc
-    auto order_status = json::map(order.status);
-    auto remaining_quantity = order.orig_qty - order.executed_qty;
-    auto average_traded_price = utils::compare(order.executed_qty, 0.0) == 0 ? NaN : order.avg_price;
+    open_orders_symbols_.emplace(item.symbol);
+    auto side = json::map(item.side);
+    auto order_type = json::map(item.type);
+    auto time_in_force = json::map(item.time_in_force);
+    auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
+    auto order_status = json::map(item.status);
+    auto remaining_quantity = item.orig_qty - item.executed_qty;
+    auto average_traded_price = utils::compare(item.executed_qty, 0.0) == 0 ? NaN : item.avg_price;
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
         .exchange = shared_.settings.exchange,
-        .symbol = order.symbol,
+        .symbol = item.symbol,
         .side = side,
         .position_effect = {},
         .margin_mode = MarginMode::PORTFOLIO,
@@ -711,17 +730,17 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
         .order_type = order_type,
         .time_in_force = time_in_force,
         .execution_instructions = {},
-        .create_time_utc = order.time,
-        .update_time_utc = order.update_time,
+        .create_time_utc = item.time,
+        .update_time_utc = item.update_time,
         .external_account = {},
         .external_order_id = external_order_id,
-        .client_order_id = order.client_order_id,
+        .client_order_id = item.client_order_id,
         .order_status = order_status,
-        .quantity = order.orig_qty,
-        .price = order.price,
-        .stop_price = order.stop_price,
+        .quantity = item.orig_qty,
+        .price = item.price,
+        .stop_price = item.stop_price,
         .remaining_quantity = remaining_quantity,
-        .traded_quantity = order.executed_qty,
+        .traded_quantity = item.executed_qty,
         .average_traded_price = average_traded_price,
         .last_traded_quantity = {},
         .last_traded_price = {},
@@ -734,7 +753,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
         .sending_time_utc = {},
     };
     Trace event_2{trace_info, order_update};
-    (*this)(event_2, order.client_order_id);
+    (*this)(event_2, item.client_order_id);
   }
 }
 
@@ -754,12 +773,9 @@ void OrderEntryPortfolio::get_trades() {
       auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);  // XXX
       auto headers = account_.create_headers();
-      log::debug(R"(body="{}")"sv, body);
-      log::debug(R"(query="{}")"sv, query);
-      log::debug(R"(headers="{}")"sv, headers);
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
-          .path = shared_.api.papi.get_trades,
+          .path = shared_.api.papi.user_trades,
           .query = query,
           .accept = web::http::Accept::APPLICATION_JSON,
           .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
@@ -783,7 +799,8 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
       json::Trades trades{body, decode_buffer_};
       Trace event_2{event, trades};
       (*this)(event_2);
-      request_.respond_trades = clock::get_system();  // completion
+      // completion
+      request_.respond_trades = clock::get_system();
       download_trades_ = false;
       download_trades_is_first_ = false;
     };
@@ -861,7 +878,6 @@ void OrderEntryPortfolio::new_order(
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::new_order(encode_buffer_, create_order, order, request_id, recv_window);
-    log::debug(R"(body="{}")"sv, body);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -890,7 +906,6 @@ void OrderEntryPortfolio::new_order_ack(
   profile_.new_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::NewOrder new_order{body};
-      log::debug("new_order={}"sv, new_order);
       Trace event_2{event, new_order};
       (*this)(event_2, user_id, order_id, version);
     };
@@ -983,7 +998,6 @@ void OrderEntryPortfolio::cancel_order(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
-    log::debug(R"(body="{}")"sv, body);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -1102,7 +1116,6 @@ void OrderEntryPortfolio::cancel_all_open_orders(
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol)
         continue;
       auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
-      log::debug(R"(body="{}")"sv, body);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
@@ -1151,7 +1164,6 @@ void OrderEntryPortfolio::cancel_all_open_orders_ack(
   profile_.cancel_all_open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelAllOpenOrders cancel_all_open_orders{body};
-      log::debug("cancel_all_open_orders={}"sv, cancel_all_open_orders);
       Trace event_2{event, cancel_all_open_orders};
       (*this)(event_2, request_id);
     };
@@ -1165,7 +1177,6 @@ void OrderEntryPortfolio::cancel_all_open_orders_ack(
 void OrderEntryPortfolio::operator()(
     Trace<json::CancelAllOpenOrders> const &event, std::string_view const &request_id) {
   auto &[trace_info, cancel_all_open_orders] = event;
-  log::debug("cancel_all_open_orders={}"sv, cancel_all_open_orders);
   auto status = [&]() {
     if (cancel_all_open_orders.code == 200)
       return RequestStatus::ACCEPTED;
@@ -1194,28 +1205,13 @@ void OrderEntryPortfolio::operator()(
   shared_(event_2);
 }
 
-namespace {
-auto get_retry_after(auto &response) {
-  std::chrono::nanoseconds result = {};
-  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
-    try {
-      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
-      auto seconds = utils::from_string_relaxed<int64_t>(value);
-      result = std::chrono::seconds{seconds};
-    } catch (RuntimeError &) {
-      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
-    }
-  });
-  return result;
-}
-}  // namespace
+// helpers
 
 template <typename SuccessHandler, typename ErrorHandler>
 void OrderEntryPortfolio::process_response(
     web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
-    log::debug(R"(status={}, category={}, body="{}")"sv, status, category, body);
     switch (category) {
       using enum web::http::Category;
       case SUCCESS:  // 2xx

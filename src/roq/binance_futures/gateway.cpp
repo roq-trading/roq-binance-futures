@@ -173,7 +173,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
   while (std::size(market_data_1_) < size) {
     auto stream_id = ++stream_id_;
     auto index = std::size(market_data_1_);
-    log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
+    log::info("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::PRIMARY, shared_, index);
     MessageInfo message_info;
     Start const start;
@@ -185,7 +185,7 @@ void Gateway::ensure_symbol_slices(size_t size) {
   while (std::size(market_data_2_) < size) {
     auto stream_id = ++stream_id_;
     auto index = std::size(market_data_2_);
-    log::debug("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
+    log::info("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::SECONDARY, shared_, index);
     MessageInfo message_info;
     Start const start;

@@ -42,14 +42,14 @@ auto create_name(auto stream_id) {
   return fmt::format("{}:{}"sv, stream_id, NAME);
 }
 
-auto create_uri(auto &settings, auto const &listen_key) {
+auto create_uri(auto &settings, auto &listen_key) {
   assert(!std::empty(listen_key));
   auto &uri = settings.ws.uri;
   auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
   return io::web::URI{result};
 }
 
-auto create_connection(auto &handler, auto &settings, auto &context, auto const &listen_key) {
+auto create_connection(auto &handler, auto &settings, auto &context, auto &listen_key) {
   auto uri = create_uri(settings, listen_key);
   auto config = web::socket::Client::Config{
       // connection
@@ -230,27 +230,28 @@ uint32_t DropCopySimple::download(DropCopyState state) {
         request_trades();
         return 1;
       } else {
-        return {};
+        return 0;
       }
     case DONE:
       (*this)(ConnectionStatus::READY);
       assert(!ready_);
       ready_ = true;
-      return {};
+      return 0;
   }
   assert(false);
-  return {};
+  return 0;
 }
 
 void DropCopySimple::parse(std::string_view const &message) {
+  auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
   profile_.parse([&]() {
     try {
-      log::debug(R"(message="{}")"sv, message);
       TraceInfo trace_info;
-      json::UserStreamParser::dispatch(
-          *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type);
+      if (!json::UserStreamParser::dispatch(
+              *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+        log_message();
     } catch (...) {
-      log::warn(R"(message="{}")"sv, message);
+      log_message();
       core::tools::UnhandledException::terminate();
     }
   });
@@ -260,11 +261,10 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
-    log::debug("order_trade_update={}"sv, order_trade_update);
     log::info<3>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
     auto side = json::map(execution_report.side);
-    auto external_order_id = fmt::format("{}"sv, execution_report.order_id);
+    auto external_order_id = fmt::format("{}"sv, execution_report.order_id);  // alloc
     auto order_status = json::map(execution_report.order_status);
     auto order_type = json::map(execution_report.order_type);
     auto time_in_force = json::map(execution_report.time_in_force);
@@ -355,7 +355,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
     for (auto &item : account_update.data.balances) {
-      log::debug("item={}"sv, item);
+      log::info<2>("item={}"sv, item);
       auto funds_update = FundsUpdate{
           .stream_id = stream_id_,
           .account = account_.name,
@@ -388,7 +388,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
     for (auto &item : account_update.data.positions) {
       if (shared_.discard_symbol(item.symbol))
         continue;
-      log::debug("item={}"sv, item);
+      log::info<2>("item={}"sv, item);
       auto margin_mode = [&]() {
         switch (item.margin_type) {
           using enum json::MarginType::type_t;
@@ -425,34 +425,54 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
 void DropCopySimple::operator()(Trace<json::MarginCall> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
-    log::debug("margin_call={}"sv, margin_call);
+    log::info<2>("margin_call={}"sv, margin_call);
   });
 }
 
 void DropCopySimple::operator()(Trace<json::StrategyUpdate> const &event) {
   profile_.strategy_update([&]() {
     auto &[trace_info, strategy_update] = event;
-    log::debug("strategy_update={}"sv, strategy_update);
+    log::info<2>("strategy_update={}"sv, strategy_update);
   });
 }
 
 void DropCopySimple::operator()(Trace<json::GridUpdate> const &event) {
   profile_.grid_update([&]() {
     auto &[trace_info, grid_update] = event;
-    log::debug("grid_update={}"sv, grid_update);
+    log::info<2>("grid_update={}"sv, grid_update);
   });
 }
 
 void DropCopySimple::operator()(Trace<json::AccountConfigUpdate> const &event) {
   profile_.account_config_update([&]() {
     auto &[trace_info, account_config_update] = event;
-    log::debug("account_config_update={}"sv, account_config_update);
+    log::info<2>("account_config_update={}"sv, account_config_update);
   });
 }
+
+// request
+
 void DropCopySimple::request_balance() {
   log::info("Requesting balance download..."sv);
   request_.request_balance = clock::get_system();
 }
+
+void DropCopySimple::request_account() {
+  log::info("Requesting account download..."sv);
+  request_.request_account = clock::get_system();
+}
+
+void DropCopySimple::request_orders() {
+  log::info("Requesting order download..."sv);
+  request_.request_orders = clock::get_system();
+}
+
+void DropCopySimple::request_trades() {
+  log::info("Requesting trades download..."sv);
+  request_.request_trades = clock::get_system();
+}
+
+// response
 
 void DropCopySimple::check_response_balance() {
   if (download_.state() != DropCopyState::BALANCE)
@@ -461,11 +481,6 @@ void DropCopySimple::check_response_balance() {
     log::info("Balance download has completed!"sv);
     download_.check(DropCopyState::BALANCE);
   }
-}
-
-void DropCopySimple::request_account() {
-  log::info("Requesting account download..."sv);
-  request_.request_account = clock::get_system();
 }
 
 void DropCopySimple::check_response_account() {
@@ -477,11 +492,6 @@ void DropCopySimple::check_response_account() {
   }
 }
 
-void DropCopySimple::request_orders() {
-  log::info("Requesting order download..."sv);
-  request_.request_orders = clock::get_system();
-}
-
 void DropCopySimple::check_response_orders() {
   if (download_.state() != DropCopyState::ORDERS)
     return;
@@ -489,11 +499,6 @@ void DropCopySimple::check_response_orders() {
     log::info("Order download has completed!"sv);
     download_.check(DropCopyState::ORDERS);
   }
-}
-
-void DropCopySimple::request_trades() {
-  log::info("Requesting trades download..."sv);
-  request_.request_trades = clock::get_system();
 }
 
 void DropCopySimple::check_response_trades() {

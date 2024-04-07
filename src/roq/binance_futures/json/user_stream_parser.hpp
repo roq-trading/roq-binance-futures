@@ -29,7 +29,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<AccountConfigUpdate> const &) = 0;
   };
 
-  static void dispatch(
+  static bool dispatch(
       Handler &,
       std::string_view const &message,
       std::span<std::byte> const &,

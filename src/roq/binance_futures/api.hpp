@@ -10,29 +10,32 @@ namespace roq {
 namespace binance_futures {
 
 struct API final {
-  // rest
-  std::string_view get_exchange_info;
-  std::string_view get_depth;
-  // ws
-  std::string_view get_listen_key;
-  std::string_view get_balance;
-  std::string_view get_account;
-  std::string_view get_open_orders;
-  std::string_view get_trades;
-  std::string_view order;
-  std::string_view all_open_orders;
-  std::string_view countdown_cancel_all;
-  // oms
-  bool modify_order_full = {};
-
   struct {
-    std::string_view get_listen_key;
-    std::string_view get_position;
-    std::string_view get_open_orders;
-    std::string_view get_trades;
+    std::string_view exchange_info;
+    std::string_view depth;
+  } market_data;
+  struct {
+    std::string_view listen_key;
+    std::string_view balance;
+    std::string_view account;
+    std::string_view open_orders;
+    std::string_view user_trades;
+    std::string_view order;
+    std::string_view all_open_orders;
+    std::string_view countdown_cancel_all;
+  } simple;
+  struct {
+    std::string_view listen_key;
+    std::string_view balance;
+    std::string_view account;
+    std::string_view position_risk;
+    std::string_view open_orders;
+    std::string_view user_trades;
     std::string_view order;
     std::string_view all_open_orders;
   } papi;
+  // oms
+  bool modify_order_full = {};
 
   // factory
   static API create(Settings const &);

@@ -30,7 +30,7 @@ void dispatch_helper(
 }
 }  // namespace
 
-void MarketStreamParser::dispatch(
+bool MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     std::string_view const &message,
     std::span<std::byte> const &buffer,
@@ -81,7 +81,7 @@ void MarketStreamParser::dispatch(
         case DATA: {
           dispatch(
               handler, core::json::get<std::string_view>(value), buffer, trace_info, continue_with_unknown_event_type);
-          return;
+          return true;
         }
         case EVENT_TYPE: {
           // note! assuming event_type is the first field
@@ -124,7 +124,7 @@ void MarketStreamParser::dispatch(
             case UNKNOWN__:
               if (!continue_with_unknown_event_type)
                 log::fatal("Unexpected"sv);
-              return;
+              return false;
           }
           assert(dispatched);
           break;
@@ -136,10 +136,7 @@ void MarketStreamParser::dispatch(
         break;
     }
   }
-  if (dispatched)
-    return;
-  log::warn(R"(message="{}")"sv, message);
-  log::fatal("Unexpected"sv);
+  return dispatched;
 }
 
 }  // namespace json

@@ -494,7 +494,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
         .account = account_.name,
         .currency = item.asset,
         .margin_mode = MarginMode::PORTFOLIO,
-        .balance = item.um_wallet_balance,
+        .balance = item.total_wallet_balance,
         .hold = hold,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,

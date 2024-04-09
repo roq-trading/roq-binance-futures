@@ -575,15 +575,15 @@ void OrderEntrySimple::operator()(Trace<json::Account> const &event) {
       continue;
     log::info<2>("item={}"sv, item);
     auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
-    auto long_quantity = std::max(0.0, item.notional);
-    auto short_quantity = std::max(0.0, -item.notional);
+    auto long_quantity = std::max(0.0, item.position_amt);
+    auto short_quantity = std::max(0.0, -item.position_amt);
     auto position_update = PositionUpdate{
         .stream_id = stream_id_,
         .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .margin_mode = margin_mode,
-        .external_account{},
+        .external_account = {},
         .long_quantity = long_quantity,
         .short_quantity = short_quantity,
         .update_type = UpdateType::SNAPSHOT,

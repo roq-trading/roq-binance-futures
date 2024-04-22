@@ -15,6 +15,12 @@
       "required": true,
       "default": "fapi",
       "description": "API (:code:`fapi` or :code:`dapi`)"
+    },
+    {
+      "name": "ws_api",
+      "type": "bool",
+      "default": false,
+      "description": "Use WebSocket API?"
     }
   ]
 }

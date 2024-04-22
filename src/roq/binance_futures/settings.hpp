@@ -13,6 +13,7 @@
 #include "roq/binance_futures/flags/request.hpp"
 #include "roq/binance_futures/flags/rest.hpp"
 #include "roq/binance_futures/flags/ws.hpp"
+#include "roq/binance_futures/flags/ws_api.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -26,6 +27,7 @@ struct Settings final : public server::flags::Settings, public flags::Flags {
   flags::Download download;
   flags::MBP mbp;
   flags::Request request;
+  flags::WS_API ws_api;
 
  private:
   Settings(args::Parser const &, flags::Flags const &);
@@ -49,6 +51,7 @@ struct fmt::formatter<roq::binance_futures::Settings> {
         R"(download={}, )"
         R"(mbp={}, )"
         R"(request={}, )"
+        R"(ws_api={}, )"
         R"(server={})"
         R"(}})"sv,
         value.exchange,
@@ -58,6 +61,7 @@ struct fmt::formatter<roq::binance_futures::Settings> {
         value.download,
         value.mbp,
         value.request,
+        value.ws_api,
         static_cast<roq::server::Settings const &>(value));
   }
 };

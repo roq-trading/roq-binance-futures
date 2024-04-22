@@ -21,6 +21,7 @@ WS_URI="wss://${API:0:1}stream.$URI/ws"
 
 REST_PM_URI="https://papi.$URI"
 WS_PM_URI="wss://fstream.$URI/pm/ws"
+WS_API_URI="wss://ws-fapi.$URI/ws-fapi/v1"
 
 $PREFIX ./roq-binance-futures \
   --name "$NAME" \
@@ -35,6 +36,7 @@ $PREFIX ./roq-binance-futures \
   --rest_uri "$REST_URI" \
   --ws_pm_uri "$WS_PM_URI" \
   --rest_pm_uri "$REST_PM_URI" \
+  --ws_api_uri "$WS_API_URI" \
   --download_symbols="BTCUSDT" \
   --download_trades_lookback=30s \
   $@

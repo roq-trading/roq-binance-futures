@@ -11,6 +11,7 @@ set(AUTOGEN_SCHEMAS
     misc.json
     request.json
     rest.json
+    ws_api.json
     ws.json)
 
 if(BUILD_DOCS)

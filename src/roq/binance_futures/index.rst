@@ -5,18 +5,39 @@
 roq-binance-futures
 ===================
 
+.. tab:: Stable
 
-Links
------
+  .. code-block:: shell
 
-* `Website <https://www.binance.com/en/futures/BTCUSDT>`__
-* `Testnet <https://testnet.binancefuture.com/en/futures/BTCUSDT>`__
-* `Support <https://www.binance.com/en/support-center>`__
-* `Documentation <https://binance-docs.github.io/apidocs/futures/en/>`__
+     $ mamba install \
+           --channel https://roq-trading.com/conda/stable \
+           roq-binance-futures
+
+.. tab:: Unstable
+
+  .. code-block:: shell
+
+     $ mamba install \
+           --channel https://roq-trading.com/conda/unstable \
+           roq-binance-futures
+
+
+:code:`roq-binance-futures`
+---------------------------
+
+.. code-block:: shell
+
+   $ roq-binance-futures [FLAGS]
+
+
+Description
+~~~~~~~~~~~
+
+:code:`roq-binance-futures` is a gateway
 
 
 Supports
---------
+~~~~~~~~
 
 .. grid::  2
   :gutter: 2
@@ -86,47 +107,11 @@ Supports
    * Modify and Auto-Cancel not possible with PAPI.
 
 
-Installing
-----------
-
-* :ref:`Using Conda <tutorial-conda>`
-
-.. tab:: Stable
-
-  .. code-block:: shell
-
-     $ mamba install \
-           --channel https://roq-trading.com/conda/stable \
-           roq-binance-futures
-
-.. tab:: Unstable
-
-  .. code-block:: shell
-
-     $ mamba install \
-           --channel https://roq-trading.com/conda/unstable \
-           roq-binance-futures
-
-
-Using
------
-
-.. code-block:: shell
-
-  $ roq-binance-futures \
-        --name "binance-futures" \
-        --config_file $CONFIG_FILE_PATH \
-        --client_listen_address $UNIX_SOCKET_PATH \
-        --flagfile $ENVIRONMENT_FLAGFILE
-
-
 .. _roq-binance-futures-flags:
 
 Flags
------
+~~~~~
 
-* :ref:`Using Flags <abseil-cpp>`
-* :ref:`Gateway Flags <gateway-flags>`
 
 .. code-block:: shell
 
@@ -143,6 +128,10 @@ Flags
 .. tab:: WS
 
    .. include:: flags/ws.rstinc
+
+.. tab:: WS API
+
+   .. include:: flags/ws_api.rstinc
 
 .. tab:: Download
 
@@ -162,7 +151,7 @@ Flags
 
 
 Environments
-------------
+~~~~~~~~~~~~
 
 .. tab:: Prod (USD-M)
 
@@ -202,9 +191,7 @@ Environments
 
 
 Configuration
--------------
-
-* :ref:`Gateway Config <gateway-config>`
+~~~~~~~~~~~~~
 
 .. code-block:: shell
 
@@ -220,7 +207,7 @@ Configuration
 
 
 Market Data
------------
+~~~~~~~~~~~
 
 .. tab:: Live
 
@@ -314,8 +301,9 @@ Market Data
       -
       -
 
+
 Statistics
-~~~~~~~~~~
+^^^^^^^^^^
 
 .. list-table::
   :header-rows: 1
@@ -350,7 +338,7 @@ Statistics
 
 
 Order Management
-----------------
+~~~~~~~~~~~~~~~~
 
 .. tab:: Live
 
@@ -444,7 +432,7 @@ Order Management
 
 
 Order Types
-~~~~~~~~~~~
+^^^^^^^^^^^
 
 .. list-table::
   :header-rows: 1
@@ -461,7 +449,7 @@ Order Types
 
 
 Time in Force
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 
 .. list-table::
   :header-rows: 1
@@ -484,7 +472,7 @@ Time in Force
 
 
 Position Effect
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -492,13 +480,13 @@ Position Effect
 
 
 Execution Instructions
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 TBD
 
 
 Account Management
-------------------
+~~~~~~~~~~~~~~~~~~
 
 .. tab:: Live
 
@@ -544,7 +532,7 @@ Account Management
 
 
 Streams
--------
+~~~~~~~
 
 .. tab:: OrderEntry
 
@@ -620,7 +608,7 @@ Streams
 
 
 Constraints
-------------
+~~~~~~~~~~~
 
 * It is only possible to download current order status for open orders.
   The implication is that backup procedures must be implemented to reoncile positions in the
@@ -639,7 +627,7 @@ Constraints
 
 
 Comments
-------------
+~~~~~~~~
 
 * External trades can optionally be captured into the event log.
 
@@ -658,3 +646,23 @@ Comments
 
   * The new end-points are selected if the toml config has :code:`margin_mode = "portfolio"`.
     The end-points are then taken from :code:`--rest_pm_uri` and :code:`--ws_pm_uri`.
+
+
+References
+----------
+
+Common
+~~~~~~
+
+* :ref:`Using Conda <tutorial-conda>`
+* :ref:`Using Flags <abseil-cpp>`
+* :ref:`Gateway Flags <gateway-flags>`
+* :ref:`Gateway Config <gateway-config>`
+
+Binance
+~~~~~~~
+
+* `Website <https://www.binance.com/en/futures/BTCUSDT>`__
+* `Testnet <https://testnet.binancefuture.com/en/futures/BTCUSDT>`__
+* `Support <https://www.binance.com/en/support-center>`__
+* `Documentation <https://binance-docs.github.io/apidocs/futures/en/>`__

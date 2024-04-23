@@ -20,6 +20,7 @@
 #include "roq/binance_futures/market_data.hpp"
 #include "roq/binance_futures/order_entry_portfolio.hpp"
 #include "roq/binance_futures/order_entry_simple.hpp"
+#include "roq/binance_futures/order_entry_ws.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
 #include "roq/binance_futures/settings.hpp"
@@ -32,8 +33,9 @@ struct Gateway final : public server::Handler,
                        public Rest::Handler,
                        public MarketData::Handler,
                        public OrderEntrySimple::Handler,
-                       public DropCopySimple::Handler,
+                       public OrderEntryWS::Handler,
                        public OrderEntryPortfolio::Handler,
+                       public DropCopySimple::Handler,
                        public DropCopyPortfolio::Handler {
   Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
@@ -82,6 +84,7 @@ struct Gateway final : public server::Handler,
   void ensure_symbol_slices(size_t size);
 
   void operator()(OrderEntrySimple::ListenKeyUpdate const &) override;
+  void operator()(OrderEntryWS::ListenKeyUpdate const &) override;
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
   // utilities

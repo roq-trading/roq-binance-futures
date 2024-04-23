@@ -21,6 +21,7 @@ set(SOURCES
     market_data.cpp
     order_entry_portfolio.cpp
     order_entry_simple.cpp
+    order_entry_ws.cpp
     rest.cpp
     settings.cpp
     shared.cpp

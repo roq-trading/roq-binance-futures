@@ -1,6 +1,7 @@
 set(TARGET_NAME ${PROJECT_NAME}-json)
 
-set(SOURCES market_stream_parser.cpp user_stream_parser.cpp utils.cpp)
+set(SOURCES market_stream_parser.cpp user_stream_parser.cpp utils.cpp wsapi_parser_2.cpp
+            wsapi_request.cpp)
 
 include(RoqAutogen)
 
@@ -70,7 +71,16 @@ set(AUTOGEN_SCHEMAS
     time_in_force.json
     trade.json
     trades.json
-    working_type.json)
+    working_type.json
+    wsapi_account.json
+    wsapi_cancel_order.json
+    wsapi_listen_key.json
+    wsapi_order_place.json
+    wsapi_trades.json
+    wsapi_cancel_open_orders.json
+    wsapi_open_orders.json
+    wsapi_rate_limits_item.json
+    wsapi_type.json)
 
 roq_autogen(
   OUTPUT

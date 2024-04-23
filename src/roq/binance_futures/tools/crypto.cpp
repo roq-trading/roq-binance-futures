@@ -11,6 +11,8 @@
 
 #include "roq/utils/codec/hex.hpp"
 
+#include "roq/utils/text/writer.hpp"
+
 #include "roq/clock.hpp"
 
 using namespace std::literals;
@@ -30,7 +32,7 @@ auto create_headers_helper(auto const &key) {
 // === IMPLEMENTATION ===
 
 Crypto::Crypto(std::string_view const &key, std::string_view const &secret)
-    : key_{key}, mac_{secret}, headers_{create_headers_helper(key_)} {
+    : key{key}, mac_{secret}, headers_{create_headers_helper(key)} {
 }
 
 std::string Crypto::create_query(std::string_view const &body) {
@@ -55,6 +57,15 @@ std::string Crypto::create_query_2(std::string_view const &body) {
   std::string signature;
   utils::codec::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, tmp, signature);
+}
+
+std::string_view Crypto::create_ws_api_signature(std::span<std::byte> const &buffer, std::string_view const &body) {
+  mac_.clear();
+  mac_.update(body);
+  auto digest = mac_.final(digest_);
+  utils::text::Writer writer{buffer};
+  writer.write(utils::codec::Hex{digest});
+  return writer.finish();
 }
 
 }  // namespace tools

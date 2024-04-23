@@ -54,8 +54,13 @@ R create_order_entry(
       case UNDEFINED:
       case ISOLATED:
       case CROSS:
-        result.try_emplace(
-            name, std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, *account, shared, request));
+        if (shared.settings.ws_api) {
+          result.try_emplace(
+              name, std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, *account, shared, request));
+        } else {
+          result.try_emplace(
+              name, std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, *account, shared, request));
+        }
         break;
       case PORTFOLIO:
         result.try_emplace(
@@ -195,6 +200,29 @@ void Gateway::ensure_symbol_slices(size_t size) {
 }
 
 void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
+  auto &account = listen_key_update.account;
+  assert(!std::empty(account));
+  auto iter = drop_copy_.find(account);
+  if (iter == std::end(drop_copy_)) {
+    log::fatal(R"(Unexpected: account="{}")"sv, account);
+  } else if (!static_cast<bool>((*iter).second)) {
+    log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
+    auto drop_copy = std::make_unique<DropCopySimple>(
+        *this,
+        context_,
+        ++stream_id_,
+        *accounts_.at(account),
+        shared_,
+        request_[account],
+        listen_key_update.listen_key);
+    MessageInfo message_info;
+    Start const start;
+    create_event_and_dispatch(*drop_copy, message_info, start);
+    (*iter).second = std::move(drop_copy);
+  }
+}
+
+void Gateway::operator()(OrderEntryWS::ListenKeyUpdate const &listen_key_update) {
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
   auto iter = drop_copy_.find(account);

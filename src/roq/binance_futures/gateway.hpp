@@ -87,11 +87,16 @@ struct Gateway final : public server::Handler,
   void operator()(OrderEntryWS::ListenKeyUpdate const &) override;
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
+  template <typename T>
+  void create_drop_copy_helper(auto &listen_key_update);
+
   // utilities
 
   template <typename... Args>
   void dispatch(Args &&...);
 
+  Account &get_account(std::string_view const &account) const;
+  Request &get_request(std::string_view const &account);
   OrderEntry &get_order_entry(std::string_view const &account);
 
  private:
@@ -102,7 +107,7 @@ struct Gateway final : public server::Handler,
   io::Context &context_;
   // shared
   Shared shared_;
-  utils::unordered_map<std::string, Request> request_;
+  utils::unordered_map<std::string, Request> requests_;
   // seed
   uint16_t stream_id_ = {};
   // streams

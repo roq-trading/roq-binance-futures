@@ -313,6 +313,27 @@ extern std::string_view modify_order(
     std::chrono::milliseconds recv_window,
     bool modify_order_full);
 
+extern std::string_view modify_order_ws_url(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &,
+    server::oms::Order const &,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    std::string_view const &api_key,
+    std::chrono::milliseconds now);
+
+extern std::string_view modify_order_ws_json(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &,
+    server::oms::Order const &,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    std::string_view const &api_key,
+    std::chrono::milliseconds now,
+    std::string_view const &signature);
+
 // cancel
 
 extern std::string_view cancel_order(

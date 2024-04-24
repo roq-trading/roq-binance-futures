@@ -9,6 +9,9 @@
       "name": "LISTEN_KEY_PING"
     },
     {
+      "name": "ACCOUNT_BALANCE"
+    },
+    {
       "name": "ACCOUNT_STATUS"
     },
     {
@@ -24,7 +27,7 @@
       "name": "ORDER_CANCEL"
     },
     {
-      "name": "ORDER_CANCEL_REPLACE"
+      "name": "ORDER_MODIFY"
     },
     {
       "name": "MY_TRADES"

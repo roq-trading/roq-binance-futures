@@ -1,5 +1,5 @@
 {
-  "name": "WSAPIAccount",
+  "name": "WSAPIAccountBalance",
   "type": "comp",
   "values": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "name": "result",
-      "type": "Account"
+      "type": "std::span<BalanceItem const>"
     },
     {
       "name": "error",

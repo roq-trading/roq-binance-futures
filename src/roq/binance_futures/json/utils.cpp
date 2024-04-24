@@ -242,6 +242,70 @@ std::string_view modify_order(
   return result;
 }
 
+std::string_view modify_order_ws_url(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &modify_order,
+    server::oms::Order const &order,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    std::string_view const &api_key,
+    std::chrono::milliseconds now) {
+  auto side = map(order.side).as_raw_text();
+  buffer.resize(512);
+  std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
+  utils::text::Writer writer{buffer_2};
+  writer.write("apiKey="sv).write(api_key);
+  writer.write("&newClientOrderId="sv).write(request_id);
+  if (!std::empty(order.external_order_id))
+    writer.write("&orderId="sv).write(order.external_order_id);
+  writer.write("&origClientOrderId="sv).write(previous_request_id);
+  if (!std::isnan(modify_order.price))
+    writer.write("&price="sv).write(Decimal{modify_order.price, order.price_precision.precision});
+  if (!std::isnan(modify_order.quantity))
+    writer.write("&quantity="sv).write(Decimal{modify_order.quantity, order.quantity_precision.precision});
+  writer.write("&recvWindow="sv).write(recv_window.count());
+  writer.write("&side="sv).write(side);
+  writer.write("&symbol="sv).write(order.symbol);
+  writer.write("&timestamp="sv).write(now.count());
+  return writer.finish();
+}
+
+std::string_view modify_order_ws_json(
+    std::vector<char> &buffer,
+    roq::ModifyOrder const &modify_order,
+    server::oms::Order const &order,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id,
+    std::chrono::milliseconds recv_window,
+    std::string_view const &api_key,
+    std::chrono::milliseconds now,
+    std::string_view const &signature) {
+  auto side = map(order.side).as_raw_text();
+  buffer.resize(512);
+  std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
+  utils::text::Writer writer{buffer_2};
+  writer.write("{"sv);
+  writer.write(R"("apiKey":")"sv).write(api_key).write(R"(")"sv);
+  writer.write(R"(,"newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
+  if (!std::empty(order.external_order_id))
+    writer.write(R"(,"orderId":)"sv).write(order.external_order_id);  // note! integer
+  writer.write(R"(,"origClientOrderId":")"sv).write(previous_request_id).write(R"(")"sv);
+  writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
+  if (!std::isnan(modify_order.price))
+    writer.write(R"(,"price":")"sv).write(Decimal{modify_order.price, order.price_precision.precision}).write(R"(")"sv);
+  if (!std::isnan(modify_order.quantity))
+    writer.write(R"(,"quantity":")"sv)
+        .write(Decimal{modify_order.quantity, order.quantity_precision.precision})
+        .write(R"(")"sv);
+  writer.write(R"(,"side":")"sv).write(side).write(R"(")"sv);
+  writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
+  writer.write(R"(,"timestamp":)"sv).write(now.count());
+  writer.write(R"(,"signature":")"sv).write(signature).write(R"(")"sv);
+  writer.write("}"sv);
+  return writer.finish();
+}
+
 // cancel
 
 std::string_view cancel_order(

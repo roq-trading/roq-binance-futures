@@ -87,28 +87,31 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
-  bool downloading() const { return download_account_ || download_orders_ || download_trades_; }
+  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
 
   void user_data_stream_start();
   void user_data_stream_ping(std::chrono::nanoseconds now);
 
+  void account_balance();
   void account_status();
+
   void open_orders_status();
 
   void my_trades();
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+
   void order_place(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
+  void order_modify(
+      Event<ModifyOrder> const &,
+      server::oms::Order const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
   void order_cancel(
       Event<CancelOrder> const &,
       server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
-  void order_cancel_replace(
-      server::cache::CancelOrderRequest const &,
-      Event<CreateOrder> const &,
-      server::oms::Order const &,
-      std::string_view const &_request_id);
 
   // web::socket::Client::Handler
   void operator()(web::socket::Client::Connected const &) override;
@@ -126,11 +129,13 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
 
   // json::WSAPIParser2::Handler
   void operator()(Trace<json::WSAPIListenKey> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIAccount> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIAccountBalance> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIAccountStatus> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPICancelOpenOrders> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOrderPlace> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIModifyOrder> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPICancelOrder> const &, json::WSAPIRequest const &) override;
 
   void update_rate_limits(auto &event);
@@ -156,9 +161,10 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
   } counter_;
   struct {
     utils::metrics::Profile parse, error, user_data_stream_start, user_data_stream_start_ack, user_data_stream_ping,
-        user_data_stream_ping_ack, account_status, account_status_ack, open_orders_status, open_orders_status_ack,
-        my_trades, my_trades_ack, open_orders_cancel_all, open_orders_cancel_all_ack, order_place, order_place_ack,
-        order_cancel, order_cancel_ack, order_cancel_replace, order_cancel_replace_ack, order_cancel_replace_error;
+        user_data_stream_ping_ack, account_balance, account_balance_ack, account_status, account_status_ack,
+        open_orders_status, open_orders_status_ack, my_trades, my_trades_ack, open_orders_cancel_all,
+        open_orders_cancel_all_ack, order_place, order_place_ack, order_modify, order_modify_ack, order_cancel,
+        order_cancel_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;
@@ -175,6 +181,7 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
   uint32_t request_id_;
   std::string listen_key_;
   std::chrono::nanoseconds listen_key_refresh_ = {};
+  bool download_balance_ = false;
   bool download_account_ = false;
   bool download_orders_ = false;
   bool download_trades_ = false;

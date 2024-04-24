@@ -35,8 +35,14 @@ bool dispatch_listen_key(auto &handler, auto &message, auto &buffer, auto &trace
   return true;
 }
 
+bool dispatch_account_balance(auto &handler, auto &message, auto &buffer, auto &trace_info, auto &request) {
+  WSAPIAccountBalance account{message, buffer};
+  create_trace_and_dispatch(handler, trace_info, account, request);
+  return true;
+}
+
 bool dispatch_account_status(auto &handler, auto &message, auto &buffer, auto &trace_info, auto &request) {
-  WSAPIAccount account{message, buffer};
+  WSAPIAccountStatus account{message, buffer};
   create_trace_and_dispatch(handler, trace_info, account, request);
   return true;
 }
@@ -65,6 +71,12 @@ bool dispatch_order_place(auto &handler, auto &message, auto &buffer, auto &trac
   return true;
 }
 
+bool dispatch_order_modify(auto &handler, auto &message, auto &buffer, auto &trace_info, auto &request) {
+  WSAPIModifyOrder modify_order{message, buffer};
+  create_trace_and_dispatch(handler, trace_info, modify_order, request);
+  return true;
+}
+
 bool dispatch_order_cancel(auto &handler, auto &message, auto &buffer, auto &trace_info, auto &request) {
   WSAPICancelOrder cancel_order{message, buffer};
   create_trace_and_dispatch(handler, trace_info, cancel_order, request);
@@ -87,6 +99,8 @@ bool WSAPIParser2::dispatch(
       return dispatch_listen_key(handler, message, buffer, trace_info, request);
     case LISTEN_KEY_PING:
       return true;  // note!
+    case ACCOUNT_BALANCE:
+      return dispatch_account_balance(handler, message, buffer, trace_info, request);
     case ACCOUNT_STATUS:
       return dispatch_account_status(handler, message, buffer, trace_info, request);
     case OPEN_ORDERS_STATUS:
@@ -97,6 +111,8 @@ bool WSAPIParser2::dispatch(
       return dispatch_open_orders_cancel_all(handler, message, buffer, trace_info, request);
     case ORDER_PLACE:
       return dispatch_order_place(handler, message, buffer, trace_info, request);
+    case ORDER_MODIFY:
+      return dispatch_order_modify(handler, message, buffer, trace_info, request);
     case ORDER_CANCEL:
       return dispatch_order_cancel(handler, message, buffer, trace_info, request);
   }

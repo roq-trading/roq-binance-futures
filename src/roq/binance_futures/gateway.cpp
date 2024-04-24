@@ -34,7 +34,7 @@ R create_accounts(auto &config) {
 }
 
 template <typename R>
-R create_request(auto &config) {
+R create_requests(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[_, account] : config.accounts)
@@ -47,24 +47,27 @@ R create_order_entry(
     auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  for (auto &[name, account] : accounts) {
-    auto &request = request_by_account[name];
-    switch ((*account).margin_mode) {
+  for (auto &[_, item] : accounts) {
+    auto &account = *item;
+    auto &request = request_by_account[account.name];
+    switch (account.margin_mode) {
       using enum MarginMode;
       case UNDEFINED:
       case ISOLATED:
       case CROSS:
         if (shared.settings.ws_api) {
           result.try_emplace(
-              name, std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, *account, shared, request));
+              account.name, std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, account, shared, request));
         } else {
           result.try_emplace(
-              name, std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, *account, shared, request));
+              account.name,
+              std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, account, shared, request));
         }
         break;
       case PORTFOLIO:
         result.try_emplace(
-            name, std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, *account, shared, request));
+            account.name,
+            std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, account, shared, request));
         break;
     }
   }
@@ -75,8 +78,10 @@ template <typename R>
 R create_drop_copy(auto &accounts) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  for (auto &[name, account] : accounts)
-    result.try_emplace(name, nullptr);
+  for (auto &[_, item] : accounts) {
+    auto &account = *item;
+    result.try_emplace(account.name, nullptr);
+  }
   return result;
 }
 }  // namespace
@@ -85,9 +90,9 @@ R create_drop_copy(auto &accounts) {
 
 Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
     : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context},
-      shared_{dispatcher, settings}, request_{create_request<decltype(request_)>(config)},
+      shared_{dispatcher, settings}, requests_{create_requests<decltype(requests_)>(config)},
       rest_{*this, context_, ++stream_id_, shared_}, order_entry_{create_order_entry<decltype(order_entry_)>(
-                                                         *this, context_, stream_id_, accounts_, shared_, request_)},
+                                                         *this, context_, stream_id_, accounts_, shared_, requests_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
   if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
@@ -200,52 +205,19 @@ void Gateway::ensure_symbol_slices(size_t size) {
 }
 
 void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
-  auto &account = listen_key_update.account;
-  assert(!std::empty(account));
-  auto iter = drop_copy_.find(account);
-  if (iter == std::end(drop_copy_)) {
-    log::fatal(R"(Unexpected: account="{}")"sv, account);
-  } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<DropCopySimple>(
-        *this,
-        context_,
-        ++stream_id_,
-        *accounts_.at(account),
-        shared_,
-        request_[account],
-        listen_key_update.listen_key);
-    MessageInfo message_info;
-    Start const start;
-    create_event_and_dispatch(*drop_copy, message_info, start);
-    (*iter).second = std::move(drop_copy);
-  }
+  create_drop_copy_helper<DropCopySimple>(listen_key_update);
 }
 
 void Gateway::operator()(OrderEntryWS::ListenKeyUpdate const &listen_key_update) {
-  auto &account = listen_key_update.account;
-  assert(!std::empty(account));
-  auto iter = drop_copy_.find(account);
-  if (iter == std::end(drop_copy_)) {
-    log::fatal(R"(Unexpected: account="{}")"sv, account);
-  } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<DropCopySimple>(
-        *this,
-        context_,
-        ++stream_id_,
-        *accounts_.at(account),
-        shared_,
-        request_[account],
-        listen_key_update.listen_key);
-    MessageInfo message_info;
-    Start const start;
-    create_event_and_dispatch(*drop_copy, message_info, start);
-    (*iter).second = std::move(drop_copy);
-  }
+  create_drop_copy_helper<DropCopySimple>(listen_key_update);
 }
 
 void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);
+}
+
+template <typename T>
+void Gateway::create_drop_copy_helper(auto &listen_key_update) {
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
   auto iter = drop_copy_.find(account);
@@ -253,13 +225,13 @@ void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<DropCopyPortfolio>(
+    auto drop_copy = std::make_unique<T>(
         *this,
         context_,
         ++stream_id_,
-        *accounts_.at(account),
+        get_account(account),
         shared_,
-        request_[account],
+        get_request(account),
         listen_key_update.listen_key);
     MessageInfo message_info;
     Start const start;
@@ -320,6 +292,20 @@ void Gateway::dispatch(Args &&...args) {
   for (auto &[_, item] : drop_copy_)
     if (static_cast<bool>(item))
       helper(*item);
+}
+
+Account &Gateway::get_account(std::string_view const &account) const {
+  auto iter = accounts_.find(account);
+  if (iter != std::end(accounts_))
+    return *(*iter).second;
+  log::fatal(R"(Unknown account="{}")"sv, account);
+}
+
+Request &Gateway::get_request(std::string_view const &account) {
+  auto iter = requests_.find(account);
+  if (iter != std::end(requests_))
+    return (*iter).second;
+  log::fatal(R"(Unknown account="{}")"sv, account);
 }
 
 OrderEntry &Gateway::get_order_entry(std::string_view const &account) {

@@ -34,9 +34,9 @@ auto const NAME = "ex"sv;
 
 auto const SUPPORTS = Mask{
     SupportType::CREATE_ORDER,
+    SupportType::MODIFY_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
-    SupportType::ORDER,
     SupportType::FUNDS,
 };
 
@@ -116,6 +116,8 @@ OrderEntryWS::OrderEntryWS(
           .user_data_stream_start_ack = create_metrics(shared.settings, name_, "user_data_stream_start_ack"sv),
           .user_data_stream_ping = create_metrics(shared.settings, name_, "user_data_stream_ping"sv),
           .user_data_stream_ping_ack = create_metrics(shared.settings, name_, "user_data_stream_ping_ack"sv),
+          .account_balance = create_metrics(shared.settings, name_, "account_balance"sv),
+          .account_balance_ack = create_metrics(shared.settings, name_, "account_balance_ack"sv),
           .account_status = create_metrics(shared.settings, name_, "account_status"sv),
           .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
           .open_orders_status = create_metrics(shared.settings, name_, "open_orders_status"sv),
@@ -126,11 +128,10 @@ OrderEntryWS::OrderEntryWS(
           .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
           .order_place = create_metrics(shared.settings, name_, "order_place"sv),
           .order_place_ack = create_metrics(shared.settings, name_, "order_place_ack"sv),
+          .order_modify = create_metrics(shared.settings, name_, "order_modify"sv),
+          .order_modify_ack = create_metrics(shared.settings, name_, "order_modify_ack"sv),
           .order_cancel = create_metrics(shared.settings, name_, "order_cancel"sv),
           .order_cancel_ack = create_metrics(shared.settings, name_, "order_cancel_ack"sv),
-          .order_cancel_replace = create_metrics(shared.settings, name_, "order_cancel_replace"sv),
-          .order_cancel_replace_ack = create_metrics(shared.settings, name_, "order_cancel_replace_ack"sv),
-          .order_cancel_replace_error = create_metrics(shared.settings, name_, "order_cancel_replace_error"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -142,7 +143,7 @@ OrderEntryWS::OrderEntryWS(
           .create_order_1d = create_metrics(shared.settings, name_, "create_order"sv, "1d"sv),
       },
       account_{account}, shared_{shared}, request_{request}, request_id_{REQUEST_ID * stream_id} {
-  log::info<5>(R"(stream_id={}, account="{}")"sv, stream_id_, account_.name);
+  log::info<5>(R"(stream_id={}, account="{}", master={})"sv, stream_id_, account_.name, master_);
 }
 
 void OrderEntryWS::operator()(Event<Start> const &) {
@@ -158,6 +159,11 @@ void OrderEntryWS::operator()(Event<Timer> const &event) {
   (*connection_).refresh(now);
   user_data_stream_ping(now);
   if (master_ && ready() && !downloading()) {
+    if (!downloading() && request_.respond_balance < request_.request_balance) {
+      log::info("Download balance..."sv);
+      account_balance();
+      download_balance_ = true;
+    }
     if (!downloading() && request_.respond_account < request_.request_account) {
       log::info("Download account..."sv);
       account_status();
@@ -187,6 +193,8 @@ void OrderEntryWS::operator()(metrics::Writer &writer) {
       .write(profile_.user_data_stream_start_ack, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_ping, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_ping_ack, metrics::Type::PROFILE)
+      .write(profile_.account_balance, metrics::Type::PROFILE)
+      .write(profile_.account_balance_ack, metrics::Type::PROFILE)
       .write(profile_.account_status, metrics::Type::PROFILE)
       .write(profile_.account_status_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders_status, metrics::Type::PROFILE)
@@ -195,11 +203,10 @@ void OrderEntryWS::operator()(metrics::Writer &writer) {
       .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
       .write(profile_.order_place, metrics::Type::PROFILE)
       .write(profile_.order_place_ack, metrics::Type::PROFILE)
+      .write(profile_.order_modify, metrics::Type::PROFILE)
+      .write(profile_.order_modify_ack, metrics::Type::PROFILE)
       .write(profile_.order_cancel, metrics::Type::PROFILE)
       .write(profile_.order_cancel_ack, metrics::Type::PROFILE)
-      .write(profile_.order_cancel_replace, metrics::Type::PROFILE)
-      .write(profile_.order_cancel_replace_ack, metrics::Type::PROFILE)
-      .write(profile_.order_cancel_replace_error, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY)
@@ -210,6 +217,7 @@ void OrderEntryWS::operator()(metrics::Writer &writer) {
 }
 
 void OrderEntryWS::operator()(Event<Disconnected> const &) {
+  // XXX TODO HANS reset downloading?
 }
 
 uint16_t OrderEntryWS::operator()(
@@ -219,11 +227,12 @@ uint16_t OrderEntryWS::operator()(
 }
 
 uint16_t OrderEntryWS::operator()(
-    Event<ModifyOrder> const &,
-    server::oms::Order const &,
-    [[maybe_unused]] std::string_view const &request_id,
-    [[maybe_unused]] std::string_view const &previous_request_id) {
-  throw server::oms::NotSupported{"not supported"sv};
+    Event<ModifyOrder> const &event,
+    server::oms::Order const &order,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
+  order_modify(event, order, request_id, previous_request_id);
+  return stream_id_;
 }
 
 uint16_t OrderEntryWS::operator()(
@@ -303,6 +312,38 @@ void OrderEntryWS::user_data_stream_ping(std::chrono::nanoseconds now) {
 }
 
 // account
+
+void OrderEntryWS::account_balance() {
+  profile_.account_balance([&]() {
+    auto now = clock::get_realtime<std::chrono::milliseconds>();
+    auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
+    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto request = json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = json::WSAPIType::ACCOUNT_BALANCE,
+        .user_id = {},
+        .order_id = {},
+        .version = {},
+        .order_id_2 = {},
+    };
+    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = fmt::format(
+        R"({{)"
+        R"("id":"{}",)"
+        R"("method":"account.balance",)"
+        R"("params":{{)"
+        R"("apiKey":"{}",)"
+        R"("timestamp":"{}",)"
+        R"("signature":"{}")"
+        R"(}})"
+        R"(}})"sv,
+        request_id,
+        account_.get_key(),
+        now.count(),
+        signature);
+    (*connection_).send_text(message);
+  });
+}
 
 void OrderEntryWS::account_status() {
   profile_.account_status([&]() {
@@ -530,6 +571,55 @@ void OrderEntryWS::order_place(
         R"(}})"sv,
         request_id_2,
         params);
+    log::info<5>(R"(message="{}")"sv, message);
+    (*connection_).send_text(message);
+  });
+}
+
+// order-modify
+
+void OrderEntryWS::order_modify(
+    Event<ModifyOrder> const &event,
+    server::oms::Order const &order,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
+  profile_.order_modify([&]() {
+    if (!ready())
+      throw server::oms::NotReady{"not ready"sv};
+    auto &[message_info, modify_order] = event;
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
+    auto now = clock::get_realtime<std::chrono::milliseconds>();
+    auto message_for_signature = json::modify_order_ws_url(
+        encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
+    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto params = json::modify_order_ws_json(
+        encode_buffer_,
+        modify_order,
+        order,
+        request_id,
+        previous_request_id,
+        recv_window,
+        account_.get_key(),
+        now,
+        signature);
+    auto request = json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = json::WSAPIType::ORDER_CANCEL,
+        .user_id = message_info.source,
+        .order_id = modify_order.order_id,
+        .version = modify_order.version,
+        .order_id_2 = {},
+    };
+    auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = fmt::format(
+        R"({{)"
+        R"("id":"{}",)"
+        R"("method":"order.modify",)"
+        R"("params":{})"
+        R"(}})"sv,
+        request_id_2,
+        params);
+    log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -577,6 +667,7 @@ void OrderEntryWS::order_cancel(
         R"(}})"sv,
         request_id_2,
         params);
+    log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -689,30 +780,68 @@ void OrderEntryWS::operator()(Trace<json::WSAPIListenKey> const &event, json::WS
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIAccount> const &event, json::WSAPIRequest const &request) {
-  profile_.user_data_stream_ping_ack([&]() {
+void OrderEntryWS::operator()(Trace<json::WSAPIAccountBalance> const &event, json::WSAPIRequest const &request) {
+  profile_.account_balance_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
     switch (message.status) {
       case 200: {
-        auto &account = message.result;
-        /*
-        for (auto &item : account.balances) {
+        for (auto &item : message.result) {
           auto funds_update = FundsUpdate{
               .stream_id = stream_id_,
               .account = account_.name,
               .currency = item.asset,
               .margin_mode = {},
-              .balance = item.free,
-              .hold = item.locked,
+              .balance = item.available_balance,
+              .hold = NaN,
               .external_account = {},
               .update_type = UpdateType::SNAPSHOT,
-              .exchange_time_utc = account.update_time,
-              .sending_time_utc = account.update_time,
+              .exchange_time_utc = item.update_time,
+              .sending_time_utc = item.update_time,
           };
           create_trace_and_dispatch(handler_, trace_info, funds_update, true);
         }
-        */
+        break;
+      }
+      default:
+        log::error("Unexpected: error={}"sv, message.error);
+    }
+    // completion
+    request_.respond_balance = clock::get_system();
+    download_balance_ = false;
+    update_rate_limits(event);
+  });
+}
+
+void OrderEntryWS::operator()(Trace<json::WSAPIAccountStatus> const &event, json::WSAPIRequest const &request) {
+  profile_.account_status_ack([&]() {
+    auto &[trace_info, message] = event;
+    log::info<2>("message={}, request={}"sv, message, request);
+    switch (message.status) {
+      case 200: {
+        auto &account = message.result;
+        for (auto &item : account.positions) {
+          if (shared_.discard_symbol(item.symbol))
+            continue;
+          log::info<2>("item={}"sv, item);
+          auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
+          auto long_quantity = std::max(0.0, item.position_amt);
+          auto short_quantity = std::max(0.0, -item.position_amt);
+          auto position_update = PositionUpdate{
+              .stream_id = stream_id_,
+              .account = account_.name,
+              .exchange = shared_.settings.exchange,
+              .symbol = item.symbol,
+              .margin_mode = margin_mode,
+              .external_account = {},
+              .long_quantity = long_quantity,
+              .short_quantity = short_quantity,
+              .update_type = UpdateType::SNAPSHOT,
+              .exchange_time_utc = account.update_time,
+              .sending_time_utc = {},
+          };
+          create_trace_and_dispatch(handler_, trace_info, position_update, true);
+        }
         break;
       }
       default:
@@ -1011,6 +1140,88 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
   });
 }
 
+void OrderEntryWS::operator()(Trace<json::WSAPIModifyOrder> const &event, json::WSAPIRequest const &request) {
+  profile_.order_modify_ack([&]() {
+    auto &[trace_info, message] = event;
+    log::info<2>("message={}, request={}"sv, message, request);
+    switch (message.status) {
+      case 200: {
+        auto &modify_order = message.result;
+        auto side = json::map(modify_order.side);
+        auto order_type = json::map(modify_order.type);
+        auto time_in_force = json::map(modify_order.time_in_force);
+        auto external_order_id = fmt::format("{}"sv, modify_order.order_id);  // alloc
+        auto order_status = json::map(modify_order.status);
+        auto response = server::oms::Response{
+            .request_type = RequestType::MODIFY_ORDER,
+            .origin = Origin::EXCHANGE,
+            .request_status = RequestStatus::ACCEPTED,
+            .error = {},
+            .text = {},
+            .version = request.version,
+            .request_id = {},
+            .quantity = NaN,
+            .price = NaN,
+        };
+        auto order_update = server::oms::OrderUpdate{
+            .account = account_.name,
+            .exchange = shared_.settings.exchange,
+            .symbol = modify_order.symbol,
+            .side = side,
+            .position_effect = {},
+            .margin_mode = {},
+            .max_show_quantity = NaN,
+            .order_type = order_type,
+            .time_in_force = time_in_force,
+            .execution_instructions = {},
+            .create_time_utc = {},
+            .update_time_utc = {},  // modify_order.transact_time,
+            .external_account = {},
+            .external_order_id = external_order_id,
+            .client_order_id = {},
+            .order_status = order_status,
+            .quantity = modify_order.orig_qty,
+            .price = modify_order.price,
+            .stop_price = NaN,
+            .remaining_quantity = NaN,
+            .traded_quantity = modify_order.executed_qty,
+            .average_traded_price = NaN,
+            .last_traded_quantity = NaN,
+            .last_traded_price = NaN,
+            .last_liquidity = {},
+            .routing_id = {},
+            .max_request_version = {},
+            .max_response_version = {},
+            .max_accepted_version = {},
+            .update_type = UpdateType::INCREMENTAL,
+            .sending_time_utc = {},
+        };
+        Trace event_2{trace_info, response};
+        (*this)(event_2, request.user_id, request.order_id, order_update);
+        break;
+      }
+      default: {
+        auto &error = message.error;
+        auto error_2 = json::guess_error(error.code);
+        auto response = server::oms::Response{
+            .request_type = RequestType::MODIFY_ORDER,
+            .origin = Origin::EXCHANGE,
+            .request_status = RequestStatus::REJECTED,
+            .error = error_2,
+            .text = error.msg,
+            .version = request.version,
+            .request_id = {},
+            .quantity = NaN,
+            .price = NaN,
+        };
+        Trace event_2{event, response};
+        (*this)(event_2, request.user_id, request.order_id);
+      }
+    }
+    update_rate_limits(event);
+  });
+}
+
 void OrderEntryWS::operator()(Trace<json::WSAPICancelOrder> const &event, json::WSAPIRequest const &request) {
   profile_.order_cancel_ack([&]() {
     auto &[trace_info, message] = event;
@@ -1109,10 +1320,8 @@ void OrderEntryWS::update_rate_limits(auto &event) {
           return RateLimitType::CREATE_ORDER;
         case REQUEST_WEIGHT:
           return RateLimitType::REQUEST_WEIGHT;
-          /*
-          case RAW_REQUESTS:
-            return RateLimitType::REQUEST;
-          */
+        case RAW_REQUESTS:
+          return RateLimitType::REQUEST;
       }
       return {};
     }();
@@ -1128,10 +1337,8 @@ void OrderEntryWS::update_rate_limits(auto &event) {
           return item.interval_num * 1s;
         case MINUTE:
           return item.interval_num * 1min;
-          /*
-          case DAY:
-            return item.interval_num * 24h;
-          */
+        case DAY:
+          return item.interval_num * 24h;
       };
       return {};
     }();

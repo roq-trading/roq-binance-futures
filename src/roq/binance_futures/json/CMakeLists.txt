@@ -72,14 +72,16 @@ set(AUTOGEN_SCHEMAS
     trade.json
     trades.json
     working_type.json
-    wsapi_account.json
+    wsapi_account_balance.json
+    wsapi_account_status.json
+    wsapi_cancel_open_orders.json
     wsapi_cancel_order.json
     wsapi_listen_key.json
-    wsapi_order_place.json
-    wsapi_trades.json
-    wsapi_cancel_open_orders.json
+    wsapi_modify_order.json
     wsapi_open_orders.json
+    wsapi_order_place.json
     wsapi_rate_limits_item.json
+    wsapi_trades.json
     wsapi_type.json)
 
 roq_autogen(

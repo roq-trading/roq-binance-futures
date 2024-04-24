@@ -10,10 +10,12 @@
 
 #include "roq/binance_futures/json/wsapi_request.hpp"
 
-#include "roq/binance_futures/json/wsapi_account.hpp"
+#include "roq/binance_futures/json/wsapi_account_balance.hpp"
+#include "roq/binance_futures/json/wsapi_account_status.hpp"
 #include "roq/binance_futures/json/wsapi_cancel_open_orders.hpp"
 #include "roq/binance_futures/json/wsapi_cancel_order.hpp"
 #include "roq/binance_futures/json/wsapi_listen_key.hpp"
+#include "roq/binance_futures/json/wsapi_modify_order.hpp"
 #include "roq/binance_futures/json/wsapi_open_orders.hpp"
 #include "roq/binance_futures/json/wsapi_order_place.hpp"
 #include "roq/binance_futures/json/wsapi_trades.hpp"
@@ -25,11 +27,13 @@ namespace json {
 struct WSAPIParser2 final {
   struct Handler {
     virtual void operator()(Trace<WSAPIListenKey> const &, WSAPIRequest const &) = 0;
-    virtual void operator()(Trace<WSAPIAccount> const &, WSAPIRequest const &) = 0;
+    virtual void operator()(Trace<WSAPIAccountBalance> const &, WSAPIRequest const &) = 0;
+    virtual void operator()(Trace<WSAPIAccountStatus> const &, WSAPIRequest const &) = 0;
     virtual void operator()(Trace<WSAPIOpenOrders> const &, WSAPIRequest const &) = 0;
     virtual void operator()(Trace<WSAPITrades> const &, WSAPIRequest const &) = 0;
     virtual void operator()(Trace<WSAPICancelOpenOrders> const &, WSAPIRequest const &) = 0;
     virtual void operator()(Trace<WSAPIOrderPlace> const &, WSAPIRequest const &) = 0;
+    virtual void operator()(Trace<WSAPIModifyOrder> const &, WSAPIRequest const &) = 0;
     virtual void operator()(Trace<WSAPICancelOrder> const &, WSAPIRequest const &) = 0;
   };
 

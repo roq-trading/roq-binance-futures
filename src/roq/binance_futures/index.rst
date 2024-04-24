@@ -647,6 +647,16 @@ Comments
   * The new end-points are selected if the toml config has :code:`margin_mode = "portfolio"`.
     The end-points are then taken from :code:`--rest_pm_uri` and :code:`--ws_pm_uri`.
 
+* WSAPI is **WORK-IN-PROGRESS**
+
+  * Some exchange features are missing (they are available from spot WSAPI):
+
+    * Download working orders
+
+    * Download trade history
+
+    * Cancel all working orders
+
 
 References
 ----------

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Added
+
+*  WSAPI support (experimental) (#456)
+
 ## 1.0.1 &ndash; 2024-04-14
 
 ### Fixed

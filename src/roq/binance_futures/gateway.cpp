@@ -26,10 +26,10 @@ template <typename R>
 R create_accounts(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  for (auto &[_, account] : config.accounts)
-    result.try_emplace(
-        static_cast<std::string_view>(account.name),
-        std::make_unique<Account>(config, account.name, account.margin_mode));
+  for (auto &[_, account] : config.accounts) {
+    auto obj = std::make_unique<Account>(config, account.name, account.margin_mode);
+    result.try_emplace(static_cast<std::string_view>(account.name), std::move(obj));
+  }
   return result;
 }
 
@@ -56,18 +56,16 @@ R create_order_entry(
       case ISOLATED:
       case CROSS:
         if (shared.settings.ws_api) {
-          result.try_emplace(
-              account.name, std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, account, shared, request));
+          auto obj = std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, account, shared, request);
+          result.try_emplace(account.name, std::move(obj));
         } else {
-          result.try_emplace(
-              account.name,
-              std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, account, shared, request));
+          auto obj = std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, account, shared, request);
+          result.try_emplace(account.name, std::move(obj));
         }
         break;
       case PORTFOLIO:
-        result.try_emplace(
-            account.name,
-            std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, account, shared, request));
+        auto obj = std::make_unique<OrderEntryPortfolio>(gateway, context, ++stream_id, account, shared, request);
+        result.try_emplace(account.name, std::move(obj));
         break;
     }
   }
@@ -173,35 +171,29 @@ void Gateway::operator()(Trace<PositionUpdate> const &event, bool is_last) {
 void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
   ensure_symbol_slices(size);
-  for (auto &iter : market_data_1_)
-    (*iter).subscribe(start_from);
-  for (auto &iter : market_data_2_)
-    (*iter).subscribe(start_from);
+  for (auto &item : market_data_1_)
+    (*item).subscribe(start_from);
+  for (auto &item : market_data_2_)
+    (*item).subscribe(start_from);
 }
 
 void Gateway::ensure_symbol_slices(size_t size) {
-  while (std::size(market_data_1_) < size) {
+  auto helper = [&](auto &container, auto priority) {
     auto stream_id = ++stream_id_;
-    auto index = std::size(market_data_1_);
-    log::info("Create MarketData #1 (stream_id={}, index={})"sv, stream_id, index);
-    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::PRIMARY, shared_, index);
+    auto index = std::size(container);
+    log::info("Create MarketData (stream_id={}, priority={}, index={})"sv, stream_id, priority, index);
+    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, priority, shared_, index);
     MessageInfo message_info;
-    Start const start;
+    Start start;
     create_event_and_dispatch(*market_data, message_info, start);
-    market_data_1_.emplace_back(std::move(market_data));
-  }
+    container.emplace_back(std::move(market_data));
+  };
+  while (std::size(market_data_1_) < size)
+    helper(market_data_1_, Priority::PRIMARY);
   if (!shared_.settings.ws.enable_secondary)
-    return;
-  while (std::size(market_data_2_) < size) {
-    auto stream_id = ++stream_id_;
-    auto index = std::size(market_data_2_);
-    log::info("Create MarketData #2 (stream_id={}, index={})"sv, stream_id, index);
-    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::SECONDARY, shared_, index);
-    MessageInfo message_info;
-    Start const start;
-    create_event_and_dispatch(*market_data, message_info, start);
-    market_data_2_.emplace_back(std::move(market_data));
-  }
+    return;  // note!
+  while (std::size(market_data_2_) < size)
+    helper(market_data_2_, Priority::SECONDARY);
 }
 
 void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
@@ -224,7 +216,7 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
   if (iter == std::end(drop_copy_)) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create drop-copy (user-stream) for account="{}")"sv, account);
+    log::info(R"(Create DropCopy (user-stream) for account="{}")"sv, account);
     auto drop_copy = std::make_unique<T>(
         *this,
         context_,
@@ -234,7 +226,7 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
         get_request(account),
         listen_key_update.listen_key);
     MessageInfo message_info;
-    Start const start;
+    Start start;
     create_event_and_dispatch(*drop_copy, message_info, start);
     (*iter).second = std::move(drop_copy);
   }

@@ -183,19 +183,19 @@ void Gateway::ensure_symbol_slices(size_t size) {
   while (std::size(market_data_1_) < size) {
     auto stream_id = ++stream_id_;
     auto index = std::size(market_data_1_);
-    log::info("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
+    log::info("Create MarketData #1 (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::PRIMARY, shared_, index);
     MessageInfo message_info;
     Start const start;
     create_event_and_dispatch(*market_data, message_info, start);
     market_data_1_.emplace_back(std::move(market_data));
   }
-  if (shared_.settings.ws.enable_secondary)
+  if (!shared_.settings.ws.enable_secondary)
     return;
   while (std::size(market_data_2_) < size) {
     auto stream_id = ++stream_id_;
     auto index = std::size(market_data_2_);
-    log::info("Create MarketData (stream_id={}, index={})"sv, stream_id, index);
+    log::info("Create MarketData #2 (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, Priority::SECONDARY, shared_, index);
     MessageInfo message_info;
     Start const start;

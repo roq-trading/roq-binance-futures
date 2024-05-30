@@ -8,57 +8,57 @@
     },
     {
       "name": "notional",
-      "type": "double",
+      "type": "std/double",
       "comment": "MIN_NOTIONAL"
     },
     {
       "name": "minPrice",
-      "type": "double",
+      "type": "std/double",
       "comment": "PRICE_FILTER"
     },
     {
       "name": "maxPrice",
-      "type": "double",
+      "type": "std/double",
       "comment": "PRICE_FILTER"
     },
     {
       "name": "tickSize",
-      "type": "double",
+      "type": "std/double",
       "comment": "PRICE_FILTER"
     },
     {
       "name": "multiplierUp",
-      "type": "double",
+      "type": "std/double",
       "comment": "PERCENT_PRICE"
     },
     {
       "name": "multiplierDown",
-      "type": "double",
+      "type": "std/double",
       "comment": "PERCENT_PRICE"
     },
     {
       "name": "multiplierDecimal",
-      "type": "int32_t",
+      "type": "std/int32",
       "comment": "PERCENT_PRICE"
     },
     {
       "name": "minQty",
-      "type": "double",
+      "type": "std/double",
       "comment": "LOT_SIZE,MARKET_LOT_SIZE"
     },
     {
       "name": "maxQty",
-      "type": "double",
+      "type": "std/double",
       "comment": "LOT_SIZE,MARKET_LOT_SIZE"
     },
     {
       "name": "stepSize",
-      "type": "double",
+      "type": "std/double",
       "comment": "LOT_SIZE,MARKET_LOT_SIZE"
     },
     {
       "name": "limit",
-      "type": "int32_t",
+      "type": "std/int32",
       "comment": "MAX_NUM_ORDERS,MAX_NUM_ALGO_ORDERS"
     }
   ]

@@ -4,59 +4,59 @@
   "values": [
     {
       "name": "asset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "walletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "unrealizedProfit",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "marginBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "maintMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "initialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "positionInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "openOrderInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossUnPnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "availableBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "maxWithdrawAmount",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "marginAvailable",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "updateTime",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     }
   ]
 }

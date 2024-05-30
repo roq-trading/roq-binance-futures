@@ -10,12 +10,14 @@
     {
       "raw": "B",
       "name": "balances",
-      "type": "std::span<AccountUpdateDataBalance const>"
+      "type": "AccountUpdateDataBalance",
+      "array": "std/span"
     },
     {
       "raw": "P",
       "name": "positions",
-      "type": "std::span<AccountUpdateDataPosition const>"
+      "type": "AccountUpdateDataPosition",
+      "array": "std/span"
     }
   ]
 }

@@ -4,119 +4,121 @@
   "values": [
     {
       "name": "feeTier",
-      "type": "int32_t"
+      "type": "std/int32"
     },
     {
       "name": "canTrade",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "canDeposit",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "canWithdraw",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "updateTime",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "totalInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalMaintMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalUnrealizedProfit",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalMarginBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalPositionInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalOpenOrderInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalCrossWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalCrossUnPnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "availableBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "maxWithdrawAmount",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "assets",
-      "type": "std::span<Asset const>"
+      "type": "Asset",
+      "array": "std/span"
     },
     {
       "name": "positions",
-      "type": "std::span<Position const>"
+      "type": "Position",
+      "array": "std/span"
     },
     {
       "name": "multiAssetsMargin",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "tradeGroupId",
-      "type": "int32_t"
+      "type": "std/int32"
     },
     {
       "name": "uniMMR",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "accountEquity",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "actualEquity",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "accountInitialMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "accountMaintMargin",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "accountStatus",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "virtualMaxWithdrawAmount",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalAvailableBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalMarginOpenLoss",
-      "type": "double"
+      "type": "std/double"
     }
   ]
 }

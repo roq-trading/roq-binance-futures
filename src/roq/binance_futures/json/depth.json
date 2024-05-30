@@ -4,35 +4,37 @@
   "values": [
     {
       "name": "lastUpdateId",
-      "type": "uint64_t"
+      "type": "std/uint64"
     },
     {
       "raw": "E",
       "name": "message_output_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "raw": "T",
       "name": "transaction_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "symbol",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "COIN-M"
     },
     {
       "name": "pair",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "COIN-M"
     },
     {
       "name": "bids",
-      "type": "std::span<DepthItem const>"
+      "type": "DepthItem",
+      "array": "std/span"
     },
     {
       "name": "asks",
-      "type": "std::span<DepthItem const>"
+      "type": "DepthItem",
+      "array": "std/span"
     }
   ]
 }

@@ -5,27 +5,27 @@
     {
       "raw": "s",
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "pa",
       "name": "position_amount",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "ep",
       "name": "entry_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "cr",
       "name": "accumulated_realized",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "up",
       "name": "unrealized_pnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "mt",
@@ -35,7 +35,7 @@
     {
       "raw": "iw",
       "name": "isolated_wallet",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "ps",
@@ -45,12 +45,12 @@
     {
       "raw": "ma",
       "name": "unknown_1",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "bep",
       "name": "break_even_price",
-      "type": "double"
+      "type": "std/double"
     }
   ]
 }

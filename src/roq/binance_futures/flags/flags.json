@@ -4,21 +4,21 @@
   "values": [
     {
       "name": "exchange",
-      "type": "std::string",
+      "type": "std/string",
       "required": true,
       "default": "binance-futures",
       "description": "Exchange identifier"
     },
     {
       "name": "api",
-      "type": "std::string",
+      "type": "std/string",
       "required": true,
       "default": "fapi",
       "description": "API (:code:`fapi` or :code:`dapi`)"
     },
     {
       "name": "ws_api",
-      "type": "bool",
+      "type": "std/bool",
       "default": false,
       "description": "Use WebSocket API?"
     }

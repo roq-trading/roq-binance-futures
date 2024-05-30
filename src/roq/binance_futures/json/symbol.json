@@ -4,11 +4,11 @@
   "values": [
     {
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "pair",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "contractType",
@@ -16,11 +16,11 @@
     },
     {
       "name": "deliveryDate",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "onboardDate",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "status",
@@ -28,58 +28,58 @@
     },
     {
       "name": "maintMarginPercent",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "requiredMarginPercent",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "baseAsset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "quoteAsset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "marginAsset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "pricePrecision",
-      "type": "uint32_t"
+      "type": "std/uint32"
     },
     {
       "name": "quantityPrecision",
-      "type": "uint32_t"
+      "type": "std/uint32"
     },
     {
       "name": "baseAssetPrecision",
-      "type": "uint32_t"
+      "type": "std/uint32"
     },
     {
       "name": "quotePrecision",
-      "type": "uint32_t"
+      "type": "std/uint32"
     },
     {
       "name": "underlyingType",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "underlyingSubType"
     },
     {
       "name": "settlePlan",
-      "type": "uint32_t"
+      "type": "std/uint32"
     },
     {
       "name": "triggerProtect",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "filters",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "orderTypes"
@@ -89,20 +89,20 @@
     },
     {
       "name": "liquidationFee",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "marketTakeBound",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "contractStatus",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "COIN-M"
     },
     {
       "name": "contractSize",
-      "type": "double",
+      "type": "std/double",
       "comment": "COIN-M"
     },
     {

@@ -4,43 +4,43 @@
   "values": [
     {
       "name": "buyer",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "commission",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "commissionAsset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "id",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "name": "maker",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "orderId",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "name": "price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "qty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "quoteQty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "realizedPnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "side",
@@ -52,23 +52,23 @@
     },
     {
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "pair",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "marginAsset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "baseQty",
-      "type": "double"
+      "type": "std/double"
     }
   ]
 }

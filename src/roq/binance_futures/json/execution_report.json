@@ -5,12 +5,12 @@
     {
       "raw": "s",
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "c",
       "name": "client_order_id",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "S",
@@ -30,22 +30,22 @@
     {
       "raw": "q",
       "name": "original_quantity",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "p",
       "name": "original_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "ap",
       "name": "average_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "sp",
       "name": "stop_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "x",
@@ -60,68 +60,68 @@
     {
       "raw": "i",
       "name": "order_id",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "raw": "l",
       "name": "last_filled_quantity",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "z",
       "name": "order_filled_accumulated_quantity",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "L",
       "name": "last_filled_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "ma",
       "name": "margin_asset",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "COIN-M"
     },
     {
       "raw": "N",
       "name": "commission_asset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "n",
       "name": "commission",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "T",
       "name": "order_trade_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "raw": "t",
       "name": "trade_id",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "raw": "b",
       "name": "bids_notional",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "a",
       "name": "asks_notional",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "m",
       "name": "is_trade_maker",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "raw": "R",
       "name": "is_reduce_only",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "raw": "wt",
@@ -141,61 +141,61 @@
     {
       "raw": "cp",
       "name": "if_close_all",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "raw": "AP",
       "name": "activation_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "cr",
       "name": "callback_rate",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "rp",
       "name": "realized_profit",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "pP",
       "name": "unknown_1",
-      "type": "bool",
+      "type": "std/bool",
       "comment": "UNDOC"
     },
     {
       "raw": "si",
       "name": "unknown_2",
-      "type": "double",
+      "type": "std/double",
       "comment": "UNDOC"
     },
     {
       "raw": "ss",
       "name": "unknown_3",
-      "type": "double",
+      "type": "std/double",
       "comment": "UNDOC"
     },
     {
       "raw": "st",
       "name": "unknown_4",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "UNDOC have seen value GRID"
     },
     {
       "raw": "V",
       "name": "self_trade_prevention_mode",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "pm",
       "name": "price_match_mode",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "gtd",
       "name": "good_till_date",
-      "type": "std::chrono::milliseconds",
+      "type": "std/milliseconds",
       "comment": "XXX 20231206 not sure about milliseconds"
     }
   ]

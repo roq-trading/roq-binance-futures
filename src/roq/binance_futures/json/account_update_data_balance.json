@@ -5,22 +5,22 @@
     {
       "raw": "a",
       "name": "asset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "wb",
       "name": "wallet_balance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "cw",
       "name": "cross_wallet_balance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "bc",
       "name": "balance_change",
-      "type": "double"
+      "type": "std/double"
     }
   ]
 }

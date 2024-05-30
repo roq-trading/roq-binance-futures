@@ -10,23 +10,23 @@
     {
       "raw": "E",
       "name": "event_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "raw": "T",
       "name": "transaction_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "raw": "i",
       "name": "i",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "papi ???"
     },
     {
       "raw": "fs",
       "name": "fs",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "papi"
     },
     {

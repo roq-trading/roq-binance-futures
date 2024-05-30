@@ -4,31 +4,34 @@
   "values": [
     {
       "name": "timezone",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "serverTime",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "rateLimits",
-      "type": "std::span<RateLimit const>"
+      "type": "RateLimit",
+      "array": "std/span"
     },
     {
       "name": "exchangeFilters"
     },
     {
       "name": "symbols",
-      "type": "std::span<Symbol const>"
+      "type": "Symbol",
+      "array": "std/span"
     },
     {
       "name": "futuresType",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "undoc"
     },
     {
       "name": "assets",
-      "type": "std::span<ExchangeInfoAsset const>"
+      "type": "ExchangeInfoAsset",
+      "array": "std/span"
     }
   ]
 }

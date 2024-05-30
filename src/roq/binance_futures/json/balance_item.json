@@ -4,87 +4,87 @@
   "values": [
     {
       "name": "accountAlias",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "asset",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "balance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossUnPnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "availableBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "maxWithdrawAmount",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "marginAvailable",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "updateTime",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "withdrawAvailable",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "totalWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossMarginAsset",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossMarginBorrowed",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossMarginFree",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossMarginInterest",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "crossMarginLocked",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "umWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "umUnrealizedPNL",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "cmWalletBalance",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "cmUnrealizedPNL",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "negativeBalance",
-      "type": "double"
+      "type": "std/double"
     }
   ]
 }

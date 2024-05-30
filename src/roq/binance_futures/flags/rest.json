@@ -12,7 +12,7 @@
     },
     {
       "name": "host",
-      "type": "std::string",
+      "type": "std/string",
       "description": "Host (when URI is an IP address)"
     },
     {
@@ -23,7 +23,7 @@
     },
     {
       "name": "pm_host",
-      "type": "std::string",
+      "type": "std/string",
       "description": "Host (when URI is an IP address)"
     },
     {
@@ -34,61 +34,61 @@
     },
     {
       "name": "ping_freq",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "5s",
       "description": "Ping frequency"
     },
     {
       "name": "ping_path",
-      "type": "std::string",
+      "type": "std/string",
       "validator": "roq::flags::validators::Path",
       "default": "/v1/time",
       "description": "Ping path"
     },
     {
       "name": "request_timeout",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "30s",
       "description": "Request timeout"
     },
     {
       "name": "listen_key_refresh",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "1800s",
       "description": "Listen key refresh period"
     },
     {
       "name": "order_recv_window",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "5000ms",
       "description": "Receive window (please refer to exchange documentation)"
     },
     {
       "name": "cancel_on_disconnect",
-      "type": "bool",
+      "type": "std/bool",
       "default": false,
       "description": "Auto-cancel orders on disconnect?"
     },
     {
       "name": "order_countdown",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "30s",
       "description": "Auto-cancel countdown period"
     },
     {
       "name": "terminate_on_403",
-      "type": "bool",
+      "type": "std/bool",
       "default": false,
       "description": "(TEST) Trigger program termination after receiving a 403 response code?"
     },
     {
       "name": "back_off_delay",
-      "type": "std::chrono::nanoseconds",
+      "type": "std/nanoseconds",
       "validator": "roq::flags::validators::TimePeriod",
       "default": "300s",
       "description": "(TEST) Time to wait before retrying a rejected request"

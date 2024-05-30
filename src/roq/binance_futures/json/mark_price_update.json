@@ -10,37 +10,37 @@
     {
       "raw": "E",
       "name": "event_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "raw": "s",
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "p",
       "name": "mark_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "i",
       "name": "index_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "P",
       "name": "est_settle_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "r",
       "name": "funding_rate",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "T",
       "name": "next_funding_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     }
   ]
 }

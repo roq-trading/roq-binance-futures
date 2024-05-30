@@ -4,15 +4,15 @@
   "values": [
     {
       "name": "orderId",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "pair",
-      "type": "std::string_view",
+      "type": "std/string_view",
       "comment": "COIN-M"
     },
     {
@@ -21,35 +21,35 @@
     },
     {
       "name": "clientOrderId",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "avgPrice",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "origQty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "executedQty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "cumQty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "cumQuote",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "cumBase",
-      "type": "double",
+      "type": "std/double",
       "comment": "COIN-M"
     },
     {
@@ -62,11 +62,11 @@
     },
     {
       "name": "reduceOnly",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "closePosition",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "side",
@@ -78,7 +78,7 @@
     },
     {
       "name": "stopPrice",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "name": "workingType",
@@ -86,7 +86,7 @@
     },
     {
       "name": "priceProtect",
-      "type": "bool"
+      "type": "std/bool"
     },
     {
       "name": "origType",
@@ -94,19 +94,19 @@
     },
     {
       "name": "updateTime",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "priceMatch",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "selfTradePreventionMode",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "goodTillDate",
-      "type": "std::chrono::milliseconds",
+      "type": "std/milliseconds",
       "comment": "XXX 20231206 not sure about milliseconds"
     }
   ]

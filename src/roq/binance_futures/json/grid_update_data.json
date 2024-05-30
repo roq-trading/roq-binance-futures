@@ -5,52 +5,52 @@
     {
       "raw": "si",
       "name": "id",
-      "type": "int64_t"
+      "type": "std/int64"
     },
     {
       "raw": "st",
       "name": "type",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "ss",
       "name": "status",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "s",
       "name": "symbol",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "raw": "r",
       "name": "realized_pnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "up",
       "name": "unmatched_average_price",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "uq",
       "name": "unmatched_qty",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "uf",
       "name": "unmatched_fee",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "mp",
       "name": "matched_pnl",
-      "type": "double"
+      "type": "std/double"
     },
     {
       "raw": "ut",
       "name": "update_time",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     }
   ]
 }

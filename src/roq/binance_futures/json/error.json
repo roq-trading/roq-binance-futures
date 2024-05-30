@@ -4,19 +4,19 @@
   "values": [
     {
       "name": "code",
-      "type": "int32_t"
+      "type": "std/int32"
     },
     {
       "name": "msg",
-      "type": "std::string_view"
+      "type": "std/string_view"
     },
     {
       "name": "timestamp",
-      "type": "std::chrono::milliseconds"
+      "type": "std/milliseconds"
     },
     {
       "name": "path",
-      "type": "std::string_view"
+      "type": "std/string_view"
     }
   ]
 }

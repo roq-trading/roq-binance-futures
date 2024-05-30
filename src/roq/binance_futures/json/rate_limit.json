@@ -12,11 +12,11 @@
     },
     {
       "name": "intervalNum",
-      "type": "int32_t"
+      "type": "std/int32"
     },
     {
       "name": "limit",
-      "type": "int32_t"
+      "type": "std/int32"
     }
   ]
 }

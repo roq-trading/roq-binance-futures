@@ -1,5 +1,5 @@
 {
-  "name": "PositionSide",
+  "name": "roq/binance_futures/json/PositionSide",
   "type": "enum",
   "values": [
     {

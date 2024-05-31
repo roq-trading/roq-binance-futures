@@ -1,5 +1,5 @@
 {
-  "name": "NewOrder",
+  "name": "roq/binance_futures/json/NewOrder",
   "type": "item",
   "values": [
     {
@@ -17,7 +17,7 @@
     },
     {
       "name": "status",
-      "type": "OrderStatus"
+      "type": "roq/binance_futures/json/OrderStatus"
     },
     {
       "name": "clientOrderId",
@@ -54,11 +54,11 @@
     },
     {
       "name": "timeInForce",
-      "type": "TimeInForce"
+      "type": "roq/binance_futures/json/TimeInForce"
     },
     {
       "name": "type",
-      "type": "OrderType"
+      "type": "roq/binance_futures/json/OrderType"
     },
     {
       "name": "reduceOnly",
@@ -70,11 +70,11 @@
     },
     {
       "name": "side",
-      "type": "Side"
+      "type": "roq/binance_futures/json/Side"
     },
     {
       "name": "positionSide",
-      "type": "PositionSide"
+      "type": "roq/binance_futures/json/PositionSide"
     },
     {
       "name": "stopPrice",
@@ -82,7 +82,7 @@
     },
     {
       "name": "workingType",
-      "type": "WorkingType"
+      "type": "roq/binance_futures/json/WorkingType"
     },
     {
       "name": "priceProtect",
@@ -90,7 +90,7 @@
     },
     {
       "name": "origType",
-      "type": "OrderType"
+      "type": "roq/binance_futures/json/OrderType"
     },
     {
       "name": "updateTime",

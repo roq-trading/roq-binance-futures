@@ -1,10 +1,10 @@
 {
-  "name": "Filters",
+  "name": "roq/binance_futures/json/Filters",
   "type": "array",
   "values": [
     {
       "name": "data",
-      "type": "Filter",
+      "type": "roq/binance_futures/json/Filter",
       "array": "std/span"
     }
   ]

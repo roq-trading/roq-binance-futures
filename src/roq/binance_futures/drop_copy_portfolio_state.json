@@ -1,5 +1,5 @@
 {
-  "name": "DropCopyPortfolioState",
+  "name": "roq/binance_futures/DropCopyPortfolioState",
   "type": "enum",
   "values": [
     {

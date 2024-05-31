@@ -1,5 +1,5 @@
 {
-  "name": "OrderStatus",
+  "name": "roq/binance_futures/json/OrderStatus",
   "type": "enum",
   "values": [
     {

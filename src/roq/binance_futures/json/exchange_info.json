@@ -1,5 +1,5 @@
 {
-  "name": "ExchangeInfo",
+  "name": "roq/binance_futures/json/ExchangeInfo",
   "type": "comp",
   "values": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "name": "rateLimits",
-      "type": "RateLimit",
+      "type": "roq/binance_futures/json/RateLimit",
       "array": "std/span"
     },
     {
@@ -20,7 +20,7 @@
     },
     {
       "name": "symbols",
-      "type": "Symbol",
+      "type": "roq/binance_futures/json/Symbol",
       "array": "std/span"
     },
     {
@@ -30,7 +30,7 @@
     },
     {
       "name": "assets",
-      "type": "ExchangeInfoAsset",
+      "type": "roq/binance_futures/json/ExchangeInfoAsset",
       "array": "std/span"
     }
   ]

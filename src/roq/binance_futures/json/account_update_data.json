@@ -1,22 +1,22 @@
 {
-  "name": "AccountUpdateData",
+  "name": "roq/binance_futures/json/AccountUpdateData",
   "type": "comp",
   "values": [
     {
       "raw": "m",
       "name": "event_reason",
-      "type": "EventReason"
+      "type": "roq/binance_futures/json/EventReason"
     },
     {
       "raw": "B",
       "name": "balances",
-      "type": "AccountUpdateDataBalance",
+      "type": "roq/binance_futures/json/AccountUpdateDataBalance",
       "array": "std/span"
     },
     {
       "raw": "P",
       "name": "positions",
-      "type": "AccountUpdateDataPosition",
+      "type": "roq/binance_futures/json/AccountUpdateDataPosition",
       "array": "std/span"
     }
   ]

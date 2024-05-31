@@ -1,11 +1,11 @@
 {
-  "name": "MarkPriceUpdate",
+  "name": "roq/binance_futures/json/MarkPriceUpdate",
   "type": "comp",
   "values": [
     {
       "raw": "e",
       "name": "event_type",
-      "type": "EventType"
+      "type": "roq/binance_futures/json/EventType"
     },
     {
       "raw": "E",

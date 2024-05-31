@@ -1,5 +1,5 @@
 {
-  "name": "Trade",
+  "name": "roq/binance_futures/json/Trade",
   "type": "item",
   "values": [
     {
@@ -44,11 +44,11 @@
     },
     {
       "name": "side",
-      "type": "Side"
+      "type": "roq/binance_futures/json/Side"
     },
     {
       "name": "positionSide",
-      "type": "PositionSide"
+      "type": "roq/binance_futures/json/PositionSide"
     },
     {
       "name": "symbol",

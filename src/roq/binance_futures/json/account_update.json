@@ -1,11 +1,11 @@
 {
-  "name": "AccountUpdate",
+  "name": "roq/binance_futures/json/AccountUpdate",
   "type": "comp",
   "values": [
     {
       "raw": "e",
       "name": "event_type",
-      "type": "EventType"
+      "type": "roq/binance_futures/json/EventType"
     },
     {
       "raw": "E",
@@ -32,7 +32,7 @@
     {
       "raw": "a",
       "name": "data",
-      "type": "AccountUpdateData"
+      "type": "roq/binance_futures/json/AccountUpdateData"
     }
   ]
 }

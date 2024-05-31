@@ -1,5 +1,5 @@
 {
-  "name": "AccountUpdateDataPosition",
+  "name": "roq/binance_futures/json/AccountUpdateDataPosition",
   "type": "item",
   "values": [
     {
@@ -30,7 +30,7 @@
     {
       "raw": "mt",
       "name": "margin_type",
-      "type": "MarginType"
+      "type": "roq/binance_futures/json/MarginType"
     },
     {
       "raw": "iw",
@@ -40,7 +40,7 @@
     {
       "raw": "ps",
       "name": "position_side",
-      "type": "PositionSide"
+      "type": "roq/binance_futures/json/PositionSide"
     },
     {
       "raw": "ma",

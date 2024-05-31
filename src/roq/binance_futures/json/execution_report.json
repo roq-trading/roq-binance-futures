@@ -1,5 +1,5 @@
 {
-  "name": "ExecutionReport",
+  "name": "roq/binance_futures/json/ExecutionReport",
   "type": "item",
   "values": [
     {
@@ -15,17 +15,17 @@
     {
       "raw": "S",
       "name": "side",
-      "type": "Side"
+      "type": "roq/binance_futures/json/Side"
     },
     {
       "raw": "o",
       "name": "order_type",
-      "type": "OrderType"
+      "type": "roq/binance_futures/json/OrderType"
     },
     {
       "raw": "f",
       "name": "time_in_force",
-      "type": "TimeInForce"
+      "type": "roq/binance_futures/json/TimeInForce"
     },
     {
       "raw": "q",
@@ -50,12 +50,12 @@
     {
       "raw": "x",
       "name": "execution_type",
-      "type": "ExecutionType"
+      "type": "roq/binance_futures/json/ExecutionType"
     },
     {
       "raw": "X",
       "name": "order_status",
-      "type": "OrderStatus"
+      "type": "roq/binance_futures/json/OrderStatus"
     },
     {
       "raw": "i",
@@ -126,17 +126,17 @@
     {
       "raw": "wt",
       "name": "stop_price_working_type",
-      "type": "WorkingType"
+      "type": "roq/binance_futures/json/WorkingType"
     },
     {
       "raw": "ot",
       "name": "original_order_type",
-      "type": "OrderType"
+      "type": "roq/binance_futures/json/OrderType"
     },
     {
       "raw": "ps",
       "name": "position_side",
-      "type": "PositionSide"
+      "type": "roq/binance_futures/json/PositionSide"
     },
     {
       "raw": "cp",

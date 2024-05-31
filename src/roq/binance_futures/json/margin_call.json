@@ -1,11 +1,11 @@
 {
-  "name": "MarginCall",
+  "name": "roq/binance_futures/json/MarginCall",
   "type": "comp",
   "values": [
     {
       "raw": "e",
       "name": "event_type",
-      "type": "EventType"
+      "type": "roq/binance_futures/json/EventType"
     },
     {
       "raw": "E",
@@ -20,7 +20,7 @@
     {
       "raw": "p",
       "name": "positions",
-      "type": "MarginCallItem",
+      "type": "roq/binance_futures/json/MarginCallItem",
       "array": "std/span"
     }
   ]

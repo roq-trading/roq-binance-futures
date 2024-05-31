@@ -1,5 +1,5 @@
 {
-  "name": "Symbol",
+  "name": "roq/binance_futures/json/Symbol",
   "type": "item",
   "values": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "name": "contractType",
-      "type": "ContractType"
+      "type": "roq/binance_futures/json/ContractType"
     },
     {
       "name": "deliveryDate",
@@ -24,7 +24,7 @@
     },
     {
       "name": "status",
-      "type": "SymbolStatus"
+      "type": "roq/binance_futures/json/SymbolStatus"
     },
     {
       "name": "maintMarginPercent",

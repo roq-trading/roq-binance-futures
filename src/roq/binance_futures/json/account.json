@@ -1,5 +1,5 @@
 {
-  "name": "Account",
+  "name": "roq/binance_futures/json/Account",
   "type": "comp",
   "values": [
     {
@@ -68,12 +68,12 @@
     },
     {
       "name": "assets",
-      "type": "Asset",
+      "type": "roq/binance_futures/json/Asset",
       "array": "std/span"
     },
     {
       "name": "positions",
-      "type": "Position",
+      "type": "roq/binance_futures/json/Position",
       "array": "std/span"
     },
     {

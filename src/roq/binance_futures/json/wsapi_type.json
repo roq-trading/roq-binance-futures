@@ -1,5 +1,5 @@
 {
-  "name": "WSAPIType",
+  "name": "roq/binance_futures/json/WSAPIType",
   "type": "enum",
   "values": [
     {

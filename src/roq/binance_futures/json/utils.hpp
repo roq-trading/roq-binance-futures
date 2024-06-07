@@ -37,9 +37,7 @@ inline void update(std::chrono::milliseconds &result, core::json::Value const &v
           [](bool) { throw std::bad_cast{}; },
           [&](int64_t value) { result = std::chrono::milliseconds{value}; },
           [&](double value) { result = std::chrono::milliseconds{static_cast<int64_t>(value)}; },
-          [&](std::string_view const &value) {
-            result = core::charconv::datetime_from_string<std::remove_reference<decltype(result)>::type>(value);
-          },
+          [&](std::string_view const &value) { result = core::charconv::datetime_from_string<std::remove_reference<decltype(result)>::type>(value); },
           [](core::json::Object const &) { throw std::bad_cast{}; },
           [](core::json::Array const &) { throw std::bad_cast{}; },
       },
@@ -277,11 +275,7 @@ extern std::string_view trades(
 // new
 
 extern std::string_view new_order(
-    std::vector<char> &buffer,
-    CreateOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::chrono::milliseconds recv_window);
+    std::vector<char> &buffer, CreateOrder const &, server::oms::Order const &, std::string_view const &request_id, std::chrono::milliseconds recv_window);
 
 extern std::string_view new_order_ws_url(
     std::vector<char> &buffer,
@@ -365,14 +359,10 @@ extern std::string_view cancel_order_ws_json(
     std::chrono::milliseconds now,
     std::string_view const &signature);
 
-extern std::string_view cancel_all_open_orders(
-    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
+extern std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
 
 extern std::string_view countdown_cancel_all_open_orders(
-    std::vector<char> &buffer,
-    std::string_view const &symbol,
-    std::chrono::milliseconds countdown_time,
-    std::chrono::milliseconds recv_window);
+    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window);
 
 }  // namespace json
 }  // namespace binance_futures

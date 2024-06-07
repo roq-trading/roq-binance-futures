@@ -87,10 +87,7 @@ std::string_view new_order(
     }
   }
   if (!std::isnan(create_order.stop_price))
-    fmt::format_to(
-        std::back_inserter(buffer),
-        R"(stopPrice={}&)"sv,
-        Decimal{create_order.stop_price, order.price_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(stopPrice={}&)"sv, Decimal{create_order.stop_price, order.price_precision.precision});
   fmt::format_to(
       std::back_inserter(buffer),
       R"(newClientOrderId={}&)"
@@ -153,15 +150,11 @@ std::string_view new_order_ws_json(
   writer.write(R"(,"newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
   if (!std::isnan(create_order.price))
     writer.write(R"(,"price":")"sv).write(Decimal{create_order.price, order.price_precision.precision}).write(R"(")"sv);
-  writer.write(R"(,"quantity":")"sv)
-      .write(Decimal{create_order.quantity, order.quantity_precision.precision})
-      .write(R"(")"sv);
+  writer.write(R"(,"quantity":")"sv).write(Decimal{create_order.quantity, order.quantity_precision.precision}).write(R"(")"sv);
   writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
   writer.write(R"(,"side":")"sv).write(side.as_raw_text()).write(R"(")"sv);
   if (!std::isnan(create_order.stop_price))
-    writer.write(R"(,"stopPrice":")"sv)
-        .write(Decimal{create_order.stop_price, order.price_precision.precision})
-        .write(R"(")"sv);
+    writer.write(R"(,"stopPrice":")"sv).write(Decimal{create_order.stop_price, order.price_precision.precision}).write(R"(")"sv);
   writer.write(R"(,"symbol":")"sv).write(create_order.symbol).write(R"(")"sv);
   if (time_in_force != json::TimeInForce{})
     writer.write(R"(,"timeInForce":")"sv).write(time_in_force.as_raw_text()).write(R"(")"sv);
@@ -295,9 +288,7 @@ std::string_view modify_order_ws_json(
   if (!std::isnan(modify_order.price))
     writer.write(R"(,"price":")"sv).write(Decimal{modify_order.price, order.price_precision.precision}).write(R"(")"sv);
   if (!std::isnan(modify_order.quantity))
-    writer.write(R"(,"quantity":")"sv)
-        .write(Decimal{modify_order.quantity, order.quantity_precision.precision})
-        .write(R"(")"sv);
+    writer.write(R"(,"quantity":")"sv).write(Decimal{modify_order.quantity, order.quantity_precision.precision}).write(R"(")"sv);
   writer.write(R"(,"side":")"sv).write(side).write(R"(")"sv);
   writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
   writer.write(R"(,"timestamp":)"sv).write(now.count());
@@ -377,8 +368,7 @@ std::string_view cancel_order_ws_json(
   return writer.finish();
 }
 
-std::string_view cancel_all_open_orders(
-    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
+std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -391,10 +381,7 @@ std::string_view cancel_all_open_orders(
 }
 
 std::string_view countdown_cancel_all_open_orders(
-    std::vector<char> &buffer,
-    std::string_view const &symbol,
-    std::chrono::milliseconds countdown_time,
-    std::chrono::milliseconds recv_window) {
+    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),

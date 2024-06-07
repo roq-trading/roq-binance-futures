@@ -20,11 +20,7 @@ namespace json {
 
 namespace {
 template <typename T>
-void dispatch_helper(
-    MarketStreamParser::Handler &handler,
-    std::string_view const &message,
-    std::span<std::byte> const &buffer,
-    TraceInfo const &trace_info) {
+void dispatch_helper(MarketStreamParser::Handler &handler, std::string_view const &message, std::span<std::byte> const &buffer, TraceInfo const &trace_info) {
   T value{message, buffer};
   create_trace_and_dispatch(handler, trace_info, value);
 }
@@ -79,8 +75,7 @@ bool MarketStreamParser::dispatch(
         case STREAM:
           break;
         case DATA: {
-          dispatch(
-              handler, core::json::get<std::string_view>(value), buffer, trace_info, continue_with_unknown_event_type);
+          dispatch(handler, core::json::get<std::string_view>(value), buffer, trace_info, continue_with_unknown_event_type);
           return true;
         }
         case EVENT_TYPE: {

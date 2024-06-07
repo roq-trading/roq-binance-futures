@@ -31,8 +31,7 @@ auto create_headers_helper(auto const &key) {
 
 // === IMPLEMENTATION ===
 
-Crypto::Crypto(std::string_view const &key, std::string_view const &secret)
-    : key{key}, mac_{secret}, headers_{create_headers_helper(key)} {
+Crypto::Crypto(std::string_view const &key, std::string_view const &secret) : key{key}, mac_{secret}, headers_{create_headers_helper(key)} {
 }
 
 std::string Crypto::create_query(std::string_view const &body) {

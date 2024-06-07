@@ -33,11 +33,7 @@ struct MarketStreamParser final {
   };
 
   static bool dispatch(
-      Handler &handler,
-      std::string_view const &message,
-      std::span<std::byte> const &buffer,
-      TraceInfo const &,
-      bool continue_with_unknown_event_type = false);
+      Handler &handler, std::string_view const &message, std::span<std::byte> const &buffer, TraceInfo const &, bool continue_with_unknown_event_type = false);
 };
 
 }  // namespace json

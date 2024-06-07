@@ -44,23 +44,14 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
     virtual void operator()(Trace<RateLimitsUpdate> const &) = 0;
-    virtual void operator()(
-        Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
+    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
     virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
     // cross-communication
     virtual void operator()(ListenKeyUpdate const &) = 0;
   };
 
-  OrderEntryWS(
-      Handler &,
-      io::Context &,
-      uint16_t stream_id,
-      Account &,
-      Shared &,
-      Request &,
-      bool master = true,
-      std::string_view const &interface = {});
+  OrderEntryWS(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
 
   bool ready() const { return status_ == ConnectionStatus::READY; }
 
@@ -72,18 +63,11 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
 
   void operator()(Event<Disconnected> const &);
 
+  uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id) override;
   uint16_t operator()(
-      Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id) override;
+      Event<ModifyOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id) override;
   uint16_t operator()(
-      Event<ModifyOrder> const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id) override;
-  uint16_t operator()(
-      Event<CancelOrder> const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id) override;
+      Event<CancelOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id) override;
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
@@ -102,16 +86,8 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
   void order_place(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
-  void order_modify(
-      Event<ModifyOrder> const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id);
-  void order_cancel(
-      Event<CancelOrder> const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id);
+  void order_modify(Event<ModifyOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
+  void order_cancel(Event<CancelOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
 
   // web::socket::Client::Handler
   void operator()(web::socket::Client::Connected const &) override;
@@ -160,11 +136,9 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, user_data_stream_start, user_data_stream_start_ack, user_data_stream_ping,
-        user_data_stream_ping_ack, account_balance, account_balance_ack, account_status, account_status_ack,
-        open_orders_status, open_orders_status_ack, my_trades, my_trades_ack, open_orders_cancel_all,
-        open_orders_cancel_all_ack, order_place, order_place_ack, order_modify, order_modify_ack, order_cancel,
-        order_cancel_ack;
+    utils::metrics::Profile parse, error, user_data_stream_start, user_data_stream_start_ack, user_data_stream_ping, user_data_stream_ping_ack, account_balance,
+        account_balance_ack, account_status, account_status_ack, open_orders_status, open_orders_status_ack, my_trades, my_trades_ack, open_orders_cancel_all,
+        open_orders_cancel_all_ack, order_place, order_place_ack, order_modify, order_modify_ack, order_cancel, order_cancel_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

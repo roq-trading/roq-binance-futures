@@ -81,8 +81,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
   create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
       : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
@@ -112,10 +111,8 @@ auto get_retry_after(auto &response) {
 
 // === IMPLEMENTATION ===
 
-OrderEntryPortfolio::OrderEntryPortfolio(
-    Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)},
-      connection_{create_connection(*this, shared.settings, context)},
+OrderEntryPortfolio::OrderEntryPortfolio(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)}, connection_{create_connection(*this, shared.settings, context)},
       decode_buffer_(shared.settings.misc.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -147,8 +144,7 @@ OrderEntryPortfolio::OrderEntryPortfolio(
           .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
           .create_order_1m = create_metrics(shared.settings, name_, "create_order"sv, "1m"sv),
       },
-      account_{account}, shared_{shared}, request_{request},
-      download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
 }
 
 void OrderEntryPortfolio::operator()(Event<Start> const &) {
@@ -222,8 +218,7 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
-uint16_t OrderEntryPortfolio::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+uint16_t OrderEntryPortfolio::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   new_order(event, order, request_id);
   return stream_id_;
 }
@@ -238,10 +233,7 @@ uint16_t OrderEntryPortfolio::operator()(
 }
 
 uint16_t OrderEntryPortfolio::operator()(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   cancel_order(event, order, request_id, previous_request_id);
   return stream_id_;
 }
@@ -400,8 +392,7 @@ void OrderEntryPortfolio::get_listen_key() {
   });
 }
 
-void OrderEntryPortfolio::get_listen_key_ack(
-    Trace<web::rest::Response> const &event, [[maybe_unused]] uint32_t sequence) {
+void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &event, [[maybe_unused]] uint32_t sequence) {
   constexpr auto const STATE = OrderEntryState::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
     auto handle_success = [&](auto &body) {
@@ -872,8 +863,7 @@ void OrderEntryPortfolio::refresh_listen_key() {
 
 // new-order
 
-void OrderEntryPortfolio::new_order(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void OrderEntryPortfolio::new_order(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.new_order([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
@@ -893,8 +883,7 @@ void OrderEntryPortfolio::new_order(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id](
-                        [[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id]([[maybe_unused]] auto &request_id, auto &response) {
       auto version = uint32_t{1};
       TraceInfo trace_info;
       Trace event{trace_info, response};
@@ -904,8 +893,7 @@ void OrderEntryPortfolio::new_order(
   });
 }
 
-void OrderEntryPortfolio::new_order_ack(
-    Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::new_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.new_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::NewOrder new_order{body};
@@ -931,8 +919,7 @@ void OrderEntryPortfolio::new_order_ack(
   });
 }
 
-void OrderEntryPortfolio::operator()(
-    Trace<json::NewOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::operator()(Trace<json::NewOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, new_order] = event;
   log::info<2>("new_order={}, user_id={}, order_id={}, version={}"sv, new_order, user_id, order_id, version);
   auto side = json::map(new_order.side);
@@ -991,10 +978,7 @@ void OrderEntryPortfolio::operator()(
 // cancel-order
 
 void OrderEntryPortfolio::cancel_order(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
@@ -1013,19 +997,17 @@ void OrderEntryPortfolio::cancel_order(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback =
-        [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
-            [[maybe_unused]] auto &request_id, auto &response) {
-          TraceInfo trace_info;
-          Trace event{trace_info, response};
-          cancel_order_ack(event, user_id, order_id, version);
-        };
+    auto callback = [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
+                        [[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      cancel_order_ack(event, user_id, order_id, version);
+    };
     (*connection_)(request_id, request, callback);
   });
 }
 
-void OrderEntryPortfolio::cancel_order_ack(
-    Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::cancel_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.cancel_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelOrder cancel_order{body};
@@ -1051,8 +1033,7 @@ void OrderEntryPortfolio::cancel_order_ack(
   });
 }
 
-void OrderEntryPortfolio::operator()(
-    Trace<json::CancelOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::operator()(Trace<json::CancelOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, cancel_order] = event;
   log::info<2>("cancel_order={}, user_id={}, order_id={}, version={}"sv, cancel_order, user_id, order_id, version);
   auto side = json::map(cancel_order.side);
@@ -1110,8 +1091,7 @@ void OrderEntryPortfolio::operator()(
 
 // cancel-all-orders
 
-void OrderEntryPortfolio::cancel_all_open_orders(
-    Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+void OrderEntryPortfolio::cancel_all_open_orders(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.cancel_all_open_orders([&]() {
     auto &cancel_all_orders = event.value;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
@@ -1162,8 +1142,7 @@ void OrderEntryPortfolio::cancel_all_open_orders(
   });
 }
 
-void OrderEntryPortfolio::cancel_all_open_orders_ack(
-    Trace<web::rest::Response> const &event, std::string_view const &request_id) {
+void OrderEntryPortfolio::cancel_all_open_orders_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.cancel_all_open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelAllOpenOrders cancel_all_open_orders{body};
@@ -1177,8 +1156,7 @@ void OrderEntryPortfolio::cancel_all_open_orders_ack(
   });
 }
 
-void OrderEntryPortfolio::operator()(
-    Trace<json::CancelAllOpenOrders> const &event, std::string_view const &request_id) {
+void OrderEntryPortfolio::operator()(Trace<json::CancelAllOpenOrders> const &event, std::string_view const &request_id) {
   auto &[trace_info, cancel_all_open_orders] = event;
   auto status = [&]() {
     if (cancel_all_open_orders.code == 200)
@@ -1211,8 +1189,7 @@ void OrderEntryPortfolio::operator()(
 // helpers
 
 template <typename SuccessHandler, typename ErrorHandler>
-void OrderEntryPortfolio::process_response(
-    web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
+void OrderEntryPortfolio::process_response(web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
     switch (category) {
@@ -1265,27 +1242,17 @@ void OrderEntryPortfolio::process_response(
 }
 
 template <typename... Args>
-void OrderEntryPortfolio::operator()(
-    Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
+void OrderEntryPortfolio::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
   auto &[trace_info, response] = event;
-  if (shared_.update_order(
-          user_id,
-          order_id,
-          stream_id_,
-          trace_info,
-          response,
-          std::forward<Args>(args)...,
-          []([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
   }
 }
 
-void OrderEntryPortfolio::operator()(
-    Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void OrderEntryPortfolio::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(
-          client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }

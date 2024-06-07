@@ -32,8 +32,7 @@ add_subdirectory(tools)
 
 include(RoqAutogen)
 
-set(AUTOGEN_SCHEMAS drop_copy_state.json drop_copy_portfolio_state.json order_entry_state.json
-                    rest_state.json)
+set(AUTOGEN_SCHEMAS drop_copy_state.json drop_copy_portfolio_state.json order_entry_state.json rest_state.json)
 
 roq_autogen(
   OUTPUT
@@ -79,10 +78,8 @@ if(ROQ_BUILD_TYPE STREQUAL "Release")
 endif()
 
 target_compile_definitions(
-  ${TARGET_NAME}
-  PRIVATE ROQ_PACKAGE_NAME="${TARGET_NAME}" ROQ_HOST="${ROQ_HOST}"
-          ROQ_BUILD_VERSION="${GIT_REPO_VERSION}" ROQ_GIT_DESCRIBE_HASH="${GIT_DESCRIBE_HASH}"
-          ROQ_BUILD_NUMBER="${ROQ_BUILD_NUMBER}" ROQ_BUILD_TYPE="${ROQ_BUILD_TYPE}")
+  ${TARGET_NAME} PRIVATE ROQ_PACKAGE_NAME="${TARGET_NAME}" ROQ_HOST="${ROQ_HOST}" ROQ_BUILD_VERSION="${GIT_REPO_VERSION}"
+                         ROQ_GIT_DESCRIBE_HASH="${GIT_DESCRIBE_HASH}" ROQ_BUILD_NUMBER="${ROQ_BUILD_NUMBER}" ROQ_BUILD_TYPE="${ROQ_BUILD_TYPE}")
 
 install(TARGETS ${TARGET_NAME})
 

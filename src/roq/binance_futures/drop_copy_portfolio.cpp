@@ -76,23 +76,15 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &liste
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  explicit create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
 };
 }  // namespace
 
 // === IMPLEMENTATION ===
 
 DropCopyPortfolio::DropCopyPortfolio(
-    Handler &handler,
-    io::Context &context,
-    uint16_t stream_id,
-    Account &account,
-    Shared &shared,
-    Request &request,
-    std::string_view const &listen_key)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
-      connection_{create_connection(*this, shared.settings, context, listen_key)},
+    Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context, listen_key)},
       decode_buffer_(shared.settings.misc.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -110,8 +102,7 @@ DropCopyPortfolio::DropCopyPortfolio(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
-      account_{account}, shared_{shared}, request_{request},
-      download_{{}, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{{}, [this](auto state) { return download(state); }} {
 }
 
 bool DropCopyPortfolio::ready() const {
@@ -251,8 +242,7 @@ void DropCopyPortfolio::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::UserStreamParser::dispatch(
-              *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
         log_message();
     } catch (...) {
       log_message();

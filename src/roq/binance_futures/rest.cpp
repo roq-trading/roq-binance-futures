@@ -78,8 +78,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
   create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
       : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
@@ -102,10 +101,8 @@ auto get_retry_after(auto &response) {
 // === IMPLEMENTATION ===
 
 Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)},
-      connection_{create_connection(*this, shared.settings, context)},
-      decode_buffer_(shared.settings.misc.decode_buffer_size),
-      decode_buffer_2_(shared.settings.misc.decode_buffer_size),
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context)},
+      decode_buffer_(shared.settings.misc.decode_buffer_size), decode_buffer_2_(shared.settings.misc.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -294,10 +291,7 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
         download_.check(STATE);
       }
     };
-    auto handle_error = [&]([[maybe_unused]] auto origin,
-                            [[maybe_unused]] auto status,
-                            [[maybe_unused]] auto error,
-                            [[maybe_unused]] auto text) {
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, [[maybe_unused]] auto error, [[maybe_unused]] auto text) {
       if (download_.downloading())
         download_.retry(STATE);
     };
@@ -470,10 +464,7 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
       Trace event_2{event, depth};
       (*this)(event_2, symbol);
     };
-    auto handle_error = [&]([[maybe_unused]] auto origin,
-                            [[maybe_unused]] auto status,
-                            [[maybe_unused]] auto error,
-                            [[maybe_unused]] auto text) {
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, [[maybe_unused]] auto error, [[maybe_unused]] auto text) {
       log::warn(R"(error={}, text="{}")"sv, error, text);
       // XXX WHAT ???
     };
@@ -549,15 +540,13 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
 // request
 
 void Rest::check_request_queue(std::chrono::nanoseconds now) {
-  shared_.depth_request_queue.dispatch(
-      [&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_depth(symbol); }, now);
+  shared_.depth_request_queue.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_depth(symbol); }, now);
 }
 
 // helpers
 
 template <typename SuccessHandler, typename ErrorHandler>
-void Rest::process_response(
-    web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
+void Rest::process_response(web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
     switch (category) {

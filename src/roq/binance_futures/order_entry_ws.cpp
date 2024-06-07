@@ -77,8 +77,7 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &inter
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
   create_metrics(auto &settings, auto const &group, auto const &function, auto const &params)
       : core::metrics::Factory(settings.app.name, group, function, params) {}
 };
@@ -104,8 +103,7 @@ OrderEntryWS::OrderEntryWS(
     bool master,
     std::string_view const &interface)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)}, master_{master},
-      connection_{create_connection(*this, shared.settings, context, interface)},
-      decode_buffer_(shared.settings.misc.decode_buffer_size),
+      connection_{create_connection(*this, shared.settings, context, interface)}, decode_buffer_(shared.settings.misc.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -220,26 +218,19 @@ void OrderEntryWS::operator()(Event<Disconnected> const &) {
   // XXX TODO HANS reset downloading?
 }
 
-uint16_t OrderEntryWS::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+uint16_t OrderEntryWS::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   order_place(event, order, request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntryWS::operator()(
-    Event<ModifyOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   order_modify(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntryWS::operator()(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   order_cancel(event, order, request_id, previous_request_id);
   return stream_id_;
 }
@@ -503,8 +494,7 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol)
         continue;
       auto now = clock::get_realtime<std::chrono::milliseconds>();
-      auto message_for_signature =
-          fmt::format("apiKey={}&symbol={}&timestamp={}"sv, account_.get_key(), symbol, now.count());
+      auto message_for_signature = fmt::format("apiKey={}&symbol={}&timestamp={}"sv, account_.get_key(), symbol, now.count());
       auto signature = account_.create_ws_api_signature(message_for_signature);
       auto request = json::WSAPIRequest{
           .sequence = ++request_id_,
@@ -514,8 +504,7 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
           .version = {},
           .order_id_2 = {},
       };
-      auto request_id_2 =
-          json::WSAPIRequest::encode(request_encode_buffer_, request);  // XXX FIXME here we lose request_id
+      auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);  // XXX FIXME here we lose request_id
       auto message = fmt::format(
           R"({{)"
           R"("id":"{}",)"
@@ -540,8 +529,7 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
 
 // order-place
 
-void OrderEntryWS::order_place(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.order_place([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
@@ -549,11 +537,9 @@ void OrderEntryWS::order_place(
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature =
-        json::new_order_ws_url(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now);
+    auto message_for_signature = json::new_order_ws_url(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now);
     auto signature = account_.create_ws_api_signature(message_for_signature);
-    auto params = json::new_order_ws_json(
-        encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now, signature);
+    auto params = json::new_order_ws_json(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_PLACE,
@@ -579,29 +565,18 @@ void OrderEntryWS::order_place(
 // order-modify
 
 void OrderEntryWS::order_modify(
-    Event<ModifyOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_modify([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = json::modify_order_ws_url(
-        encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
+    auto message_for_signature =
+        json::modify_order_ws_url(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
     auto signature = account_.create_ws_api_signature(message_for_signature);
-    auto params = json::modify_order_ws_json(
-        encode_buffer_,
-        modify_order,
-        order,
-        request_id,
-        previous_request_id,
-        recv_window,
-        account_.get_key(),
-        now,
-        signature);
+    auto params =
+        json::modify_order_ws_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -627,29 +602,18 @@ void OrderEntryWS::order_modify(
 // order-cancel
 
 void OrderEntryWS::order_cancel(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_cancel([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = json::cancel_order_ws_url(
-        encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
+    auto message_for_signature =
+        json::cancel_order_ws_url(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
     auto signature = account_.create_ws_api_signature(message_for_signature);
-    auto params = json::cancel_order_ws_json(
-        encode_buffer_,
-        cancel_order,
-        order,
-        request_id,
-        previous_request_id,
-        recv_window,
-        account_.get_key(),
-        now,
-        signature);
+    auto params =
+        json::cancel_order_ws_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -1029,8 +993,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, j
               .update_type = UpdateType::INCREMENTAL,
               .sending_time_utc = {},
           };
-          shared_.update_order(
-              item.client_order_id, stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
+          shared_.update_order(item.client_order_id, stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
         }
         break;
       }
@@ -1389,17 +1352,9 @@ void OrderEntryWS::update_rate_limits(auto &event) {
 }
 
 template <typename... Args>
-void OrderEntryWS::operator()(
-    Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
+void OrderEntryWS::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
   auto &[trace_info, response] = event;
-  if (shared_.update_order(
-          user_id,
-          order_id,
-          stream_id_,
-          trace_info,
-          response,
-          std::forward<Args>(args)...,
-          []([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
   }
@@ -1407,8 +1362,7 @@ void OrderEntryWS::operator()(
 
 void OrderEntryWS::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(
-          client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }

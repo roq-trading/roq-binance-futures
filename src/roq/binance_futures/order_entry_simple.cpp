@@ -82,8 +82,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
   create_metrics(auto &settings, auto const &group, auto const &function, auto const &period)
       : core::metrics::Factory(settings.app.name, group, function, period) {}
 };
@@ -113,10 +112,8 @@ auto get_retry_after(auto &response) {
 
 // === IMPLEMENTATION ===
 
-OrderEntrySimple::OrderEntrySimple(
-    Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)},
-      connection_{create_connection(*this, shared.settings, context)},
+OrderEntrySimple::OrderEntrySimple(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)}, connection_{create_connection(*this, shared.settings, context)},
       decode_buffer_(shared.settings.misc.decode_buffer_size),
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -141,8 +138,7 @@ OrderEntrySimple::OrderEntrySimple(
           .cancel_all_open_orders = create_metrics(shared.settings, name_, "cancel_all_open_orders"sv),
           .cancel_all_open_orders_ack = create_metrics(shared.settings, name_, "cancel_all_open_orders_ack"sv),
           .auto_cancel_all_open_orders = create_metrics(shared.settings, name_, "auto_cancel_all_open_orders"sv),
-          .auto_cancel_all_open_orders_ack =
-              create_metrics(shared.settings, name_, "auto_cancel_all_open_orders_ack"sv),
+          .auto_cancel_all_open_orders_ack = create_metrics(shared.settings, name_, "auto_cancel_all_open_orders_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -151,8 +147,7 @@ OrderEntrySimple::OrderEntrySimple(
           .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
           .create_order_1m = create_metrics(shared.settings, name_, "create_order"sv, "1m"sv),
       },
-      account_{account}, shared_{shared}, request_{request},
-      download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
 }
 
 void OrderEntrySimple::operator()(Event<Start> const &) {
@@ -167,8 +162,7 @@ void OrderEntrySimple::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() &&
-      next_auto_cancel_ < now) {
+  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() && next_auto_cancel_ < now) {
     next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
     auto_cancel_all_open_orders();
   }
@@ -228,26 +222,19 @@ void OrderEntrySimple::operator()(metrics::Writer &writer) {
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
-uint16_t OrderEntrySimple::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+uint16_t OrderEntrySimple::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   new_order(event, order, request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntrySimple::operator()(
-    Event<ModifyOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   modify_order(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntrySimple::operator()(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   cancel_order(event, order, request_id, previous_request_id);
   return stream_id_;
 }
@@ -803,8 +790,7 @@ void OrderEntrySimple::refresh_listen_key() {
 
 // new-order
 
-void OrderEntrySimple::new_order(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void OrderEntrySimple::new_order(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.new_order([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
@@ -824,8 +810,7 @@ void OrderEntrySimple::new_order(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id](
-                        [[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id]([[maybe_unused]] auto &request_id, auto &response) {
       auto version = uint32_t{1};
       TraceInfo trace_info;
       Trace event{trace_info, response};
@@ -835,8 +820,7 @@ void OrderEntrySimple::new_order(
   });
 }
 
-void OrderEntrySimple::new_order_ack(
-    Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::new_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.new_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::NewOrder new_order{body};
@@ -862,8 +846,7 @@ void OrderEntrySimple::new_order_ack(
   });
 }
 
-void OrderEntrySimple::operator()(
-    Trace<json::NewOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::operator()(Trace<json::NewOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, new_order] = event;
   log::info<2>("new_order={}, user_id={}, order_id={}, version={}"sv, new_order, user_id, order_id, version);
   auto side = json::map(new_order.side);
@@ -922,23 +905,13 @@ void OrderEntrySimple::operator()(
 // modify-order
 
 void OrderEntrySimple::modify_order(
-    Event<ModifyOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.modify_order([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::modify_order(
-        encode_buffer_,
-        modify_order,
-        order,
-        request_id,
-        previous_request_id,
-        recv_window,
-        shared_.api.modify_order_full);
+    auto body = json::modify_order(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -951,19 +924,17 @@ void OrderEntrySimple::modify_order(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback =
-        [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
-            [[maybe_unused]] auto &request_id, auto &response) {
-          TraceInfo trace_info;
-          Trace event{trace_info, response};
-          modify_order_ack(event, user_id, order_id, version);
-        };
+    auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
+                        [[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      modify_order_ack(event, user_id, order_id, version);
+    };
     (*connection_)(request_id, request, callback);
   });
 }
 
-void OrderEntrySimple::modify_order_ack(
-    Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::modify_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.modify_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::ModifyOrder modify_order{body};
@@ -989,8 +960,7 @@ void OrderEntrySimple::modify_order_ack(
   });
 }
 
-void OrderEntrySimple::operator()(
-    Trace<json::ModifyOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::operator()(Trace<json::ModifyOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, modify_order] = event;
   log::info<2>("modify_order={}, user_id={}, order_id={}, version={}"sv, modify_order, user_id, order_id, version);
   auto side = json::map(modify_order.side);
@@ -1049,10 +1019,7 @@ void OrderEntrySimple::operator()(
 // cancel-order
 
 void OrderEntrySimple::cancel_order(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.cancel_order([&]() {
     if (!ready())
       throw server::oms::NotReady{"not ready"sv};
@@ -1071,19 +1038,17 @@ void OrderEntrySimple::cancel_order(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback =
-        [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
-            [[maybe_unused]] auto &request_id, auto &response) {
-          TraceInfo trace_info;
-          Trace event{trace_info, response};
-          cancel_order_ack(event, user_id, order_id, version);
-        };
+    auto callback = [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
+                        [[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      cancel_order_ack(event, user_id, order_id, version);
+    };
     (*connection_)(request_id, request, callback);
   });
 }
 
-void OrderEntrySimple::cancel_order_ack(
-    Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::cancel_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.cancel_order_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelOrder cancel_order{body};
@@ -1109,8 +1074,7 @@ void OrderEntrySimple::cancel_order_ack(
   });
 }
 
-void OrderEntrySimple::operator()(
-    Trace<json::CancelOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntrySimple::operator()(Trace<json::CancelOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, cancel_order] = event;
   log::info<2>("cancel_order={}, user_id={}, order_id={}, version={}"sv, cancel_order, user_id, order_id, version);
   auto side = json::map(cancel_order.side);
@@ -1219,8 +1183,7 @@ void OrderEntrySimple::cancel_all_open_orders(Event<CancelAllOrders> const &even
   });
 }
 
-void OrderEntrySimple::cancel_all_open_orders_ack(
-    Trace<web::rest::Response> const &event, std::string_view const &request_id) {
+void OrderEntrySimple::cancel_all_open_orders_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.cancel_all_open_orders_ack([&]() {
     auto handle_success = [&](auto &body) {
       json::CancelAllOpenOrders cancel_all_open_orders{body};
@@ -1269,8 +1232,7 @@ void OrderEntrySimple::operator()(Trace<json::CancelAllOpenOrders> const &event,
 void OrderEntrySimple::auto_cancel_all_open_orders() {
   profile_.auto_cancel_all_open_orders([&]() {
     for (auto &symbol : open_orders_symbols_) {
-      auto countdown_time =
-          std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
+      auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto body = json::countdown_cancel_all_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
       auto query = account_.create_query(body);
@@ -1317,8 +1279,7 @@ void OrderEntrySimple::operator()(Trace<json::AutoCancelAllOpenOrders> const &ev
 // helpers
 
 template <typename SuccessHandler, typename ErrorHandler>
-void OrderEntrySimple::process_response(
-    web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
+void OrderEntrySimple::process_response(web::rest::Response const &response, SuccessHandler success_handler, ErrorHandler error_handler) {
   try {
     auto [status, category, body] = response.result();
     switch (category) {
@@ -1371,27 +1332,17 @@ void OrderEntrySimple::process_response(
 }
 
 template <typename... Args>
-void OrderEntrySimple::operator()(
-    Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
+void OrderEntrySimple::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
   auto &[trace_info, response] = event;
-  if (shared_.update_order(
-          user_id,
-          order_id,
-          stream_id_,
-          trace_info,
-          response,
-          std::forward<Args>(args)...,
-          []([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
   }
 }
 
-void OrderEntrySimple::operator()(
-    Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void OrderEntrySimple::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(
-          client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }

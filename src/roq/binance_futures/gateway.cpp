@@ -43,8 +43,7 @@ R create_requests(auto &config) {
 }
 
 template <typename R>
-R create_order_entry(
-    auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
+R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
   for (auto &[_, item] : accounts) {
@@ -87,10 +86,9 @@ R create_drop_copy(auto &accounts) {
 // === IMPLEMENTATION ===
 
 Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
-    : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context},
-      shared_{dispatcher, settings}, requests_{create_requests<decltype(requests_)>(config)},
-      rest_{*this, context_, ++stream_id_, shared_}, order_entry_{create_order_entry<decltype(order_entry_)>(
-                                                         *this, context_, stream_id_, accounts_, shared_, requests_)},
+    : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context}, shared_{dispatcher, settings},
+      requests_{create_requests<decltype(requests_)>(config)}, rest_{*this, context_, ++stream_id_, shared_},
+      order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
   if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
@@ -155,8 +153,7 @@ void Gateway::operator()(Trace<StatisticsUpdate> const &event, bool is_last) {
   dispatcher_(event, is_last);
 }
 
-void Gateway::operator()(
-    Trace<TradeUpdate> const &event, bool is_last, uint8_t user_id, std::string_view const &request_id) {
+void Gateway::operator()(Trace<TradeUpdate> const &event, bool is_last, uint8_t user_id, std::string_view const &request_id) {
   dispatcher_(event, is_last, user_id, request_id);
 }
 
@@ -217,14 +214,7 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create DropCopy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<T>(
-        *this,
-        context_,
-        ++stream_id_,
-        get_account(account),
-        shared_,
-        get_request(account),
-        listen_key_update.listen_key);
+    auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
     MessageInfo message_info;
     Start start;
     create_event_and_dispatch(*drop_copy, message_info, start);
@@ -232,18 +222,14 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
   }
 }
 
-uint16_t Gateway::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+uint16_t Gateway::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   auto &create_order = event.value;
   assert(!std::empty(create_order.account));
   return get_order_entry(create_order.account)(event, order, request_id);
 }
 
 uint16_t Gateway::operator()(
-    Event<ModifyOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   auto &modify_order = event.value;
   assert(!std::empty(modify_order.account));
   assert(modify_order.account == order.account);
@@ -251,10 +237,7 @@ uint16_t Gateway::operator()(
 }
 
 uint16_t Gateway::operator()(
-    Event<CancelOrder> const &event,
-    server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   auto &cancel_order = event.value;
   assert(!std::empty(cancel_order.account));
   assert(cancel_order.account == order.account);

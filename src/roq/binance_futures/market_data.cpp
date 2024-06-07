@@ -88,8 +88,7 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 }
 
 struct create_metrics final : public core::metrics::Factory {
-  explicit create_metrics(auto &settings, auto const &group, auto const &function)
-      : core::metrics::Factory(settings.app.name, group, function) {}
+  explicit create_metrics(auto &settings, auto const &group, auto const &function) : core::metrics::Factory(settings.app.name, group, function) {}
 };
 
 auto get_supports(auto priority) {
@@ -109,11 +108,9 @@ auto get_supports(auto priority) {
 
 // === IMPLEMENTATION ===
 
-MarketData::MarketData(
-    Handler &handler, io::Context &context, uint16_t stream_id, Priority priority, Shared &shared, size_t index)
-    : handler_{handler}, stream_id_{stream_id}, priority_{priority}, name_{create_name(stream_id_, priority_)},
-      index_{index}, connection_{create_connection(*this, shared.settings, context)},
-      decode_buffer_(shared.settings.misc.decode_buffer_size),
+MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_id, Priority priority, Shared &shared, size_t index)
+    : handler_{handler}, stream_id_{stream_id}, priority_{priority}, name_{create_name(stream_id_, priority_)}, index_{index},
+      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_(shared.settings.misc.decode_buffer_size),
       request_id_{static_cast<uint64_t>(stream_id_) * 1000000},  // scale (debugging)
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -269,8 +266,7 @@ void MarketData::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::MarketStreamParser::dispatch(
-              *this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+      if (!json::MarketStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
         log_message();
     } catch (...) {
       log_message();
@@ -424,8 +420,7 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
     for (auto &item : depth_update.asks)
       emplace_back(mbp.asks, item);
     try {
-      auto create_update =
-          [&](auto &bids, auto &asks, auto update_type, auto exchange_sequence) -> MarketByPriceUpdate {
+      auto create_update = [&](auto &bids, auto &asks, auto update_type, auto exchange_sequence) -> MarketByPriceUpdate {
         return {
             .stream_id = stream_id_,
             .exchange = shared_.settings.exchange,
@@ -464,15 +459,7 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
         }
         shared_.depth_request_queue.emplace_back(symbol);
       };
-      sequencer(
-          mbp.bids,
-          mbp.asks,
-          first_sequence,
-          last_sequence,
-          previous_sequence,
-          publish_update,
-          publish_snapshot,
-          request_snapshot);
+      sequencer(mbp.bids, mbp.asks, first_sequence, last_sequence, previous_sequence, publish_update, publish_snapshot, request_snapshot);
     } catch (BadState &) {
       log::warn(R"(RESUBSCRIBE symbol="{}")"sv, symbol);
       // XXX FIXME publish stale
@@ -531,10 +518,7 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
 // request
 
 void MarketData::check_subscribe_queue(std::chrono::nanoseconds now) {
-  subscribe_queue_.dispatch(
-      [&](auto now) { return shared_.rate_limiter.can_request(now); },
-      [&](auto &message) { (*connection_).send_text(message); },
-      now);
+  subscribe_queue_.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &message) { (*connection_).send_text(message); }, now);
 }
 
 }  // namespace binance_futures

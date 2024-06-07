@@ -28,20 +28,16 @@
 namespace roq {
 namespace binance_futures {
 
-struct DropCopySimple final : public DropCopy,
-                              public web::socket::Client::Handler,
-                              public json::UserStreamParser::Handler {
+struct DropCopySimple final : public DropCopy, public web::socket::Client::Handler, public json::UserStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
-    virtual void operator()(
-        Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
+    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
     virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
   };
 
-  DropCopySimple(
-      Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
+  DropCopySimple(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
   DropCopySimple(DropCopySimple &&) = delete;
   DropCopySimple(DropCopySimple const &) = delete;
@@ -101,8 +97,7 @@ struct DropCopySimple final : public DropCopy,
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile parse, order_trade_update, account_update, margin_call, strategy_update, grid_update,
-        account_config_update;
+    utils::metrics::Profile parse, order_trade_update, account_update, margin_call, strategy_update, grid_update, account_config_update;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

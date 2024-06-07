@@ -30,11 +30,7 @@ struct UserStreamParser final {
   };
 
   static bool dispatch(
-      Handler &,
-      std::string_view const &message,
-      std::span<std::byte> const &,
-      TraceInfo const &,
-      bool continue_with_unknown_event_type = false);
+      Handler &, std::string_view const &message, std::span<std::byte> const &, TraceInfo const &, bool continue_with_unknown_event_type = false);
 
  private:
   static bool try_dispatch(

@@ -6,7 +6,7 @@
     {
       "name": "uri",
       "type": "roq/io/web/URI",
-      "validator": "roq::core::flags::URI",
+      "validator": "roq/core/flags/URI",
       "default": "https://testnet.binancefuture.com",
       "description": "Exchange end-point"
     },
@@ -18,7 +18,7 @@
     {
       "name": "pm_uri",
       "type": "roq/io/web/URI",
-      "validator": "roq::core::flags::URI",
+      "validator": "roq/core/flags/URI",
       "description": "Exchange end-point (portfolio margin)"
     },
     {
@@ -29,41 +29,41 @@
     {
       "name": "proxy",
       "type": "roq/io/web/URI",
-      "validator": "roq::core::flags::URI",
+      "validator": "roq/core/flags/URI",
       "description": "Proxy end-point"
     },
     {
       "name": "ping_freq",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "5s",
       "description": "Ping frequency"
     },
     {
       "name": "ping_path",
       "type": "std/string",
-      "validator": "roq::flags::validators::Path",
+      "validator": "roq/flags/validators/Path",
       "default": "/v1/time",
       "description": "Ping path"
     },
     {
       "name": "request_timeout",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "30s",
       "description": "Request timeout"
     },
     {
       "name": "listen_key_refresh",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "1800s",
       "description": "Listen key refresh period"
     },
     {
       "name": "order_recv_window",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "5000ms",
       "description": "Receive window (please refer to exchange documentation)"
     },
@@ -76,7 +76,7 @@
     {
       "name": "order_countdown",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "30s",
       "description": "Auto-cancel countdown period"
     },
@@ -89,7 +89,7 @@
     {
       "name": "back_off_delay",
       "type": "std/nanoseconds",
-      "validator": "roq::flags::validators::TimePeriod",
+      "validator": "roq/flags/validators/TimePeriod",
       "default": "300s",
       "description": "(TEST) Time to wait before retrying a rejected request"
     }

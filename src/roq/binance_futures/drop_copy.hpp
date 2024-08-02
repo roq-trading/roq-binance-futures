@@ -12,7 +12,6 @@ namespace binance_futures {
 struct DropCopy {
   DropCopy() = default;
 
-  DropCopy(DropCopy &&) = default;
   DropCopy(DropCopy const &) = delete;
 
   virtual ~DropCopy() {}

@@ -39,7 +39,6 @@ struct Gateway final : public server::Handler,
                        public DropCopyPortfolio::Handler {
   Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
-  Gateway(Gateway &&) = default;
   Gateway(Gateway const &) = delete;
 
  protected:

@@ -19,6 +19,7 @@
 
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/filters.hpp"
+#include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
@@ -367,13 +368,12 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
           break;
       }
     }
-    auto security_type = json::map(item.contract_type);
     auto reference_data = ReferenceData{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .description = {},
-        .security_type = security_type,
+        .security_type = json::Map{item.contract_type},
         .base_currency = item.base_asset,
         .quote_currency = item.quote_asset,
         .margin_currency = item.margin_asset,
@@ -412,12 +412,11 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     if (all_symbols_.emplace(symbol).second)  // only include new
       symbols.emplace_back(symbol);
     ++counter;
-    auto trading_status = json::map(item.status);
     auto market_status = MarketStatus{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
-        .trading_status = trading_status,
+        .trading_status = json::Map{item.status},
         .exchange_time_utc = {},
         .exchange_sequence = {},
         .sending_time_utc = exchange_info.server_time,

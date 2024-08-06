@@ -14,6 +14,7 @@
 
 #include "roq/core/metrics/factory.hpp"
 
+#include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
@@ -253,30 +254,26 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
     auto &order_trade_update = event.value;
     log::info<3>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
-    auto side = json::map(execution_report.side);
     auto external_order_id = fmt::format("{}"sv, execution_report.order_id);  // alloc
-    auto order_status = json::map(execution_report.order_status);
-    auto order_type = json::map(execution_report.order_type);
-    auto time_in_force = json::map(execution_report.time_in_force);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
     // XXX HANS execution_report.execution_type ==> OrderAck ???
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
-        .side = side,
+        .side = json::Map{execution_report.side},
         .position_effect = {},
         .margin_mode = {},
         .max_show_quantity = NaN,
-        .order_type = order_type,
-        .time_in_force = time_in_force,
+        .order_type = json::Map{execution_report.order_type},
+        .time_in_force = json::Map{execution_report.time_in_force},
         .execution_instructions = {},
         .create_time_utc = {},
         .update_time_utc = order_trade_update.transaction_time,
         .external_account = {},
         .external_order_id = external_order_id,
         .client_order_id = execution_report.client_order_id,
-        .order_status = order_status,
+        .order_status = json::Map{execution_report.order_status},
         .quantity = execution_report.original_quantity,
         .price = execution_report.original_price,
         .stop_price = execution_report.stop_price,
@@ -324,7 +321,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .order_id = order_id,
         .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
-        .side = side,
+        .side = json::Map{execution_report.side},
         .position_effect = {},
         .margin_mode = {},
         .create_time_utc = execution_report.order_trade_time,

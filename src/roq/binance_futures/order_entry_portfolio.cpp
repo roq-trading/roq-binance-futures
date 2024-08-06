@@ -18,6 +18,7 @@
 #include "roq/web/rest/client.hpp"
 
 #include "roq/binance_futures/json/error.hpp"
+#include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
 
 using namespace std::literals;
@@ -703,30 +704,26 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrders> const &event) {
     if (std::empty(item.client_order_id))
       continue;
     open_orders_symbols_.emplace(item.symbol);
-    auto side = json::map(item.side);
-    auto order_type = json::map(item.type);
-    auto time_in_force = json::map(item.time_in_force);
     auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
-    auto order_status = json::map(item.status);
     auto remaining_quantity = item.orig_qty - item.executed_qty;
     auto average_traded_price = utils::compare(item.executed_qty, 0.0) == 0 ? NaN : item.avg_price;
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
-        .side = side,
+        .side = json::Map{item.side},
         .position_effect = {},
         .margin_mode = MarginMode::PORTFOLIO,
         .max_show_quantity = NaN,
-        .order_type = order_type,
-        .time_in_force = time_in_force,
+        .order_type = json::Map{item.type},
+        .time_in_force = json::Map{item.time_in_force},
         .execution_instructions = {},
         .create_time_utc = item.time,
         .update_time_utc = item.update_time,
         .external_account = {},
         .external_order_id = external_order_id,
         .client_order_id = item.client_order_id,
-        .order_status = order_status,
+        .order_status = json::Map{item.status},
         .quantity = item.orig_qty,
         .price = item.price,
         .stop_price = item.stop_price,
@@ -821,14 +818,13 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);
     auto external_order_id = fmt::format("{}"sv, trade.order_id);
-    auto side = json::map(trade.side);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
         .account = account_.name,
         .order_id = {},
         .exchange = shared_.settings.exchange,
         .symbol = trade.symbol,
-        .side = side,
+        .side = json::Map{trade.side},
         .position_effect = {},
         .margin_mode = MarginMode::PORTFOLIO,
         .create_time_utc = trade.time,
@@ -922,10 +918,6 @@ void OrderEntryPortfolio::new_order_ack(Trace<web::rest::Response> const &event,
 void OrderEntryPortfolio::operator()(Trace<json::NewOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, new_order] = event;
   log::info<2>("new_order={}, user_id={}, order_id={}, version={}"sv, new_order, user_id, order_id, version);
-  auto side = json::map(new_order.side);
-  auto order_type = json::map(new_order.type);
-  auto time_in_force = json::map(new_order.time_in_force);
-  auto order_status = json::map(new_order.status);
   auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // alloc
   auto response = server::oms::Response{
       .request_type = RequestType::CREATE_ORDER,
@@ -942,19 +934,19 @@ void OrderEntryPortfolio::operator()(Trace<json::NewOrder> const &event, uint8_t
       .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = new_order.symbol,
-      .side = side,
+      .side = json::Map{new_order.side},
       .position_effect = {},
       .margin_mode = MarginMode::PORTFOLIO,
       .max_show_quantity = NaN,
-      .order_type = order_type,
-      .time_in_force = time_in_force,
+      .order_type = json::Map{new_order.type},
+      .time_in_force = json::Map{new_order.time_in_force},
       .execution_instructions = {},
       .create_time_utc = {},
       .update_time_utc = new_order.update_time,
       .external_account = {},
       .external_order_id = external_order_id,
       .client_order_id = {},
-      .order_status = order_status,
+      .order_status = json::Map{new_order.status},
       .quantity = new_order.orig_qty,
       .price = new_order.price,
       .stop_price = new_order.stop_price,
@@ -1036,11 +1028,7 @@ void OrderEntryPortfolio::cancel_order_ack(Trace<web::rest::Response> const &eve
 void OrderEntryPortfolio::operator()(Trace<json::CancelOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, cancel_order] = event;
   log::info<2>("cancel_order={}, user_id={}, order_id={}, version={}"sv, cancel_order, user_id, order_id, version);
-  auto side = json::map(cancel_order.side);
-  auto order_type = json::map(cancel_order.type);
-  auto time_in_force = json::map(cancel_order.time_in_force);
   auto external_order_id = fmt::format("{}"sv, cancel_order.order_id);  // alloc
-  auto order_status = json::map(cancel_order.status);
   auto response = server::oms::Response{
       .request_type = RequestType::CANCEL_ORDER,
       .origin = Origin::EXCHANGE,
@@ -1056,19 +1044,19 @@ void OrderEntryPortfolio::operator()(Trace<json::CancelOrder> const &event, uint
       .account = account_.name,
       .exchange = shared_.settings.exchange,
       .symbol = cancel_order.symbol,
-      .side = side,
+      .side = json::Map{cancel_order.side},
       .position_effect = {},
       .margin_mode = MarginMode::PORTFOLIO,
       .max_show_quantity = NaN,
-      .order_type = order_type,
-      .time_in_force = time_in_force,
+      .order_type = json::Map{cancel_order.type},
+      .time_in_force = json::Map{cancel_order.time_in_force},
       .execution_instructions = {},
       .create_time_utc = {},
       .update_time_utc = cancel_order.update_time,
       .external_account = {},
       .external_order_id = external_order_id,
       .client_order_id = {},
-      .order_status = order_status,
+      .order_status = json::Map{cancel_order.status},
       .quantity = cancel_order.orig_qty,
       .price = cancel_order.price,
       .stop_price = cancel_order.stop_price,

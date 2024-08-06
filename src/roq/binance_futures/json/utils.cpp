@@ -8,6 +8,8 @@
 
 #include "roq/utils/text/writer.hpp"
 
+#include "roq/binance_futures/json/map.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -50,8 +52,8 @@ std::string_view new_order(
     server::oms::Order const &order,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window) {
-  auto side = map(create_order.side).as_raw_text();
-  auto type = map(create_order.order_type).as_raw_text();
+  auto side = map<Side>(create_order.side).as_raw_text();
+  auto type = map<OrderType>(create_order.order_type).as_raw_text();
   auto reduce_only = false;
   buffer.clear();
   fmt::format_to(
@@ -76,7 +78,7 @@ std::string_view new_order(
       break;
     case LIMIT: {
       assert(!std::isnan(create_order.price));
-      auto time_in_force = map(create_order.time_in_force).as_raw_text();
+      auto time_in_force = map<TimeInForce>(create_order.time_in_force).as_raw_text();
       fmt::format_to(
           std::back_inserter(buffer),
           R"(timeInForce={}&)"
@@ -106,9 +108,9 @@ std::string_view new_order_ws_url(
     std::chrono::milliseconds recv_window,
     std::string_view const &api_key,
     std::chrono::milliseconds now) {
-  auto side = map(create_order.side);
-  auto type = map(create_order.order_type);
-  auto time_in_force = map(create_order.time_in_force);
+  auto side = map<Side>(create_order.side);
+  auto type = map<OrderType>(create_order.order_type);
+  auto time_in_force = map<TimeInForce>(create_order.time_in_force);
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -139,9 +141,9 @@ std::string_view new_order_ws_json(
     std::string_view const &api_key,
     std::chrono::milliseconds now,
     std::string_view const &signature) {
-  auto side = map(create_order.side);
-  auto type = map(create_order.order_type);
-  auto time_in_force = map(create_order.time_in_force);
+  auto side = map<Side>(create_order.side);
+  auto type = map<OrderType>(create_order.order_type);
+  auto time_in_force = map<TimeInForce>(create_order.time_in_force);
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -176,7 +178,7 @@ std::string_view modify_order(
     std::chrono::milliseconds recv_window,
     bool modify_order_full) {
   buffer.clear();
-  auto side = map(order.side).as_raw_text();
+  auto side = map<Side>(order.side).as_raw_text();
   if (modify_order_full) {  // fapi
     auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
     auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
@@ -244,7 +246,7 @@ std::string_view modify_order_ws_url(
     std::chrono::milliseconds recv_window,
     std::string_view const &api_key,
     std::chrono::milliseconds now) {
-  auto side = map(order.side).as_raw_text();
+  auto side = map<Side>(order.side).as_raw_text();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -274,7 +276,7 @@ std::string_view modify_order_ws_json(
     std::string_view const &api_key,
     std::chrono::milliseconds now,
     std::string_view const &signature) {
-  auto side = map(order.side).as_raw_text();
+  auto side = map<Side>(order.side).as_raw_text();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};

@@ -19,6 +19,7 @@
 
 #include "roq/core/metrics/factory.hpp"
 
+#include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
 #include "roq/binance_futures/json/wsapi_type.hpp"
 
@@ -830,28 +831,24 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOpenOrders> const &event, json::W
           if (std::empty(item.client_order_id))
             continue;
           open_orders_symbols_.emplace(item.symbol);
-          auto side = json::map(item.side);
-          auto order_type = json::map(item.type);
-          auto time_in_force = json::map(item.time_in_force);
           auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
-          auto order_status = json::map(item.status);
           auto order_update = server::oms::OrderUpdate{
               .account = account_.name,
               .exchange = shared_.settings.exchange,
               .symbol = item.symbol,
-              .side = side,
+              .side = json::Map{item.side},
               .position_effect = {},
               .margin_mode = {},
               .max_show_quantity = NaN,
-              .order_type = order_type,
-              .time_in_force = time_in_force,
+              .order_type = json::Map{item.type},
+              .time_in_force = json::Map{item.time_in_force},
               .execution_instructions = {},
               .create_time_utc = item.time,
               .update_time_utc = item.update_time,
               .external_account = {},
               .external_order_id = external_order_id,
               .client_order_id = item.client_order_id,
-              .order_status = order_status,
+              .order_status = json::Map{item.status},
               .quantity = item.orig_qty,
               .price = item.price,
               .stop_price = item.stop_price,
@@ -955,28 +952,24 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, j
           log::info<2>("item={}"sv, item);
           if (std::empty(item.client_order_id))
             continue;
-          auto side = json::map(item.side);
-          auto order_type = json::map(item.type);
-          auto time_in_force = json::map(item.time_in_force);
           auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
-          auto order_status = json::map(item.status);
           auto order_update = server::oms::OrderUpdate{
               .account = account_.name,
               .exchange = shared_.settings.exchange,
               .symbol = item.symbol,
-              .side = side,
+              .side = json::Map{item.side},
               .position_effect = {},
               .margin_mode = {},
               .max_show_quantity = NaN,
-              .order_type = order_type,
-              .time_in_force = time_in_force,
+              .order_type = json::Map{item.type},
+              .time_in_force = json::Map{item.time_in_force},
               .execution_instructions = {},
               .create_time_utc = item.time,
               .update_time_utc = item.update_time,
               .external_account = {},
               .external_order_id = external_order_id,
               .client_order_id = {},
-              .order_status = order_status,
+              .order_status = json::Map{item.status},
               .quantity = item.orig_qty,
               .price = item.price,
               .stop_price = item.stop_price,
@@ -1011,11 +1004,8 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
     switch (message.status) {
       case 200: {
         auto &new_order = message.result;
-        auto side = json::map(new_order.side);
-        auto order_type = json::map(new_order.type);
-        auto time_in_force = json::map(new_order.time_in_force);
         auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // alloc
-        auto order_status = json::map(new_order.status);
+        auto order_status = json::map<OrderStatus>(new_order.status);
         // LIMIT_MAKER orders do not return any order state + we only end up here if we receive HTTP status OK
         if (order_status == OrderStatus{})
           order_status = OrderStatus::WORKING;
@@ -1051,12 +1041,12 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
             .account = account_.name,
             .exchange = shared_.settings.exchange,
             .symbol = new_order.symbol,
-            .side = side,
+            .side = json::Map{new_order.side},
             .position_effect = {},
             .margin_mode = {},
             .max_show_quantity = NaN,
-            .order_type = order_type,
-            .time_in_force = time_in_force,
+            .order_type = json::Map{new_order.type},
+            .time_in_force = json::Map{new_order.time_in_force},
             .execution_instructions = {},
             .create_time_utc = {},
             .update_time_utc = {},  // new_order.transact_time,
@@ -1113,11 +1103,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPIModifyOrder> const &event, json::
     switch (message.status) {
       case 200: {
         auto &modify_order = message.result;
-        auto side = json::map(modify_order.side);
-        auto order_type = json::map(modify_order.type);
-        auto time_in_force = json::map(modify_order.time_in_force);
         auto external_order_id = fmt::format("{}"sv, modify_order.order_id);  // alloc
-        auto order_status = json::map(modify_order.status);
         auto response = server::oms::Response{
             .request_type = RequestType::MODIFY_ORDER,
             .origin = Origin::EXCHANGE,
@@ -1133,19 +1119,19 @@ void OrderEntryWS::operator()(Trace<json::WSAPIModifyOrder> const &event, json::
             .account = account_.name,
             .exchange = shared_.settings.exchange,
             .symbol = modify_order.symbol,
-            .side = side,
+            .side = json::Map{modify_order.side},
             .position_effect = {},
             .margin_mode = {},
             .max_show_quantity = NaN,
-            .order_type = order_type,
-            .time_in_force = time_in_force,
+            .order_type = json::Map{modify_order.type},
+            .time_in_force = json::Map{modify_order.time_in_force},
             .execution_instructions = {},
             .create_time_utc = {},
             .update_time_utc = {},  // modify_order.transact_time,
             .external_account = {},
             .external_order_id = external_order_id,
             .client_order_id = {},
-            .order_status = order_status,
+            .order_status = json::Map{modify_order.status},
             .quantity = modify_order.orig_qty,
             .price = modify_order.price,
             .stop_price = NaN,
@@ -1195,11 +1181,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOrder> const &event, json::
     switch (message.status) {
       case 200: {
         auto &cancel_order = message.result;
-        auto side = json::map(cancel_order.side);
-        auto order_type = json::map(cancel_order.type);
-        auto time_in_force = json::map(cancel_order.time_in_force);
         auto external_order_id = fmt::format("{}"sv, cancel_order.order_id);  // alloc
-        auto order_status = json::map(cancel_order.status);
         auto response = server::oms::Response{
             .request_type = RequestType::CANCEL_ORDER,
             .origin = Origin::EXCHANGE,
@@ -1215,19 +1197,19 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOrder> const &event, json::
             .account = account_.name,
             .exchange = shared_.settings.exchange,
             .symbol = cancel_order.symbol,
-            .side = side,
+            .side = json::Map{cancel_order.side},
             .position_effect = {},
             .margin_mode = {},
             .max_show_quantity = NaN,
-            .order_type = order_type,
-            .time_in_force = time_in_force,
+            .order_type = json::Map{cancel_order.type},
+            .time_in_force = json::Map{cancel_order.time_in_force},
             .execution_instructions = {},
             .create_time_utc = {},
             .update_time_utc = {},  // cancel_order.transact_time,
             .external_account = {},
             .external_order_id = external_order_id,
             .client_order_id = {},
-            .order_status = order_status,
+            .order_status = json::Map{cancel_order.status},
             .quantity = cancel_order.orig_qty,
             .price = cancel_order.price,
             .stop_price = NaN,

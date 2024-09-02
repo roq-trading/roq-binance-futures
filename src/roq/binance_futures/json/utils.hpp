@@ -9,9 +9,9 @@
 
 #include "roq/utils/patterns.hpp"
 
-#include "roq/core/json/parser.hpp"
+#include "roq/utils/charconv/from_chars.hpp"
 
-#include "roq/core/charconv/datetime.hpp"
+#include "roq/core/json/parser.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -24,13 +24,14 @@ inline void update(T &result, core::json::Value const &value) {
 
 template <>
 inline void update(std::chrono::milliseconds &result, core::json::Value const &value) {
+  using result_type = std::remove_reference<decltype(result)>::type;
   return std::visit(
       utils::overloaded{
-          [&](core::json::Null const &) { result = std::chrono::milliseconds{}; },
+          [&](core::json::Null const &) { result = result_type{}; },
           [](bool) { throw std::bad_cast{}; },
-          [&](int64_t value) { result = std::chrono::milliseconds{value}; },
-          [&](double value) { result = std::chrono::milliseconds{static_cast<int64_t>(value)}; },
-          [&](std::string_view const &value) { result = core::charconv::datetime_from_string<std::remove_reference<decltype(result)>::type>(value); },
+          [&](int64_t value) { result = result_type{value}; },
+          [&](double value) { result = result_type{static_cast<int64_t>(value)}; },
+          [&](std::string_view const &value) { result = utils::charconv::from_chars<result_type>(value, utils::charconv::Format::DATETIME); },
           [](core::json::Object const &) { throw std::bad_cast{}; },
           [](core::json::Array const &) { throw std::bad_cast{}; },
       },

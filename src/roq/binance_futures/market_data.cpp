@@ -11,7 +11,7 @@
 #include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
-#include "roq/core/charconv.hpp"
+#include "roq/utils/charconv/to_string.hpp"
 
 #include "roq/core/tools/exception.hpp"
 
@@ -303,7 +303,7 @@ void MarketData::operator()(Trace<json::AggTrade> const &event) {
         .taker_order_id = {},
         .maker_order_id = {},
     };
-    core::charconv::to_string(std::back_inserter(trade.trade_id), agg_trade.agg_trade_id);
+    utils::charconv::to_string(std::back_inserter(trade.trade_id), agg_trade.agg_trade_id);
     auto trade_summary = TradeSummary{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,

@@ -324,6 +324,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .side = json::Map{execution_report.side},
         .position_effect = {},
         .margin_mode = {},
+        .quantity_type = {},
         .create_time_utc = execution_report.order_trade_time,
         .update_time_utc = execution_report.order_trade_time,
         .external_account = {},

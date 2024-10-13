@@ -1,3 +1,121 @@
+# ReferenceData
+
+## LINEAR (USD-M, fapi)
+
+```
+{
+  symbol="BTCUSDT",
+  pair="BTCUSDT",
+  contract_type=PERPETUAL,
+  delivery_date=4133404800000ms,
+  onboard_date=1569398400000ms,
+  status=TRADING,
+  maint_margin_percent=2.5,
+  required_margin_percent=5,
+  base_asset="BTC",
+  quote_asset="USDT",
+  margin_asset="USDT",
+  price_precision=2,
+  quantity_precision=3,
+  base_asset_precision=8,
+  quote_precision=8,
+  underlying_type="COIN",
+  settle_plan=0,
+  trigger_protect=0.05000000000000001,
+  filters="[{
+    "minPrice":"556.80",
+    "maxPrice":"4529764",
+    "filterType":"PRICE_FILTER",
+    "tickSize":"0.10"
+  }, {
+    "minQty":"0.001",
+    "maxQty":"1000",
+    "stepSize":"0.001",
+    "filterType":"LOT_SIZE"
+  }, {
+    "filterType":"MARKET_LOT_SIZE",
+    "minQty":"0.001",
+    "maxQty":"120",
+    "stepSize":"0.001"
+  }, {"filterType":"MAX_NUM_ORDERS",
+    "limit":200
+  }, {
+    "limit":10,
+    "filterType":"MAX_NUM_ALGO_ORDERS"
+  }, {
+    "notional":"100",
+    "filterType":"MIN_NOTIONAL"
+  }, {
+    "multiplierDown":"0.9500",
+    "filterType":"PERCENT_PRICE",
+    "multiplierUp":"1.0500",
+    "multiplierDecimal":"4"
+  }
+  ]",
+  liquidation_fee=0.012500000000000002,
+  market_take_bound=0.05000000000000001,
+  contract_status="",
+  contract_size=nan
+}
+```
+
+## INVERSE (COIN-M, dapi)
+
+```
+{
+  symbol="BTCUSD_241227",
+  pair="BTCUSD",
+  contract_type=CURRENT_QUARTER,
+  delivery_date=1735286400000ms,
+  onboard_date=1719561600000ms,
+  status=<UNDEFINED>,
+  maint_margin_percent=2.5,
+  required_margin_percent=5,
+  base_asset="BTC",
+  quote_asset="USD",
+  margin_asset="BTC",
+  price_precision=1,
+  quantity_precision=0,
+  base_asset_precision=8,
+  quote_precision=8,
+  underlying_type="COIN",
+  settle_plan=0,
+  trigger_protect=0.05000000000000001,
+  filters="[{
+    "minPrice":"1000",
+    "maxPrice":"4671848",
+    "filterType":"PRICE_FILTER",
+    "tickSize":"0.1"
+  }, {
+    "stepSize":"1",
+    "filterType":"LOT_SIZE",
+    "maxQty":"1000000",
+    "minQty":"1"
+  }, {
+    "stepSize":"1",
+    "filterType":"MARKET_LOT_SIZE",
+    "maxQty":"1000",
+    "minQty":"1"
+  }, {
+    "limit":200,
+    "filterType":"MAX_NUM_ORDERS"
+  }, {
+    "limit":20,
+    "filterType":"MAX_NUM_ALGO_ORDERS"
+  }, {
+    "multiplierDown":"0.9500",
+    "multiplierUp":"1.0500",
+    "multiplierDecimal":"4",
+    "filterType":"PERCENT_PRICE"
+  }
+  ]",
+  liquidation_fee=0.010000000000000002,
+  market_take_bound=0.05000000000000001,
+  contract_status="TRADING",
+  contract_size=100
+}
+```
+
 papi
 -- no auto-cancel
 -- something weird with funds

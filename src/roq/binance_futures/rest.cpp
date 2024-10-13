@@ -8,6 +8,7 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/compare.hpp"
+#include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/utils/charconv/from_chars.hpp"
@@ -366,6 +367,11 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
           break;
       }
     }
+    auto settlement_currency = [&]() {
+      if (item.margin_asset == item.base_asset)
+        return item.quote_asset;
+      return item.base_asset;
+    }();
     auto reference_data = ReferenceData{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
@@ -374,11 +380,11 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .security_type = json::Map{item.contract_type},
         .base_currency = item.base_asset,
         .quote_currency = item.quote_asset,
-        .settlement_currency = {},
+        .settlement_currency = settlement_currency,
         .margin_currency = item.margin_asset,
         .commission_currency = {},
         .tick_size = tick_size,
-        .multiplier = NaN,
+        .multiplier = item.contract_size,  // XXX ???
         .min_notional = min_notional,
         .min_trade_vol = min_trade_vol,
         .max_trade_vol = max_trade_vol,
@@ -386,10 +392,10 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .option_type = {},
         .strike_currency = {},
         .strike_price = NaN,
-        .underlying = {},
+        .underlying = item.pair,
         .time_zone = {},
-        .issue_date = {},
-        .settlement_date = {},
+        .issue_date = utils::safe_cast{item.onboard_date},
+        .settlement_date = utils::safe_cast{item.delivery_date},
         .expiry_datetime = {},
         .expiry_datetime_utc = {},
         .exchange_time_utc = {},

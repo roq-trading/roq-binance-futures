@@ -378,6 +378,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .symbol = item.symbol,
         .description = {},
         .security_type = json::Map{item.contract_type},
+        .cfi_code = {},
         .base_currency = item.base_asset,
         .quote_currency = item.quote_asset,
         .settlement_currency = settlement_currency,

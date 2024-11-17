@@ -67,4 +67,4 @@ add_library(${TARGET_NAME} OBJECT ${AUTOGEN_SOURCES})
 
 add_dependencies(${TARGET_NAME} flags-autogen-headers)
 
-target_link_libraries(${TARGET_NAME} PRIVATE roq-api::roq-api absl::flags)
+target_link_libraries(${TARGET_NAME} PRIVATE roq-api::roq-api roq-flags::roq-flags absl::flags)

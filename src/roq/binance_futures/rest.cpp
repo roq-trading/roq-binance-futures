@@ -385,6 +385,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .margin_currency = item.margin_asset,
         .commission_currency = {},
         .tick_size = tick_size,
+        .tick_size_steps = {},
         .multiplier = item.contract_size,  // XXX ???
         .min_notional = min_notional,
         .min_trade_vol = min_trade_vol,

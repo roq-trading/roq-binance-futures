@@ -397,6 +397,14 @@ std::string_view countdown_cancel_all_open_orders(
   return result;
 }
 
+// map
+
+TradingStatus trading_status_helper(SymbolStatus symbol_status, ContractStatus contract_status) {
+  if (symbol_status != SymbolStatus::UNDEFINED__)
+    return Map{symbol_status};
+  return Map{contract_status};
+}
+
 }  // namespace json
 }  // namespace binance_futures
 }  // namespace roq

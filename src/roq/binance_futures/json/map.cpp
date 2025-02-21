@@ -153,7 +153,7 @@ static_assert(static_cast<roq::SecurityType>(Helper{ContractType{ContractType::N
 static_assert(static_cast<roq::SecurityType>(Helper{ContractType{ContractType::CURRENT_QUARTER_DELIVERING}}) == roq::SecurityType::FUTURES);
 static_assert(static_cast<roq::SecurityType>(Helper{ContractType{ContractType::PERPETUAL_DELIVERING}}) == roq::SecurityType::FUTURES);
 
-// SymbolStatus ==> roq::Side
+// SymbolStatus ==> roq::TradingStatus
 
 template <>
 template <>
@@ -202,6 +202,56 @@ static_assert(static_cast<roq::TradingStatus>(Helper{SymbolStatus{SymbolStatus::
 static_assert(static_cast<roq::TradingStatus>(Helper{SymbolStatus{SymbolStatus::SETTLING}}) == roq::TradingStatus::PRE_CLOSE);
 static_assert(static_cast<roq::TradingStatus>(Helper{SymbolStatus{SymbolStatus::PENDING_TRADING}}) == roq::TradingStatus::PRE_OPEN);
 static_assert(static_cast<roq::TradingStatus>(Helper{SymbolStatus{SymbolStatus::DELIVERING}}) == roq::TradingStatus::UNDEFINED);
+
+// ContractStatus ==> roq::TradingStatus
+
+template <>
+template <>
+constexpr Helper<ContractStatus>::operator roq::TradingStatus() {
+  switch (std::get<0>(args_)) {
+    using enum json::ContractStatus::type_t;
+    case UNDEFINED__:
+      return {};
+    case UNKNOWN__:
+      break;
+    case TRADING:
+      return roq::TradingStatus::OPEN;
+    case HALT:
+      return roq::TradingStatus::HALT;
+    case BREAK:
+      return roq::TradingStatus::CLOSE;
+    case END_OF_DAY:
+      return roq::TradingStatus::END_OF_DAY;
+      // note! following probably not used (not sure if also applies to futures)
+      // - https://dev.binance.vision/t/explanation-on-symbol-status/118
+    case PRE_TRADING:
+      return roq::TradingStatus::PRE_OPEN;
+    case AUCTION_MATCH:
+      return roq::TradingStatus::PRE_OPEN;
+    case POST_TRADING:
+      return roq::TradingStatus::CLOSE;
+      // note! have found no documentation
+    case SETTLING:                           // note! no idea what this is for
+      return roq::TradingStatus::PRE_CLOSE;  // XXX REVIEW
+    case PENDING_TRADING:                    // note! no idea what this is for
+      return roq::TradingStatus::PRE_OPEN;   // XXX REVIEW
+    case DELIVERING:
+      return roq::TradingStatus::UNDEFINED;
+  }
+  roq::log::fatal("Unexpected"sv);
+}
+
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::UNDEFINED__}}) == roq::TradingStatus::UNDEFINED);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::TRADING}}) == roq::TradingStatus::OPEN);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::HALT}}) == roq::TradingStatus::HALT);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::BREAK}}) == roq::TradingStatus::CLOSE);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::END_OF_DAY}}) == roq::TradingStatus::END_OF_DAY);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::PRE_TRADING}}) == roq::TradingStatus::PRE_OPEN);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::AUCTION_MATCH}}) == roq::TradingStatus::PRE_OPEN);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::POST_TRADING}}) == roq::TradingStatus::CLOSE);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::SETTLING}}) == roq::TradingStatus::PRE_CLOSE);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::PENDING_TRADING}}) == roq::TradingStatus::PRE_OPEN);
+static_assert(static_cast<roq::TradingStatus>(Helper{ContractStatus{ContractStatus::DELIVERING}}) == roq::TradingStatus::UNDEFINED);
 
 // TimeInForce ==> roq::TimeInForce
 
@@ -405,6 +455,12 @@ Map<Side>::operator roq::Side() {
 template <>
 template <>
 Map<SymbolStatus>::operator roq::TradingStatus() {
+  return Helper{args_};
+}
+
+template <>
+template <>
+Map<ContractStatus>::operator roq::TradingStatus() {
   return Helper{args_};
 }
 

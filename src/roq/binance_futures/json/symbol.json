@@ -97,7 +97,7 @@
     },
     {
       "name": "contractStatus",
-      "type": "std/string_view",
+      "type": "roq/binance_futures/json/ContractStatus",
       "comment": "COIN-M"
     },
     {

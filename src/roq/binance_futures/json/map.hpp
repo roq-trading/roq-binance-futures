@@ -6,6 +6,7 @@
 
 #include "roq/api.hpp"
 
+#include "roq/binance_futures/json/contract_status.hpp"
 #include "roq/binance_futures/json/contract_type.hpp"
 #include "roq/binance_futures/json/order_status.hpp"
 #include "roq/binance_futures/json/order_type.hpp"

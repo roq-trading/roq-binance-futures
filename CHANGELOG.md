@@ -4,6 +4,8 @@ All notable changes will be documented in this file.
 
 ## Head
 
+* `ExchangeInfo.contractStatus` was not being processed for COIN-M products (#485)
+
 ## 1.0.4 &ndash; 2024-12-30
 
 ## 1.0.3 &ndash; 2024-11-26

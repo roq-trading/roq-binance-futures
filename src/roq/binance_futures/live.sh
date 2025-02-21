@@ -14,7 +14,7 @@ CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
 URI="binance.com"
 
-API="fapi"
+API="dapi"
 
 REST_URI="https://$API.$URI"
 WS_URI="wss://${API:0:1}stream.$URI/ws"

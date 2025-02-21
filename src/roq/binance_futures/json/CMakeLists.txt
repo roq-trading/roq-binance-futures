@@ -22,6 +22,7 @@ set(AUTOGEN_SCHEMAS
     book_ticker.json
     cancel_all_open_orders.json
     cancel_order.json
+    contract_status.json
     contract_type.json
     depth_item.json
     depth.json

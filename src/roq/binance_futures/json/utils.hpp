@@ -13,6 +13,9 @@
 
 #include "roq/core/json/parser.hpp"
 
+#include "roq/binance_futures/json/contract_status.hpp"
+#include "roq/binance_futures/json/symbol_status.hpp"
+
 namespace roq {
 namespace binance_futures {
 namespace json {
@@ -139,6 +142,8 @@ extern std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::s
 
 extern std::string_view countdown_cancel_all_open_orders(
     std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window);
+
+extern TradingStatus trading_status_helper(SymbolStatus, ContractStatus);
 
 }  // namespace json
 }  // namespace binance_futures

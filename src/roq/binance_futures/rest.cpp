@@ -423,7 +423,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
-        .trading_status = json::Map{item.status},
+        .trading_status = json::trading_status_helper(item.status, item.contract_status),
         .exchange_time_utc = {},
         .exchange_sequence = {},
         .sending_time_utc = exchange_info.server_time,

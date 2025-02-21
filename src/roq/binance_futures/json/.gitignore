@@ -17,6 +17,7 @@ balances_item.hpp
 book_ticker.hpp
 cancel_all_open_orders.hpp
 cancel_order.hpp
+contract_status.hpp
 contract_type.hpp
 depth_item.hpp
 depth.hpp
@@ -94,6 +95,7 @@ balances_item.cpp
 book_ticker.cpp
 cancel_all_open_orders.cpp
 cancel_order.cpp
+contract_status.cpp
 contract_type.cpp
 depth_item.cpp
 depth.cpp

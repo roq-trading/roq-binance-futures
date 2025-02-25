@@ -88,6 +88,10 @@ bool UserStreamParser::try_dispatch(
       // XXX need parsing
       break;
     }
+    case TRADE_LITE: {
+      // XXX need parsing
+      break;
+    }
     case UNKNOWN__:
       if (!continue_with_unknown_event_type)
         log::fatal("Unexpected"sv);

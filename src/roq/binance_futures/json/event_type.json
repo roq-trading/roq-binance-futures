@@ -37,6 +37,9 @@
     },
     {
       "name": "listenKeyExpired"
+    },
+    {
+      "name": "TRADE_LITE"
     }
   ]
 }

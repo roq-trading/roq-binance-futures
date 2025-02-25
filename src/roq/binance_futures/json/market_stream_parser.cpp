@@ -116,6 +116,8 @@ bool MarketStreamParser::dispatch(
               // XXX need parsing
               break;
             }
+            case TRADE_LITE:
+              break;
             case UNKNOWN__:
               if (!continue_with_unknown_event_type)
                 log::fatal("Unexpected"sv);

@@ -89,7 +89,9 @@ bool UserStreamParser::try_dispatch(
       break;
     }
     case TRADE_LITE: {
-      // XXX need parsing
+      TradeLite trade_lite{message, buffer};
+      Trace event{trace_info, trade_lite};
+      handler(event);
       break;
     }
     case UNKNOWN__:

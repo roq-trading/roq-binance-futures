@@ -81,6 +81,33 @@ R create_drop_copy(auto &accounts) {
   }
   return result;
 }
+
+template <typename R>
+R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
+  using result_type = std::remove_cvref<R>::type;
+  result_type result;
+  for (auto &[_, item] : accounts) {
+    auto &account = *item;
+    auto &request = request_by_account[account.name];
+    switch (account.margin_mode) {
+      using enum MarginMode;
+      case UNDEFINED:
+      case ISOLATED:
+      case CROSS:
+        if (shared.settings.ws_api) {
+          auto obj = std::make_unique<RestTrade>(gateway, context, ++stream_id, account, shared, request);
+          result.try_emplace(account.name, std::move(obj));
+        } else {
+          // do nothing
+        }
+        break;
+      case PORTFOLIO:
+        // do nothing
+        break;
+    }
+  }
+  return result;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -89,7 +116,8 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
     : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context}, shared_{dispatcher, settings},
       requests_{create_requests<decltype(requests_)>(config)}, rest_{*this, context_, ++stream_id_, shared_},
       order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
-      drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
+      drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)},
+      download_{create_download<decltype(download_)>(*this, context_, stream_id_, accounts_, shared_, requests_)} {
   if (settings.rest.cancel_on_disconnect)
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
 }
@@ -291,6 +319,8 @@ void Gateway::dispatch(Args &&...args) {
   for (auto &[_, item] : drop_copy_)
     if (static_cast<bool>(item))
       helper(*item);
+  for (auto &[_, item] : download_)
+    helper(*item);
 }
 
 Account &Gateway::get_account(std::string_view const &account) const {

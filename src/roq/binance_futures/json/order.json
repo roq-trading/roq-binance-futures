@@ -97,6 +97,14 @@
     {
       "name": "goodTillDate",
       "type": "std/milliseconds"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view"
+    },
+    {
+      "name": "cumBase",
+      "type": "std/double"
     }
   ]
 }

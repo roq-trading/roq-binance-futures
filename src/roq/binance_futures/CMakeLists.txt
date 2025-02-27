@@ -15,6 +15,7 @@ set(SOURCES
     order_entry_simple.cpp
     order_entry_ws.cpp
     rest.cpp
+    rest_trade.cpp
     settings.cpp
     shared.cpp
     main.cpp)

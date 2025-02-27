@@ -119,6 +119,10 @@
     {
       "name": "totalMarginOpenLoss",
       "type": "std/double"
+    },
+    {
+      "name": "feeBurn",
+      "type": "std/bool"
     }
   ]
 }

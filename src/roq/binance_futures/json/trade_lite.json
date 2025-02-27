@@ -1,0 +1,71 @@
+{
+  "name": "roq/binance_futures/json/TradeLite",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "q",
+      "name": "original_quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "p",
+      "name": "original_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "m",
+      "name": "maker",
+      "type": "std/bool"
+    },
+    {
+      "raw": "c",
+      "name": "client_order_id",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "S",
+      "name": "side",
+      "type": "roq/binance_futures/json/Side"
+    },
+    {
+      "raw": "L",
+      "name": "last_filled_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "l",
+      "name": "last_filled_quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "t",
+      "name": "trade_id",
+      "type": "std/int64"
+    },
+    {
+      "raw": "i",
+      "name": "order_id",
+      "type": "std/int64"
+    }
+  ]
+}

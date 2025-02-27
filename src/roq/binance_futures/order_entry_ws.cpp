@@ -118,10 +118,6 @@ OrderEntryWS::OrderEntryWS(
           .account_balance_ack = create_metrics(shared.settings, name_, "account_balance_ack"sv),
           .account_status = create_metrics(shared.settings, name_, "account_status"sv),
           .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
-          .open_orders_status = create_metrics(shared.settings, name_, "open_orders_status"sv),
-          .open_orders_status_ack = create_metrics(shared.settings, name_, "open_orders_status_ack"sv),
-          .my_trades = create_metrics(shared.settings, name_, "my_trades"sv),
-          .my_trades_ack = create_metrics(shared.settings, name_, "my_trades_ack"sv),
           .open_orders_cancel_all = create_metrics(shared.settings, name_, "open_orders_cancel_all"sv),
           .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
           .order_place = create_metrics(shared.settings, name_, "order_place"sv),
@@ -167,16 +163,6 @@ void OrderEntryWS::operator()(Event<Timer> const &event) {
       account_status();
       download_account_ = true;
     }
-    if (!downloading() && request_.respond_orders < request_.request_orders) {
-      log::info("Download orders..."sv);
-      open_orders_status();
-      download_orders_ = true;
-    }
-    if (!downloading() && request_.respond_trades < request_.request_trades) {
-      log::info("Download trades..."sv);
-      my_trades();
-      download_trades_ = true;
-    }
   }
 }
 
@@ -195,8 +181,6 @@ void OrderEntryWS::operator()(metrics::Writer &writer) {
       .write(profile_.account_balance_ack, metrics::Type::PROFILE)
       .write(profile_.account_status, metrics::Type::PROFILE)
       .write(profile_.account_status_ack, metrics::Type::PROFILE)
-      .write(profile_.open_orders_status, metrics::Type::PROFILE)
-      .write(profile_.open_orders_status_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
       .write(profile_.order_place, metrics::Type::PROFILE)
@@ -365,97 +349,6 @@ void OrderEntryWS::account_status() {
         now.count(),
         signature);
     (*connection_).send_text(message);
-  });
-}
-
-// open-orders
-
-void OrderEntryWS::open_orders_status() {
-  profile_.open_orders_status([&]() {
-    auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
-    auto signature = account_.create_ws_api_signature(message_for_signature);
-    auto request = json::WSAPIRequest{
-        .sequence = ++request_id_,
-        .type = json::WSAPIType::OPEN_ORDERS_STATUS,
-        .user_id = {},
-        .order_id = {},
-        .version = {},
-        .order_id_2 = {},
-    };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"openOrders.status",)"
-        R"("params":{{)"
-        R"("apiKey":"{}",)"
-        R"("timestamp":"{}",)"
-        R"("signature":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        account_.get_key(),
-        now.count(),
-        signature);
-    (*connection_).send_text(message);
-  });
-}
-
-// my-trades
-
-void OrderEntryWS::my_trades() {
-  profile_.my_trades([&]() {
-    auto &symbols = shared_.settings.download.symbols;
-    for (auto &symbol : symbols) {
-      auto now = clock::get_realtime<std::chrono::milliseconds>();
-      auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
-      log::info<1>("Download trades: lookback={}"sv, lookback);
-      auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - lookback);
-      // note! remember to sort
-      auto message_for_signature = fmt::format(
-          "apiKey={}&"
-          "limit={}&"
-          "startTime={}&"
-          "symbol={}&"
-          "timestamp={}"sv,
-          account_.get_key(),
-          shared_.settings.download.trades_limit,
-          start_time.count(),
-          symbol,
-          now.count());
-      auto signature = account_.create_ws_api_signature(message_for_signature);
-      auto request = json::WSAPIRequest{
-          .sequence = ++request_id_,
-          .type = json::WSAPIType::MY_TRADES,
-          .user_id = {},
-          .order_id = {},
-          .version = {},
-          .order_id_2 = {},
-      };
-      auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-      auto message = fmt::format(
-          R"({{)"
-          R"("id":"{}",)"
-          R"("method":"myTrades",)"
-          R"("params":{{)"
-          R"("apiKey":"{}",)"
-          R"("limit":{},)"
-          R"("startTime":{},)"
-          R"("symbol":"{}",)"
-          R"("timestamp":{},)"
-          R"("signature":"{}")"
-          R"(}})"
-          R"(}})"sv,
-          request_id,
-          account_.get_key(),
-          shared_.settings.download.trades_limit,
-          start_time.count(),
-          symbol,
-          now.count(),
-          signature);
-      (*connection_).send_text(message);
-    }
   });
 }
 
@@ -818,127 +711,12 @@ void OrderEntryWS::operator()(Trace<json::WSAPIAccountStatus> const &event, json
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIOpenOrders> const &event, json::WSAPIRequest const &request) {
-  profile_.open_orders_status_ack([&]() {
-    auto &[trace_info, message] = event;
-    log::info<2>("message={}, request={}"sv, message, request);
-    switch (message.status) {
-      case 200: {
-        auto &open_orders = message.result;
-        for (auto &item : open_orders) {
-          log::info<2>("item={}"sv, item);
-          if (std::empty(item.client_order_id))
-            continue;
-          open_orders_symbols_.emplace(item.symbol);
-          auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
-          auto order_update = server::oms::OrderUpdate{
-              .account = account_.name,
-              .exchange = shared_.settings.exchange,
-              .symbol = item.symbol,
-              .side = json::Map{item.side},
-              .position_effect = {},
-              .margin_mode = {},
-              .max_show_quantity = NaN,
-              .order_type = json::Map{item.type},
-              .time_in_force = json::Map{item.time_in_force},
-              .execution_instructions = {},
-              .create_time_utc = item.time,
-              .update_time_utc = item.update_time,
-              .external_account = {},
-              .external_order_id = external_order_id,
-              .client_order_id = item.client_order_id,
-              .order_status = json::Map{item.status},
-              .quantity = item.orig_qty,
-              .price = item.price,
-              .stop_price = item.stop_price,
-              .remaining_quantity = NaN,
-              .traded_quantity = item.executed_qty,
-              .average_traded_price = {},
-              .last_traded_quantity = {},
-              .last_traded_price = {},
-              .last_liquidity = {},
-              .routing_id = {},
-              .max_request_version = {},
-              .max_response_version = {},
-              .max_accepted_version = {},
-              .update_type = UpdateType::SNAPSHOT,
-              .sending_time_utc = {},
-          };
-          Trace event_2{trace_info, order_update};
-          (*this)(event_2, item.client_order_id);
-        }
-        break;
-      }
-      default:
-        log::error("Unexpected: error={}"sv, message.error);
-    }
-    // completion
-    request_.respond_orders = clock::get_system();
-    download_orders_ = false;
-    update_rate_limits(event);
-  });
+void OrderEntryWS::operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) {
+  log::fatal("Unexpected"sv);
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPITrades> const &event, json::WSAPIRequest const &request) {
-  profile_.my_trades_ack([&]() {
-    auto &[trace_info, message] = event;
-    log::info<2>("message={}, request={}"sv, message, request);
-    switch (message.status) {
-      case 200: {
-        download_trades_is_first_ = false;  // after first successful
-        auto &trades = message.result;
-        /*
-        for (auto &item : trades) {
-          log::info<2>("item={}"sv, item);
-          auto liquidity = item.is_maker ? Liquidity::MAKER : Liquidity::TAKER;
-          auto fill = Fill{
-              .external_trade_id = {},
-              .quantity = item.qty,  // XXX FIXME quote_qty ???
-              .price = item.price,
-              .liquidity = liquidity,
-              .quote_quantity = NaN,
-              .commission_quantity = NaN,
-              .commission_currency = {},
-          };
-          auto side = item.is_buyer ? Side::BUY : Side::SELL;
-          fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, item.id);
-          auto external_order_id = fmt::format("{}"sv, item.order_id);
-          auto trade_update = TradeUpdate{
-              .stream_id = stream_id_,
-              .account = account_.name,
-              .order_id = {},
-              .exchange = shared_.settings.exchange,
-              .symbol = item.symbol,
-              .side = side,
-              .position_effect = {},
-              .margin_mode = {},
-              .quantity_type = {},
-              .create_time_utc = item.time,
-              .update_time_utc = item.time,
-              .external_account = {},
-              .external_order_id = external_order_id,
-              .client_order_id = {},
-              .fills = {&fill, 1},
-              .routing_id = {},
-              .update_type = UpdateType::INCREMENTAL,
-              .sending_time_utc = item.time,
-              .user = {},
-              .strategy_id = {},
-          };
-          std::string_view client_order_id;  // XXX MISSING
-          create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_order_id);
-        }
-        */
-        break;
-      }
-      default:
-        log::error("Unexpected: error={}"sv, message.error);
-    }
-    // completion
-    request_.respond_trades = clock::get_system();
-    download_trades_ = false;
-    update_rate_limits(event);
-  });
+void OrderEntryWS::operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) {
+  log::fatal("Unexpected"sv);
 }
 
 void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, json::WSAPIRequest const &request) {

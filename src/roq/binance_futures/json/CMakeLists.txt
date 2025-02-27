@@ -70,6 +70,7 @@ set(AUTOGEN_SCHEMAS
     ticker.json
     time_in_force.json
     trade.json
+    trade_lite.json
     trades.json
     working_type.json
     wsapi_account_balance.json

@@ -14,6 +14,7 @@
 #include "roq/binance_futures/json/margin_call.hpp"
 #include "roq/binance_futures/json/order_trade_update.hpp"
 #include "roq/binance_futures/json/strategy_update.hpp"
+#include "roq/binance_futures/json/trade_lite.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -27,6 +28,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<StrategyUpdate> const &) = 0;
     virtual void operator()(Trace<GridUpdate> const &) = 0;
     virtual void operator()(Trace<AccountConfigUpdate> const &) = 0;
+    virtual void operator()(Trace<TradeLite> const &) = 0;
   };
 
   static bool dispatch(

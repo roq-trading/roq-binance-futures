@@ -65,6 +65,7 @@ symbol_status.hpp
 ticker.hpp
 time_in_force.hpp
 trade.hpp
+trade_lite.hpp
 trades.hpp
 working_type.hpp
 wsapi_account_balance.hpp
@@ -143,6 +144,7 @@ symbol_status.cpp
 ticker.cpp
 time_in_force.cpp
 trade.cpp
+trade_lite.cpp
 trades.cpp
 working_type.cpp
 wsapi_account_balance.cpp

@@ -23,6 +23,7 @@
 #include "roq/binance_futures/order_entry_ws.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
+#include "roq/binance_futures/rest_trade.hpp"
 #include "roq/binance_futures/settings.hpp"
 #include "roq/binance_futures/shared.hpp"
 
@@ -36,7 +37,8 @@ struct Gateway final : public server::Handler,
                        public OrderEntryWS::Handler,
                        public OrderEntryPortfolio::Handler,
                        public DropCopySimple::Handler,
-                       public DropCopyPortfolio::Handler {
+                       public DropCopyPortfolio::Handler,
+                       public RestTrade::Handler {
   Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
   Gateway(Gateway const &) = delete;
@@ -114,6 +116,7 @@ struct Gateway final : public server::Handler,
   std::vector<std::unique_ptr<MarketData>> market_data_1_, market_data_2_;
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
+  utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;
   // cache
   std::vector<MBPUpdate> bids_, asks_;
 };

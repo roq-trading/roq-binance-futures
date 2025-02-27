@@ -98,6 +98,7 @@ DropCopySimple::DropCopySimple(
           .strategy_update = create_metrics(shared.settings, name_, "strategy_update"sv),
           .grid_update = create_metrics(shared.settings, name_, "grid_update"sv),
           .account_config_update = create_metrics(shared.settings, name_, "account_config_update"sv),
+          .trade_lite = create_metrics(shared.settings, name_, "trade_lite"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -138,6 +139,7 @@ void DropCopySimple::operator()(metrics::Writer &writer) {
       .write(profile_.strategy_update, metrics::Type::PROFILE)
       .write(profile_.grid_update, metrics::Type::PROFILE)
       .write(profile_.account_config_update, metrics::Type::PROFILE)
+      .write(profile_.trade_lite, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -438,6 +440,14 @@ void DropCopySimple::operator()(Trace<json::AccountConfigUpdate> const &event) {
   profile_.account_config_update([&]() {
     auto &[trace_info, account_config_update] = event;
     log::info<2>("account_config_update={}"sv, account_config_update);
+  });
+}
+
+void DropCopySimple::operator()(Trace<json::TradeLite> const &event) {
+  profile_.trade_lite([&]() {
+    auto &[trace_info, trade_lite] = event;
+    log::info<2>("trade_lite={}"sv, trade_lite);
+    log::warn("DEBUG trade_lite={}"sv, trade_lite);
   });
 }
 

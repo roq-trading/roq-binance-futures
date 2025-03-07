@@ -133,6 +133,8 @@ OrderEntryPortfolio::OrderEntryPortfolio(Handler &handler, io::Context &context,
           .trades_ack = create_metrics(shared.settings, name_, "trades_ack"sv),
           .new_order = create_metrics(shared.settings, name_, "new_order"sv),
           .new_order_ack = create_metrics(shared.settings, name_, "new_order_ack"sv),
+          .modify_order = create_metrics(shared.settings, name_, "modify_order"sv),
+          .modify_order_ack = create_metrics(shared.settings, name_, "modify_order_ack"sv),
           .cancel_order = create_metrics(shared.settings, name_, "cancel_order"sv),
           .cancel_order_ack = create_metrics(shared.settings, name_, "cancel_order_ack"sv),
           .cancel_all_open_orders = create_metrics(shared.settings, name_, "cancel_all_open_orders"sv),
@@ -208,6 +210,8 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) {
       .write(profile_.trades_ack, metrics::Type::PROFILE)
       .write(profile_.new_order, metrics::Type::PROFILE)
       .write(profile_.new_order_ack, metrics::Type::PROFILE)
+      .write(profile_.modify_order, metrics::Type::PROFILE)
+      .write(profile_.modify_order_ack, metrics::Type::PROFILE)
       .write(profile_.cancel_order, metrics::Type::PROFILE)
       .write(profile_.cancel_order_ack, metrics::Type::PROFILE)
       .write(profile_.cancel_all_open_orders, metrics::Type::PROFILE)
@@ -225,11 +229,8 @@ uint16_t OrderEntryPortfolio::operator()(Event<CreateOrder> const &event, server
 }
 
 uint16_t OrderEntryPortfolio::operator()(
-    Event<ModifyOrder> const &,
-    server::oms::Order const &,
-    [[maybe_unused]] std::string_view const &request_id,
-    [[maybe_unused]] std::string_view const &previous_request_id) {
-  throw server::oms::NotSupported{"not supported"sv};
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+  modify_order(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
@@ -954,6 +955,116 @@ void OrderEntryPortfolio::operator()(Trace<json::NewOrder> const &event, uint8_t
       .remaining_quantity = NaN,
       .traded_quantity = new_order.executed_qty,
       .average_traded_price = new_order.avg_price,
+      .last_traded_quantity = NaN,
+      .last_traded_price = NaN,
+      .last_liquidity = {},
+      .routing_id = {},
+      .max_request_version = {},
+      .max_response_version = {},
+      .max_accepted_version = {},
+      .update_type = UpdateType::INCREMENTAL,
+      .sending_time_utc = {},
+  };
+  Trace event_2{trace_info, response};
+  (*this)(event_2, user_id, order_id, order_update);
+}
+
+// modify-order
+
+void OrderEntryPortfolio::modify_order(
+    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+  profile_.modify_order([&]() {
+    if (!ready())
+      throw server::oms::NotReady{"not ready"sv};
+    auto &[message_info, modify_order] = event;
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
+    auto body = json::modify_order(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, true);
+    auto query = account_.create_query(body);
+    auto headers = account_.create_headers();
+    auto request = web::rest::Request{
+        .method = web::http::Method::PUT,
+        .path = shared_.api.papi.order,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+        .headers = headers,
+        .body = body,
+        .quality_of_service = io::QualityOfService::IMMEDIATE,
+    };
+    auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
+                        [[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      modify_order_ack(event, user_id, order_id, version);
+    };
+    (*connection_)(request_id, request, callback);
+  });
+}
+
+void OrderEntryPortfolio::modify_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+  profile_.modify_order_ack([&]() {
+    auto handle_success = [&](auto &body) {
+      json::ModifyOrder modify_order{body};
+      Trace event_2{event, modify_order};
+      (*this)(event_2, user_id, order_id, version);
+    };
+    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+      auto response = server::oms::Response{
+          .request_type = RequestType::MODIFY_ORDER,
+          .origin = origin,
+          .request_status = status,
+          .error = error,
+          .text = text,
+          .version = version,
+          .request_id = {},
+          .quantity = NaN,
+          .price = NaN,
+      };
+      Trace event_2{event, response};
+      (*this)(event_2, user_id, order_id);
+    };
+    process_response(event, handle_success, handle_error);
+  });
+}
+
+void OrderEntryPortfolio::operator()(Trace<json::ModifyOrder> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+  auto &[trace_info, modify_order] = event;
+  log::info<2>("modify_order={}, user_id={}, order_id={}, version={}"sv, modify_order, user_id, order_id, version);
+  auto external_order_id = fmt::format("{}"sv, modify_order.order_id);  // alloc
+  auto response = server::oms::Response{
+      .request_type = RequestType::MODIFY_ORDER,
+      .origin = Origin::EXCHANGE,
+      .request_status = RequestStatus::ACCEPTED,
+      .error = {},
+      .text = {},
+      .version = version,
+      .request_id = {},
+      .quantity = modify_order.orig_qty,
+      .price = modify_order.price,
+  };
+  auto order_update = server::oms::OrderUpdate{
+      .account = account_.name,
+      .exchange = shared_.settings.exchange,
+      .symbol = modify_order.symbol,
+      .side = json::Map{modify_order.side},
+      .position_effect = {},
+      .margin_mode = MarginMode::PORTFOLIO,
+      .max_show_quantity = NaN,
+      .order_type = json::Map{modify_order.type},
+      .time_in_force = json::Map{modify_order.time_in_force},
+      .execution_instructions = {},
+      .create_time_utc = {},
+      .update_time_utc = modify_order.update_time,
+      .external_account = {},
+      .external_order_id = external_order_id,
+      .client_order_id = {},
+      .order_status = json::Map{modify_order.status},
+      .quantity = modify_order.orig_qty,
+      .price = modify_order.price,
+      .stop_price = modify_order.stop_price,
+      .remaining_quantity = NaN,
+      .traded_quantity = modify_order.executed_qty,
+      .average_traded_price = modify_order.avg_price,
       .last_traded_quantity = NaN,
       .last_traded_price = NaN,
       .last_liquidity = {},

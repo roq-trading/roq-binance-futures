@@ -34,6 +34,7 @@ auto const NAME = "omm"sv;
 
 auto const SUPPORTS = Mask{
     SupportType::CREATE_ORDER,
+    SupportType::MODIFY_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
     SupportType::FUNDS,

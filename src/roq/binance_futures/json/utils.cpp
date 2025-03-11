@@ -17,6 +17,12 @@ namespace binance_futures {
 namespace json {
 
 Error guess_error([[maybe_unused]] int32_t code) {
+  switch (code) {
+    case -2013:  // NO_SUCH_ORDER
+      return Error::UNKNOWN_EXTERNAL_ORDER_ID;
+    case -4197:  // SAME_ORDER
+      return Error::UNKNOWN;
+  }
   return Error::UNKNOWN;
 }
 

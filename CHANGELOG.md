@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* `ClOrdID` can now use 2 bits to encode the API of an exchange (#489)
 * `ExchangeInfo.contractStatus` was not being processed for COIN-M products (#485)
 
 ### Changed

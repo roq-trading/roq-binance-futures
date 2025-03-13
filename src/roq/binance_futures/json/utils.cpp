@@ -2,6 +2,8 @@
 
 #include "roq/binance_futures/json/utils.hpp"
 
+#include "roq/logging.hpp"
+
 #include "roq/decimal.hpp"
 
 #include "roq/server/oms/exceptions.hpp"
@@ -18,11 +20,14 @@ namespace json {
 
 Error guess_error([[maybe_unused]] int32_t code) {
   switch (code) {
+    case -2011:  // CANCEL_REJECTED
+      return Error::UNKNOWN_EXTERNAL_ORDER_ID;
     case -2013:  // NO_SUCH_ORDER
       return Error::UNKNOWN_EXTERNAL_ORDER_ID;
     case -4197:  // SAME_ORDER
-      return Error::UNKNOWN;
+      return Error::MODIFY_HAS_NO_EFFECT;
   }
+  log::warn("DEBUG unable to map error_code={}"sv, code);
   return Error::UNKNOWN;
 }
 

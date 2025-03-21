@@ -305,8 +305,7 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
           strategy_id = order.strategy_id;
         })) {
     } else {
-      log::warn("*** EXTERNAL ORDER ***"sv);
-      log::warn("execution_report={}"sv, execution_report);
+      log::warn<2>("DEBUG: execution_report={}"sv, execution_report);
     }
     if (execution_report.execution_type != json::ExecutionType::TRADE)
       return;

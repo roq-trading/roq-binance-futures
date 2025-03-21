@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Modified
+
+* Prefer orderId to origClientOrderId (#493)
+
 ### Fixed
 
 * `ClOrdID` can now use 2 bits to encode the API of an exchange (#489)

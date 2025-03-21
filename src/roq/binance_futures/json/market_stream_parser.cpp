@@ -80,9 +80,13 @@ bool MarketStreamParser::dispatch(
         }
         case EVENT_TYPE: {
           // note! assuming event_type is the first field
-          EventType event_type(value);
+          EventType event_type{value};
           switch (event_type) {
             using enum EventType::type_t;
+            case UNKNOWN__:
+              if (!continue_with_unknown_event_type)
+                log::fatal("Unexpected"sv);
+              return false;
             case AGG_TRADE:
               dispatch_helper<AggTrade>(handler, message, buffer, trace_info);
               dispatched = true;
@@ -117,11 +121,10 @@ bool MarketStreamParser::dispatch(
               break;
             }
             case TRADE_LITE:
+            case BALANCE_UPDATE: {
+              log::fatal("Unexpected"sv);
               break;
-            case UNKNOWN__:
-              if (!continue_with_unknown_event_type)
-                log::fatal("Unexpected"sv);
-              return false;
+            }
           }
           assert(dispatched);
           break;

@@ -40,6 +40,9 @@
     },
     {
       "name": "TRADE_LITE"
+    },
+    {
+      "name": "balanceUpdate"
     }
   ]
 }

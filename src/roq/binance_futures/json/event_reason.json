@@ -13,6 +13,9 @@
     },
     {
       "name": "FUNDING_FEE"
+    },
+    {
+      "name": "DEPOSIT"
     }
   ]
 }

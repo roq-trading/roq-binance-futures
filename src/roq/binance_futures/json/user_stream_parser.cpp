@@ -40,6 +40,10 @@ bool UserStreamParser::try_dispatch(
     bool continue_with_unknown_event_type) {
   switch (event_type) {
     using enum EventType::type_t;
+    case UNKNOWN__:
+      if (!continue_with_unknown_event_type)
+        log::fatal("Unexpected"sv);
+      return false;
     case UNDEFINED__:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
@@ -94,12 +98,11 @@ bool UserStreamParser::try_dispatch(
       handler(event);
       break;
     }
-    case UNKNOWN__:
-      if (!continue_with_unknown_event_type)
-        log::fatal("Unexpected"sv);
-      return false;
-    default:
-      return false;
+    case BALANCE_UPDATE: {
+      log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message);
+      // XXX need parsing
+      break;
+    }
   }
   return true;
 }

@@ -647,6 +647,15 @@ Comments
   * The new end-points are selected if the toml config has :code:`margin_mode = "portfolio"`.
     The end-points are then taken from :code:`--rest_pm_uri` and :code:`--ws_pm_uri`.
 
+* PAPI has a race between order matching an trade reporting
+
+  * A modify or cancel request may be rejected with the :code:`Order does not exist.` text message if the order
+    has already been matched but the completion has not yet been reported.
+
+  * This is indicative that Binance's implementation has matching engine logic separated from PAPI / trade reporting.
+    The matching engine will not report fills directly, rather it will hand the update off to centralized logic that
+    will udpate and validate portfolio margin.
+
 * WSAPI is **WORK-IN-PROGRESS**
 
   * Some exchange features are missing (they are available from spot WSAPI):

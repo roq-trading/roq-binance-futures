@@ -2,10 +2,6 @@
 
 #pragma once
 
-#include <tuple>
-
-#include "roq/api.hpp"
-
 #include "roq/binance_futures/json/contract_status.hpp"
 #include "roq/binance_futures/json/contract_type.hpp"
 #include "roq/binance_futures/json/order_status.hpp"
@@ -14,29 +10,61 @@
 #include "roq/binance_futures/json/symbol_status.hpp"
 #include "roq/binance_futures/json/time_in_force.hpp"
 
+#include "roq/order_status.hpp"
+#include "roq/order_type.hpp"
+#include "roq/security_type.hpp"
+#include "roq/side.hpp"
+#include "roq/time_in_force.hpp"
+#include "roq/trading_status.hpp"
+
+#include "roq/map.hpp"
+
 namespace roq {
-namespace binance_futures {
-namespace json {
 
-template <typename... Args>
-struct Map final {
-  explicit Map(Args &&...args) : args_{std::forward<Args>(args)...} {}
-  explicit Map(Args const &...args) : args_{args...} {}
+template <>
+template <>
+std::optional<TradingStatus> Map<binance_futures::json::ContractStatus>::helper() const;
 
-  Map(Map const &) = delete;
+template <>
+template <>
+std::optional<SecurityType> Map<binance_futures::json::ContractType>::helper() const;
 
-  template <typename R>
-  operator R();
+template <>
+template <>
+std::optional<OrderStatus> Map<binance_futures::json::OrderStatus>::helper() const;
 
- private:
-  std::tuple<Args...> const args_;
-};
+template <>
+template <>
+std::optional<OrderType> Map<binance_futures::json::OrderType>::helper() const;
 
-template <typename R, typename... Args>
-inline R map(Args &&...args) {
-  return static_cast<R>(Map{std::forward<Args>(args)...});
-}
+template <>
+template <>
+std::optional<Side> Map<binance_futures::json::Side>::helper() const;
 
-}  // namespace json
-}  // namespace binance_futures
+template <>
+template <>
+std::optional<TradingStatus> Map<binance_futures::json::SymbolStatus>::helper() const;
+
+template <>
+template <>
+std::optional<TimeInForce> Map<binance_futures::json::TimeInForce>::helper() const;
+
+// ===
+
+template <>
+template <>
+std::optional<binance_futures::json::OrderStatus> Map<OrderStatus>::helper() const;
+
+template <>
+template <>
+std::optional<binance_futures::json::OrderType> Map<OrderType>::helper() const;
+
+template <>
+template <>
+std::optional<binance_futures::json::Side> Map<Side>::helper() const;
+
+template <>
+template <>
+std::optional<binance_futures::json::TimeInForce> Map<TimeInForce>::helper() const;
+
 }  // namespace roq

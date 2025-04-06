@@ -63,8 +63,8 @@ std::string_view new_order(
     server::oms::Order const &order,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window) {
-  auto side = map<Side>(create_order.side).as_raw_text();
-  auto type = map<OrderType>(create_order.order_type).as_raw_text();
+  auto side = map(create_order.side).template get<Side>();
+  auto type = map(create_order.order_type).template get<OrderType>();
   auto reduce_only = false;
   buffer.clear();
   fmt::format_to(
@@ -75,8 +75,8 @@ std::string_view new_order(
       R"(quantity={}&)"
       R"(reduceOnly={}&)"sv,
       create_order.symbol,
-      side,
-      type,
+      side.as_raw_text(),
+      type.as_raw_text(),
       Decimal{create_order.quantity, order.quantity_precision.precision},
       reduce_only);
   switch (create_order.order_type) {
@@ -89,12 +89,12 @@ std::string_view new_order(
       break;
     case LIMIT: {
       assert(!std::isnan(create_order.price));
-      auto time_in_force = map<TimeInForce>(create_order.time_in_force).as_raw_text();
+      auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
       fmt::format_to(
           std::back_inserter(buffer),
           R"(timeInForce={}&)"
           R"(price={}&)"sv,
-          time_in_force,
+          time_in_force.as_raw_text(),
           Decimal{create_order.price, order.price_precision.precision});
       break;
     }
@@ -119,9 +119,9 @@ std::string_view new_order_ws_url(
     std::chrono::milliseconds recv_window,
     std::string_view const &api_key,
     std::chrono::milliseconds now) {
-  auto side = map<Side>(create_order.side);
-  auto type = map<OrderType>(create_order.order_type);
-  auto time_in_force = map<TimeInForce>(create_order.time_in_force);
+  auto side = map(create_order.side).template get<Side>();
+  auto type = map(create_order.order_type).template get<OrderType>();
+  auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -152,9 +152,9 @@ std::string_view new_order_ws_json(
     std::string_view const &api_key,
     std::chrono::milliseconds now,
     std::string_view const &signature) {
-  auto side = map<Side>(create_order.side);
-  auto type = map<OrderType>(create_order.order_type);
-  auto time_in_force = map<TimeInForce>(create_order.time_in_force);
+  auto side = map(create_order.side).template get<Side>();
+  auto type = map(create_order.order_type).template get<OrderType>();
+  auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -189,7 +189,7 @@ std::string_view modify_order(
     std::chrono::milliseconds recv_window,
     bool modify_order_full) {
   buffer.clear();
-  auto side = map<Side>(order.side).as_raw_text();
+  auto side = map(order.side).template get<Side>();
   if (modify_order_full) {  // fapi
     auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
     auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
@@ -203,7 +203,7 @@ std::string_view modify_order(
         R"(quantity={}&)"
         R"(price={}&)"
         R"(recvWindow={})"sv,
-        side,
+        side.as_raw_text(),
         Decimal{quantity, order.quantity_precision.precision},
         Decimal{price, order.price_precision.precision},
         recv_window.count());
@@ -218,7 +218,7 @@ std::string_view modify_order(
           R"(side={}&)"
           R"(quantity={}&)"
           R"(recvWindow={})"sv,
-          side,
+          side.as_raw_text(),
           Decimal{modify_order.quantity, order.quantity_precision.precision},
           recv_window.count());
     } else if (std::isnan(modify_order.quantity)) {
@@ -231,7 +231,7 @@ std::string_view modify_order(
           R"(side={}&)"
           R"(price={}&)"
           R"(recvWindow={})"sv,
-          side,
+          side.as_raw_text(),
           Decimal{modify_order.price, order.price_precision.precision},
           recv_window.count());
     } else {
@@ -251,7 +251,7 @@ std::string_view modify_order_ws_url(
     std::chrono::milliseconds recv_window,
     std::string_view const &api_key,
     std::chrono::milliseconds now) {
-  auto side = map<Side>(order.side).as_raw_text();
+  auto side = map(order.side).template get<Side>();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -265,7 +265,7 @@ std::string_view modify_order_ws_url(
   if (!std::isnan(modify_order.quantity))
     writer.write("&quantity="sv).write(Decimal{modify_order.quantity, order.quantity_precision.precision});
   writer.write("&recvWindow="sv).write(recv_window.count());
-  writer.write("&side="sv).write(side);
+  writer.write("&side="sv).write(side.as_raw_text());
   writer.write("&symbol="sv).write(order.symbol);
   writer.write("&timestamp="sv).write(now.count());
   return writer.finish();
@@ -281,7 +281,7 @@ std::string_view modify_order_ws_json(
     std::string_view const &api_key,
     std::chrono::milliseconds now,
     std::string_view const &signature) {
-  auto side = map<Side>(order.side).as_raw_text();
+  auto side = map(order.side).template get<Side>();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
@@ -296,7 +296,7 @@ std::string_view modify_order_ws_json(
     writer.write(R"(,"price":")"sv).write(Decimal{modify_order.price, order.price_precision.precision}).write(R"(")"sv);
   if (!std::isnan(modify_order.quantity))
     writer.write(R"(,"quantity":")"sv).write(Decimal{modify_order.quantity, order.quantity_precision.precision}).write(R"(")"sv);
-  writer.write(R"(,"side":")"sv).write(side).write(R"(")"sv);
+  writer.write(R"(,"side":")"sv).write(side.as_raw_text()).write(R"(")"sv);
   writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
   writer.write(R"(,"timestamp":)"sv).write(now.count());
   writer.write(R"(,"signature":")"sv).write(signature).write(R"(")"sv);
@@ -404,8 +404,8 @@ std::string_view countdown_cancel_all_open_orders(
 
 TradingStatus trading_status_helper(SymbolStatus symbol_status, ContractStatus contract_status) {
   if (symbol_status != SymbolStatus::UNDEFINED__)
-    return Map{symbol_status};
-  return Map{contract_status};
+    return map(symbol_status);
+  return map(contract_status);
 }
 
 }  // namespace json

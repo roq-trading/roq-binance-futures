@@ -90,8 +90,9 @@ struct create_metrics final : public utils::metrics::Factory {
 
 auto get_download_trades_lookback(auto &settings, auto download_trades_is_first) {
   if (download_trades_is_first) {
-    if (settings.download.trades_lookback_on_restart.count())
+    if (settings.download.trades_lookback_on_restart.count()) {
       return settings.download.trades_lookback_on_restart;
+    }
   }
   return settings.download.trades_lookback;
 }
@@ -257,8 +258,9 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Connected> const &) {
 void OrderEntrySimple::operator()(Trace<web::rest::Client::Disconnected> const &) {
   ++counter_.disconnect;
   (*this)(ConnectionStatus::DISCONNECTED);
-  if (!download_.downloading())
+  if (!download_.downloading()) {
     download_.reset();
+  }
   download_balance_ = false;
   download_account_ = false;
   download_orders_ = false;
@@ -318,8 +320,9 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
 
 void OrderEntrySimple::operator()(Trace<web::rest::Client::MessageEnd> const &event) {
   auto &trace_info = event.trace_info;
-  if (std::empty(shared_.rate_limits))
+  if (std::empty(shared_.rate_limits)) {
     return;
+  }
   auto rate_limits_update = RateLimitsUpdate{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -404,8 +407,9 @@ void OrderEntrySimple::get_listen_key_ack(Trace<web::rest::Response> const &even
     };
     auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, auto error, auto text) {
       log::warn(R"(error={}, text="{}")"sv, error, text);
-      if (download_.downloading())
+      if (download_.downloading()) {
         download_.retry(STATE);
+      }
     };
     process_response(event, handle_success, handle_error);
   });
@@ -424,8 +428,9 @@ void OrderEntrySimple::operator()(Trace<json::ListenKey> const &event) {
       };
       create_trace_and_dispatch(handler_, trace_info, listen_key_update);
     } else {
-      if (!initial) [[unlikely]]
+      if (!initial) [[unlikely]] {
         log::info("Listen key has been refreshed!"sv);
+      }
     }
   }
   auto now = clock::get_system();
@@ -559,8 +564,9 @@ void OrderEntrySimple::operator()(Trace<json::Account> const &event) {
   auto &[trace_info, account] = event;
   log::info<2>("account={}"sv, account);
   for (auto &item : account.positions) {
-    if (shared_.discard_symbol(item.symbol))
+    if (shared_.discard_symbol(item.symbol)) {
       continue;
+    }
     log::info<2>("item={}"sv, item);
     auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
     auto long_quantity = std::max(0.0, item.position_amt);
@@ -630,8 +636,9 @@ void OrderEntrySimple::operator()(Trace<json::OpenOrders> const &event) {
   log::info<2>("open_orders={}"sv, open_orders);
   for (auto &item : open_orders.data) {
     log::info<2>("item={}"sv, item);
-    if (std::empty(item.client_order_id))
+    if (std::empty(item.client_order_id)) {
       continue;
+    }
     open_orders_symbols_.emplace(item.symbol);
     auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
     auto order_update = server::oms::OrderUpdate{
@@ -775,11 +782,13 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
 // ...
 
 void OrderEntrySimple::refresh_listen_key() {
-  if (!ready())
+  if (!ready()) {
     return;
+  }
   auto now = clock::get_system();
-  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
+  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_) {
     return;
+  }
   log::info("Refreshing listen key..."sv);
   listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
   get_listen_key();
@@ -789,8 +798,9 @@ void OrderEntrySimple::refresh_listen_key() {
 
 void OrderEntrySimple::new_order(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.new_order([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
@@ -900,8 +910,9 @@ void OrderEntrySimple::operator()(Trace<json::NewOrder> const &event, uint8_t us
 void OrderEntrySimple::modify_order(
     Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.modify_order([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::modify_order(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
@@ -1010,8 +1021,9 @@ void OrderEntrySimple::operator()(Trace<json::ModifyOrder> const &event, uint8_t
 void OrderEntrySimple::cancel_order(
     Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.cancel_order([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = json::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
@@ -1122,8 +1134,9 @@ void OrderEntrySimple::cancel_all_open_orders(Event<CancelAllOrders> const &even
     auto &cancel_all_orders = event.value;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
-      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol)
+      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
+      }
       auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
@@ -1185,8 +1198,9 @@ void OrderEntrySimple::cancel_all_open_orders_ack(Trace<web::rest::Response> con
 void OrderEntrySimple::operator()(Trace<json::CancelAllOpenOrders> const &event, std::string_view const &request_id) {
   auto &[trace_info, cancel_all_open_orders] = event;
   auto status = [&]() {
-    if (cancel_all_open_orders.code == 200)
+    if (cancel_all_open_orders.code == 200) {
       return RequestStatus::ACCEPTED;
+    }
     return RequestStatus::REJECTED;
   }();
   auto error = json::guess_error(cancel_all_open_orders.code);
@@ -1281,8 +1295,9 @@ void OrderEntrySimple::process_response(web::rest::Response const &response, Suc
           case I_AM_A_TEAPOT:        // 418
           case TOO_MANY_REQUESTS: {  // 429
             auto retry_after = get_retry_after(response);
-            if (retry_after.count())
+            if (retry_after.count()) {
               (*connection_).suspend(retry_after);
+            }
             auto text = fmt::format("{}"sv, status);
             error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::REQUEST_RATE_LIMIT_REACHED, text);
             break;

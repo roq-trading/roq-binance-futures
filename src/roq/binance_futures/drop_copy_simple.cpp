@@ -241,8 +241,9 @@ void DropCopySimple::parse(std::string_view const &message) {
   profile_.parse([&]() {
     try {
       TraceInfo trace_info;
-      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type)) {
         log_message();
+      }
     } catch (...) {
       log_message();
       utils::exceptions::Unhandled::terminate();
@@ -304,8 +305,9 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
       log::warn("*** EXTERNAL ORDER ***"sv);
       log::warn("execution_report={}"sv, execution_report);
     }
-    if (execution_report.execution_type != json::ExecutionType::TRADE)
+    if (execution_report.execution_type != json::ExecutionType::TRADE) {
       return;
+    }
     auto fill = Fill{
         .exchange_time_utc = execution_report.order_trade_time,
         .external_trade_id = {},
@@ -379,8 +381,9 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
       }
     }
     for (auto &item : account_update.data.positions) {
-      if (shared_.discard_symbol(item.symbol))
+      if (shared_.discard_symbol(item.symbol)) {
         continue;
+      }
       log::info<2>("item={}"sv, item);
       auto margin_mode = [&]() {
         switch (item.margin_type) {
@@ -476,8 +479,9 @@ void DropCopySimple::request_trades() {
 // response
 
 void DropCopySimple::check_response_balance() {
-  if (download_.state() != DropCopyState::BALANCE)
+  if (download_.state() != DropCopyState::BALANCE) {
     return;
+  }
   if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
     download_.check(DropCopyState::BALANCE);
@@ -485,8 +489,9 @@ void DropCopySimple::check_response_balance() {
 }
 
 void DropCopySimple::check_response_account() {
-  if (download_.state() != DropCopyState::ACCOUNT)
+  if (download_.state() != DropCopyState::ACCOUNT) {
     return;
+  }
   if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
     download_.check(DropCopyState::ACCOUNT);
@@ -494,8 +499,9 @@ void DropCopySimple::check_response_account() {
 }
 
 void DropCopySimple::check_response_orders() {
-  if (download_.state() != DropCopyState::ORDERS)
+  if (download_.state() != DropCopyState::ORDERS) {
     return;
+  }
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
     download_.check(DropCopyState::ORDERS);
@@ -503,8 +509,9 @@ void DropCopySimple::check_response_orders() {
 }
 
 void DropCopySimple::check_response_trades() {
-  if (download_.state() != DropCopyState::TRADES)
+  if (download_.state() != DropCopyState::TRADES) {
     return;
+  }
   if (request_.request_trades < request_.respond_trades) {
     log::info("Trades download has completed!"sv);
     download_.check(DropCopyState::TRADES);

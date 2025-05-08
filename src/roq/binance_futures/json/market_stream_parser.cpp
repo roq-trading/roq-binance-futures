@@ -84,8 +84,9 @@ bool MarketStreamParser::dispatch(
           switch (event_type) {
             using enum EventType::type_t;
             case UNKNOWN__:
-              if (!continue_with_unknown_event_type)
+              if (!continue_with_unknown_event_type) {
                 log::fatal("Unexpected"sv);
+              }
               return false;
             case AGG_TRADE:
               dispatch_helper<AggTrade>(handler, message, buffer, trace_info);
@@ -132,8 +133,9 @@ bool MarketStreamParser::dispatch(
         case ORDER_BOOK_UPDATE_ID:
           break;
       }
-      if (dispatched)
+      if (dispatched) {
         break;
+      }
     }
   }
   return dispatched;

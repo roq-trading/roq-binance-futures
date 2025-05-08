@@ -37,8 +37,9 @@ template <typename R>
 R create_requests(auto &config) {
   using result_type = std::remove_cvref<R>::type;
   result_type result;
-  for (auto &[_, account] : config.accounts)
+  for (auto &[_, account] : config.accounts) {
     result.try_emplace(static_cast<std::string_view>(account.name), Request{});
+  }
   return result;
 }
 
@@ -118,8 +119,9 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
       order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)},
       download_{create_download<decltype(download_)>(*this, context_, stream_id_, accounts_, shared_, requests_)} {
-  if (settings.rest.cancel_on_disconnect)
+  if (settings.rest.cancel_on_disconnect) {
     log::fatal("Exchange does *NOT* support cancel on disconnect"sv);
+  }
 }
 
 void Gateway::operator()(Event<Start> const &event) {
@@ -212,10 +214,12 @@ void Gateway::operator()(Trace<PositionUpdate> const &event, bool is_last) {
 void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
   ensure_symbol_slices(size);
-  for (auto &item : market_data_1_)
+  for (auto &item : market_data_1_) {
     (*item).subscribe(start_from);
-  for (auto &item : market_data_2_)
+  }
+  for (auto &item : market_data_2_) {
     (*item).subscribe(start_from);
+  }
 }
 
 void Gateway::ensure_symbol_slices(size_t size) {
@@ -229,12 +233,15 @@ void Gateway::ensure_symbol_slices(size_t size) {
     create_event_and_dispatch(*market_data, message_info, start);
     container.emplace_back(std::move(market_data));
   };
-  while (std::size(market_data_1_) < size)
+  while (std::size(market_data_1_) < size) {
     helper(market_data_1_, Priority::PRIMARY);
-  if (!shared_.settings.ws.enable_secondary)
+  }
+  if (!shared_.settings.ws.enable_secondary) {
     return;  // note!
-  while (std::size(market_data_2_) < size)
+  }
+  while (std::size(market_data_2_) < size) {
     helper(market_data_2_, Priority::SECONDARY);
+  }
 }
 
 void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
@@ -310,37 +317,46 @@ template <typename... Args>
 void Gateway::dispatch(Args &&...args) {
   auto helper = [&](auto &target) { target(std::forward<Args>(args)...); };
   helper(rest_);
-  for (auto &item : market_data_1_)
+  for (auto &item : market_data_1_) {
     helper(*item);
-  for (auto &item : market_data_2_)
+  }
+  for (auto &item : market_data_2_) {
     helper(*item);
-  for (auto &[_, item] : order_entry_)
+  }
+  for (auto &[_, item] : order_entry_) {
     helper(*item);
-  for (auto &[_, item] : drop_copy_)
-    if (static_cast<bool>(item))
+  }
+  for (auto &[_, item] : drop_copy_) {
+    if (static_cast<bool>(item)) {
       helper(*item);
-  for (auto &[_, item] : download_)
+    }
+  }
+  for (auto &[_, item] : download_) {
     helper(*item);
+  }
 }
 
 Account &Gateway::get_account(std::string_view const &account) const {
   auto iter = accounts_.find(account);
-  if (iter != std::end(accounts_))
+  if (iter != std::end(accounts_)) {
     return *(*iter).second;
+  }
   log::fatal(R"(Unknown account="{}")"sv, account);
 }
 
 Request &Gateway::get_request(std::string_view const &account) {
   auto iter = requests_.find(account);
-  if (iter != std::end(requests_))
+  if (iter != std::end(requests_)) {
     return (*iter).second;
+  }
   log::fatal(R"(Unknown account="{}")"sv, account);
 }
 
 OrderEntry &Gateway::get_order_entry(std::string_view const &account) {
   auto iter = order_entry_.find(account);
-  if (iter != std::end(order_entry_))
+  if (iter != std::end(order_entry_)) {
     return *(*iter).second;
+  }
   throw RuntimeError{R"(Unknown account="{}")"sv, account};
 }
 

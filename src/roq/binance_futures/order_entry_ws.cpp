@@ -84,8 +84,9 @@ struct create_metrics final : public utils::metrics::Factory {
 
 auto get_download_trades_lookback(auto const &settings, auto download_trades_is_first) {
   if (download_trades_is_first) {
-    if (settings.download.trades_lookback_on_restart.count())
+    if (settings.download.trades_lookback_on_restart.count()) {
       return settings.download.trades_lookback_on_restart;
+    }
   }
   return settings.download.trades_lookback;
 }
@@ -253,12 +254,15 @@ void OrderEntryWS::user_data_stream_start() {
 
 void OrderEntryWS::user_data_stream_ping(std::chrono::nanoseconds now) {
   profile_.user_data_stream_ping([&]() {
-    if (!ready())
+    if (!ready()) {
       return;
-    if (std::empty(listen_key_))
+    }
+    if (std::empty(listen_key_)) {
       return;
-    if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_)
+    }
+    if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_) {
       return;
+    }
     log::info<1>("Refreshing listen key..."sv);
     listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
     auto request = json::WSAPIRequest{
@@ -356,8 +360,9 @@ void OrderEntryWS::account_status() {
 
 void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
-    if (!ready()) [[unlikely]]
+    if (!ready()) [[unlikely]] {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &message_info = event.message_info;
     auto &cancel_all_orders = event.value;
     auto send_ack = [&](auto &symbol) {
@@ -384,8 +389,9 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
       shared_(event_2);
     };
     for (auto &symbol : open_orders_symbols_) {
-      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol)
+      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
+      }
       auto now = clock::get_realtime<std::chrono::milliseconds>();
       auto message_for_signature = fmt::format("apiKey={}&symbol={}&timestamp={}"sv, account_.get_key(), symbol, now.count());
       auto signature = account_.create_ws_api_signature(message_for_signature);
@@ -424,8 +430,9 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
 
 void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.order_place([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
@@ -460,8 +467,9 @@ void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Ord
 void OrderEntryWS::order_modify(
     Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_modify([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
@@ -497,8 +505,9 @@ void OrderEntryWS::order_modify(
 void OrderEntryWS::order_cancel(
     Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_cancel([&]() {
-    if (!ready())
+    if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
+    }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
@@ -597,8 +606,9 @@ void OrderEntryWS::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::WSAPIParser2::dispatch(*this, message, decode_buffer_, trace_info))
+      if (!json::WSAPIParser2::dispatch(*this, message, decode_buffer_, trace_info)) {
         log_message();
+      }
     } catch (...) {
       log_message();
       utils::exceptions::Unhandled::terminate();
@@ -678,8 +688,9 @@ void OrderEntryWS::operator()(Trace<json::WSAPIAccountStatus> const &event, json
       case 200: {
         auto &account = message.result;
         for (auto &item : account.positions) {
-          if (shared_.discard_symbol(item.symbol))
+          if (shared_.discard_symbol(item.symbol)) {
             continue;
+          }
           log::info<2>("item={}"sv, item);
           auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
           auto long_quantity = std::max(0.0, item.position_amt);
@@ -728,8 +739,9 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, j
         auto &cancel_all_open_orders = message.result;
         for (auto &item : cancel_all_open_orders) {
           log::info<2>("item={}"sv, item);
-          if (std::empty(item.client_order_id))
+          if (std::empty(item.client_order_id)) {
             continue;
+          }
           auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
           auto order_update = server::oms::OrderUpdate{
               .account = account_.name,
@@ -785,8 +797,9 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
         auto external_order_id = fmt::format("{}"sv, new_order.order_id);  // alloc
         auto order_status = map(new_order.status).template get<OrderStatus>();
         // LIMIT_MAKER orders do not return any order state + we only end up here if we receive HTTP status OK
-        if (order_status == OrderStatus{})
+        if (order_status == OrderStatus{}) {
           order_status = OrderStatus::WORKING;
+        }
         auto remaining_quantity = new_order.orig_qty - new_order.executed_qty;
         /*
         auto average_traded_price =
@@ -802,8 +815,9 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
         }
         */
         auto last_traded_price = NaN;  // note! could also use average_traded_price
-        if (utils::is_greater(last_traded_quantity, 0.0))
+        if (utils::is_greater(last_traded_quantity, 0.0)) {
           last_traded_price = tmp / last_traded_quantity;
+        }
         auto response = server::oms::Response{
             .request_type = RequestType::CREATE_ORDER,
             .origin = Origin::EXCHANGE,
@@ -1051,8 +1065,9 @@ void OrderEntryWS::update_rate_limits(auto &event) {
       }
       return {};
     }();
-    if (type == RateLimitType{})
+    if (type == RateLimitType{}) {
       continue;
+    }
     auto period = [&]() -> std::chrono::seconds {
       switch (item.interval) {
         using enum json::Interval::type_t;

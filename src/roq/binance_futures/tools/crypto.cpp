@@ -39,8 +39,9 @@ std::string Crypto::create_query(std::string_view const &body) {
   auto timestamp = fmt::format("timestamp={}"sv, now.count());
   mac_.clear();
   mac_.update(timestamp);
-  if (!std::empty(body))
+  if (!std::empty(body)) {
     mac_.update(body);
+  }
   auto digest = mac_.final(digest_);
   std::string signature;
   utils::codec::Hex::encode(signature, digest);

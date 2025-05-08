@@ -245,8 +245,9 @@ void DropCopyPortfolio::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type))
+      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.misc.continue_with_unknown_event_type)) {
         log_message();
+      }
     } catch (...) {
       log_message();
       utils::exceptions::Unhandled::terminate();
@@ -307,8 +308,9 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
     } else {
       log::warn<2>("DEBUG: execution_report={}"sv, execution_report);
     }
-    if (execution_report.execution_type != json::ExecutionType::TRADE)
+    if (execution_report.execution_type != json::ExecutionType::TRADE) {
       return;
+    }
     auto fill = Fill{
         .exchange_time_utc = execution_report.order_trade_time,
         .external_trade_id = {},
@@ -382,8 +384,9 @@ void DropCopyPortfolio::operator()(Trace<json::AccountUpdate> const &event) {
       }
     }
     for (auto &item : account_update.data.positions) {
-      if (shared_.discard_symbol(item.symbol))
+      if (shared_.discard_symbol(item.symbol)) {
         continue;
+      }
       log::info<2>("item={}"sv, item);
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
@@ -471,8 +474,9 @@ void DropCopyPortfolio::request_trades() {
 // response
 
 void DropCopyPortfolio::check_response_balance() {
-  if (download_.state() != DropCopyPortfolioState::BALANCE)
+  if (download_.state() != DropCopyPortfolioState::BALANCE) {
     return;
+  }
   if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
     download_.check(DropCopyPortfolioState::BALANCE);
@@ -480,8 +484,9 @@ void DropCopyPortfolio::check_response_balance() {
 }
 
 void DropCopyPortfolio::check_response_account() {
-  if (download_.state() != DropCopyPortfolioState::ACCOUNT)
+  if (download_.state() != DropCopyPortfolioState::ACCOUNT) {
     return;
+  }
   if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
     download_.check(DropCopyPortfolioState::ACCOUNT);
@@ -489,8 +494,9 @@ void DropCopyPortfolio::check_response_account() {
 }
 
 void DropCopyPortfolio::check_response_position() {
-  if (download_.state() != DropCopyPortfolioState::POSITION)
+  if (download_.state() != DropCopyPortfolioState::POSITION) {
     return;
+  }
   if (request_.request_position < request_.respond_position) {
     log::info("Position download has completed!"sv);
     download_.check(DropCopyPortfolioState::POSITION);
@@ -498,8 +504,9 @@ void DropCopyPortfolio::check_response_position() {
 }
 
 void DropCopyPortfolio::check_response_orders() {
-  if (download_.state() != DropCopyPortfolioState::ORDERS)
+  if (download_.state() != DropCopyPortfolioState::ORDERS) {
     return;
+  }
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
     download_.check(DropCopyPortfolioState::ORDERS);
@@ -507,8 +514,9 @@ void DropCopyPortfolio::check_response_orders() {
 }
 
 void DropCopyPortfolio::check_response_trades() {
-  if (download_.state() != DropCopyPortfolioState::TRADES)
+  if (download_.state() != DropCopyPortfolioState::TRADES) {
     return;
+  }
   if (request_.request_trades < request_.respond_trades) {
     log::info("Trades download has completed!"sv);
     download_.check(DropCopyPortfolioState::TRADES);

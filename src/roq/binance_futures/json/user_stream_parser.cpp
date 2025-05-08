@@ -21,11 +21,13 @@ bool UserStreamParser::dispatch(
   core::json::Parser parser{message};
   auto root = parser.root();
   for (auto [key, value] : std::get<core::json::Object>(root)) {
-    if (key.compare("e"sv) != 0)
+    if (key.compare("e"sv) != 0) {
       continue;
+    }
     EventType event_type{value};
-    if (try_dispatch(handler, message, buffer, event_type, trace_info, continue_with_unknown_event_type))
+    if (try_dispatch(handler, message, buffer, event_type, trace_info, continue_with_unknown_event_type)) {
       return true;
+    }
     break;
   }
   return false;
@@ -41,8 +43,9 @@ bool UserStreamParser::try_dispatch(
   switch (event_type) {
     using enum EventType::type_t;
     case UNKNOWN__:
-      if (!continue_with_unknown_event_type)
+      if (!continue_with_unknown_event_type) {
         log::fatal("Unexpected"sv);
+      }
       return false;
     case UNDEFINED__:
     case AGG_TRADE:

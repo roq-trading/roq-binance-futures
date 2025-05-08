@@ -86,8 +86,9 @@ struct create_metrics final : public utils::metrics::Factory {
 
 auto get_download_trades_lookback(auto &settings, auto download_trades_is_first) {
   if (download_trades_is_first) {
-    if (settings.download.trades_lookback_on_restart.count())
+    if (settings.download.trades_lookback_on_restart.count()) {
       return settings.download.trades_lookback_on_restart;
+    }
   }
   return settings.download.trades_lookback;
 }
@@ -256,8 +257,9 @@ void RestTrade::operator()(Trace<web::rest::Client::Header> const &event) {
 
 void RestTrade::operator()(Trace<web::rest::Client::MessageEnd> const &event) {
   auto &trace_info = event.trace_info;
-  if (std::empty(shared_.rate_limits))
+  if (std::empty(shared_.rate_limits)) {
     return;
+  }
   auto rate_limits_update = RateLimitsUpdate{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -417,8 +419,9 @@ void RestTrade::operator()(Trace<json::Account> const &event) {
   auto &[trace_info, account] = event;
   log::info<2>("account={}"sv, account);
   for (auto &item : account.positions) {
-    if (shared_.discard_symbol(item.symbol))
+    if (shared_.discard_symbol(item.symbol)) {
       continue;
+    }
     log::info<2>("item={}"sv, item);
     auto margin_mode = item.isolated ? MarginMode::ISOLATED : MarginMode::CROSS;
     auto long_quantity = std::max(0.0, item.position_amt);
@@ -488,8 +491,9 @@ void RestTrade::operator()(Trace<json::OpenOrders> const &event) {
   log::info<2>("open_orders={}"sv, open_orders);
   for (auto &item : open_orders.data) {
     log::info<2>("item={}"sv, item);
-    if (std::empty(item.client_order_id))
+    if (std::empty(item.client_order_id)) {
       continue;
+    }
     open_orders_symbols_.emplace(item.symbol);
     auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
     auto order_update = server::oms::OrderUpdate{
@@ -657,8 +661,9 @@ void RestTrade::process_response(web::rest::Response const &response, SuccessHan
           case I_AM_A_TEAPOT:        // 418
           case TOO_MANY_REQUESTS: {  // 429
             auto retry_after = get_retry_after(response);
-            if (retry_after.count())
+            if (retry_after.count()) {
               (*connection_).suspend(retry_after);
+            }
             auto text = fmt::format("{}"sv, status);
             error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::REQUEST_RATE_LIMIT_REACHED, text);
             break;

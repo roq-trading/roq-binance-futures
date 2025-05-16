@@ -1053,8 +1053,8 @@ void OrderEntryWS::update_rate_limits(auto &event) {
     auto type = [&]() -> RateLimitType {
       switch (item.rate_limit_type) {
         using enum json::RateLimitType::type_t;
-        case UNDEFINED__:
-        case UNKNOWN__:
+        case _UNDEFINED:
+        case _UNKNOWN:
           break;
         case ORDERS:
           return RateLimitType::CREATE_ORDER;
@@ -1071,8 +1071,8 @@ void OrderEntryWS::update_rate_limits(auto &event) {
     auto period = [&]() -> std::chrono::seconds {
       switch (item.interval) {
         using enum json::Interval::type_t;
-        case UNDEFINED__:
-        case UNKNOWN__:
+        case _UNDEFINED:
+        case _UNKNOWN:
           break;
         case SECOND:
           return item.interval_num * 1s;

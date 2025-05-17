@@ -388,8 +388,8 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
       auto margin_mode = [&]() {
         switch (item.margin_type) {
           using enum json::MarginType::type_t;
-          case _UNDEFINED:
-          case _UNKNOWN:
+          case UNDEFINED_INTERNAL:
+          case UNKNOWN_INTERNAL:
             break;
           case ISOLATED:
             return MarginMode::ISOLATED;

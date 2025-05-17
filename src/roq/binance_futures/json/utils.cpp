@@ -423,7 +423,7 @@ std::string_view countdown_cancel_all_open_orders(
 // map
 
 TradingStatus trading_status_helper(SymbolStatus symbol_status, ContractStatus contract_status) {
-  if (symbol_status != SymbolStatus::_UNDEFINED) {
+  if (symbol_status != SymbolStatus::UNDEFINED_INTERNAL) {
     return map(symbol_status);
   }
   return map(contract_status);

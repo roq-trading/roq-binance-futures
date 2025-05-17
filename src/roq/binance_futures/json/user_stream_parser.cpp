@@ -42,12 +42,12 @@ bool UserStreamParser::try_dispatch(
     bool continue_with_unknown_event_type) {
   switch (event_type) {
     using enum EventType::type_t;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       if (!continue_with_unknown_event_type) {
         log::fatal("Unexpected"sv);
       }
       return false;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
     case BOOK_TICKER:

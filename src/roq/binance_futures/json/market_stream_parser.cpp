@@ -43,10 +43,10 @@ bool MarketStreamParser::dispatch(
       auto field = Field(key);
       switch (field) {
         using enum Field::type_t;
-        case _UNDEFINED:
+        case UNDEFINED_INTERNAL:
           log::fatal("Unexpected"sv);
           break;
-        case _UNKNOWN:
+        case UNKNOWN_INTERNAL:
 #ifndef NDEBUG
           log::fatal(R"(Unknown key="{}")"sv, key);
 #endif
@@ -83,7 +83,7 @@ bool MarketStreamParser::dispatch(
           EventType event_type{value};
           switch (event_type) {
             using enum EventType::type_t;
-            case _UNKNOWN:
+            case UNKNOWN_INTERNAL:
               if (!continue_with_unknown_event_type) {
                 log::fatal("Unexpected"sv);
               }
@@ -108,7 +108,7 @@ bool MarketStreamParser::dispatch(
               dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
-            case _UNDEFINED:
+            case UNDEFINED_INTERNAL:
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:

@@ -20,9 +20,9 @@ template <>
 constexpr Helper<binance_futures::json::ContractStatus>::operator std::optional<roq::TradingStatus>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::ContractStatus::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::TradingStatus::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::TradingStatus::UNDEFINED;
     case TRADING:
       return roq::TradingStatus::OPEN;
@@ -51,7 +51,7 @@ constexpr Helper<binance_futures::json::ContractStatus>::operator std::optional<
   return {};
 }
 
-static_assert(Helper{binance_futures::json::ContractStatus{binance_futures::json::ContractStatus::_UNDEFINED}} == roq::TradingStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::ContractStatus{binance_futures::json::ContractStatus::UNDEFINED_INTERNAL}} == roq::TradingStatus::UNDEFINED);
 static_assert(Helper{binance_futures::json::ContractStatus{binance_futures::json::ContractStatus::TRADING}} == roq::TradingStatus::OPEN);
 static_assert(Helper{binance_futures::json::ContractStatus{binance_futures::json::ContractStatus::HALT}} == roq::TradingStatus::HALT);
 static_assert(Helper{binance_futures::json::ContractStatus{binance_futures::json::ContractStatus::BREAK}} == roq::TradingStatus::CLOSE);
@@ -76,9 +76,9 @@ template <>
 constexpr Helper<binance_futures::json::ContractType>::operator std::optional<roq::SecurityType>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::ContractType::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::SecurityType::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::SecurityType::UNDEFINED;
     case PERPETUAL:
       return roq::SecurityType::SWAP;
@@ -94,7 +94,7 @@ constexpr Helper<binance_futures::json::ContractType>::operator std::optional<ro
   return {};
 }
 
-static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::_UNDEFINED}} == roq::SecurityType::UNDEFINED);
+static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::UNDEFINED_INTERNAL}} == roq::SecurityType::UNDEFINED);
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::PERPETUAL}} == roq::SecurityType::SWAP);
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::CURRENT_QUARTER}} == roq::SecurityType::FUTURES);
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::NEXT_QUARTER}} == roq::SecurityType::FUTURES);
@@ -114,9 +114,9 @@ template <>
 constexpr Helper<binance_futures::json::OrderStatus>::operator std::optional<roq::OrderStatus>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::OrderStatus::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::OrderStatus::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::OrderStatus::UNDEFINED;
     case NEW:
       return roq::OrderStatus::WORKING;
@@ -136,7 +136,7 @@ constexpr Helper<binance_futures::json::OrderStatus>::operator std::optional<roq
   return {};
 }
 
-static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED}} == roq::OrderStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL}} == roq::OrderStatus::UNDEFINED);
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW}} == roq::OrderStatus::WORKING);
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::PARTIALLY_FILLED}} == roq::OrderStatus::WORKING);
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::FILLED}} == roq::OrderStatus::COMPLETED);
@@ -158,9 +158,9 @@ template <>
 constexpr Helper<binance_futures::json::OrderType>::operator std::optional<roq::OrderType>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::OrderType::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::OrderType::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::OrderType::UNDEFINED;
     case MARKET:
       return roq::OrderType::MARKET;
@@ -176,7 +176,7 @@ constexpr Helper<binance_futures::json::OrderType>::operator std::optional<roq::
   return {};
 }
 
-static_assert(Helper{binance_futures::json::OrderType{binance_futures::json::OrderType::_UNDEFINED}} == roq::OrderType::UNDEFINED);
+static_assert(Helper{binance_futures::json::OrderType{binance_futures::json::OrderType::UNDEFINED_INTERNAL}} == roq::OrderType::UNDEFINED);
 static_assert(Helper{binance_futures::json::OrderType{binance_futures::json::OrderType::LIMIT}} == roq::OrderType::LIMIT);
 static_assert(Helper{binance_futures::json::OrderType{binance_futures::json::OrderType::MARKET}} == roq::OrderType::MARKET);
 static_assert(Helper{binance_futures::json::OrderType{binance_futures::json::OrderType::STOP}} == roq::OrderType::UNDEFINED);
@@ -196,9 +196,9 @@ template <>
 constexpr Helper<binance_futures::json::Side>::operator std::optional<roq::Side>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::Side::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::Side::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::Side::UNDEFINED;
     case BUY:
       return roq::Side::BUY;
@@ -208,7 +208,7 @@ constexpr Helper<binance_futures::json::Side>::operator std::optional<roq::Side>
   return {};
 }
 
-static_assert(Helper{binance_futures::json::Side{binance_futures::json::Side::_UNDEFINED}} == roq::Side::UNDEFINED);
+static_assert(Helper{binance_futures::json::Side{binance_futures::json::Side::UNDEFINED_INTERNAL}} == roq::Side::UNDEFINED);
 static_assert(Helper{binance_futures::json::Side{binance_futures::json::Side::BUY}} == roq::Side::BUY);
 static_assert(Helper{binance_futures::json::Side{binance_futures::json::Side::SELL}} == roq::Side::SELL);
 
@@ -225,9 +225,9 @@ template <>
 constexpr Helper<binance_futures::json::SymbolStatus>::operator std::optional<roq::TradingStatus>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::SymbolStatus::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::TradingStatus::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::TradingStatus::UNDEFINED;
     case TRADING:
       return roq::TradingStatus::OPEN;
@@ -256,7 +256,7 @@ constexpr Helper<binance_futures::json::SymbolStatus>::operator std::optional<ro
   return {};
 }
 
-static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::_UNDEFINED}} == roq::TradingStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::UNDEFINED_INTERNAL}} == roq::TradingStatus::UNDEFINED);
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::TRADING}} == roq::TradingStatus::OPEN);
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::HALT}} == roq::TradingStatus::HALT);
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::BREAK}} == roq::TradingStatus::CLOSE);
@@ -281,9 +281,9 @@ template <>
 constexpr Helper<binance_futures::json::TimeInForce>::operator std::optional<roq::TimeInForce>() const {
   switch (std::get<0>(args_)) {
     using enum binance_futures::json::TimeInForce::type_t;
-    case _UNDEFINED:
+    case UNDEFINED_INTERNAL:
       return roq::TimeInForce::UNDEFINED;
-    case _UNKNOWN:
+    case UNKNOWN_INTERNAL:
       return roq::TimeInForce::UNDEFINED;
     case GTC:
       return roq::TimeInForce::GTC;
@@ -297,7 +297,7 @@ constexpr Helper<binance_futures::json::TimeInForce>::operator std::optional<roq
   return {};
 }
 
-static_assert(Helper{binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED}} == roq::TimeInForce::UNDEFINED);
+static_assert(Helper{binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL}} == roq::TimeInForce::UNDEFINED);
 static_assert(Helper{binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTC}} == roq::TimeInForce::GTC);
 static_assert(Helper{binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::IOC}} == roq::TimeInForce::IOC);
 static_assert(Helper{binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::FOK}} == roq::TimeInForce::FOK);
@@ -319,18 +319,18 @@ constexpr Helper<roq::OrderStatus>::operator std::optional<binance_futures::json
   switch (std::get<0>(args_)) {
     using enum roq::OrderStatus;
     case UNDEFINED:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
     case SENT:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
     case ACCEPTED:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
     case SUSPENDED:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
     case WORKING:
       return binance_futures::json::OrderStatus::NEW;
       // return json::OrderStatus::PARTIALLY_FILLED;
     case STOPPED:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
     case COMPLETED:
       return binance_futures::json::OrderStatus::FILLED;
     case EXPIRED:
@@ -338,21 +338,21 @@ constexpr Helper<roq::OrderStatus>::operator std::optional<binance_futures::json
     case CANCELED:
       return binance_futures::json::OrderStatus::CANCELED;
     case REJECTED:
-      return binance_futures::json::OrderStatus::_UNDEFINED;
+      return binance_futures::json::OrderStatus::UNDEFINED_INTERNAL;
   }
   return {};
 }
 
-static_assert(Helper{roq::OrderStatus::UNDEFINED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
-static_assert(Helper{roq::OrderStatus::SENT} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
-static_assert(Helper{roq::OrderStatus::ACCEPTED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
-static_assert(Helper{roq::OrderStatus::SUSPENDED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
+static_assert(Helper{roq::OrderStatus::UNDEFINED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::OrderStatus::SENT} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::OrderStatus::ACCEPTED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::OrderStatus::SUSPENDED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::OrderStatus::WORKING} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW});
-static_assert(Helper{roq::OrderStatus::STOPPED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
+static_assert(Helper{roq::OrderStatus::STOPPED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::OrderStatus::COMPLETED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::FILLED});
 static_assert(Helper{roq::OrderStatus::EXPIRED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::EXPIRED});
 static_assert(Helper{roq::OrderStatus::CANCELED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::CANCELED});
-static_assert(Helper{roq::OrderStatus::REJECTED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::_UNDEFINED});
+static_assert(Helper{roq::OrderStatus::REJECTED} == binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL});
 
 template <>
 template <>
@@ -368,7 +368,7 @@ constexpr Helper<roq::OrderType>::operator std::optional<binance_futures::json::
   switch (std::get<0>(args_)) {
     using enum roq::OrderType;
     case UNDEFINED:
-      return binance_futures::json::OrderType::_UNDEFINED;
+      return binance_futures::json::OrderType::UNDEFINED_INTERNAL;
     case MARKET:
       return binance_futures::json::OrderType::MARKET;
     case LIMIT:
@@ -377,7 +377,7 @@ constexpr Helper<roq::OrderType>::operator std::optional<binance_futures::json::
   return {};
 }
 
-static_assert(Helper{roq::OrderType::UNDEFINED} == binance_futures::json::OrderType{binance_futures::json::OrderType::_UNDEFINED});
+static_assert(Helper{roq::OrderType::UNDEFINED} == binance_futures::json::OrderType{binance_futures::json::OrderType::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::OrderType::MARKET} == binance_futures::json::OrderType{binance_futures::json::OrderType::MARKET});
 static_assert(Helper{roq::OrderType::LIMIT} == binance_futures::json::OrderType{binance_futures::json::OrderType::LIMIT});
 
@@ -395,7 +395,7 @@ constexpr Helper<roq::Side>::operator std::optional<binance_futures::json::Side>
   switch (std::get<0>(args_)) {
     using enum roq::Side;
     case UNDEFINED:
-      return binance_futures::json::Side::_UNDEFINED;
+      return binance_futures::json::Side::UNDEFINED_INTERNAL;
     case BUY:
       return binance_futures::json::Side::BUY;
     case SELL:
@@ -404,7 +404,7 @@ constexpr Helper<roq::Side>::operator std::optional<binance_futures::json::Side>
   return {};
 }
 
-static_assert(Helper{roq::Side::UNDEFINED} == binance_futures::json::Side{binance_futures::json::Side::_UNDEFINED});
+static_assert(Helper{roq::Side::UNDEFINED} == binance_futures::json::Side{binance_futures::json::Side::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::Side::BUY} == binance_futures::json::Side{binance_futures::json::Side::BUY});
 static_assert(Helper{roq::Side::SELL} == binance_futures::json::Side{binance_futures::json::Side::SELL});
 
@@ -422,13 +422,13 @@ constexpr Helper<roq::TimeInForce>::operator std::optional<binance_futures::json
   switch (std::get<0>(args_)) {
     using enum roq::TimeInForce;
     case UNDEFINED:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GFD:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GTC:
       return binance_futures::json::TimeInForce::GTC;
     case OPG:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case IOC:
       return binance_futures::json::TimeInForce::IOC;
     case FOK:
@@ -436,37 +436,37 @@ constexpr Helper<roq::TimeInForce>::operator std::optional<binance_futures::json
     case GTX:
       return binance_futures::json::TimeInForce::GTX;
     case GTD:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case AT_THE_CLOSE:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GOOD_THROUGH_CROSSING:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case AT_CROSSING:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GOOD_FOR_TIME:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GFA:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GFM:
-      return binance_futures::json::TimeInForce::_UNDEFINED;
+      return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
   }
   return {};
 }
 
-static_assert(Helper{roq::TimeInForce::UNDEFINED} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::GFD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
+static_assert(Helper{roq::TimeInForce::UNDEFINED} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GFD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::TimeInForce::GTC} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTC});
-static_assert(Helper{roq::TimeInForce::OPG} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
+static_assert(Helper{roq::TimeInForce::OPG} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(Helper{roq::TimeInForce::IOC} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::IOC});
 static_assert(Helper{roq::TimeInForce::FOK} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::FOK});
 static_assert(Helper{roq::TimeInForce::GTX} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTX});
-static_assert(Helper{roq::TimeInForce::GTD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::AT_THE_CLOSE} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::AT_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::GOOD_FOR_TIME} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::GFA} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
-static_assert(Helper{roq::TimeInForce::GFM} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::_UNDEFINED});
+static_assert(Helper{roq::TimeInForce::GTD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::AT_THE_CLOSE} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::AT_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GOOD_FOR_TIME} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GFA} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GFM} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
 
 template <>
 template <>

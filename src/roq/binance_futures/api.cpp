@@ -14,7 +14,7 @@ namespace binance_futures {
 API API::create(Settings const &settings) {
   auto api = settings.app.api;
   // USD-M futures
-  if (api.compare("fapi"sv) == 0) {
+  if (api == "fapi"sv) {
     return {
         .market_data{
             .exchange_info = "/fapi/v1/exchangeInfo"sv,
@@ -44,7 +44,7 @@ API API::create(Settings const &settings) {
     };
   }
   // COIN-M futures
-  if (api.compare("dapi"sv) == 0) {
+  if (api == "dapi"sv) {
     return {
         .market_data{
             .exchange_info = "/dapi/v1/exchangeInfo"sv,

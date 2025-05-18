@@ -18,6 +18,8 @@ namespace roq {
 namespace binance_futures {
 namespace json {
 
+// NOLINTBEGIN(readability-magic-numbers)
+
 Error guess_error([[maybe_unused]] int32_t code) {
   switch (code) {
     case -2011:  // CANCEL_REJECTED
@@ -30,6 +32,8 @@ Error guess_error([[maybe_unused]] int32_t code) {
   log::warn("DEBUG unable to map error_code={}"sv, code);
   return Error::UNKNOWN;
 }
+
+// NOLINTEND(readability-magic-numbers)
 
 std::string_view trades(
     std::vector<char> &buffer,

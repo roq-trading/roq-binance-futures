@@ -23,10 +23,10 @@ uint8_t const DAPI = 0x1;
 namespace {
 
 auto parse_api(auto &settings) {
-  if (settings.api.compare("fapi"sv) == 0) {
+  if (settings.api == "fapi"sv) {
     return FAPI;
   }
-  if (settings.api.compare("dapi"sv) == 0) {
+  if (settings.api == "dapi"sv) {
     return DAPI;
   }
   log::fatal(R"(Unexpected: api="{}")"sv, settings.api);

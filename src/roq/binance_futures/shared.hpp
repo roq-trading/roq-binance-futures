@@ -89,7 +89,6 @@ struct Shared final {
  private:
   utils::unordered_map<std::string, Instrument> instruments_;
 
- private:
   server::Dispatcher &dispatcher_;
 
  public:

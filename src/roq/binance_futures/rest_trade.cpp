@@ -231,7 +231,7 @@ void RestTrade::operator()(Trace<web::rest::Client::Header> const &event) {
           .limit = shared_.limits.request_weight_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.request_weight_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -247,7 +247,7 @@ void RestTrade::operator()(Trace<web::rest::Client::Header> const &event) {
           .limit = shared_.limits.create_order_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.create_order_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);

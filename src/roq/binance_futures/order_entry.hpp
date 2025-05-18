@@ -16,7 +16,7 @@ struct OrderEntry {
 
   OrderEntry(OrderEntry const &) = delete;
 
-  virtual ~OrderEntry() {}
+  virtual ~OrderEntry() = default;
 
   virtual void operator()(Event<Start> const &) = 0;
   virtual void operator()(Event<Stop> const &) = 0;

@@ -164,7 +164,7 @@ void OrderEntrySimple::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   refresh_listen_key();
-  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() && next_auto_cancel_ < now) {
+  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < now) {
     next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
     auto_cancel_all_open_orders();
   }
@@ -294,7 +294,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .limit = shared_.limits.request_weight_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.request_weight_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -310,7 +310,7 @@ void OrderEntrySimple::operator()(Trace<web::rest::Client::Header> const &event)
           .limit = shared_.limits.create_order_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.create_order_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -786,7 +786,7 @@ void OrderEntrySimple::refresh_listen_key() {
     return;
   }
   auto now = clock::get_system();
-  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_) {
+  if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
     return;
   }
   log::info("Refreshing listen key..."sv);
@@ -834,7 +834,7 @@ void OrderEntrySimple::new_order_ack(Trace<web::rest::Response> const &event, ui
       Trace event_2{event, new_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
           .origin = origin,
@@ -945,7 +945,7 @@ void OrderEntrySimple::modify_order_ack(Trace<web::rest::Response> const &event,
       Trace event_2{event, modify_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = origin,
@@ -1056,7 +1056,7 @@ void OrderEntrySimple::cancel_order_ack(Trace<web::rest::Response> const &event,
       Trace event_2{event, cancel_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
           .origin = origin,

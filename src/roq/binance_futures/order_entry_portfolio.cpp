@@ -296,7 +296,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &eve
           .limit = shared_.limits.request_weight_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.request_weight_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -312,7 +312,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::Client::Header> const &eve
           .limit = shared_.limits.create_order_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.create_order_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -862,7 +862,7 @@ void OrderEntryPortfolio::refresh_listen_key() {
     return;
   }
   auto now = clock::get_system();
-  if (listen_key_refresh_ == listen_key_refresh_.zero() || now < listen_key_refresh_) {
+  if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
     return;
   }
   log::info("Refreshing listen key..."sv);
@@ -910,7 +910,7 @@ void OrderEntryPortfolio::new_order_ack(Trace<web::rest::Response> const &event,
       Trace event_2{event, new_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
           .origin = origin,
@@ -1021,7 +1021,7 @@ void OrderEntryPortfolio::modify_order_ack(Trace<web::rest::Response> const &eve
       Trace event_2{event, modify_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = origin,
@@ -1132,7 +1132,7 @@ void OrderEntryPortfolio::cancel_order_ack(Trace<web::rest::Response> const &eve
       Trace event_2{event, cancel_order};
       (*this)(event_2, user_id, order_id, version);
     };
-    auto handle_error = [&](auto origin, auto status, auto error, auto text) {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
           .origin = origin,

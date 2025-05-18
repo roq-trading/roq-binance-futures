@@ -196,7 +196,7 @@ void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
           .limit = shared_.limits.request_weight_1m,
           .value = value,
       };
-      shared_.rate_limits.emplace_back(std::move(rate_limit));
+      shared_.rate_limits.emplace_back(rate_limit);
       rate_limiter_.request_weight_1m.set(value);
     } catch (RuntimeError &) {
       log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
@@ -294,7 +294,7 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
         download_.check(STATE);
       }
     };
-    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, [[maybe_unused]] auto error, [[maybe_unused]] auto text) {
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, [[maybe_unused]] auto error, [[maybe_unused]] auto const &text) {
       if (download_.downloading()) {
         download_.retry(STATE);
       }
@@ -420,7 +420,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     }
     auto create_symbol = [](auto const &value) {
       std::string tmp{value};
-      std::transform(std::begin(tmp), std::end(tmp), std::begin(tmp), [](auto c) { return std::tolower(c); });
+      std::ranges::transform(tmp, std::begin(tmp), [](auto item) { return std::tolower(item); });
       return tmp;
     };
     auto symbol = create_symbol(item.symbol);

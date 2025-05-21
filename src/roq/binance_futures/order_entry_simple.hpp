@@ -69,7 +69,7 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
   void operator()(Event<Stop> const &) override;
   void operator()(Event<Timer> const &) override;
 
-  void operator()(metrics::Writer &) override;
+  void operator()(metrics::Writer &) const override;
 
   uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id) override;
   uint16_t operator()(

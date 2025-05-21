@@ -309,8 +309,25 @@ uint16_t Gateway::operator()(Event<CancelQuotes> const &) {
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-void Gateway::operator()(metrics::Writer &writer) {
-  dispatch(writer);
+void Gateway::operator()(metrics::Writer &writer) const {
+  rest_(writer);
+  for (auto &item : market_data_1_) {
+    (*item)(writer);
+  }
+  for (auto &item : market_data_2_) {
+    (*item)(writer);
+  }
+  for (auto &[_, item] : order_entry_) {
+    (*item)(writer);
+  }
+  for (auto &[_, item] : drop_copy_) {
+    if (static_cast<bool>(item)) {
+      (*item)(writer);
+    }
+  }
+  for (auto &[_, item] : download_) {
+    (*item)(writer);
+  }
 }
 
 template <typename... Args>

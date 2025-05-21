@@ -127,7 +127,7 @@ void DropCopySimple::operator()(Event<Timer> const &event) {
   check_response_trades();
 }
 
-void DropCopySimple::operator()(metrics::Writer &writer) {
+void DropCopySimple::operator()(metrics::Writer &writer) const {
   writer
       // counter
       .write(counter_.disconnect, metrics::Type::COUNTER)

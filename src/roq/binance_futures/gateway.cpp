@@ -310,45 +310,33 @@ uint16_t Gateway::operator()(Event<CancelQuotes> const &) {
 }
 
 void Gateway::operator()(metrics::Writer &writer) const {
-  rest_(writer);
-  for (auto &item : market_data_1_) {
-    (*item)(writer);
-  }
-  for (auto &item : market_data_2_) {
-    (*item)(writer);
-  }
-  for (auto &[_, item] : order_entry_) {
-    (*item)(writer);
-  }
-  for (auto &[_, item] : drop_copy_) {
-    if (static_cast<bool>(item)) {
-      (*item)(writer);
-    }
-  }
-  for (auto &[_, item] : download_) {
-    (*item)(writer);
-  }
+  dispatch_helper(*this, writer);
 }
 
 template <typename... Args>
 void Gateway::dispatch(Args &&...args) {
+  dispatch_helper(*this, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Gateway::dispatch_helper(auto &self, Args &&...args) {
   auto helper = [&](auto &target) { target(std::forward<Args>(args)...); };
-  helper(rest_);
-  for (auto &item : market_data_1_) {
+  helper(self.rest_);
+  for (auto &item : self.market_data_1_) {
     helper(*item);
   }
-  for (auto &item : market_data_2_) {
+  for (auto &item : self.market_data_2_) {
     helper(*item);
   }
-  for (auto &[_, item] : order_entry_) {
+  for (auto &[_, item] : self.order_entry_) {
     helper(*item);
   }
-  for (auto &[_, item] : drop_copy_) {
+  for (auto &[_, item] : self.drop_copy_) {
     if (static_cast<bool>(item)) {
       helper(*item);
     }
   }
-  for (auto &[_, item] : download_) {
+  for (auto &[_, item] : self.download_) {
     helper(*item);
   }
 }

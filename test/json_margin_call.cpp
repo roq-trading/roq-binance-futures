@@ -36,6 +36,6 @@ TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
   CHECK(obj.cross_wallet_balance == 3.16812045_a);
   auto &positions = obj.positions;
   REQUIRE(std::size(positions) == 1);
-  auto &p0 = positions[0];
-  CHECK(p0.symbol == "ETHUSDT"sv);
+  auto &position_0 = positions[0];
+  CHECK(position_0.symbol == "ETHUSDT"sv);
 }

@@ -195,43 +195,43 @@ TEST_CASE("json_account_simple_usd_m", "[json_account]") {
   CHECK(obj.max_withdraw_amount == 0.0_a);
   auto &assets = obj.assets;
   REQUIRE(std::size(assets) == 5);
-  auto &a0 = assets[0];
-  CHECK(a0.asset == "BTC"sv);
-  CHECK(a0.wallet_balance == 0.0_a);
-  CHECK(a0.unrealized_profit == 0.0_a);
-  CHECK(a0.margin_balance == 0.0_a);
-  CHECK(a0.maint_margin == 0.0_a);
-  CHECK(a0.initial_margin == 0.0_a);
-  CHECK(a0.position_initial_margin == 0.0_a);
-  CHECK(a0.open_order_initial_margin == 0.0_a);
-  CHECK(a0.max_withdraw_amount == 0.0_a);
-  CHECK(a0.cross_wallet_balance == 0.0_a);
-  CHECK(a0.cross_un_pnl == 0.0_a);
-  CHECK(a0.available_balance == 0.0_a);
-  CHECK(a0.margin_available == true);
-  CHECK(a0.update_time == 0ms);
+  auto &account_0 = assets[0];
+  CHECK(account_0.asset == "BTC"sv);
+  CHECK(account_0.wallet_balance == 0.0_a);
+  CHECK(account_0.unrealized_profit == 0.0_a);
+  CHECK(account_0.margin_balance == 0.0_a);
+  CHECK(account_0.maint_margin == 0.0_a);
+  CHECK(account_0.initial_margin == 0.0_a);
+  CHECK(account_0.position_initial_margin == 0.0_a);
+  CHECK(account_0.open_order_initial_margin == 0.0_a);
+  CHECK(account_0.max_withdraw_amount == 0.0_a);
+  CHECK(account_0.cross_wallet_balance == 0.0_a);
+  CHECK(account_0.cross_un_pnl == 0.0_a);
+  CHECK(account_0.available_balance == 0.0_a);
+  CHECK(account_0.margin_available == true);
+  CHECK(account_0.update_time == 0ms);
   // XXX TODO a1
   // XXX TODO a2
   // XXX TODO a3
   // XXX TODO a4
   auto &positions = obj.positions;
   REQUIRE(std::size(positions) == 4);
-  auto &p0 = positions[0];
-  CHECK(p0.symbol == "RAYUSDT"sv);
-  CHECK(p0.initial_margin == 0.0_a);
-  CHECK(p0.maint_margin == 0.0_a);
-  CHECK(p0.unrealized_profit == 0.0_a);
-  CHECK(p0.position_initial_margin == 0.0_a);
-  CHECK(p0.open_order_initial_margin == 0.0_a);
-  CHECK(p0.leverage == 20.0_a);
-  CHECK(p0.isolated == false);
-  CHECK(p0.entry_price == 0.0_a);
-  CHECK(p0.max_notional == 25000.0_a);
-  CHECK(p0.position_side == "BOTH"sv);
-  CHECK(p0.position_amt == 0.0_a);
-  CHECK(p0.notional == 0.0_a);
-  CHECK(p0.isolated_wallet == 0.0_a);
-  CHECK(p0.update_time == 0ms);
+  auto &position_0 = positions[0];
+  CHECK(position_0.symbol == "RAYUSDT"sv);
+  CHECK(position_0.initial_margin == 0.0_a);
+  CHECK(position_0.maint_margin == 0.0_a);
+  CHECK(position_0.unrealized_profit == 0.0_a);
+  CHECK(position_0.position_initial_margin == 0.0_a);
+  CHECK(position_0.open_order_initial_margin == 0.0_a);
+  CHECK(position_0.leverage == 20.0_a);
+  CHECK(position_0.isolated == false);
+  CHECK(position_0.entry_price == 0.0_a);
+  CHECK(position_0.max_notional == 25000.0_a);
+  CHECK(position_0.position_side == "BOTH"sv);
+  CHECK(position_0.position_amt == 0.0_a);
+  CHECK(position_0.notional == 0.0_a);
+  CHECK(position_0.isolated_wallet == 0.0_a);
+  CHECK(position_0.update_time == 0ms);
   // XXX TODO p1
   // XXX TODO p2
   // XXX TODO p3

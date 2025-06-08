@@ -495,6 +495,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
         .margin_mode = MarginMode::PORTFOLIO,
         .balance = item.total_wallet_balance,
         .hold = hold,
+        .borrowed = NaN,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -510,6 +511,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Balance> const &event) {
           .margin_mode = MarginMode::PORTFOLIO,
           .balance = item.cross_wallet_balance,
           .hold = NaN,  // ???
+          .borrowed = NaN,
           .external_account = {},
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = item.update_time,

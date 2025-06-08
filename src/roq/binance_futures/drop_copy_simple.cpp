@@ -358,6 +358,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
           .margin_mode = {},  // XXX TODO maybe this should be MarginMode::ISOLATED?
           .balance = item.wallet_balance,
           .hold = NaN,  // note! we don't see this
+          .borrowed = NaN,
           .external_account = {},
           .update_type = UpdateType::INCREMENTAL,
           .exchange_time_utc = account_update.transaction_time,
@@ -372,6 +373,7 @@ void DropCopySimple::operator()(Trace<json::AccountUpdate> const &event) {
             .margin_mode = MarginMode::CROSS,
             .balance = item.cross_wallet_balance,
             .hold = NaN,  // note! we don't see this
+            .borrowed = NaN,
             .external_account = {},
             .update_type = UpdateType::INCREMENTAL,
             .exchange_time_utc = account_update.transaction_time,

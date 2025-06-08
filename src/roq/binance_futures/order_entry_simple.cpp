@@ -493,6 +493,7 @@ void OrderEntrySimple::operator()(Trace<json::Balance> const &event) {
         .margin_mode = {},
         .balance = item.balance,
         .hold = hold,
+        .borrowed = NaN,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -507,6 +508,7 @@ void OrderEntrySimple::operator()(Trace<json::Balance> const &event) {
           .margin_mode = MarginMode::CROSS,
           .balance = item.cross_wallet_balance,
           .hold = NaN,  // ???
+          .borrowed = NaN,
           .external_account = {},
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = item.update_time,

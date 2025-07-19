@@ -321,7 +321,7 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .quote_amount = NaN,
         .commission_amount = execution_report.commission,
         .commission_currency = execution_report.commission_asset,
-        .profit_loss_amount = NaN,
+        .profit_loss_cost_amount = NaN,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{

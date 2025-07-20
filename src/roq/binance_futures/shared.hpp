@@ -42,6 +42,11 @@ struct Shared final {
     return dispatcher_(std::forward<Args>(args)...);
   }
 
+  template <typename... Args>
+  auto get_ref_data(Args &&...args) {
+    return dispatcher_.get_ref_data(std::forward<Args>(args)...);
+  }
+
  public:
   Settings const &settings;
   API const api;

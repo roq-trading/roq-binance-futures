@@ -7,6 +7,7 @@
 
 #include "roq/mask.hpp"
 
+#include "roq/utils/common.hpp"
 #include "roq/utils/compare.hpp"
 #include "roq/utils/update.hpp"
 
@@ -742,6 +743,9 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
   for (auto &item : trades.data) {
     log::info<2>("item={}"sv, item);
     auto liquidity = item.maker ? Liquidity::MAKER : Liquidity::TAKER;
+    auto side = map(item.side).template get<Side>();
+    auto ref_data = shared_.get_ref_data(shared_.settings.exchange, item.symbol);
+    auto profit_loss_cost_amount = utils::compute_profit_loss_cost_amount(side, item.qty, item.price, ref_data.multiplier);
     auto fill = Fill{
         .exchange_time_utc = item.time,
         .external_trade_id = {},
@@ -752,7 +756,7 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
         .quote_amount = NaN,
         .commission_amount = item.commission,
         .commission_currency = item.commission_asset,
-        .profit_loss_cost_amount = NaN,
+        .profit_loss_cost_amount = profit_loss_cost_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, item.id);
     auto external_order_id = fmt::format("{}"sv, item.order_id);
@@ -762,7 +766,7 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
         .order_id = {},
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
-        .side = map(item.side),
+        .side = side,
         .position_effect = {},
         .margin_mode = {},
         .quantity_type = {},

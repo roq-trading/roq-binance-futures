@@ -6,6 +6,7 @@
 
 #include "roq/mask.hpp"
 
+#include "roq/utils/common.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/utils/exceptions/unhandled.hpp"
@@ -311,6 +312,10 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
     if (execution_report.execution_type != json::ExecutionType::TRADE) {
       return;
     }
+    auto side = map(execution_report.side).template get<Side>();
+    auto ref_data = shared_.get_ref_data(shared_.settings.exchange, execution_report.symbol);
+    auto profit_loss_cost_amount =
+        utils::compute_profit_loss_cost_amount(side, execution_report.last_filled_quantity, execution_report.last_filled_price, ref_data.multiplier);
     auto fill = Fill{
         .exchange_time_utc = execution_report.order_trade_time,
         .external_trade_id = {},
@@ -321,7 +326,7 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .quote_amount = NaN,
         .commission_amount = execution_report.commission,
         .commission_currency = execution_report.commission_asset,
-        .profit_loss_cost_amount = NaN,
+        .profit_loss_cost_amount = profit_loss_cost_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{
@@ -330,7 +335,7 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .order_id = order_id,
         .exchange = shared_.settings.exchange,
         .symbol = execution_report.symbol,
-        .side = map(execution_report.side),
+        .side = side,
         .position_effect = {},
         .margin_mode = MarginMode::PORTFOLIO,
         .quantity_type = {},

@@ -821,7 +821,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
     auto liquidity = trade.maker ? Liquidity::MAKER : Liquidity::TAKER;
     auto side = map(trade.side).template get<Side>();
     auto ref_data = shared_.get_ref_data(shared_.settings.exchange, trade.symbol);
-    auto profit_loss_cost_amount = utils::compute_profit_loss_cost_amount(side, trade.qty, trade.price, ref_data.multiplier);
+    auto profit_loss_amount = utils::compute_profit_loss_amount(side, trade.qty, trade.price, ref_data.multiplier);
     auto fill = Fill{
         .exchange_time_utc = trade.time,
         .external_trade_id = {},
@@ -832,7 +832,7 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
         .quote_amount = NaN,
         .commission_amount = trade.commission,
         .commission_currency = trade.commission_asset,
-        .profit_loss_cost_amount = profit_loss_cost_amount,
+        .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);
     auto external_order_id = fmt::format("{}"sv, trade.order_id);

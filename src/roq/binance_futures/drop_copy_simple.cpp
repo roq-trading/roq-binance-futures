@@ -311,8 +311,8 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
     }
     auto side = map(execution_report.side).template get<Side>();
     auto ref_data = shared_.get_ref_data(shared_.settings.exchange, execution_report.symbol);
-    auto profit_loss_cost_amount =
-        utils::compute_profit_loss_cost_amount(side, execution_report.last_filled_quantity, execution_report.last_filled_price, ref_data.multiplier);
+    auto profit_loss_amount =
+        utils::compute_profit_loss_amount(side, execution_report.last_filled_quantity, execution_report.last_filled_price, ref_data.multiplier);
     auto fill = Fill{
         .exchange_time_utc = execution_report.order_trade_time,
         .external_trade_id = {},
@@ -323,7 +323,7 @@ void DropCopySimple::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .quote_amount = NaN,
         .commission_amount = execution_report.commission,
         .commission_currency = execution_report.commission_asset,
-        .profit_loss_cost_amount = profit_loss_cost_amount,
+        .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{

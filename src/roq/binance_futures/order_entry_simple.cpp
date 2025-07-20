@@ -752,10 +752,10 @@ void OrderEntrySimple::operator()(Trace<json::Trades> const &event) {
         .quantity = item.qty,
         .price = item.price,
         .liquidity = liquidity,
-        .base_amount = NaN,
-        .quote_amount = NaN,
         .commission_amount = item.commission,
         .commission_currency = item.commission_asset,
+        .base_amount = NaN,
+        .quote_amount = NaN,
         .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, item.id);

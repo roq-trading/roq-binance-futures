@@ -828,10 +828,10 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
         .quantity = trade.qty,
         .price = trade.price,
         .liquidity = liquidity,
-        .base_amount = NaN,
-        .quote_amount = NaN,
         .commission_amount = trade.commission,
         .commission_currency = trade.commission_asset,
+        .base_amount = NaN,
+        .quote_amount = NaN,
         .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);

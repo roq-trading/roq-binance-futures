@@ -59,6 +59,7 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
     void operator()(Trace<json::BookTicker> const &) override { found_ = true; }
     void operator()(Trace<json::DepthUpdate> const &) override { FAIL(); }
     void operator()(Trace<json::MarkPriceUpdate> const &) override { FAIL(); }
+    void operator()(Trace<json::Kline> const &) override { FAIL(); }
 
     operator bool() const { return found_; }
 
@@ -94,6 +95,7 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
     void operator()(Trace<json::BookTicker> const &) override { found_ = true; }
     void operator()(Trace<json::DepthUpdate> const &) override { FAIL(); }
     void operator()(Trace<json::MarkPriceUpdate> const &) override { FAIL(); }
+    void operator()(Trace<json::Kline> const &) override { FAIL(); }
 
     operator bool() const { return found_; }
 

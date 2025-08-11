@@ -125,6 +125,7 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
           .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
           .book_ticker = create_metrics(shared.settings, name_, "book_ticker"sv),
           .depth_update = create_metrics(shared.settings, name_, "depth_update"sv),
+          .kline = create_metrics(shared.settings, name_, "kline"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -163,6 +164,7 @@ void MarketData::operator()(metrics::Writer &writer) const {
       .write(profile_.mini_ticker, metrics::Type::PROFILE)
       .write(profile_.book_ticker, metrics::Type::PROFILE)
       .write(profile_.depth_update, metrics::Type::PROFILE)
+      .write(profile_.kline, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -246,6 +248,12 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols) {
   auto frequency = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.ws.subscribe_depth_freq);
   auto depth = fmt::format(R"(depth@{}ms)"sv, frequency.count());
   subscribe(symbols, depth);
+  if (shared_.settings.download.time_series_lookback.count()) {
+    subscribe(symbols, "kline_1m"sv);
+    for (auto &symbol : symbols) {
+      shared_.time_series_request_queue.emplace_back(symbol);
+    }
+  }
 }
 
 void MarketData::subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel) {
@@ -520,6 +528,41 @@ void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
         .sending_time_utc = mark_price.event_time,
     };
     create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
+  });
+}
+
+void MarketData::operator()(Trace<json::Kline> const &event) {
+  profile_.kline([&]() {
+    auto &[trace_info, kline] = event;
+    log::info<3>(R"(kline={})"sv, kline);
+    (*connection_).touch(trace_info.source_receive_time);
+    if (!kline.data.closed) {
+      return;
+    }
+    auto bar = Bar{
+        .begin_time_utc = kline.data.begin_time,
+        .open_price = kline.data.open_price,
+        .high_price = kline.data.high_price,
+        .low_price = kline.data.low_price,
+        .close_price = kline.data.close_price,
+        .quantity = NaN,
+        .base_amount = kline.data.base_asset_volume,
+        .quote_amount = kline.data.quote_asset_volume,
+        .number_of_trades = kline.data.number_of_trades,
+        .vwap = NaN,
+    };
+    auto time_series_update = TimeSeriesUpdate{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = kline.data.symbol,
+        .data_source = DataSource::TRADE_SUMMARY,
+        .interval = Interval::_60,
+        .origin = Origin::EXCHANGE,
+        .bars = {&bar, 1},
+        .update_type = UpdateType::INCREMENTAL,
+        .exchange_time_utc = kline.event_time,
+    };
+    create_trace_and_dispatch(handler_, trace_info, time_series_update, true);
   });
 }
 

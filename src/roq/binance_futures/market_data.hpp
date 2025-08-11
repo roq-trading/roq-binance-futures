@@ -37,6 +37,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
     virtual void operator()(Trace<MarketByPriceUpdate> const &, bool is_last) = 0;
     virtual void operator()(Trace<TradeSummary> const &, bool is_last) = 0;
     virtual void operator()(Trace<StatisticsUpdate> const &, bool is_last) = 0;
+    virtual void operator()(Trace<TimeSeriesUpdate> const &, bool is_last) = 0;
   };
 
   MarketData(Handler &, io::Context &, uint16_t stream_id, Priority, Shared &, size_t index);
@@ -83,6 +84,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
   void operator()(Trace<json::MiniTicker> const &) override;
   void operator()(Trace<json::BookTicker> const &) override;
   void operator()(Trace<json::DepthUpdate> const &) override;
+  void operator()(Trace<json::Kline> const &) override;
 
   Handler &handler_;
   // config
@@ -101,7 +103,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, book_ticker, depth_update;
+    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, book_ticker, depth_update, kline;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

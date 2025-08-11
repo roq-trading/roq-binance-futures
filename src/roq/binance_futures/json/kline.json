@@ -1,0 +1,26 @@
+{
+  "name": "roq/binance_futures/json/Kline",
+  "type": "comp",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "k",
+      "name": "data",
+      "type": "roq/binance_futures/json/KlineData"
+    }
+  ]
+}

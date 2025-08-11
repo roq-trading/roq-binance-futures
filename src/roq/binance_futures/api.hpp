@@ -13,6 +13,7 @@ struct API final {
   struct {
     std::string_view exchange_info;
     std::string_view depth;
+    std::string_view kline;
   } market_data;
   struct {
     std::string_view listen_key;

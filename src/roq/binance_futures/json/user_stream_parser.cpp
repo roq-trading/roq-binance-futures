@@ -53,6 +53,7 @@ bool UserStreamParser::try_dispatch(
     case BOOK_TICKER:
     case DEPTH_UPDATE:
     case MARK_PRICE_UPDATE:
+    case KLINE:
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {

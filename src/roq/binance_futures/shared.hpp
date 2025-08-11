@@ -100,6 +100,7 @@ struct Shared final {
   core::limit::RateLimiter rate_limiter;
   core::Symbols symbols;
   core::TimerQueue<std::string> depth_request_queue;
+  core::TimerQueue<std::string> time_series_request_queue;
   std::vector<RateLimit> rate_limits;
 
   struct {
@@ -107,6 +108,8 @@ struct Shared final {
     uint32_t create_order_10s = {};
     uint32_t create_order_1m = {};
   } limits;
+
+  std::vector<Bar> bars;
 };
 
 }  // namespace binance_futures

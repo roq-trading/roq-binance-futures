@@ -108,6 +108,10 @@ bool MarketStreamParser::dispatch(
               dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
               dispatched = true;
               break;
+            case KLINE:
+              dispatch_helper<Kline>(handler, message, buffer, trace_info);
+              dispatched = true;
+              break;
             case UNDEFINED_INTERNAL:
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:

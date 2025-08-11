@@ -28,6 +28,7 @@
 #include "roq/binance_futures/json/cancel_order.hpp"
 #include "roq/binance_futures/json/depth.hpp"
 #include "roq/binance_futures/json/exchange_info.hpp"
+#include "roq/binance_futures/json/kline_ack.hpp"
 #include "roq/binance_futures/json/listen_key.hpp"
 #include "roq/binance_futures/json/new_order.hpp"
 
@@ -45,6 +46,7 @@ struct Rest final : public web::rest::Client::Handler {
     virtual void operator()(Trace<RateLimitsUpdate> const &) = 0;
     virtual void operator()(Trace<ReferenceData> const &, bool is_last) = 0;
     virtual void operator()(Trace<MarketStatus> const &, bool is_last) = 0;
+    virtual void operator()(Trace<TimeSeriesUpdate> const &, bool is_last) = 0;
     // cross-communication
     virtual void operator()(SymbolsUpdate &) = 0;
   };
@@ -82,6 +84,10 @@ struct Rest final : public web::rest::Client::Handler {
   void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
   void operator()(Trace<json::Depth> const &, std::string_view const &symbol);
 
+  void get_kline(std::string_view const &symbol);
+  void get_kline_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
+  void operator()(Trace<json::KlineAck> const &, std::string_view const &symbol);
+
   void check_request_queue(std::chrono::nanoseconds now);
 
   template <typename SuccessHandler, typename ErrorHandler>
@@ -104,7 +110,7 @@ struct Rest final : public web::rest::Client::Handler {
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile exchange_info, exchange_info_ack, depth, depth_ack;
+    utils::metrics::Profile exchange_info, exchange_info_ack, depth, depth_ack, kline, kline_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;

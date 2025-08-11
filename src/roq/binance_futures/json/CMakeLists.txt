@@ -42,6 +42,10 @@ set(AUTOGEN_SCHEMAS
     grid_update_data.json
     grid_update.json
     interval.json
+    kline_ack_item.json
+    kline_ack.json
+    kline_data.json
+    kline.json
     listen_key.json
     margin_call_item.json
     margin_call.json

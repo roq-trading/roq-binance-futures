@@ -111,6 +111,8 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
           .exchange_info_ack = create_metrics(shared.settings, name_, "exchange_info_ack"sv),
           .depth = create_metrics(shared.settings, name_, "depth"sv),
           .depth_ack = create_metrics(shared.settings, name_, "depth_ack"sv),
+          .kline = create_metrics(shared.settings, name_, "kline"sv),
+          .kline_ack = create_metrics(shared.settings, name_, "kline_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -146,6 +148,8 @@ void Rest::operator()(metrics::Writer &writer) const {
       .write(profile_.exchange_info_ack, metrics::Type::PROFILE)
       .write(profile_.depth, metrics::Type::PROFILE)
       .write(profile_.depth_ack, metrics::Type::PROFILE)
+      .write(profile_.kline, metrics::Type::PROFILE)
+      .write(profile_.kline_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
@@ -488,8 +492,7 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
 }
 
 void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &symbol) {
-  auto &trace_info = event.trace_info;
-  auto &depth = event.value;
+  auto &[trace_info, depth] = event;
   log::info<4>("depth={}"sv, depth);
   auto sequence = depth.last_update_id;
   auto &instrument = shared_.get_instrument(symbol);
@@ -554,10 +557,87 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
   }
 }
 
+// kline
+
+void Rest::get_kline(std::string_view const &symbol) {
+  profile_.kline([&]() {
+    auto query = fmt::format("?symbol={}&interval=1m"sv, symbol);
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.market_data.kline,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_kline_ack(event, symbol);
+    };
+    (*connection_)("kline"sv, request, callback);
+  });
+}
+
+void Rest::get_kline_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
+  profile_.kline_ack([&]() {
+    auto handle_success = [&](auto &body) {
+      log::warn("{}"sv, body);
+      json::KlineAck kline_ack{body, decode_buffer_};
+      Trace event_2{event, kline_ack};
+      (*this)(event_2, symbol);
+    };
+    auto handle_error = [&]([[maybe_unused]] auto origin, [[maybe_unused]] auto status, [[maybe_unused]] auto error, [[maybe_unused]] auto text) {
+      log::warn(R"(error={}, text="{}")"sv, error, text);
+      // XXX WHAT ???
+    };
+    process_response(event, handle_success, handle_error);
+  });
+}
+
+void Rest::operator()(Trace<json::KlineAck> const &event, std::string_view const &symbol) {
+  auto &[trace_info, kline_ack] = event;
+  log::info<4>("kline_ack={}"sv, kline_ack);
+  auto &bars = shared_.bars;
+  bars.clear();
+  for (auto &item : kline_ack.data) {
+    auto bar = Bar{
+        .begin_time_utc = item.begin_time,
+        .open_price = item.open_price,
+        .high_price = item.high_price,
+        .low_price = item.low_price,
+        .close_price = item.close_price,
+        .quantity = NaN,
+        .base_amount = item.base_asset_volume,
+        .quote_amount = item.quote_asset_volume,
+        .number_of_trades = item.number_of_trades,
+        .vwap = NaN,
+    };
+    bars.emplace_back(std::move(bar));
+  }
+  if (!std::empty(bars)) {
+    auto time_series_update = TimeSeriesUpdate{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = symbol,
+        .data_source = DataSource::TRADE_SUMMARY,
+        .interval = Interval::_60,
+        .origin = Origin::EXCHANGE,
+        .bars = bars,
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = {},
+    };
+    create_trace_and_dispatch(handler_, trace_info, time_series_update, true);
+  }
+}
+
 // request
 
 void Rest::check_request_queue(std::chrono::nanoseconds now) {
   shared_.depth_request_queue.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_depth(symbol); }, now);
+  shared_.time_series_request_queue.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_kline(symbol); }, now);
 }
 
 // helpers

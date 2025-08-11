@@ -18,6 +18,9 @@
       "name": "markPriceUpdate"
     },
     {
+      "name": "kline"
+    },
+    {
       "name": "ORDER_TRADE_UPDATE"
     },
     {

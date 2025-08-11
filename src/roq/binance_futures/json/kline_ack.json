@@ -1,0 +1,11 @@
+{
+  "name": "roq/binance_futures/json/KlineAck",
+  "type": "array",
+  "values": [
+    {
+      "name": "data",
+      "type": "roq/binance_futures/json/KlineAckItem",
+      "array": "std/span"
+    }
+  ]
+}

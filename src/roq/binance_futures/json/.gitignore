@@ -37,6 +37,10 @@ filter_type.hpp
 grid_update_data.hpp
 grid_update.hpp
 interval.hpp
+kline_ack_item.hpp
+kline_ack.hpp
+kline_data.hpp
+kline.hpp
 listen_key.hpp
 margin_call_item.hpp
 margin_call.hpp
@@ -116,6 +120,10 @@ filter_type.cpp
 grid_update_data.cpp
 grid_update.cpp
 interval.cpp
+kline_ack_item.cpp
+kline_ack.cpp
+kline_data.cpp
+kline.cpp
 listen_key.cpp
 margin_call_item.cpp
 margin_call.cpp

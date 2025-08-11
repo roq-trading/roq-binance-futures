@@ -39,5 +39,6 @@ $PREFIX ./roq-binance-futures \
   --rest_pm_uri "$REST_PM_URI" \
   --ws_api_uri "$WS_API_URI" \
   --download_symbols="BTCUSD_PERP" \
-  --download_trades_lookback=30s \
+  --download_trades_lookback "30s" \
+  --download_time_series_lookback "2h" \
   $@

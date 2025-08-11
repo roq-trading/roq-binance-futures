@@ -12,6 +12,7 @@
 #include "roq/binance_futures/json/agg_trade.hpp"
 #include "roq/binance_futures/json/book_ticker.hpp"
 #include "roq/binance_futures/json/depth_update.hpp"
+#include "roq/binance_futures/json/kline.hpp"
 #include "roq/binance_futures/json/mark_price_update.hpp"
 #include "roq/binance_futures/json/mini_ticker.hpp"
 
@@ -30,6 +31,7 @@ struct MarketStreamParser final {
     virtual void operator()(Trace<BookTicker> const &) = 0;
     virtual void operator()(Trace<DepthUpdate> const &) = 0;
     virtual void operator()(Trace<MarkPriceUpdate> const &) = 0;
+    virtual void operator()(Trace<Kline> const &) = 0;
   };
 
   static bool dispatch(

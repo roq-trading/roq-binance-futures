@@ -541,6 +541,7 @@ void MarketData::operator()(Trace<json::Kline> const &event) {
     }
     auto bar = Bar{
         .begin_time_utc = kline.data.begin_time,
+        .confirmed = kline.data.closed,
         .open_price = kline.data.open_price,
         .high_price = kline.data.high_price,
         .low_price = kline.data.low_price,

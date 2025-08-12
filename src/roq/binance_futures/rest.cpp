@@ -604,7 +604,7 @@ void Rest::operator()(Trace<json::KlineAck> const &event, std::string_view const
   bars.clear();
   for (auto &item : kline_ack.data) {
     auto bar = Bar{
-        .begin_time_utc = item.begin_time,
+        .begin_time_utc = utils::safe_cast(item.begin_time),
         .confirmed = true,
         .open_price = item.open_price,
         .high_price = item.high_price,

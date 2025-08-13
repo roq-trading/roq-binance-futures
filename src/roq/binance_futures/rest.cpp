@@ -624,7 +624,7 @@ void Rest::operator()(Trace<json::KlineAck> const &event, std::string_view const
         .exchange = shared_.settings.exchange,
         .symbol = symbol,
         .data_source = DataSource::TRADE_SUMMARY,
-        .interval = shared.settings_time_series_interval,
+        .interval = shared_.settings_time_series_interval,
         .origin = Origin::EXCHANGE,
         .bars = bars,
         .update_type = UpdateType::SNAPSHOT,

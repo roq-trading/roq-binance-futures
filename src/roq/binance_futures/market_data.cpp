@@ -557,7 +557,7 @@ void MarketData::operator()(Trace<json::Kline> const &event) {
         .exchange = shared_.settings.exchange,
         .symbol = kline.data.symbol,
         .data_source = DataSource::TRADE_SUMMARY,
-        .interval = shared.settings_time_series_interval,
+        .interval = shared_.settings_time_series_interval,
         .origin = Origin::EXCHANGE,
         .bars = {&bar, 1},
         .update_type = UpdateType::INCREMENTAL,

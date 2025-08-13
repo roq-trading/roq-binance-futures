@@ -49,6 +49,7 @@ struct Shared final {
 
  public:
   Settings const &settings;
+  Interval const settings_time_series_interval;
   API const api;
 
  private:

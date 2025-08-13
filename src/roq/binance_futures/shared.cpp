@@ -2,6 +2,8 @@
 
 #include "roq/binance_futures/shared.hpp"
 
+#include "roq/utils/common.hpp"
+
 namespace roq {
 namespace binance_futures {
 
@@ -20,8 +22,9 @@ auto create_sequencer(auto &settings) {
 // === IMPLEMENTATION ===
 
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
-    : settings{settings}, api{API::create(settings)}, dispatcher_{dispatcher}, rate_limiter{settings.request.limit, settings.request.limit_interval},
-      symbols{settings.ws.max_subscriptions_per_stream}, depth_request_queue{settings.ws.mbp_request_delay} {
+    : settings{settings}, settings_time_series_interval{utils::to_interval(settings.time_series.interval)}, api{API::create(settings)}, dispatcher_{dispatcher},
+      rate_limiter{settings.request.limit, settings.request.limit_interval}, symbols{settings.ws.max_subscriptions_per_stream},
+      depth_request_queue{settings.ws.mbp_request_delay} {
 }
 
 Shared::Instrument &Shared::get_instrument(std::string_view const &symbol) {

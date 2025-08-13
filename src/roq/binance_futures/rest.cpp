@@ -584,7 +584,7 @@ void Rest::get_kline(std::string_view const &symbol) {
 void Rest::get_kline_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
   profile_.kline_ack([&]() {
     auto handle_success = [&](auto &body) {
-      log::warn("{}"sv, body);
+      log::debug("{}"sv, body);
       json::KlineAck kline_ack{body, decode_buffer_};
       Trace event_2{event, kline_ack};
       (*this)(event_2, symbol);
@@ -624,7 +624,7 @@ void Rest::operator()(Trace<json::KlineAck> const &event, std::string_view const
         .exchange = shared_.settings.exchange,
         .symbol = symbol,
         .data_source = DataSource::TRADE_SUMMARY,
-        .interval = shared_.settings_time_series_interval,
+        .interval = shared_.settings.time_series.interval,
         .origin = Origin::EXCHANGE,
         .bars = bars,
         .update_type = UpdateType::SNAPSHOT,

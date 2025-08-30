@@ -10,6 +10,7 @@
 
 #include "roq/binance_futures/json/account_config_update.hpp"
 #include "roq/binance_futures/json/account_update.hpp"
+#include "roq/binance_futures/json/execution_report_2.hpp"
 #include "roq/binance_futures/json/grid_update.hpp"
 #include "roq/binance_futures/json/margin_call.hpp"
 #include "roq/binance_futures/json/order_trade_update.hpp"
@@ -29,6 +30,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<GridUpdate> const &) = 0;
     virtual void operator()(Trace<AccountConfigUpdate> const &) = 0;
     virtual void operator()(Trace<TradeLite> const &) = 0;
+    virtual void operator()(Trace<ExecutionReport2> const &) = 0;
   };
 
   static bool dispatch(

@@ -28,6 +28,7 @@ event_type.hpp
 exchange_info_asset.hpp
 exchange_info.hpp
 execution_report.hpp
+execution_report_2.hpp
 execution_type.hpp
 field.hpp
 fill.hpp
@@ -111,6 +112,7 @@ event_type.cpp
 exchange_info_asset.cpp
 exchange_info.cpp
 execution_report.cpp
+execution_report_2.cpp
 execution_type.cpp
 field.cpp
 fill.cpp

@@ -107,6 +107,12 @@ bool UserStreamParser::try_dispatch(
       // XXX need parsing
       break;
     }
+    case EXECUTION_REPORT: {
+      ExecutionReport2 execution_report{message, buffer};
+      Trace event{trace_info, execution_report};
+      handler(event);
+      break;
+    }
   }
   return true;
 }

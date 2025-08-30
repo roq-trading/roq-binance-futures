@@ -33,6 +33,7 @@ set(AUTOGEN_SCHEMAS
     exchange_info_asset.json
     exchange_info.json
     execution_report.json
+    execution_report_2.json
     execution_type.json
     field.json
     fill.json

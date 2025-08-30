@@ -46,6 +46,10 @@
     },
     {
       "name": "balanceUpdate"
+    },
+    {
+      "name": "executionReport",
+      "comment": "margin orders (papi)"
     }
   ]
 }

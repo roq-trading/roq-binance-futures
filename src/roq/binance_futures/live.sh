@@ -40,8 +40,9 @@ $PREFIX ./roq-binance-futures \
   --ws_api_uri "$WS_API_URI" \
   --download_symbols="BTCUSD_PERP" \
   --download_trades_lookback "30s" \
-  --time_series_interval "60s" \
-  --time_series_lookback "2h" \
-  --time_series_realtime true \
-  --download_time_series true \
   $@
+
+#  --time_series_interval "60s" \
+#  --time_series_lookback "2h" \
+#  --time_series_realtime true \
+#  --download_time_series true \

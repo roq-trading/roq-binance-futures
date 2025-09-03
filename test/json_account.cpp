@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/account.hpp"
 
 using namespace roq;
@@ -175,7 +177,7 @@ TEST_CASE("json_account_simple_usd_m", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Account obj{message, buffer};
   CHECK(obj.fee_tier == 0);
   CHECK(obj.can_trade == true);
@@ -308,7 +310,7 @@ TEST_CASE("json_account_simple_coin_m", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   [[maybe_unused]] json::Account obj{message, buffer};
 }
 
@@ -400,6 +402,6 @@ TEST_CASE("json_account_simple_usd_m_new", "[json_account]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   [[maybe_unused]] json::Account obj{message, buffer};
 }

@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/account_config_update.hpp"
 
 using namespace roq;
@@ -22,7 +24,7 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"("l":25)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::AccountConfigUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);
@@ -41,7 +43,7 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"("j":true)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::AccountConfigUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
   CHECK(obj.event_time == 1611646737479ms);

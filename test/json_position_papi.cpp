@@ -2,6 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
 #include "roq/core/json/parser.hpp"
 
 #include "roq/binance_futures/json/position.hpp"

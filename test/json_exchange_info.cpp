@@ -2,6 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
 #include "roq/core/json/parser.hpp"
 
 #include "roq/binance_futures/json/exchange_info.hpp"
@@ -123,7 +124,7 @@ TEST_CASE("json_exchange_info_simple_usd_m", "[json_exchange_info]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(65536);
+  core::json::BufferStack buffer{65536, 1};
   json::ExchangeInfo obj{message, buffer};
   CHECK(obj.timezone == "UTC"sv);
   CHECK(obj.server_time == 1634122324532ms);
@@ -300,6 +301,6 @@ TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(65536);
+  core::json::BufferStack buffer{65536, 1};
   [[maybe_unused]] json::ExchangeInfo obj{message, buffer};
 }

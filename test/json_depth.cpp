@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/depth.hpp"
 
 using namespace roq;
@@ -29,6 +31,6 @@ TEST_CASE("json_depth_simple_coin_m", "[json_depth]") {
                  R"(["49498.8","7"])"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   [[maybe_unused]] json::Depth obj{message, buffer};
 }

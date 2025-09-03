@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/order_trade_update.hpp"
 
 using namespace roq;
@@ -49,7 +51,7 @@ TEST_CASE("json_order_trade_update_simple_new", "[json_order_trade_update]") {
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634553049579ms);
@@ -121,7 +123,7 @@ TEST_CASE("json_order_trade_update_simple_canceled", "[json_order_trade_update]"
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634561771964ms);
@@ -195,7 +197,7 @@ TEST_CASE("json_order_trade_update_simple_filled_maker", "[json_order_trade_upda
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634812374563ms);
@@ -271,7 +273,7 @@ TEST_CASE("json_order_trade_update_simple_filled_taker", "[json_order_trade_upda
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::OrderTradeUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
   CHECK(obj.transaction_time == 1634814520988ms);

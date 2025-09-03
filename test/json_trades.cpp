@@ -2,6 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
 #include "roq/core/json/parser.hpp"
 
 #include "roq/binance_futures/json/trades.hpp"
@@ -16,7 +17,7 @@ using namespace Catch::literals;
 
 TEST_CASE("empty", "[json_trades]") {
   auto message = R"([])";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Trades obj{message, buffer};
   REQUIRE(std::size(obj.data) == 0);
 }
@@ -39,7 +40,7 @@ TEST_CASE("fapi", "[json_trades]") {
                  R"("time": 1569514978020)"
                  R"(})"
                  R"(])";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Trades obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);
@@ -80,7 +81,7 @@ TEST_CASE("dapi", "[json_trades]") {
                  R"("maker": false)"
                  R"(})"
                  R"(])";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Trades obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 1);

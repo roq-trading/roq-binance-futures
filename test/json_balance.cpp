@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/balance.hpp"
 
 using namespace roq;
@@ -65,7 +67,7 @@ TEST_CASE("json_balance_simple_usd_m", "[json_balance]") {
                  R"("updateTime":0)"
                  R"(})"
                  R"(])";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Balance obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 5);
@@ -151,7 +153,7 @@ TEST_CASE("json_balance_simple_coinm", "[json_balance]") {
                  R"("availableBalance":"0.00000000")"
                  R"(})"
                  R"(])";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::Balance obj{message, buffer};
   auto &data = obj.data;
   REQUIRE(std::size(data) == 3);

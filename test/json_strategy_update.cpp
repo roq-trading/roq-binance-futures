@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/strategy_update.hpp"
 
 using namespace roq;
@@ -26,7 +28,7 @@ TEST_CASE("simple", "[json_strategy_update]") {
                  R"("c":8007)"
                  R"(})"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::StrategyUpdate obj{message, buffer};
   CHECK(obj.event_type == json::EventType::STRATEGY_UPDATE);
   CHECK(obj.transaction_time == 1669261797627ms);

@@ -2,6 +2,8 @@
 
 #include <catch2/catch_all.hpp>
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/margin_call.hpp"
 
 using namespace roq;
@@ -29,7 +31,7 @@ TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  std::vector<std::byte> buffer(8192);
+  core::json::BufferStack buffer{8192, 1};
   json::MarginCall obj{message, buffer};
   CHECK(obj.event_type == json::EventType::MARGIN_CALL);
   CHECK(obj.event_time == 1587727187525ms);

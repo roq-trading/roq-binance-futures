@@ -35,6 +35,8 @@ auto const SUPPORTS = Mask{
     SupportType::FUNDS,
     SupportType::POSITION,
 };
+
+size_t const MAX_DECODE_BUFFER_DEPTH = 1;
 }  // namespace
 
 // === HELPERS ===
@@ -87,7 +89,7 @@ struct create_metrics final : public utils::metrics::Factory {
 DropCopyPortfolio::DropCopyPortfolio(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context, listen_key)},
-      decode_buffer_(shared.settings.misc.decode_buffer_size),
+      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },

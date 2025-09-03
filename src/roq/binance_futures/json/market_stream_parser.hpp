@@ -6,6 +6,8 @@
 
 #include "roq/trace_info.hpp"
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/result.hpp"
 
@@ -34,8 +36,7 @@ struct MarketStreamParser final {
     virtual void operator()(Trace<Kline> const &) = 0;
   };
 
-  static bool dispatch(
-      Handler &handler, std::string_view const &message, std::span<std::byte> const &buffer, TraceInfo const &, bool continue_with_unknown_event_type = false);
+  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool continue_with_unknown_event_type = false);
 };
 
 }  // namespace json

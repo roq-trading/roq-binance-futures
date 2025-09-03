@@ -15,7 +15,7 @@ namespace json {
 bool UserStreamParser::dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
-    std::span<std::byte> const &buffer,
+    core::json::BufferStack &buffer_stack,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
   core::json::Parser parser{message};
@@ -25,7 +25,7 @@ bool UserStreamParser::dispatch(
       continue;
     }
     EventType event_type{value};
-    if (try_dispatch(handler, message, buffer, event_type, trace_info, continue_with_unknown_event_type)) {
+    if (try_dispatch(handler, message, buffer_stack, event_type, trace_info, continue_with_unknown_event_type)) {
       return true;
     }
     break;
@@ -36,7 +36,7 @@ bool UserStreamParser::dispatch(
 bool UserStreamParser::try_dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
-    std::span<std::byte> const &buffer,
+    core::json::BufferStack &buffer_stack,
     EventType event_type,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
@@ -57,37 +57,37 @@ bool UserStreamParser::try_dispatch(
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE: {
-      OrderTradeUpdate order_trade_update{message, buffer};
+      OrderTradeUpdate order_trade_update{message, buffer_stack};
       Trace event{trace_info, order_trade_update};
       handler(event);
       break;
     }
     case ACCOUNT_UPDATE: {
-      AccountUpdate account_update{message, buffer};
+      AccountUpdate account_update{message, buffer_stack};
       Trace event{trace_info, account_update};
       handler(event);
       break;
     }
     case MARGIN_CALL: {
-      MarginCall margin_call{message, buffer};
+      MarginCall margin_call{message, buffer_stack};
       Trace event{trace_info, margin_call};
       handler(event);
       break;
     }
     case STRATEGY_UPDATE: {
-      StrategyUpdate strategy_update{message, buffer};
+      StrategyUpdate strategy_update{message, buffer_stack};
       Trace event{trace_info, strategy_update};
       handler(event);
       break;
     }
     case GRID_UPDATE: {
-      GridUpdate grid_update{message, buffer};
+      GridUpdate grid_update{message, buffer_stack};
       Trace event{trace_info, grid_update};
       handler(event);
       break;
     }
     case ACCOUNT_CONFIG_UPDATE: {
-      AccountConfigUpdate account_config_update{message, buffer};
+      AccountConfigUpdate account_config_update{message, buffer_stack};
       Trace event{trace_info, account_config_update};
       handler(event);
       break;
@@ -97,7 +97,7 @@ bool UserStreamParser::try_dispatch(
       break;
     }
     case TRADE_LITE: {
-      TradeLite trade_lite{message, buffer};
+      TradeLite trade_lite{message, buffer_stack};
       Trace event{trace_info, trade_lite};
       handler(event);
       break;
@@ -108,7 +108,7 @@ bool UserStreamParser::try_dispatch(
       break;
     }
     case EXECUTION_REPORT: {
-      ExecutionReport2 execution_report{message, buffer};
+      ExecutionReport2 execution_report{message, buffer_stack};
       Trace event{trace_info, execution_report};
       handler(event);
       break;

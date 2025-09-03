@@ -20,8 +20,9 @@ namespace json {
 
 namespace {
 template <typename T>
-void dispatch_helper(MarketStreamParser::Handler &handler, std::string_view const &message, std::span<std::byte> const &buffer, TraceInfo const &trace_info) {
-  T value{message, buffer};
+void dispatch_helper(
+    MarketStreamParser::Handler &handler, std::string_view const &message, core::json::BufferStack &buffer_stack, TraceInfo const &trace_info) {
+  T value{message, buffer_stack};
   create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
@@ -29,7 +30,7 @@ void dispatch_helper(MarketStreamParser::Handler &handler, std::string_view cons
 bool MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
     std::string_view const &message,
-    std::span<std::byte> const &buffer,
+    core::json::BufferStack &buffer_stack,
     TraceInfo const &trace_info,
     bool continue_with_unknown_event_type) {
   int64_t id = -1;
@@ -65,8 +66,7 @@ bool MarketStreamParser::dispatch(
           break;
         case RESULT:
           if (id >= 0) {
-            core::json::Buffer buffer_2{buffer};
-            Result result{value, buffer_2};
+            Result result{value, buffer_stack};
             Trace event{trace_info, result};
             dispatched = true;
             handler(event, id);
@@ -75,7 +75,7 @@ bool MarketStreamParser::dispatch(
         case STREAM:
           break;
         case DATA: {
-          dispatch(handler, core::json::get<std::string_view>(value), buffer, trace_info, continue_with_unknown_event_type);
+          dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, continue_with_unknown_event_type);
           return true;
         }
         case EVENT_TYPE: {
@@ -89,27 +89,27 @@ bool MarketStreamParser::dispatch(
               }
               return false;
             case AGG_TRADE:
-              dispatch_helper<AggTrade>(handler, message, buffer, trace_info);
+              dispatch_helper<AggTrade>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case _24HR_MINI_TICKER:
-              dispatch_helper<MiniTicker>(handler, message, buffer, trace_info);
+              dispatch_helper<MiniTicker>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case BOOK_TICKER:
-              dispatch_helper<BookTicker>(handler, message, buffer, trace_info);
+              dispatch_helper<BookTicker>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case DEPTH_UPDATE:
-              dispatch_helper<DepthUpdate>(handler, message, buffer, trace_info);
+              dispatch_helper<DepthUpdate>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case MARK_PRICE_UPDATE:
-              dispatch_helper<MarkPriceUpdate>(handler, message, buffer, trace_info);
+              dispatch_helper<MarkPriceUpdate>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case KLINE:
-              dispatch_helper<Kline>(handler, message, buffer, trace_info);
+              dispatch_helper<Kline>(handler, message, buffer_stack, trace_info);
               dispatched = true;
               break;
             case UNDEFINED_INTERNAL:

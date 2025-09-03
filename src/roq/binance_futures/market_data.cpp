@@ -40,6 +40,8 @@ auto const SUPPORTS_SECONDARY = Mask{
     SupportType::TOP_OF_BOOK,
     SupportType::MARKET_BY_PRICE,
 };
+
+size_t const MAX_DECODE_BUFFER_DEPTH = 1;
 }  // namespace
 
 // === HELPERS ===
@@ -110,7 +112,7 @@ auto get_supports(auto priority) {
 
 MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_id, Priority priority, Shared &shared, size_t index)
     : handler_{handler}, stream_id_{stream_id}, priority_{priority}, name_{create_name(stream_id_, priority_)}, index_{index},
-      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_(shared.settings.misc.decode_buffer_size),
+      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       request_id_{static_cast<uint64_t>(stream_id_) * 1000000},  // scale (debugging)
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),

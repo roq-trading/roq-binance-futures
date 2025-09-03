@@ -6,6 +6,8 @@
 
 #include "roq/trace_info.hpp"
 
+#include "roq/core/json/buffer_stack.hpp"
+
 #include "roq/binance_futures/json/event_type.hpp"
 
 #include "roq/binance_futures/json/account_config_update.hpp"
@@ -33,14 +35,13 @@ struct UserStreamParser final {
     virtual void operator()(Trace<ExecutionReport2> const &) = 0;
   };
 
-  static bool dispatch(
-      Handler &, std::string_view const &message, std::span<std::byte> const &, TraceInfo const &, bool continue_with_unknown_event_type = false);
+  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool continue_with_unknown_event_type = false);
 
  private:
   static bool try_dispatch(
       UserStreamParser::Handler &,
       std::string_view const &message,
-      std::span<std::byte> const &,
+      core::json::BufferStack &,
       EventType,
       TraceInfo const &,
       bool continue_with_unknown_event_type);

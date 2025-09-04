@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/BalanceItem",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "accountAlias",

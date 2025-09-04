@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/WSAPIOpenOrders",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "name": "id",

@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/CancelAllOpenOrders",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "code",

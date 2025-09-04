@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/NewOrder",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "orderId",

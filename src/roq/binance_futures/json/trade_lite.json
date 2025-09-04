@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/TradeLite",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "raw": "e",

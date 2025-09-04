@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/AccountUpdateData",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "raw": "m",

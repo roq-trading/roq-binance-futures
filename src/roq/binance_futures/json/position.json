@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/Position",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "symbol",

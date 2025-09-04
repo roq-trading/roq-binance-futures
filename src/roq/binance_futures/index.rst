@@ -5,20 +5,20 @@
 roq-binance-futures
 ===================
 
-.. tab:: Stable
-
-  .. code-block:: shell
-
-     $ conda install \
-           --channel https://roq-trading.com/conda/stable \
-           roq-binance-futures
-
 .. tab:: Unstable
 
   .. code-block:: shell
 
      $ conda install \
            --channel https://roq-trading.com/conda/unstable \
+           roq-binance-futures
+
+.. tab:: Stable
+
+  .. code-block:: shell
+
+     $ conda install \
+           --channel https://roq-trading.com/conda/stable \
            roq-binance-futures
 
 

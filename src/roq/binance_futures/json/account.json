@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/Account",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "name": "feeTier",

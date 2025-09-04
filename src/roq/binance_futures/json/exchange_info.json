@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/ExchangeInfo",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "name": "timezone",

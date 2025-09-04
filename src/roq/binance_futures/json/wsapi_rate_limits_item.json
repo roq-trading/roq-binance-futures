@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/WSAPIRateLimitsItem",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "rateLimitType",

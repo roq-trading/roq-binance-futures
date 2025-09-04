@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/AccountUpdateDataPosition",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "raw": "s",

@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/CancelOrder",
-  "type": "item",
+  "type": "dictionary",
   "values": [
     {
       "name": "orderId",

@@ -1,6 +1,6 @@
 {
   "name": "roq/binance_futures/json/StrategyUpdateData",
-  "type": "comp",
+  "type": "dictionary",
   "values": [
     {
       "raw": "si",

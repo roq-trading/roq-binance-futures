@@ -14,6 +14,7 @@ auto_cancel_all_open_orders.hpp
 balance_item.hpp
 balance.hpp
 balances_item.hpp
+balance_update.hpp
 book_ticker.hpp
 cancel_all_open_orders.hpp
 cancel_order.hpp
@@ -27,8 +28,8 @@ event_reason.hpp
 event_type.hpp
 exchange_info_asset.hpp
 exchange_info.hpp
-execution_report.hpp
 execution_report_2.hpp
+execution_report.hpp
 execution_type.hpp
 field.hpp
 fill.hpp
@@ -42,6 +43,7 @@ kline_ack_item.hpp
 kline_ack.hpp
 kline_data.hpp
 kline.hpp
+liability_change.hpp
 listen_key.hpp
 margin_call_item.hpp
 margin_call.hpp
@@ -98,6 +100,7 @@ auto_cancel_all_open_orders.cpp
 balance_item.cpp
 balance.cpp
 balances_item.cpp
+balance_update.cpp
 book_ticker.cpp
 cancel_all_open_orders.cpp
 cancel_order.cpp
@@ -111,8 +114,8 @@ event_reason.cpp
 event_type.cpp
 exchange_info_asset.cpp
 exchange_info.cpp
-execution_report.cpp
 execution_report_2.cpp
+execution_report.cpp
 execution_type.cpp
 field.cpp
 fill.cpp
@@ -126,6 +129,7 @@ kline_ack_item.cpp
 kline_ack.cpp
 kline_data.cpp
 kline.cpp
+liability_change.cpp
 listen_key.cpp
 margin_call_item.cpp
 margin_call.cpp

@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* New event-type `liabilityChange` (#519)
 * Event-type `ExecutionReport` not handled (#518)
 
 ## 1.0.8 &ndash; 2025-08-16

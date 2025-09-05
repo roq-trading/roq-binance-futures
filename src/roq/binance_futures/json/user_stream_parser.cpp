@@ -12,6 +12,18 @@ namespace roq {
 namespace binance_futures {
 namespace json {
 
+// === HELPERS ===
+
+namespace {
+template <typename T>
+void dispatch_helper(auto &handler, auto &message, auto &buffer_stack, auto &trace_info) {
+  T obj{message, buffer_stack};
+  create_trace_and_dispatch(handler, trace_info, obj);
+}
+}  // namespace
+
+// === IMPLEMENTATION ===
+
 bool UserStreamParser::dispatch(
     UserStreamParser::Handler &handler,
     std::string_view const &message,
@@ -56,63 +68,40 @@ bool UserStreamParser::try_dispatch(
     case KLINE:
       log::fatal("Unexpected"sv);
       break;
-    case ORDER_TRADE_UPDATE: {
-      OrderTradeUpdate order_trade_update{message, buffer_stack};
-      Trace event{trace_info, order_trade_update};
-      handler(event);
+    case ORDER_TRADE_UPDATE:
+      dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case ACCOUNT_UPDATE: {
-      AccountUpdate account_update{message, buffer_stack};
-      Trace event{trace_info, account_update};
-      handler(event);
+    case ACCOUNT_UPDATE:
+      dispatch_helper<AccountUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case MARGIN_CALL: {
-      MarginCall margin_call{message, buffer_stack};
-      Trace event{trace_info, margin_call};
-      handler(event);
+    case MARGIN_CALL:
+      dispatch_helper<MarginCall>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case STRATEGY_UPDATE: {
-      StrategyUpdate strategy_update{message, buffer_stack};
-      Trace event{trace_info, strategy_update};
-      handler(event);
+    case STRATEGY_UPDATE:
+      dispatch_helper<StrategyUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case GRID_UPDATE: {
-      GridUpdate grid_update{message, buffer_stack};
-      Trace event{trace_info, grid_update};
-      handler(event);
+    case GRID_UPDATE:
+      dispatch_helper<GridUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case ACCOUNT_CONFIG_UPDATE: {
-      AccountConfigUpdate account_config_update{message, buffer_stack};
-      Trace event{trace_info, account_config_update};
-      handler(event);
+    case ACCOUNT_CONFIG_UPDATE:
+      dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
     case LISTEN_KEY_EXPIRED: {
       // XXX need parsing
       break;
     }
-    case TRADE_LITE: {
-      TradeLite trade_lite{message, buffer_stack};
-      Trace event{trace_info, trade_lite};
-      handler(event);
+    case TRADE_LITE:
+      dispatch_helper<TradeLite>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case BALANCE_UPDATE: {
-      log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message);
-      // XXX need parsing
+    case BALANCE_UPDATE:
+      dispatch_helper<BalanceUpdate>(handler, message, buffer_stack, trace_info);
       break;
-    }
-    case EXECUTION_REPORT: {
-      ExecutionReport2 execution_report{message, buffer_stack};
-      Trace event{trace_info, execution_report};
-      handler(event);
+    case EXECUTION_REPORT:
+      dispatch_helper<ExecutionReport2>(handler, message, buffer_stack, trace_info);
       break;
-    }
+    case LIABILITY_CHANGE:
+      dispatch_helper<LiabilityChange>(handler, message, buffer_stack, trace_info);
+      break;
   }
   return true;
 }

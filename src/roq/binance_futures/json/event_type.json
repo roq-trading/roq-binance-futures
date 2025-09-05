@@ -50,6 +50,10 @@
     {
       "name": "executionReport",
       "comment": "margin orders (papi)"
+    },
+    {
+      "name": "liabilityChange",
+      "comment": "arrives on both spot and futures at the same time?"
     }
   ]
 }

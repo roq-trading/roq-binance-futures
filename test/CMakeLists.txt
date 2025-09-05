@@ -9,6 +9,7 @@ set(SOURCES
     json_account_update_papi.cpp
     json_auto_cancel_all_open_orders.cpp
     json_balance.cpp
+    json_balance_update.cpp
     json_book_ticker.cpp
     json_cancel_order.cpp
     json_depth.cpp
@@ -17,6 +18,7 @@ set(SOURCES
     json_exchange_info.cpp
     json_filters.cpp
     json_grid_update.cpp
+    json_liability_change.cpp
     json_listen_key.cpp
     json_margin_call.cpp
     json_mini_ticker.cpp

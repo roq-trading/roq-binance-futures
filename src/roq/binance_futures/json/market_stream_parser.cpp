@@ -18,6 +18,8 @@ namespace roq {
 namespace binance_futures {
 namespace json {
 
+// === HELPERS ===
+
 namespace {
 template <typename T>
 void dispatch_helper(
@@ -26,6 +28,8 @@ void dispatch_helper(
   create_trace_and_dispatch(handler, trace_info, value);
 }
 }  // namespace
+
+// === IMPLEMENTATION ===
 
 bool MarketStreamParser::dispatch(
     MarketStreamParser::Handler &handler,
@@ -127,7 +131,8 @@ bool MarketStreamParser::dispatch(
             }
             case TRADE_LITE:
             case BALANCE_UPDATE:
-            case EXECUTION_REPORT: {
+            case EXECUTION_REPORT:
+            case LIABILITY_CHANGE: {
               log::fatal("Unexpected"sv);
               break;
             }

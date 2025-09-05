@@ -103,6 +103,8 @@ DropCopySimple::DropCopySimple(
           .account_config_update = create_metrics(shared.settings, name_, "account_config_update"sv),
           .trade_lite = create_metrics(shared.settings, name_, "trade_lite"sv),
           .execution_report = create_metrics(shared.settings, name_, "execution_report"sv),
+          .balance_update = create_metrics(shared.settings, name_, "balance_update"sv),
+          .liability_change = create_metrics(shared.settings, name_, "liability_change"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -145,6 +147,8 @@ void DropCopySimple::operator()(metrics::Writer &writer) const {
       .write(profile_.account_config_update, metrics::Type::PROFILE)
       .write(profile_.trade_lite, metrics::Type::PROFILE)
       .write(profile_.execution_report, metrics::Type::PROFILE)
+      .write(profile_.balance_update, metrics::Type::PROFILE)
+      .write(profile_.liability_change, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -473,6 +477,22 @@ void DropCopySimple::operator()(Trace<json::ExecutionReport2> const &event) {
     auto &[trace_info, execution_report] = event;
     log::info<2>("execution_report={}"sv, execution_report);
     log::warn("DEBUG execution_report={}"sv, execution_report);
+  });
+}
+
+void DropCopySimple::operator()(Trace<json::BalanceUpdate> const &event) {
+  profile_.balance_update([&]() {
+    auto &[trace_info, balance_update] = event;
+    log::info<2>("balance_update={}"sv, balance_update);
+    log::warn("DEBUG balance_update={}"sv, balance_update);
+  });
+}
+
+void DropCopySimple::operator()(Trace<json::LiabilityChange> const &event) {
+  profile_.liability_change([&]() {
+    auto &[trace_info, liability_change] = event;
+    log::info<2>("liability_change={}"sv, liability_change);
+    log::warn("DEBUG liability_change={}"sv, liability_change);
   });
 }
 

@@ -1,0 +1,46 @@
+{
+  "name": "roq/binance_futures/json/LiabilityChange",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "a",
+      "name": "asset",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "t",
+      "name": "type",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_id",
+      "type": "std/int64"
+    },
+    {
+      "raw": "p",
+      "name": "principal",
+      "type": "std/double"
+    },
+    {
+      "raw": "i",
+      "name": "interest",
+      "type": "std/double"
+    },
+    {
+      "raw": "l",
+      "name": "total_liability",
+      "type": "std/double"
+    }
+  ]
+}

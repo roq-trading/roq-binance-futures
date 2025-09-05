@@ -19,6 +19,7 @@ set(AUTOGEN_SCHEMAS
     balance_item.json
     balance.json
     balances_item.json
+    balance_update.json
     book_ticker.json
     cancel_all_open_orders.json
     cancel_order.json
@@ -32,8 +33,8 @@ set(AUTOGEN_SCHEMAS
     event_type.json
     exchange_info_asset.json
     exchange_info.json
-    execution_report.json
     execution_report_2.json
+    execution_report.json
     execution_type.json
     field.json
     fill.json
@@ -47,6 +48,7 @@ set(AUTOGEN_SCHEMAS
     kline_ack.json
     kline_data.json
     kline.json
+    liability_change.json
     listen_key.json
     margin_call_item.json
     margin_call.json

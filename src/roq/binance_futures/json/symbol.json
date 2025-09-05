@@ -79,7 +79,8 @@
     },
     {
       "name": "filters",
-      "type": "std/string_view"
+      "type": "roq/binance_futures/json/Filter",
+      "array": "std/span"
     },
     {
       "name": "orderTypes"

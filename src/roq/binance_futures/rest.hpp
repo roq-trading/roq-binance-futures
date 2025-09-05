@@ -106,7 +106,6 @@ struct Rest final : public web::rest::Client::Handler {
   std::unique_ptr<web::rest::Client> const connection_;
   // buffers
   core::json::BufferStack decode_buffer_;
-  core::json::BufferStack decode_buffer_2_;  // XXX FIXME TODO roll this into decode_buffer_
   // metrics
   struct {
     utils::metrics::Counter disconnect;

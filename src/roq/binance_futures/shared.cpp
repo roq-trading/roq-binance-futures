@@ -21,7 +21,8 @@ auto create_sequencer(auto &settings) {
 
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
     : settings{settings}, api{API::create(settings)}, dispatcher_{dispatcher}, rate_limiter{settings.request.limit, settings.request.limit_interval},
-      symbols{settings.ws.max_subscriptions_per_stream}, depth_request_queue{settings.ws.mbp_request_delay} {
+      symbols{settings.ws.max_subscriptions_per_stream}, depth_request_queue{settings.ws.mbp_request_delay},
+      allow_unknown_event_types{settings.experimental.allow_unknown_event_types || settings.misc.continue_with_unknown_event_type} {
 }
 
 Shared::Instrument &Shared::get_instrument(std::string_view const &symbol) {

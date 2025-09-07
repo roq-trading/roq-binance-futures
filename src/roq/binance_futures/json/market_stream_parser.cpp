@@ -2,15 +2,12 @@
 
 #include "roq/binance_futures/json/market_stream_parser.hpp"
 
-#include <cctype>
-#include <string>
+#include "roq/logging.hpp"
 
-#include "roq/compat.hpp"
+#include "roq/core/json/parser.hpp"
 
 #include "roq/binance_futures/json/field.hpp"
 #include "roq/binance_futures/json/stream.hpp"
-
-#include "roq/logging.hpp"
 
 using namespace std::literals;
 
@@ -21,11 +18,11 @@ namespace json {
 // === HELPERS ===
 
 namespace {
-template <typename T>
-void dispatch_helper(
-    MarketStreamParser::Handler &handler, std::string_view const &message, core::json::BufferStack &buffer_stack, TraceInfo const &trace_info) {
-  T value{message, buffer_stack};
-  create_trace_and_dispatch(handler, trace_info, value);
+// note! for legacy reasons, the dispatcher below uses a mixture of (json) value or (string) message
+template <typename T, typename... Args>
+void dispatch_helper(auto &handler, auto &value_or_message, auto &buffer_stack, auto &trace_info, Args &&...args) {
+  T obj{value_or_message, buffer_stack};
+  create_trace_and_dispatch(handler, trace_info, obj, std::forward<Args>(args)...);
 }
 }  // namespace
 
@@ -36,16 +33,13 @@ bool MarketStreamParser::dispatch(
     std::string_view const &message,
     core::json::BufferStack &buffer_stack,
     TraceInfo const &trace_info,
-    bool continue_with_unknown_event_type) {
+    bool allow_unknown_event_types) {
   int64_t id = -1;
-  std::string symbol;  // allocating because we need uppercase
-  // auto stream = Stream::UNDEFINED;
-  bool dispatched = false;
-  for (int i = 0; i < 2 && !dispatched; ++i) {
-    core::json::Parser parser(message);
+  for (int i = 0; i < 2; ++i) {
+    core::json::Parser parser{message};
     auto root = parser.root();
     for (auto [key, value] : std::get<core::json::Object>(root)) {
-      auto field = Field(key);
+      Field field{key};
       switch (field) {
         using enum Field::type_t;
         case UNDEFINED_INTERNAL:
@@ -57,66 +51,55 @@ bool MarketStreamParser::dispatch(
 #endif
           break;
         case ID:
-          // note! assuming id is the first field
           id = std::get<decltype(id)>(value);
           break;
         case ERROR:
           if (id >= 0) {
-            Error error{value};
-            Trace event{trace_info, error};
-            dispatched = true;
-            handler(event, id);
+            dispatch_helper<Error>(handler, value, buffer_stack, trace_info, id);
+            return true;
           }
           break;
         case RESULT:
           if (id >= 0) {
-            Result result{value, buffer_stack};
-            Trace event{trace_info, result};
-            dispatched = true;
-            handler(event, id);
+            dispatch_helper<Result>(handler, value, buffer_stack, trace_info, id);
+            return true;
           }
           break;
         case STREAM:
           break;
-        case DATA: {
-          dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, continue_with_unknown_event_type);
+        case DATA:
+          // XXX FIXME TODO why the need for recursive here ???
+          dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, allow_unknown_event_types);
           return true;
-        }
         case EVENT_TYPE: {
-          // note! assuming event_type is the first field
           EventType event_type{value};
           switch (event_type) {
             using enum EventType::type_t;
+            case UNDEFINED_INTERNAL:
+              break;
             case UNKNOWN_INTERNAL:
-              if (!continue_with_unknown_event_type) {
+              if (!allow_unknown_event_types) {
                 log::fatal("Unexpected"sv);
               }
               return false;
             case AGG_TRADE:
               dispatch_helper<AggTrade>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
+              return true;
             case _24HR_MINI_TICKER:
               dispatch_helper<MiniTicker>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
+              return true;
             case BOOK_TICKER:
               dispatch_helper<BookTicker>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
+              return true;
             case DEPTH_UPDATE:
               dispatch_helper<DepthUpdate>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
+              return true;
             case MARK_PRICE_UPDATE:
               dispatch_helper<MarkPriceUpdate>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
+              return true;
             case KLINE:
               dispatch_helper<Kline>(handler, message, buffer_stack, trace_info);
-              dispatched = true;
-              break;
-            case UNDEFINED_INTERNAL:
+              return true;
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:
@@ -125,10 +108,9 @@ bool MarketStreamParser::dispatch(
             case ACCOUNT_CONFIG_UPDATE:
               log::fatal("Unexpected"sv);
               break;
-            case LISTEN_KEY_EXPIRED: {
-              // XXX need parsing
-              break;
-            }
+            case LISTEN_KEY_EXPIRED:
+              // XXX FIXME TODO need parsing
+              return true;
             case TRADE_LITE:
             case BALANCE_UPDATE:
             case EXECUTION_REPORT:
@@ -137,18 +119,14 @@ bool MarketStreamParser::dispatch(
               break;
             }
           }
-          assert(dispatched);
           break;
         }
         case ORDER_BOOK_UPDATE_ID:
           break;
       }
-      if (dispatched) {
-        break;
-      }
     }
   }
-  return dispatched;
+  log::fatal(R"(Unexpected: message="{}")"sv, message);
 }
 
 }  // namespace json

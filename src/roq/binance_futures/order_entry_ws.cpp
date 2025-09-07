@@ -41,7 +41,7 @@ auto const SUPPORTS = Mask{
     SupportType::FUNDS,
 };
 
-uint32_t const REQUEST_ID = 1000000;
+uint32_t const REQUEST_ID = 1'000'000;
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 1;
 }  // namespace
@@ -606,10 +606,10 @@ void OrderEntryWS::operator()(ConnectionStatus status) {
 
 void OrderEntryWS::parse(std::string_view const &message) {
   profile_.parse([&]() {
-    auto log_message = [&]() { log::warn(R"(message="{}")"sv, message); };
+    auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::WSAPIParser2::dispatch(*this, message, decode_buffer_, trace_info)) {
+      if (!json::WSAPIParser2::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }
     } catch (...) {

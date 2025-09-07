@@ -36,7 +36,7 @@ struct MarketStreamParser final {
     virtual void operator()(Trace<Kline> const &) = 0;
   };
 
-  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool continue_with_unknown_event_type = false);
+  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool allow_unknown_event_types = false);
 };
 
 }  // namespace json

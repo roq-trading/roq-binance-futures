@@ -25,7 +25,7 @@ TEST_CASE("json_mini_ticker_simple_coin_m", "[json_mini_ticker]") {
                  R"("v":"1913789",)"
                  R"("q":"3833.39491534")"
                  R"(})";
-  core::json::BufferStack buffer{8192,1};
+  core::json::BufferStack buffer{8192, 1};
   json::MiniTicker obj{message, buffer};
   CHECK(obj.event_type == json::EventType::_24HR_MINI_TICKER);
   CHECK(obj.event_time == 1640248670092ms);

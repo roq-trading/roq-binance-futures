@@ -8,8 +8,6 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/event_type.hpp"
-
 #include "roq/binance_futures/json/account_config_update.hpp"
 #include "roq/binance_futures/json/account_update.hpp"
 #include "roq/binance_futures/json/balance_update.hpp"
@@ -39,16 +37,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<LiabilityChange> const &) = 0;
   };
 
-  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool continue_with_unknown_event_type = false);
-
- private:
-  static bool try_dispatch(
-      UserStreamParser::Handler &,
-      std::string_view const &message,
-      core::json::BufferStack &,
-      EventType,
-      TraceInfo const &,
-      bool continue_with_unknown_event_type);
+  static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool allow_unknown_event_types = false);
 };
 
 }  // namespace json

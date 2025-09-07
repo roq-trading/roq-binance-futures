@@ -110,6 +110,8 @@ struct Shared final {
   } limits;
 
   std::vector<Bar> bars;
+
+  bool const allow_unknown_event_types;
 };
 
 }  // namespace binance_futures

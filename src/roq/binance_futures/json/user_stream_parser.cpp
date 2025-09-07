@@ -6,11 +6,19 @@
 
 #include "roq/core/json/parser.hpp"
 
+#include "roq/binance_futures/json/event_type.hpp"
+
 using namespace std::literals;
 
 namespace roq {
 namespace binance_futures {
 namespace json {
+
+// === CONSTANTS ===
+
+namespace {
+auto const EVENT_TYPE = "e"sv;
+}
 
 // === HELPERS ===
 
@@ -20,45 +28,15 @@ void dispatch_helper(auto &handler, auto &message, auto &buffer_stack, auto &tra
   T obj{message, buffer_stack};
   create_trace_and_dispatch(handler, trace_info, obj);
 }
-}  // namespace
 
-// === IMPLEMENTATION ===
-
-bool UserStreamParser::dispatch(
-    UserStreamParser::Handler &handler,
-    std::string_view const &message,
-    core::json::BufferStack &buffer_stack,
-    TraceInfo const &trace_info,
-    bool continue_with_unknown_event_type) {
-  core::json::Parser parser{message};
-  auto root = parser.root();
-  for (auto [key, value] : std::get<core::json::Object>(root)) {
-    if (key != "e"sv) {
-      continue;
-    }
-    EventType event_type{value};
-    if (try_dispatch(handler, message, buffer_stack, event_type, trace_info, continue_with_unknown_event_type)) {
-      return true;
-    }
-    break;
-  }
-  return false;
-}
-
-bool UserStreamParser::try_dispatch(
-    UserStreamParser::Handler &handler,
-    std::string_view const &message,
-    core::json::BufferStack &buffer_stack,
-    EventType event_type,
-    TraceInfo const &trace_info,
-    bool continue_with_unknown_event_type) {
+auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_type, auto &trace_info, auto allow_unknown_event_types) {
   switch (event_type) {
     using enum EventType::type_t;
     case UNKNOWN_INTERNAL:
-      if (!continue_with_unknown_event_type) {
-        log::fatal("Unexpected"sv);
+      if (allow_unknown_event_types) {
+        return false;
       }
-      return false;
+      break;
     case UNDEFINED_INTERNAL:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
@@ -70,40 +48,63 @@ bool UserStreamParser::try_dispatch(
       break;
     case ORDER_TRADE_UPDATE:
       dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case ACCOUNT_UPDATE:
       dispatch_helper<AccountUpdate>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case MARGIN_CALL:
       dispatch_helper<MarginCall>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case STRATEGY_UPDATE:
       dispatch_helper<StrategyUpdate>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case GRID_UPDATE:
       dispatch_helper<GridUpdate>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case ACCOUNT_CONFIG_UPDATE:
       dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
-      break;
-    case LISTEN_KEY_EXPIRED: {
-      // XXX need parsing
-      break;
-    }
+      return true;
+    case LISTEN_KEY_EXPIRED:
+      // XXX FIXME TODO need parsing
+      return true;
     case TRADE_LITE:
       dispatch_helper<TradeLite>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case BALANCE_UPDATE:
       dispatch_helper<BalanceUpdate>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case EXECUTION_REPORT:
       dispatch_helper<ExecutionReport2>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
     case LIABILITY_CHANGE:
       dispatch_helper<LiabilityChange>(handler, message, buffer_stack, trace_info);
-      break;
+      return true;
   }
-  return true;
+  log::fatal(R"(Unexpected: message="{}")"sv, message);
+}
+}  // namespace
+
+// === IMPLEMENTATION ===
+
+bool UserStreamParser::dispatch(
+    UserStreamParser::Handler &handler,
+    std::string_view const &message,
+    core::json::BufferStack &buffer_stack,
+    TraceInfo const &trace_info,
+    bool allow_unknown_event_types) {
+  core::json::Parser parser{message};
+  auto root = parser.root();
+  for (auto [key, value] : std::get<core::json::Object>(root)) {
+    if (key != EVENT_TYPE) {
+      continue;
+    }
+    EventType event_type{value};
+    if (try_dispatch(handler, message, buffer_stack, event_type, trace_info, allow_unknown_event_types)) {
+      return true;
+    }
+    break;
+  }
+  return false;
 }
 
 }  // namespace json

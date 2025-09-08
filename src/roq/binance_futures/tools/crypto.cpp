@@ -2,6 +2,8 @@
 
 #include "roq/binance_futures/tools/crypto.hpp"
 
+#include "roq/compat/fmt.hpp"
+
 #include <fmt/format.h>
 
 #include <array>

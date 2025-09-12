@@ -15,6 +15,7 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
+#include "roq/binance_futures/json/encoder.hpp"
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
@@ -553,7 +554,7 @@ void RestTrade::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit;
-      auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto body = json::Encoder::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);
       auto headers = account_.create_headers();
       auto request = web::rest::Request{

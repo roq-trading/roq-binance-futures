@@ -3,11 +3,6 @@
 #pragma once
 
 #include <chrono>
-#include <vector>
-
-#include "roq/server/oms/order.hpp"
-
-#include "roq/utils/patterns.hpp"
 
 #include "roq/utils/charconv/from_chars.hpp"
 
@@ -42,106 +37,6 @@ inline void update(std::chrono::milliseconds &result, core::json::Value const &v
 }
 
 extern roq::Error guess_error(int32_t code);
-
-extern std::string_view trades(
-    std::vector<char> &buffer,
-    std::string_view const &symbol,
-    std::chrono::milliseconds start_time,
-    std::chrono::milliseconds end_time,
-    uint32_t limit,
-    std::chrono::milliseconds recv_window);
-
-// new
-
-extern std::string_view new_order(
-    std::vector<char> &buffer, CreateOrder const &, server::oms::Order const &, std::string_view const &request_id, std::chrono::milliseconds recv_window);
-
-extern std::string_view new_order_ws_url(
-    std::vector<char> &buffer,
-    CreateOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now);
-
-extern std::string_view new_order_ws_json(
-    std::vector<char> &buffer,
-    CreateOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature);
-
-// modify
-
-extern std::string_view modify_order(
-    std::vector<char> &buffer,
-    roq::ModifyOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window,
-    bool modify_order_full);
-
-extern std::string_view modify_order_ws_url(
-    std::vector<char> &buffer,
-    roq::ModifyOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now);
-
-extern std::string_view modify_order_ws_json(
-    std::vector<char> &buffer,
-    roq::ModifyOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature);
-
-// cancel
-
-extern std::string_view cancel_order(
-    std::vector<char> &buffer,
-    roq::CancelOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window);
-
-extern std::string_view cancel_order_ws_url(
-    std::vector<char> &buffer,
-    roq::CancelOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now);
-
-extern std::string_view cancel_order_ws_json(
-    std::vector<char> &buffer,
-    roq::CancelOrder const &,
-    server::oms::Order const &,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
-    std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature);
-
-extern std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
-
-extern std::string_view countdown_cancel_all_open_orders(
-    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window);
 
 extern TradingStatus trading_status_helper(SymbolStatus, ContractStatus);
 

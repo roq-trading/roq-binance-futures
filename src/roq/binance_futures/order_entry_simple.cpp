@@ -17,6 +17,7 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
+#include "roq/binance_futures/json/encoder.hpp"
 #include "roq/binance_futures/json/error.hpp"
 #include "roq/binance_futures/json/map.hpp"
 #include "roq/binance_futures/json/utils.hpp"
@@ -695,7 +696,7 @@ void OrderEntrySimple::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit;
-      auto body = json::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto body = json::Encoder::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
@@ -812,7 +813,7 @@ void OrderEntrySimple::new_order(Event<CreateOrder> const &event, server::oms::O
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::new_order(encode_buffer_, create_order, order, request_id, recv_window);
+    auto body = json::Encoder::new_order(encode_buffer_, create_order, order, request_id, recv_window);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -923,7 +924,7 @@ void OrderEntrySimple::modify_order(
     }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::modify_order(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
+    auto body = json::Encoder::modify_order(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -1034,7 +1035,7 @@ void OrderEntrySimple::cancel_order(
     }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
+    auto body = json::Encoder::cancel_order(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
     auto query = account_.create_query(body);
     auto headers = account_.create_headers();
     auto request = web::rest::Request{
@@ -1145,7 +1146,7 @@ void OrderEntrySimple::cancel_all_open_orders(Event<CancelAllOrders> const &even
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
       }
-      auto body = json::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
+      auto body = json::Encoder::cancel_all_open_orders(encode_buffer_, symbol, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
       auto request = web::rest::Request{
@@ -1241,7 +1242,7 @@ void OrderEntrySimple::auto_cancel_all_open_orders() {
     for (auto &symbol : open_orders_symbols_) {
       auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-      auto body = json::countdown_cancel_all_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
+      auto body = json::Encoder::countdown_cancel_all_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
       auto query = account_.create_query(body);
       auto headers = account_.create_headers();
       auto request = web::rest::Request{

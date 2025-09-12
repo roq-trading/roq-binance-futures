@@ -90,8 +90,7 @@ struct RestTrade final : public web::rest::Client::Handler {
   void get_trades_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::Trades> const &);
 
-  template <typename SuccessHandler, typename ErrorHandler>
-  void process_response(web::rest::Response const &, SuccessHandler, ErrorHandler);
+  void process_response(web::rest::Response const &, auto error_handler, auto success_handler);
 
   template <typename... Args>
   void operator()(Trace<server::oms::Response> const &, uint8_t user_id, uint64_t order_id, Args &&...);

@@ -17,11 +17,11 @@ using namespace Catch::literals;
 TEST_CASE("simple", "[json_balance_update]") {
   auto message = R"({)"
                  R"("e":"balanceUpdate",)"
-                 R"("E":1573200697110,)"
-                 R"("a":"BTC",)"
-                 R"("d":"100.00000000",)"
-                 R"("U":1027053479517,)"
-                 R"("T":1573200697068)"
+                 R"("E":1758021107347,)"
+                 R"("a":"USDT",)"
+                 R"("d":"100000.00000000",)"
+                 R"("U":2239237878416,)"
+                 R"("T":1758021107347)"
                  R"(})";
   core::json::BufferStack buffer{8192, 1};
   json::BalanceUpdate obj{message, buffer};

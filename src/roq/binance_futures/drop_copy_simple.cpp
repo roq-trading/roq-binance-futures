@@ -36,7 +36,7 @@ auto const SUPPORTS = Mask{
     SupportType::POSITION,
 };
 
-size_t const MAX_DECODE_BUFFER_DEPTH = 1;
+size_t const MAX_DECODE_BUFFER_DEPTH = 2;
 }  // namespace
 
 // === HELPERS ===
@@ -105,6 +105,7 @@ DropCopySimple::DropCopySimple(
           .execution_report = create_metrics(shared.settings, name_, "execution_report"sv),
           .balance_update = create_metrics(shared.settings, name_, "balance_update"sv),
           .liability_change = create_metrics(shared.settings, name_, "liability_change"sv),
+          .outbound_account_position = create_metrics(shared.settings, name_, "outbound_account_position"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -149,6 +150,7 @@ void DropCopySimple::operator()(metrics::Writer &writer) const {
       .write(profile_.execution_report, metrics::Type::PROFILE)
       .write(profile_.balance_update, metrics::Type::PROFILE)
       .write(profile_.liability_change, metrics::Type::PROFILE)
+      .write(profile_.outbound_account_position, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -493,6 +495,14 @@ void DropCopySimple::operator()(Trace<json::LiabilityChange> const &event) {
     auto &[trace_info, liability_change] = event;
     log::info<2>("liability_change={}"sv, liability_change);
     log::warn("DEBUG liability_change={}"sv, liability_change);
+  });
+}
+
+void DropCopySimple::operator()(Trace<json::OutboundAccountPosition> const &event) {
+  profile_.outbound_account_position([&]() {
+    auto &[trace_info, outbound_account_position] = event;
+    log::info<2>("outbound_account_position={}"sv, outbound_account_position);
+    log::warn("DEBUG outbound_account_position={}"sv, outbound_account_position);
   });
 }
 

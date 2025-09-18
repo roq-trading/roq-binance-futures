@@ -114,7 +114,8 @@ bool MarketStreamParser::dispatch(
             case TRADE_LITE:
             case BALANCE_UPDATE:
             case EXECUTION_REPORT:
-            case LIABILITY_CHANGE: {
+            case LIABILITY_CHANGE:
+            case OUTBOUND_ACCOUNT_POSITION: {
               log::fatal("Unexpected"sv);
               break;
             }

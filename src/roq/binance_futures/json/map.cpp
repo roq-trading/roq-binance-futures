@@ -252,6 +252,8 @@ constexpr Helper<binance_futures::json::SymbolStatus>::operator std::optional<ro
       return roq::TradingStatus::PRE_OPEN;   // XXX REVIEW
     case DELIVERING:
       return roq::TradingStatus::UNDEFINED;
+    case PRE_SETTLE:
+      return roq::TradingStatus::OPEN;  // XXX REVIEW
   }
   return {};
 }
@@ -267,6 +269,7 @@ static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::SETTLING}} == roq::TradingStatus::PRE_CLOSE);
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
 static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::DELIVERING}} == roq::TradingStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::SymbolStatus{binance_futures::json::SymbolStatus::PRE_SETTLE}} == roq::TradingStatus::OPEN);
 
 template <>
 template <>

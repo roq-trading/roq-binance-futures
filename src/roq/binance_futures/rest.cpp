@@ -375,6 +375,8 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
           break;
         case EXCHANGE_MAX_NUM_ALGO_ORDERS:
           break;
+        case POSITION_RISK_CONTROL:
+          break;
       }
     }
     auto settlement_currency = [&]() {

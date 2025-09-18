@@ -60,6 +60,11 @@
       "name": "limit",
       "type": "std/int32",
       "comment": "MAX_NUM_ORDERS,MAX_NUM_ALGO_ORDERS"
+    },
+    {
+      "name": "positionControlSide",
+      "type": "std/string_view",
+      "comment": "reported by client"
     }
   ]
 }

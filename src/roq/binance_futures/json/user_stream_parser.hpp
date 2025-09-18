@@ -16,6 +16,7 @@
 #include "roq/binance_futures/json/liability_change.hpp"
 #include "roq/binance_futures/json/margin_call.hpp"
 #include "roq/binance_futures/json/order_trade_update.hpp"
+#include "roq/binance_futures/json/outbound_account_position.hpp"
 #include "roq/binance_futures/json/strategy_update.hpp"
 #include "roq/binance_futures/json/trade_lite.hpp"
 
@@ -35,6 +36,7 @@ struct UserStreamParser final {
     virtual void operator()(Trace<ExecutionReport2> const &) = 0;
     virtual void operator()(Trace<BalanceUpdate> const &) = 0;
     virtual void operator()(Trace<LiabilityChange> const &) = 0;
+    virtual void operator()(Trace<OutboundAccountPosition> const &) = 0;
   };
 
   static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool allow_unknown_event_types = false);

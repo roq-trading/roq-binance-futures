@@ -1,0 +1,21 @@
+{
+  "name": "roq/binance_futures/json/OutboundAccountPositionBalancesItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "a",
+      "name": "asset",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "f",
+      "name": "free",
+      "type": "std/double"
+    },
+    {
+      "raw": "l",
+      "name": "locked",
+      "type": "std/double"
+    }
+  ]
+}

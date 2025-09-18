@@ -54,6 +54,10 @@
     {
       "name": "liabilityChange",
       "comment": "arrives on both spot and futures at the same time?"
+    },
+    {
+      "name": "outboundAccountPosition",
+      "comment": "reported by client"
     }
   ]
 }

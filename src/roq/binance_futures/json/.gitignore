@@ -57,6 +57,8 @@ order.hpp
 order_status.hpp
 order_trade_update.hpp
 order_type.hpp
+outbound_account_position_balances_item.hpp
+outbound_account_position.hpp
 position.hpp
 position_list.hpp
 position_side.hpp
@@ -143,6 +145,8 @@ order.cpp
 order_status.cpp
 order_trade_update.cpp
 order_type.cpp
+outbound_account_position_balances_item.cpp
+outbound_account_position.cpp
 position.cpp
 position_list.cpp
 position_side.cpp

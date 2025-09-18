@@ -113,6 +113,10 @@
     {
       "name": "maxMoveOrderLimit",
       "comment": "COIN-M"
+    },
+    {
+      "name": "permissionSets",
+      "comment": "UNDOC reported by client"
     }
   ]
 }

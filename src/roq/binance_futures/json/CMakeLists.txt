@@ -69,6 +69,8 @@ set(AUTOGEN_SCHEMAS
     order_status.json
     order_trade_update.json
     order_type.json
+    outbound_account_position_balances_item.json
+    outbound_account_position.json
     position.json
     position_list.json
     position_side.json

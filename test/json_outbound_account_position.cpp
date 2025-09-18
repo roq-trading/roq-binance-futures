@@ -15,15 +15,15 @@ using namespace std::chrono_literals;
 using namespace Catch::literals;
 
 TEST_CASE("simple", "[json_outbound_account_position]") {
-  // note! from docs
   auto message = R"({)"
                  R"("e":"outboundAccountPosition",)"
-                 R"("E":1564034571105,)"
-                 R"("u":1564034571073,)"
+                 R"("E":1758021107347,)"
+                 R"("u":1758021107347,)"
+                 R"("U":2239237878416,)"
                  R"("B":[{)"
-                 R"("a":"ETH",)"
-                 R"("f":"10000.000000",)"
-                 R"("l":"0.000000")"
+                 R"("a":"USDT",)"
+                 R"("f":"110096.34321000",)"
+                 R"("l":"0.00000000")"
                  R"(})"
                  R"(])"
                  R"(})";

@@ -39,6 +39,8 @@ auto const X_MBX_USED_WEIGHT_1M = "x-mbx-used-weight-1m"sv;
 auto const X_MBX_ORDER_COUNT_1M = "x-mbx-order-count-1m"sv;
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 1;
+
+size_t const DOWNLOAD_TRADES_LIMIT = 1000;
 }  // namespace
 
 // === HELPERS ===
@@ -553,7 +555,7 @@ void RestTrade::get_trades() {
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
-      auto limit = shared_.settings.download.trades_limit;
+      auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
       auto body = json::Encoder::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_query_2(body);
       auto headers = account_.create_headers();

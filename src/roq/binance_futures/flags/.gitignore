@@ -1,6 +1,5 @@
 !!! THIS FILE HAS BEEN AUTO-GENERATED !!!
 roq-binance-futures-flags
-download.rstinc
 flags.rstinc
 mbp.rstinc
 misc.rstinc
@@ -8,7 +7,6 @@ request.rstinc
 rest.rstinc
 ws_api.rstinc
 ws.rstinc
-download.hpp
 flags.hpp
 mbp.hpp
 misc.hpp
@@ -16,7 +14,6 @@ request.hpp
 rest.hpp
 ws_api.hpp
 ws.hpp
-download.cpp
 flags.cpp
 mbp.cpp
 misc.cpp

@@ -1356,7 +1356,7 @@ void OrderEntryPortfolio::process_response(web::rest::Response const &response, 
         break;
       case SERVER_ERROR: {
         auto message = fmt::format("{}"sv, status);
-        error_handler(Origin::EXCHANGE, RequestStatus::ERROR, Error::UNKNOWN, message);
+        error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::UNKNOWN, message);
         break;
       }
     }

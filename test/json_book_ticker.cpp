@@ -68,7 +68,7 @@ TEST_CASE("json_book_ticker_parse_stream_simple", "[json_book_ticker]") {
    private:
     bool found_ = false;
   } handler;
-  json::MarketStreamParser::dispatch(handler, message, buffer, trace_info);
+  json::MarketStreamParser::dispatch(handler, message, buffer, trace_info, false);
   CHECK(static_cast<bool>(handler) == true);
 }
 
@@ -104,7 +104,7 @@ TEST_CASE("json_book_ticker_parse_stream_wrapped", "[json_book_ticker]") {
    private:
     bool found_ = false;
   } handler;
-  json::MarketStreamParser::dispatch(handler, message, buffer, trace_info);
+  json::MarketStreamParser::dispatch(handler, message, buffer, trace_info, false);
   CHECK(static_cast<bool>(handler) == true);
 }
 

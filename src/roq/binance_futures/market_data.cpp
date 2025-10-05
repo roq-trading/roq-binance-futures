@@ -336,7 +336,7 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
     auto &[trace_info, mini_ticker] = event;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
     (*connection_).touch(trace_info.source_receive_time);
-    std::array<Statistics, 4> statistics{{
+    std::array<Statistics, 5> statistics{{
         {
             .type = StatisticsType::HIGHEST_TRADED_PRICE,
             .value = mini_ticker.high_price,
@@ -358,6 +358,12 @@ void MarketData::operator()(Trace<json::MiniTicker> const &event) {
         {
             .type = StatisticsType::CLOSE_PRICE,
             .value = mini_ticker.close_price,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::TRADE_VOLUME,
+            .value = mini_ticker.total_traded_base_asset_volume,
             .begin_time_utc = {},
             .end_time_utc = {},
         },

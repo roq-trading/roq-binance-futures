@@ -204,7 +204,15 @@ std::string_view Encoder::modify_order(
         Decimal{price, order.price_precision.precision},
         recv_window.count());
   } else {  // dapi
-    if (std::isnan(modify_order.price)) {
+    auto helper = [](auto value, auto last_value) {
+      if (!std::isnan(value) && !utils::is_equal(value, last_value)) {
+        return value;
+      }
+      return NaN;
+    };
+    auto quantity = helper(modify_order.quantity, order.quantity);
+    auto price = helper(modify_order.price, order.price);
+    if (!std::isnan(quantity) && std::isnan(price)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
       if (!std::empty(order.external_order_id)) {
         fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
@@ -218,7 +226,7 @@ std::string_view Encoder::modify_order(
           side.as_raw_text(),
           Decimal{modify_order.quantity, order.quantity_precision.precision},
           recv_window.count());
-    } else if (std::isnan(modify_order.quantity)) {
+    } else if (std::isnan(quantity) && !std::isnan(price)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
       if (!std::empty(order.external_order_id)) {
         fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);

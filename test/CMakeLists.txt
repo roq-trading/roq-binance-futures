@@ -14,6 +14,7 @@ set(SOURCES
     json_cancel_order.cpp
     json_depth.cpp
     json_depth_update.cpp
+    json_encoder.cpp
     json_error.cpp
     json_exchange_info.cpp
     json_filters.cpp

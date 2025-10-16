@@ -122,3 +122,10 @@ TEST_CASE("json_encoder_dapi_quantity_2", "[json_encoder]") {
   auto result = json::Encoder::modify_order(buffer, modify_order, order, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&quantity=2&recvWindow=5000"sv);
 }
+
+TEST_CASE("json_encoder_dapi_both", "[json_encoder]") {
+  std::vector<char> buffer(4096);
+  auto modify_order = create_modify_order(2.0, 2.0);
+  auto order = create_order(1.0, 1.0);
+  CHECK_THROWS(json::Encoder::modify_order(buffer, modify_order, order, {}, {}, 5s, false));
+}

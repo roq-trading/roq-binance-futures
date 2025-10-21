@@ -1025,6 +1025,9 @@ void OrderEntryPortfolio::modify_order(
   });
 }
 
+// testing document
+// autogen error mapping from code
+// optional override map in .toml
 void OrderEntryPortfolio::modify_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.modify_order_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2025, Hans Erik Thrane */
 
-#include "roq/binance_futures/order_entry_ws.hpp"
+#include "roq/binance_futures/web_socket.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -97,7 +97,7 @@ auto get_download_trades_lookback(auto const &settings, auto download_trades_is_
 
 // === IMPLEMENTATION ===
 
-OrderEntryWS::OrderEntryWS(
+WebSocket::WebSocket(
     Handler &handler,
     io::Context &context,
     uint16_t stream_id,
@@ -145,15 +145,15 @@ OrderEntryWS::OrderEntryWS(
   log::info<5>(R"(stream_id={}, account="{}", master={})"sv, stream_id_, account_.name, master_);
 }
 
-void OrderEntryWS::operator()(Event<Start> const &) {
+void WebSocket::operator()(Event<Start> const &) {
   (*connection_).start();
 }
 
-void OrderEntryWS::operator()(Event<Stop> const &) {
+void WebSocket::operator()(Event<Stop> const &) {
   (*connection_).stop();
 }
 
-void OrderEntryWS::operator()(Event<Timer> const &event) {
+void WebSocket::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   user_data_stream_ping(now);
@@ -171,7 +171,7 @@ void OrderEntryWS::operator()(Event<Timer> const &event) {
   }
 }
 
-void OrderEntryWS::operator()(metrics::Writer &writer) const {
+void WebSocket::operator()(metrics::Writer &writer) const {
   writer
       // counter
       .write(counter_.disconnect, metrics::Type::COUNTER)
@@ -203,35 +203,35 @@ void OrderEntryWS::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.create_order_1d, metrics::Type::RATE_LIMITER);
 }
 
-void OrderEntryWS::operator()(Event<Disconnected> const &) {
+void WebSocket::operator()(Event<Disconnected> const &) {
   // XXX TODO HANS reset downloading?
 }
 
-uint16_t OrderEntryWS::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+uint16_t WebSocket::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   order_place(event, order, request_id);
   return stream_id_;
 }
 
-uint16_t OrderEntryWS::operator()(
+uint16_t WebSocket::operator()(
     Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   order_modify(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
-uint16_t OrderEntryWS::operator()(
+uint16_t WebSocket::operator()(
     Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   order_cancel(event, order, request_id, previous_request_id);
   return stream_id_;
 }
 
-uint16_t OrderEntryWS::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+uint16_t WebSocket::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
   return stream_id_;
 }
 
 // listen-key
 
-void OrderEntryWS::user_data_stream_start() {
+void WebSocket::user_data_stream_start() {
   profile_.user_data_stream_start([&]() {
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
@@ -256,7 +256,7 @@ void OrderEntryWS::user_data_stream_start() {
   });
 }
 
-void OrderEntryWS::user_data_stream_ping(std::chrono::nanoseconds now) {
+void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
   profile_.user_data_stream_ping([&]() {
     if (!ready()) {
       return;
@@ -296,11 +296,11 @@ void OrderEntryWS::user_data_stream_ping(std::chrono::nanoseconds now) {
 
 // account
 
-void OrderEntryWS::account_balance() {
+void WebSocket::account_balance() {
   profile_.account_balance([&]() {
     auto now = clock::get_realtime<std::chrono::milliseconds>();
     auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
-    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto signature = account_.create_ws_signature(message_for_signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ACCOUNT_BALANCE,
@@ -328,11 +328,11 @@ void OrderEntryWS::account_balance() {
   });
 }
 
-void OrderEntryWS::account_status() {
+void WebSocket::account_status() {
   profile_.account_status([&]() {
     auto now = clock::get_realtime<std::chrono::milliseconds>();
     auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
-    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto signature = account_.create_ws_signature(message_for_signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ACCOUNT_STATUS,
@@ -362,7 +362,7 @@ void OrderEntryWS::account_status() {
 
 // open-orders-cancel-all
 
-void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
     if (!ready()) [[unlikely]] {
       throw server::oms::NotReady{"not ready"sv};
@@ -398,7 +398,7 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
       }
       auto now = clock::get_realtime<std::chrono::milliseconds>();
       auto message_for_signature = fmt::format("apiKey={}&symbol={}&timestamp={}"sv, account_.get_key(), symbol, now.count());
-      auto signature = account_.create_ws_api_signature(message_for_signature);
+      auto signature = account_.create_ws_signature(message_for_signature);
       auto request = json::WSAPIRequest{
           .sequence = ++request_id_,
           .type = json::WSAPIType::OPEN_ORDERS_CANCEL_ALL,
@@ -432,7 +432,7 @@ void OrderEntryWS::open_orders_cancel_all(Event<CancelAllOrders> const &event, s
 
 // order-place
 
-void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   profile_.order_place([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
@@ -442,7 +442,7 @@ void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Ord
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
     auto message_for_signature = json::Encoder::new_order_ws_url(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto signature = account_.create_ws_signature(message_for_signature);
     auto params = json::Encoder::new_order_ws_json(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
@@ -468,7 +468,7 @@ void OrderEntryWS::order_place(Event<CreateOrder> const &event, server::oms::Ord
 
 // order-modify
 
-void OrderEntryWS::order_modify(
+void WebSocket::order_modify(
     Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_modify([&]() {
     if (!ready()) {
@@ -479,7 +479,7 @@ void OrderEntryWS::order_modify(
     auto now = clock::get_realtime<std::chrono::milliseconds>();
     auto message_for_signature =
         json::Encoder::modify_order_ws_url(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto signature = account_.create_ws_signature(message_for_signature);
     auto params = json::Encoder::modify_order_ws_json(
         encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
@@ -506,7 +506,7 @@ void OrderEntryWS::order_modify(
 
 // order-cancel
 
-void OrderEntryWS::order_cancel(
+void WebSocket::order_cancel(
     Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
   profile_.order_cancel([&]() {
     if (!ready()) {
@@ -517,7 +517,7 @@ void OrderEntryWS::order_cancel(
     auto now = clock::get_realtime<std::chrono::milliseconds>();
     auto message_for_signature =
         json::Encoder::cancel_order_ws_url(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_api_signature(message_for_signature);
+    auto signature = account_.create_ws_signature(message_for_signature);
     auto params = json::Encoder::cancel_order_ws_json(
         encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
     auto request = json::WSAPIRequest{
@@ -542,17 +542,17 @@ void OrderEntryWS::order_cancel(
   });
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Connected const &) {
+void WebSocket::operator()(web::socket::Client::Connected const &) {
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Disconnected const &) {
+void WebSocket::operator()(web::socket::Client::Disconnected const &) {
   ++counter_.disconnect;
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   // XXX FIXME also reset the download_* latches?
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Ready const &) {
+void WebSocket::operator()(web::socket::Client::Ready const &) {
   if (master_) {
     user_data_stream_start();
     (*this)(ConnectionStatus::LOGIN_SENT);
@@ -561,10 +561,10 @@ void OrderEntryWS::operator()(web::socket::Client::Ready const &) {
   }
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Close const &) {
+void WebSocket::operator()(web::socket::Client::Close const &) {
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Latency const &latency) {
+void WebSocket::operator()(web::socket::Client::Latency const &latency) {
   TraceInfo trace_info;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
@@ -575,15 +575,15 @@ void OrderEntryWS::operator()(web::socket::Client::Latency const &latency) {
   latency_.ping.update(latency.sample);
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Text const &text) {
+void WebSocket::operator()(web::socket::Client::Text const &text) {
   parse(text.payload);
 }
 
-void OrderEntryWS::operator()(web::socket::Client::Binary const &) {
+void WebSocket::operator()(web::socket::Client::Binary const &) {
   log::fatal("Unexpected"sv);
 }
 
-void OrderEntryWS::operator()(ConnectionStatus status) {
+void WebSocket::operator()(ConnectionStatus status) {
   if (utils::update(status_, status)) {
     TraceInfo trace_info;
     auto stream_status = StreamStatus{
@@ -605,7 +605,7 @@ void OrderEntryWS::operator()(ConnectionStatus status) {
   }
 }
 
-void OrderEntryWS::parse(std::string_view const &message) {
+void WebSocket::parse(std::string_view const &message) {
   profile_.parse([&]() {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
@@ -622,7 +622,7 @@ void OrderEntryWS::parse(std::string_view const &message) {
 
 // json::WSAPIParser2::Handler
 
-void OrderEntryWS::operator()(Trace<json::WSAPIListenKey> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event, json::WSAPIRequest const &request) {
   profile_.user_data_stream_start_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -651,7 +651,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPIListenKey> const &event, json::WS
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIAccountBalance> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event, json::WSAPIRequest const &request) {
   profile_.account_balance_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -685,7 +685,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPIAccountBalance> const &event, jso
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIAccountStatus> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event, json::WSAPIRequest const &request) {
   profile_.account_status_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -727,15 +727,15 @@ void OrderEntryWS::operator()(Trace<json::WSAPIAccountStatus> const &event, json
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) {
+void WebSocket::operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) {
   log::fatal("Unexpected"sv);
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) {
+void WebSocket::operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) {
   log::fatal("Unexpected"sv);
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPICancelOpenOrders> const &event, json::WSAPIRequest const &request) {
   profile_.open_orders_cancel_all_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -792,7 +792,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOpenOrders> const &event, j
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAPIRequest const &request) {
   profile_.order_place_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -893,7 +893,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPIOrderPlace> const &event, json::W
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPIModifyOrder> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIModifyOrder> const &event, json::WSAPIRequest const &request) {
   profile_.order_modify_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -971,7 +971,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPIModifyOrder> const &event, json::
   });
 }
 
-void OrderEntryWS::operator()(Trace<json::WSAPICancelOrder> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPICancelOrder> const &event, json::WSAPIRequest const &request) {
   profile_.order_cancel_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -1051,7 +1051,7 @@ void OrderEntryWS::operator()(Trace<json::WSAPICancelOrder> const &event, json::
 
 // helpers
 
-void OrderEntryWS::update_rate_limits(auto &event) {
+void WebSocket::update_rate_limits(auto &event) {
   auto &[trace_info, message] = event;
   shared_.rate_limits.clear();
   for (auto &item : message.rate_limits) {
@@ -1132,7 +1132,7 @@ void OrderEntryWS::update_rate_limits(auto &event) {
 }
 
 template <typename... Args>
-void OrderEntryWS::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
+void WebSocket::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
   auto &[trace_info, response] = event;
   if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
   } else {
@@ -1140,7 +1140,7 @@ void OrderEntryWS::operator()(Trace<server::oms::Response> const &event, uint8_t
   }
 }
 
-void OrderEntryWS::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void WebSocket::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
   auto &[trace_info, order_update] = event;
   if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {

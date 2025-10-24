@@ -56,10 +56,10 @@ R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accoun
       case ISOLATED:
       case CROSS:
         if (shared.settings.ws_api) {
-          auto obj = std::make_unique<OrderEntryWS>(gateway, context, ++stream_id, account, shared, request);
+          auto obj = std::make_unique<WebSocket>(gateway, context, ++stream_id, account, shared, request);
           result.try_emplace(account.name, std::move(obj));
         } else {
-          auto obj = std::make_unique<OrderEntrySimple>(gateway, context, ++stream_id, account, shared, request);
+          auto obj = std::make_unique<OrderEntryClassic>(gateway, context, ++stream_id, account, shared, request);
           result.try_emplace(account.name, std::move(obj));
         }
         break;
@@ -248,12 +248,12 @@ void Gateway::ensure_symbol_slices(size_t size) {
   }
 }
 
-void Gateway::operator()(OrderEntrySimple::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopySimple>(listen_key_update);
+void Gateway::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
 }
 
-void Gateway::operator()(OrderEntryWS::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopySimple>(listen_key_update);
+void Gateway::operator()(OrderEntryClassic::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
 }
 
 void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {

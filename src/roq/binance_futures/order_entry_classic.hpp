@@ -42,7 +42,7 @@
 namespace roq {
 namespace binance_futures {
 
-struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Handler {
+struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -59,10 +59,10 @@ struct OrderEntrySimple final : public OrderEntry, public web::rest::Client::Han
     virtual void operator()(ListenKeyUpdate const &) = 0;
   };
 
-  OrderEntrySimple(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
+  OrderEntryClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
 
-  OrderEntrySimple(OrderEntrySimple &&) = delete;
-  OrderEntrySimple(OrderEntrySimple const &) = delete;
+  OrderEntryClassic(OrderEntryClassic &&) = delete;
+  OrderEntryClassic(OrderEntryClassic const &) = delete;
 
   bool ready() const { return status_ == ConnectionStatus::READY; }
   bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <span>
 #include <string>
 #include <string_view>
@@ -19,14 +20,13 @@ struct Crypto final {
   Crypto(Crypto &&) = delete;
   Crypto(Crypto const &) = delete;
 
-  std::string create_query(std::string_view const &body);
-  std::string create_query_2(std::string_view const &body);
+  std::string_view get_rest_headers() const { return headers_; }
 
-  std::string_view create_headers() const { return headers_; }
+  std::string create_rest_signature(std::chrono::milliseconds now_utc);
+  std::string create_rest_signature_body(std::chrono::milliseconds now_utc, std::string_view const &body);
+  std::string create_rest_signature_query(std::chrono::milliseconds now_utc, std::string_view const &query);
 
-  // WS API
-
-  std::string_view create_ws_api_signature(std::span<std::byte> const &buffer, std::string_view const &body);
+  std::string_view create_ws_signature(std::span<std::byte> const &buffer, std::string_view const &message);
 
   static constexpr auto const QUERY_BUFFER_LENGTH = 128uz;  // note! expected length == 99
 

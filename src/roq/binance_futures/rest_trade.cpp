@@ -298,8 +298,8 @@ void RestTrade::operator()(ConnectionStatus status) {
 
 void RestTrade::get_balance() {
   profile_.balance([&]() {
-    auto query = account_.create_query();
-    auto headers = account_.create_headers();
+    auto query = account_.create_rest_signature();
+    auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.simple.balance,
@@ -378,8 +378,8 @@ void RestTrade::operator()(Trace<json::Balance> const &event) {
 
 void RestTrade::get_account() {
   profile_.account([&]() {
-    auto query = account_.create_query();
-    auto headers = account_.create_headers();
+    auto query = account_.create_rest_signature();
+    auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.simple.account,
@@ -449,8 +449,8 @@ void RestTrade::operator()(Trace<json::Account> const &event) {
 
 void RestTrade::get_open_orders() {
   profile_.open_orders([&]() {
-    auto query = account_.create_query();
-    auto headers = account_.create_headers();
+    auto query = account_.create_rest_signature();
+    auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.simple.open_orders,
@@ -557,8 +557,8 @@ void RestTrade::get_trades() {
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
       auto body = json::Encoder::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
-      auto query = account_.create_query_2(body);
-      auto headers = account_.create_headers();
+      auto query = account_.create_rest_signature_query(body);
+      auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
           .path = shared_.api.simple.user_trades,

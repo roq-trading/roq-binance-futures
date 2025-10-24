@@ -15,17 +15,17 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/config.hpp"
+#include "roq/binance_futures/drop_copy_classic.hpp"
 #include "roq/binance_futures/drop_copy_portfolio.hpp"
-#include "roq/binance_futures/drop_copy_simple.hpp"
 #include "roq/binance_futures/market_data.hpp"
+#include "roq/binance_futures/order_entry_classic.hpp"
 #include "roq/binance_futures/order_entry_portfolio.hpp"
-#include "roq/binance_futures/order_entry_simple.hpp"
-#include "roq/binance_futures/order_entry_ws.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
 #include "roq/binance_futures/rest_trade.hpp"
 #include "roq/binance_futures/settings.hpp"
 #include "roq/binance_futures/shared.hpp"
+#include "roq/binance_futures/web_socket.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -33,10 +33,10 @@ namespace binance_futures {
 struct Gateway final : public server::Handler,
                        public Rest::Handler,
                        public MarketData::Handler,
-                       public OrderEntrySimple::Handler,
-                       public OrderEntryWS::Handler,
+                       public WebSocket::Handler,
+                       public OrderEntryClassic::Handler,
                        public OrderEntryPortfolio::Handler,
-                       public DropCopySimple::Handler,
+                       public DropCopyClassic::Handler,
                        public DropCopyPortfolio::Handler,
                        public RestTrade::Handler {
   Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
@@ -85,8 +85,8 @@ struct Gateway final : public server::Handler,
 
   void ensure_symbol_slices(size_t size);
 
-  void operator()(OrderEntrySimple::ListenKeyUpdate const &) override;
-  void operator()(OrderEntryWS::ListenKeyUpdate const &) override;
+  void operator()(WebSocket::ListenKeyUpdate const &) override;
+  void operator()(OrderEntryClassic::ListenKeyUpdate const &) override;
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
   template <typename T>

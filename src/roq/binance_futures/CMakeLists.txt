@@ -7,17 +7,17 @@ set(SOURCES
     api.cpp
     application.cpp
     config.cpp
+    drop_copy_classic.cpp
     drop_copy_portfolio.cpp
-    drop_copy_simple.cpp
     gateway.cpp
     market_data.cpp
+    order_entry_classic.cpp
     order_entry_portfolio.cpp
-    order_entry_simple.cpp
-    order_entry_ws.cpp
     rest.cpp
     rest_trade.cpp
     settings.cpp
     shared.cpp
+    web_socket.cpp
     main.cpp)
 
 add_subdirectory(json)

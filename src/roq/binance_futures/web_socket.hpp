@@ -36,7 +36,7 @@
 namespace roq {
 namespace binance_futures {
 
-struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handler, public json::WSAPIParser2::Handler {
+struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public json::WSAPIParser2::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -53,7 +53,7 @@ struct OrderEntryWS final : public OrderEntry, public web::socket::Client::Handl
     virtual void operator()(ListenKeyUpdate const &) = 0;
   };
 
-  OrderEntryWS(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
+  WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
 
   bool ready() const { return status_ == ConnectionStatus::READY; }
 

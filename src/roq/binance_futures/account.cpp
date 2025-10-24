@@ -37,5 +37,20 @@ Account::Account(Config const &config, std::string_view const &name, MarginMode 
     : name{name}, margin_mode{margin_mode}, crypto_{create_crypto(config, name)}, query_encode_buffer_(tools::Crypto::QUERY_BUFFER_LENGTH) {
 }
 
+std::string Account::create_rest_signature() {
+  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
+  return crypto_.create_rest_signature(now_utc);
+}
+
+std::string Account::create_rest_signature_body(std::string_view const &body) {
+  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
+  return crypto_.create_rest_signature_body(now_utc, body);
+}
+
+std::string Account::create_rest_signature_query(std::string_view const &query) {
+  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
+  return crypto_.create_rest_signature_query(now_utc, query);
+}
+
 }  // namespace binance_futures
 }  // namespace roq

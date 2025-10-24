@@ -36,23 +36,30 @@ auto create_headers_helper(auto const &key) {
 Crypto::Crypto(std::string_view const &key, std::string_view const &secret) : key{key}, mac_{secret}, headers_{create_headers_helper(key)} {
 }
 
-std::string Crypto::create_query(std::string_view const &body) {
-  auto now = clock::get_realtime<std::chrono::milliseconds>();
-  auto timestamp = fmt::format("timestamp={}"sv, now.count());
+std::string Crypto::create_rest_signature(std::chrono::milliseconds now_utc) {
+  auto timestamp = fmt::format("timestamp={}"sv, now_utc.count());
   mac_.clear();
   mac_.update(timestamp);
-  if (!std::empty(body)) {
-    mac_.update(body);
-  }
   auto digest = mac_.final(digest_);
   std::string signature;
   utils::codec::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, timestamp, signature);
 }
 
-std::string Crypto::create_query_2(std::string_view const &body) {
-  auto now = clock::get_realtime<std::chrono::milliseconds>();
-  auto tmp = fmt::format("{}&timestamp={}"sv, body, now.count());
+std::string Crypto::create_rest_signature_body(std::chrono::milliseconds now_utc, std::string_view const &body) {
+  auto timestamp = fmt::format("timestamp={}"sv, now_utc.count());
+  mac_.clear();
+  mac_.update(timestamp);
+  assert(!std::empty(body));
+  mac_.update(body);
+  auto digest = mac_.final(digest_);
+  std::string signature;
+  utils::codec::Hex::encode(signature, digest);
+  return fmt::format("?{}&signature={}"sv, timestamp, signature);
+}
+
+std::string Crypto::create_rest_signature_query(std::chrono::milliseconds now_utc, std::string_view const &query) {
+  auto tmp = fmt::format("{}&timestamp={}"sv, query, now_utc.count());
   mac_.clear();
   mac_.update(tmp);
   auto digest = mac_.final(digest_);
@@ -61,9 +68,9 @@ std::string Crypto::create_query_2(std::string_view const &body) {
   return fmt::format("?{}&signature={}"sv, tmp, signature);
 }
 
-std::string_view Crypto::create_ws_api_signature(std::span<std::byte> const &buffer, std::string_view const &body) {
+std::string_view Crypto::create_ws_signature(std::span<std::byte> const &buffer, std::string_view const &message) {
   mac_.clear();
-  mac_.update(body);
+  mac_.update(message);
   auto digest = mac_.final(digest_);
   utils::text::Writer writer{buffer};
   writer.write(utils::codec::Hex{digest});

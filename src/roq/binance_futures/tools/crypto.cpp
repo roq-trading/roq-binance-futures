@@ -55,9 +55,8 @@ auto create_mac(auto &secret, auto margin_mode) {
 Crypto::Crypto(std::string_view const &key, std::string_view const &secret, MarginMode margin_mode)
     : key_{key}, headers_{create_headers(key)}, pkey_{create_ed25519<decltype(pkey_)>(secret, margin_mode)},
       mac_{create_mac<decltype(mac_)>(secret, margin_mode)} {
-  assert((!std::empty(pkey_)) && (!std::empty(mac_)));  // can't be both
   if (std::empty(pkey_) && std::empty(mac_)) {
-    log::fatal("The secret should be valid ED25519 or HMAC_SHA256"sv);
+    log::fatal("The secret must be valid ED25519 or HMAC_SHA256"sv);
   }
 }
 

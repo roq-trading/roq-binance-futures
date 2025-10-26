@@ -115,6 +115,8 @@ WebSocket::WebSocket(
       profile_{
           .parse = create_metrics(shared.settings, name_, "parse"sv),
           .error = create_metrics(shared.settings, name_, "error"sv),
+          .session_logon = create_metrics(shared.settings, name_, "session_logon"sv),
+          .session_logon_ack = create_metrics(shared.settings, name_, "session_logon_ack"sv),
           .user_data_stream_start = create_metrics(shared.settings, name_, "user_data_stream_start"sv),
           .user_data_stream_start_ack = create_metrics(shared.settings, name_, "user_data_stream_start_ack"sv),
           .user_data_stream_ping = create_metrics(shared.settings, name_, "user_data_stream_ping"sv),
@@ -123,6 +125,8 @@ WebSocket::WebSocket(
           .account_balance_ack = create_metrics(shared.settings, name_, "account_balance_ack"sv),
           .account_status = create_metrics(shared.settings, name_, "account_status"sv),
           .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
+          .account_position = create_metrics(shared.settings, name_, "account_position"sv),
+          .account_position_ack = create_metrics(shared.settings, name_, "account_position_ack"sv),
           .open_orders_cancel_all = create_metrics(shared.settings, name_, "open_orders_cancel_all"sv),
           .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
           .order_place = create_metrics(shared.settings, name_, "order_place"sv),
@@ -141,7 +145,8 @@ WebSocket::WebSocket(
           .create_order_10s = create_metrics(shared.settings, name_, "create_order"sv, "10s"sv),
           .create_order_1d = create_metrics(shared.settings, name_, "create_order"sv, "1d"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, request_id_{REQUEST_ID * stream_id} {
+      account_{account}, shared_{shared}, request_{request}, request_id_{REQUEST_ID * stream_id},
+      download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
   log::info<5>(R"(stream_id={}, account="{}", master={})"sv, stream_id_, account_.name, master_);
 }
 
@@ -178,6 +183,8 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       // profile
       .write(profile_.parse, metrics::Type::PROFILE)
       .write(profile_.error, metrics::Type::PROFILE)
+      .write(profile_.session_logon, metrics::Type::PROFILE)
+      .write(profile_.session_logon_ack, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_start, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_start_ack, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_ping, metrics::Type::PROFILE)
@@ -186,6 +193,8 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       .write(profile_.account_balance_ack, metrics::Type::PROFILE)
       .write(profile_.account_status, metrics::Type::PROFILE)
       .write(profile_.account_status_ack, metrics::Type::PROFILE)
+      .write(profile_.account_position, metrics::Type::PROFILE)
+      .write(profile_.account_position_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
       .write(profile_.order_place, metrics::Type::PROFILE)
@@ -204,7 +213,9 @@ void WebSocket::operator()(metrics::Writer &writer) const {
 }
 
 void WebSocket::operator()(Event<Disconnected> const &) {
-  // XXX TODO HANS reset downloading?
+  ++counter_.disconnect;
+  (*this)(ConnectionStatus::DISCONNECTED);
+  download_.reset();
 }
 
 uint16_t WebSocket::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
@@ -227,6 +238,40 @@ uint16_t WebSocket::operator()(
 uint16_t WebSocket::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
   return stream_id_;
+}
+
+// session-logon
+
+void WebSocket::session_logon() {
+  profile_.session_logon([&]() {
+    auto timestamp = clock::get_realtime<std::chrono::milliseconds>();
+    auto request = json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = json::WSAPIType::SESSION_LOGON,
+        .user_id = {},
+        .order_id = {},
+        .version = {},
+        .order_id_2 = {},
+    };
+    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto signature = account_.create_session_logon_signature(timestamp);
+    auto message = fmt::format(
+        R"({{)"
+        R"("id":"{}",)"
+        R"("method":"session.logon",)"
+        R"("params":{{)"
+        R"("apiKey":"{}",)"
+        R"("timestamp":{},)"
+        R"("signature":"{}")"
+        R"(}})"
+        R"(}})"sv,
+        request_id,
+        account_.get_key(),
+        timestamp.count(),
+        signature);
+    (*connection_).send_text(message);
+    (*this)(ConnectionStatus::LOGIN_SENT);
+  });
 }
 
 // listen-key
@@ -294,13 +339,11 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
   });
 }
 
-// account
+// account-balance
 
 void WebSocket::account_balance() {
   profile_.account_balance([&]() {
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
-    auto signature = account_.create_ws_signature(message_for_signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ACCOUNT_BALANCE,
@@ -315,24 +358,20 @@ void WebSocket::account_balance() {
         R"("id":"{}",)"
         R"("method":"account.balance",)"
         R"("params":{{)"
-        R"("apiKey":"{}",)"
-        R"("timestamp":"{}",)"
-        R"("signature":"{}")"
+        R"("timestamp":"{}")"
         R"(}})"
         R"(}})"sv,
         request_id,
-        account_.get_key(),
-        now.count(),
-        signature);
+        now.count());
     (*connection_).send_text(message);
   });
 }
 
+// account-status
+
 void WebSocket::account_status() {
   profile_.account_status([&]() {
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = fmt::format("apiKey={}&timestamp={}"sv, account_.get_key(), now.count());
-    auto signature = account_.create_ws_signature(message_for_signature);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ACCOUNT_STATUS,
@@ -347,18 +386,45 @@ void WebSocket::account_status() {
         R"("id":"{}",)"
         R"("method":"account.status",)"
         R"("params":{{)"
-        R"("apiKey":"{}",)"
-        R"("timestamp":"{}",)"
-        R"("signature":"{}")"
+        R"("timestamp":"{}")"
         R"(}})"
         R"(}})"sv,
         request_id,
-        account_.get_key(),
-        now.count(),
-        signature);
+        now.count());
     (*connection_).send_text(message);
   });
 }
+
+// account-position
+
+void WebSocket::account_position() {
+  profile_.account_position([&]() {
+    auto now = clock::get_realtime<std::chrono::milliseconds>();
+    auto request = json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = json::WSAPIType::ACCOUNT_POSITION,
+        .user_id = {},
+        .order_id = {},
+        .version = {},
+        .order_id_2 = {},
+    };
+    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = fmt::format(
+        R"({{)"
+        R"("id":"{}",)"
+        R"("method":"account.position",)"
+        R"("params":{{)"
+        R"("timestamp":"{}")"
+        R"(}})"
+        R"(}})"sv,
+        request_id,
+        now.count());
+    (*connection_).send_text(message);
+  });
+}
+
+// XXX open-orders does not exist => rest
+// XXX my-trades does not exist => rest
 
 // open-orders-cancel-all
 
@@ -397,8 +463,6 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
         continue;
       }
       auto now = clock::get_realtime<std::chrono::milliseconds>();
-      auto message_for_signature = fmt::format("apiKey={}&symbol={}&timestamp={}"sv, account_.get_key(), symbol, now.count());
-      auto signature = account_.create_ws_signature(message_for_signature);
       auto request = json::WSAPIRequest{
           .sequence = ++request_id_,
           .type = json::WSAPIType::OPEN_ORDERS_CANCEL_ALL,
@@ -413,17 +477,13 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
           R"("id":"{}",)"
           R"("method":"openOrders.cancelAll",)"
           R"("params":{{)"
-          R"("apiKey":"{}",)"
           R"("symbol":"{}",)"
-          R"("timestamp":"{}",)"
-          R"("signature":"{}")"
+          R"("timestamp":"{}")"
           R"(}})"
           R"(}})"sv,
           request_id_2,
-          account_.get_key(),
           symbol,
-          now.count(),
-          signature);
+          now.count());
       (*connection_).send_text(message);
       send_ack(symbol);
     }
@@ -441,9 +501,7 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature = json::Encoder::new_order_ws_url(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_signature(message_for_signature);
-    auto params = json::Encoder::new_order_ws_json(encode_buffer_, create_order, order, request_id, recv_window, account_.get_key(), now, signature);
+    auto params = json::Encoder::new_order_ws_json(encode_buffer_, create_order, order, request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_PLACE,
@@ -477,11 +535,7 @@ void WebSocket::order_modify(
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature =
-        json::Encoder::modify_order_ws_url(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_signature(message_for_signature);
-    auto params = json::Encoder::modify_order_ws_json(
-        encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
+    auto params = json::Encoder::modify_order_ws_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -515,11 +569,7 @@ void WebSocket::order_cancel(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto message_for_signature =
-        json::Encoder::cancel_order_ws_url(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now);
-    auto signature = account_.create_ws_signature(message_for_signature);
-    auto params = json::Encoder::cancel_order_ws_json(
-        encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, account_.get_key(), now, signature);
+    auto params = json::Encoder::cancel_order_ws_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -553,12 +603,15 @@ void WebSocket::operator()(web::socket::Client::Disconnected const &) {
 }
 
 void WebSocket::operator()(web::socket::Client::Ready const &) {
+  /*
   if (master_) {
     user_data_stream_start();
     (*this)(ConnectionStatus::LOGIN_SENT);
   } else {
     (*this)(ConnectionStatus::READY);
   }
+  */
+  download_.begin();
 }
 
 void WebSocket::operator()(web::socket::Client::Close const &) {
@@ -605,6 +658,26 @@ void WebSocket::operator()(ConnectionStatus status) {
   }
 }
 
+uint32_t WebSocket::download(WebSocketState state) {
+  switch (state) {
+    using enum WebSocketState;
+    case UNDEFINED:
+      assert(false);
+      break;
+    case SESSION_LOGON:
+      session_logon();
+      return 1;
+    case USER_DATA_STREAM_START:
+      user_data_stream_start();
+      return 1;
+    case DONE:
+      (*this)(ConnectionStatus::READY);
+      return 0;
+  }
+  assert(false);
+  return 0;
+}
+
 void WebSocket::parse(std::string_view const &message) {
   profile_.parse([&]() {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
@@ -622,10 +695,31 @@ void WebSocket::parse(std::string_view const &message) {
 
 // json::WSAPIParser2::Handler
 
-void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
+  auto const STATE = WebSocketState::SESSION_LOGON;
+  profile_.session_logon([&]() {
+    auto &[trace_info, session_logon] = event;
+    log::info<2>("session_logon={}"sv, session_logon);
+    if (session_logon.status == 200) {
+      auto &result = session_logon.result;
+      download_.check_relaxed(STATE);
+    } else {
+      // XXX FIXME TODO review
+      auto error = json::guess_error(session_logon.error.code);
+      log::error(R"(Unexpected: account="{}", error={})"sv, account_.name, session_logon.error);
+      if (download_.downloading()) {
+        download_.retry(STATE);
+      }
+    }
+    update_rate_limits(event);
+  });
+}
+
+void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
+  auto const STATE = WebSocketState::USER_DATA_STREAM_START;
   profile_.user_data_stream_start_ack([&]() {
     auto &[trace_info, message] = event;
-    log::info<2>("message={}, request={}"sv, message, request);
+    log::info<2>("message={}"sv, message);
     switch (message.status) {
       case 200: {
         auto &listen_key = message.result;
@@ -636,7 +730,7 @@ void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event, json::WSAPI
             .listen_key = listen_key_,
         };
         create_trace_and_dispatch(handler_, trace_info, listen_key_update);
-        (*this)(ConnectionStatus::READY);
+        download_.check_relaxed(STATE);
         auto now = clock::get_system();
         listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
         break;
@@ -646,15 +740,18 @@ void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event, json::WSAPI
           case -2015:  // invalid key
             log::error("Unexpected: error={}"sv, message.error);
         }
+        if (download_.downloading()) {
+          download_.retry(STATE);
+        }
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
   profile_.account_balance_ack([&]() {
     auto &[trace_info, message] = event;
-    log::info<2>("message={}, request={}"sv, message, request);
+    log::info<2>("message={}"sv, message);
     switch (message.status) {
       case 200: {
         for (auto &item : message.result) {
@@ -685,10 +782,10 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event, json::
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
   profile_.account_status_ack([&]() {
     auto &[trace_info, message] = event;
-    log::info<2>("message={}, request={}"sv, message, request);
+    log::info<2>("message={}"sv, message);
     switch (message.status) {
       case 200: {
         auto &account = message.result;
@@ -727,11 +824,23 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event, json::W
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) {
+void WebSocket::operator()(Trace<json::WSAPIAccountPosition> const &event) {
+  profile_.account_position_ack([&]() {
+    auto &[trace_info, message] = event;
+    log::info<2>("message={}"sv, message);
+    // XXX FIXME TODO
+    // completion
+    request_.respond_account = clock::get_system();
+    download_account_ = false;
+    update_rate_limits(event);
+  });
+}
+
+void WebSocket::operator()(Trace<json::WSAPIOpenOrders> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void WebSocket::operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) {
+void WebSocket::operator()(Trace<json::WSAPITrades> const &) {
   log::fatal("Unexpected"sv);
 }
 

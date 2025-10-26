@@ -60,23 +60,29 @@ bool WSAPIParser2::dispatch(
         return false;
       }
       break;
+    case SESSION_LOGON:
+      dispatch_helper<WSAPISessionLogon>(handler, message, buffer_stack, trace_info);
+      return true;
     case LISTEN_KEY_CREATE:
-      dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info);
       return true;
     case LISTEN_KEY_PING:
-      // note! we drop
-      return true;
+      // note! drop
+      return false;
     case ACCOUNT_BALANCE:
-      dispatch_helper<WSAPIAccountBalance>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIAccountBalance>(handler, message, buffer_stack, trace_info);
       return true;
     case ACCOUNT_STATUS:
-      dispatch_helper<WSAPIAccountStatus>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIAccountStatus>(handler, message, buffer_stack, trace_info);
+      return true;
+    case ACCOUNT_POSITION:
+      dispatch_helper<WSAPIAccountPosition>(handler, message, buffer_stack, trace_info);
       return true;
     case OPEN_ORDERS_STATUS:
-      dispatch_helper<WSAPIOpenOrders>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIOpenOrders>(handler, message, buffer_stack, trace_info);
       return true;
     case MY_TRADES:
-      dispatch_helper<WSAPITrades>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPITrades>(handler, message, buffer_stack, trace_info);
       return true;
     case OPEN_ORDERS_CANCEL_ALL:
       dispatch_helper<WSAPICancelOpenOrders>(handler, message, buffer_stack, trace_info, request);

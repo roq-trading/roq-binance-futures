@@ -78,6 +78,7 @@ trade_lite.hpp
 trades.hpp
 working_type.hpp
 wsapi_account_balance.hpp
+wsapi_account_position.hpp
 wsapi_account_status.hpp
 wsapi_cancel_open_orders.hpp
 wsapi_cancel_order.hpp
@@ -86,6 +87,8 @@ wsapi_modify_order.hpp
 wsapi_open_orders.hpp
 wsapi_order_place.hpp
 wsapi_rate_limits_item.hpp
+wsapi_session_logon.hpp
+wsapi_session_logon_result.hpp
 wsapi_trades.hpp
 wsapi_type.hpp
 account_config_update_data1.cpp
@@ -166,6 +169,7 @@ trade_lite.cpp
 trades.cpp
 working_type.cpp
 wsapi_account_balance.cpp
+wsapi_account_position.cpp
 wsapi_account_status.cpp
 wsapi_cancel_open_orders.cpp
 wsapi_cancel_order.cpp
@@ -174,5 +178,7 @@ wsapi_modify_order.cpp
 wsapi_open_orders.cpp
 wsapi_order_place.cpp
 wsapi_rate_limits_item.cpp
+wsapi_session_logon.cpp
+wsapi_session_logon_result.cpp
 wsapi_trades.cpp
 wsapi_type.cpp

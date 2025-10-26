@@ -3,6 +3,9 @@
   "type": "enum",
   "values": [
     {
+      "name": "SESSION_LOGON"
+    },
+    {
       "name": "LISTEN_KEY_CREATE"
     },
     {
@@ -13,6 +16,9 @@
     },
     {
       "name": "ACCOUNT_STATUS"
+    },
+    {
+      "name": "ACCOUNT_POSITION"
     },
     {
       "name": "OPEN_ORDERS_STATUS"

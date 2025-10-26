@@ -47,9 +47,7 @@ struct Encoder final {
       server::oms::Order const &,
       std::string_view const &request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now,
-      std::string_view const &signature);
+      std::chrono::milliseconds now);
 
   // modify
 
@@ -79,9 +77,7 @@ struct Encoder final {
       std::string_view const &request_id,
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now,
-      std::string_view const &signature);
+      std::chrono::milliseconds now);
 
   // cancel
 
@@ -110,9 +106,7 @@ struct Encoder final {
       std::string_view const &request_id,
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now,
-      std::string_view const &signature);
+      std::chrono::milliseconds now);
 
   static std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
 

@@ -25,7 +25,7 @@ add_subdirectory(tools)
 
 include(RoqAutogen)
 
-set(AUTOGEN_SCHEMAS drop_copy_state.json drop_copy_portfolio_state.json order_entry_state.json rest_state.json)
+set(AUTOGEN_SCHEMAS drop_copy_state.json drop_copy_portfolio_state.json order_entry_state.json rest_state.json web_socket_state.json)
 
 roq_autogen_hpp(
   OUTPUT

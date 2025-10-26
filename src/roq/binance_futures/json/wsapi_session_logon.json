@@ -1,0 +1,27 @@
+{
+  "name": "roq/binance_futures/json/WSAPISessionLogon",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "id",
+      "type": "std/string_view"
+    },
+    {
+      "name": "status",
+      "type": "std/int32"
+    },
+    {
+      "name": "result",
+      "type": "roq/binance_futures/json/WSAPISessionLogonResult"
+    },
+    {
+      "name": "error",
+      "type": "roq/binance_futures/json/Error"
+    },
+    {
+      "name": "rateLimits",
+      "type": "roq/binance_futures/json/WSAPIRateLimitsItem",
+      "array": "std/span"
+    }
+  ]
+}

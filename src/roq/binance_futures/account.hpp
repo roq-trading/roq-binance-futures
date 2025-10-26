@@ -19,21 +19,26 @@ struct Account final {
 
   Account(Account const &) = delete;
 
-  std::string_view get_key() const { return crypto_.key; }
+  std::string_view get_key() const { return crypto_.get_key(); }
 
   std::string_view get_rest_headers() const { return crypto_.get_rest_headers(); }
+
+  // classic
 
   std::string create_rest_signature();
   std::string create_rest_signature_body(std::string_view const &body);
   std::string create_rest_signature_query(std::string_view const &query);
 
-  std::string_view create_ws_signature(std::string_view const &message) { return crypto_.create_ws_signature(query_encode_buffer_, message); }
+  // ed25519
+
+  std::string_view create_session_logon_signature(std::chrono::milliseconds now_utc) { return crypto_.create_session_logon_signature(sign_buffer_, now_utc); }
 
   std::string const name;
   MarginMode const margin_mode;
 
  private:
   tools::Crypto crypto_;
+  std::string sign_buffer_;
   std::vector<std::byte> query_encode_buffer_;
 };
 

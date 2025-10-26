@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include "roq/core/download.hpp"
+
 #include "roq/utils/container.hpp"
 
 #include "roq/utils/metrics/counter.hpp"
@@ -30,6 +32,7 @@
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
+#include "roq/binance_futures/web_socket_state.hpp"
 
 #include "roq/binance_futures/json/wsapi_parser_2.hpp"
 
@@ -75,11 +78,14 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
  protected:
   bool downloading() const { return download_balance_ || download_account_; }
 
+  void session_logon();
+
   void user_data_stream_start();
   void user_data_stream_ping(std::chrono::nanoseconds now);
 
   void account_balance();
   void account_status();
+  void account_position();
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
@@ -99,14 +105,18 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
  private:
   void operator()(ConnectionStatus);
 
+  uint32_t download(WebSocketState state);
+
   void parse(std::string_view const &message);
 
   // json::WSAPIParser2::Handler
-  void operator()(Trace<json::WSAPIListenKey> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIAccountBalance> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIAccountStatus> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIOpenOrders> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPITrades> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPISessionLogon> const &) override;
+  void operator()(Trace<json::WSAPIListenKey> const &) override;
+  void operator()(Trace<json::WSAPIAccountBalance> const &) override;
+  void operator()(Trace<json::WSAPIAccountStatus> const &) override;
+  void operator()(Trace<json::WSAPIAccountPosition> const &) override;
+  void operator()(Trace<json::WSAPIOpenOrders> const &) override;
+  void operator()(Trace<json::WSAPITrades> const &) override;
   void operator()(Trace<json::WSAPICancelOpenOrders> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOrderPlace> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIModifyOrder> const &, json::WSAPIRequest const &) override;
@@ -134,9 +144,18 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, user_data_stream_start, user_data_stream_start_ack, user_data_stream_ping, user_data_stream_ping_ack, account_balance,
-        account_balance_ack, account_status, account_status_ack, open_orders_cancel_all, open_orders_cancel_all_ack, order_place, order_place_ack, order_modify,
-        order_modify_ack, order_cancel, order_cancel_ack;
+    utils::metrics::Profile parse, error,                    //
+        session_logon, session_logon_ack,                    //
+        user_data_stream_start, user_data_stream_start_ack,  //
+        user_data_stream_ping, user_data_stream_ping_ack,    //
+        account_balance, account_balance_ack,                //
+        account_status, account_status_ack,                  //
+        account_position, account_position_ack,              //
+        open_orders_cancel_all,                              //
+        open_orders_cancel_all_ack,                          //
+        order_place, order_place_ack,                        //
+        order_modify, order_modify_ack,                      //
+        order_cancel, order_cancel_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;
@@ -161,6 +180,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   // state
   bool ready_ = false;
   ConnectionStatus status_ = {};
+  core::Download<WebSocketState> download_;
   [[maybe_unused]] bool download_trades_is_first_ = true;
 };
 

@@ -297,6 +297,7 @@ void RestTrade::operator()(ConnectionStatus status) {
 // balance
 
 void RestTrade::get_balance() {
+  return;
   profile_.balance([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();
@@ -377,6 +378,7 @@ void RestTrade::operator()(Trace<json::Balance> const &event) {
 // account
 
 void RestTrade::get_account() {
+  return;
   profile_.account([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();

@@ -141,9 +141,7 @@ std::string_view Encoder::new_order_ws_json(
     server::oms::Order const &order,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature) {
+    std::chrono::milliseconds now) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
   auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
@@ -151,8 +149,7 @@ std::string_view Encoder::new_order_ws_json(
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
   writer.write("{"sv);
-  writer.write(R"("apiKey":")"sv).write(api_key).write(R"(")"sv);
-  writer.write(R"(,"newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
+  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
   if (!std::isnan(create_order.price)) {
     writer.write(R"(,"price":")"sv).write(Decimal{create_order.price, order.price_precision.precision}).write(R"(")"sv);
   }
@@ -168,7 +165,6 @@ std::string_view Encoder::new_order_ws_json(
   }
   writer.write(R"(,"timestamp":)"sv).write(now.count());
   writer.write(R"(,"type":")"sv).write(type.as_raw_text()).write(R"(")"sv);
-  writer.write(R"(,"signature":")"sv).write(signature).write(R"(")"sv);
   writer.write("}"sv);
   return writer.finish();
 }
@@ -287,16 +283,13 @@ std::string_view Encoder::modify_order_ws_json(
     std::string_view const &request_id,
     std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature) {
+    std::chrono::milliseconds now) {
   auto side = map(order.side).template get<Side>();
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
   writer.write("{"sv);
-  writer.write(R"("apiKey":")"sv).write(api_key).write(R"(")"sv);
-  writer.write(R"(,"newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
+  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
   if (!std::empty(order.external_order_id)) {
     writer.write(R"(,"orderId":)"sv).write(order.external_order_id);  // note! integer
   }
@@ -311,7 +304,6 @@ std::string_view Encoder::modify_order_ws_json(
   writer.write(R"(,"side":")"sv).write(side.as_raw_text()).write(R"(")"sv);
   writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
   writer.write(R"(,"timestamp":)"sv).write(now.count());
-  writer.write(R"(,"signature":")"sv).write(signature).write(R"(")"sv);
   writer.write("}"sv);
   return writer.finish();
 }
@@ -367,15 +359,12 @@ std::string_view Encoder::cancel_order_ws_json(
     std::string_view const &request_id,
     std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now,
-    std::string_view const &signature) {
+    std::chrono::milliseconds now) {
   buffer.resize(512);
   std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
   utils::text::Writer writer{buffer_2};
   writer.write("{"sv);
-  writer.write(R"("apiKey":")"sv).write(api_key).write(R"(")"sv);
-  writer.write(R"(,"newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
+  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
   if (!std::empty(order.external_order_id)) {
     writer.write(R"(,"orderId":)"sv).write(order.external_order_id);  // note! integer
   }
@@ -383,7 +372,6 @@ std::string_view Encoder::cancel_order_ws_json(
   writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
   writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
   writer.write(R"(,"timestamp":)"sv).write(now.count());
-  writer.write(R"(,"signature":")"sv).write(signature).write(R"(")"sv);
   writer.write("}"sv);
   return writer.finish();
 }

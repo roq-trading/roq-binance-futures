@@ -1,0 +1,15 @@
+{
+  "name": "roq/binance_futures/WebSocketState",
+  "type": "enum",
+  "values": [
+    {
+      "name": "session_logon"
+    },
+    {
+      "name": "user_data_stream_start"
+    },
+    {
+      "name": "done"
+    }
+  ]
+}

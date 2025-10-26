@@ -90,6 +90,7 @@ set(AUTOGEN_SCHEMAS
     trades.json
     working_type.json
     wsapi_account_balance.json
+    wsapi_account_position.json
     wsapi_account_status.json
     wsapi_cancel_open_orders.json
     wsapi_cancel_order.json
@@ -98,6 +99,8 @@ set(AUTOGEN_SCHEMAS
     wsapi_open_orders.json
     wsapi_order_place.json
     wsapi_rate_limits_item.json
+    wsapi_session_logon.json
+    wsapi_session_logon_result.json
     wsapi_trades.json
     wsapi_type.json)
 

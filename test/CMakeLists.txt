@@ -29,6 +29,7 @@ set(SOURCES
     json_order_trade_update_papi.cpp
     json_outbound_account_position.cpp
     json_position_papi.cpp
+    json_session_logon.cpp
     json_strategy_update.cpp
     json_trades.cpp
     main.cpp)

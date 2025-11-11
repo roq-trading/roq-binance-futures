@@ -13,7 +13,7 @@ CONFIG="${CONFIG:-$NAME}"
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
 API="fapi"
-WS_API=false
+WS_API=true
 DOWNLOAD_SYMBOLS="BTCUSD_PERP"
 
 FLAGFILE="../../../share/flags/prod/flags-$API.cfg"

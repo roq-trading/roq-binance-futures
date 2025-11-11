@@ -776,6 +776,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
         log::error("Unexpected: error={}"sv, message.error);
     }
     // completion
+    log::info<1>("Balance download has completed!"sv);
     request_.respond_balance = clock::get_system();
     download_balance_ = false;
     update_rate_limits(event);
@@ -818,6 +819,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
         log::error("Unexpected: error={}"sv, message.error);
     }
     // completion
+    log::info<1>("Account download has completed!"sv);
     request_.respond_account = clock::get_system();
     download_account_ = false;
     update_rate_limits(event);

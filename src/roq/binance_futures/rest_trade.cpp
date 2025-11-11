@@ -150,6 +150,7 @@ void RestTrade::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   if (ready() && !downloading()) {
+    /* XXX FIXME TODO DEPRECATED
     if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
       get_balance();
@@ -160,6 +161,7 @@ void RestTrade::operator()(Event<Timer> const &event) {
       get_account();
       download_account_ = true;
     }
+    */
     if (!downloading() && request_.respond_orders < request_.request_orders) {
       log::info<1>("Download orders..."sv);
       get_open_orders();
@@ -323,7 +325,7 @@ void RestTrade::get_balance() {
 void RestTrade::get_balance_ack(Trace<web::rest::Response> const &event) {
   profile_.balance_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(Balance download has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -331,8 +333,10 @@ void RestTrade::get_balance_ack(Trace<web::rest::Response> const &event) {
       Trace event_2{event, balance};
       (*this)(event_2);
       // completion
+      log::info<1>("Balance download has completed!"sv);
       request_.respond_balance = clock::get_system();
       download_balance_ = false;
+      log::warn("DEBUG downloading={}"sv, downloading());
     };
     process_response(event, handle_error, handle_success);
   });
@@ -404,7 +408,7 @@ void RestTrade::get_account() {
 void RestTrade::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(Account download has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -412,8 +416,10 @@ void RestTrade::get_account_ack(Trace<web::rest::Response> const &event) {
       Trace event_2{event, account};
       (*this)(event_2);
       // completion
+      log::info<1>("Account download has completed!"sv);
       request_.respond_account = clock::get_system();
       download_account_ = false;
+      log::warn("DEBUG downloading={}"sv, downloading());
     };
     process_response(event, handle_error, handle_success);
   });
@@ -475,7 +481,7 @@ void RestTrade::get_open_orders() {
 void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(Orders download has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -483,8 +489,10 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
       Trace event_2{event, open_orders};
       (*this)(event_2);
       // completion
+      log::info<1>("Orders download has completed!"sv);
       request_.respond_orders = clock::get_system();
       download_orders_ = false;
+      log::warn("DEBUG downloading={}"sv, downloading());
     };
     process_response(event, handle_error, handle_success);
   });
@@ -584,16 +592,19 @@ void RestTrade::get_trades() {
 void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(Trades download has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
       json::Trades trades{body, decode_buffer_};
       Trace event_2{event, trades};
       (*this)(event_2);
-      request_.respond_trades = clock::get_system();  // completion
+      // completion
+      log::info<1>("Trades download has completed!"sv);
+      request_.respond_trades = clock::get_system();
       download_trades_ = false;
       download_trades_is_first_ = false;
+      log::warn("DEBUG downloading={}"sv, downloading());
     };
     process_response(event, handle_error, handle_success);
   });

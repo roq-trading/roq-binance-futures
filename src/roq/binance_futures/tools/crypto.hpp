@@ -20,7 +20,7 @@ namespace binance_futures {
 namespace tools {
 
 struct Crypto final {
-  Crypto(std::string_view const &key, std::string_view const &secret, MarginMode);
+  Crypto(std::string_view const &key, std::string_view const &secret, MarginMode, std::string_view const &key_2, std::string_view const &secret_2);
 
   Crypto(Crypto &&) = delete;
   Crypto(Crypto const &) = delete;
@@ -41,6 +41,7 @@ struct Crypto final {
 
  private:
   std::string const key_;
+  std::string const key_2_;
   std::string const headers_;
 
   // ed25519

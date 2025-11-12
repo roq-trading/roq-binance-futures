@@ -21,6 +21,12 @@
       "type": "std/bool",
       "default": false,
       "description": "Continue when receiving updates for unexpected event-types?"
+    },
+    {
+      "name": "test_alt_funds_update",
+      "type": "std/bool",
+      "default": false,
+      "description": "Test alternative FundsUpdate?"
     }
   ]
 }

@@ -370,30 +370,16 @@ void DropCopyPortfolio::operator()(Trace<json::AccountUpdate> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
-#if (!NEW_FUNDS_UPDATE)
-    for (auto &item : account_update.data.balances) {
-      log::info<2>("item={}"sv, item);
-      auto funds_update = FundsUpdate{
-          .stream_id = stream_id_,
-          .account = account_.name,
-          .currency = item.asset,
-          .margin_mode = MarginMode::PORTFOLIO,
-          .balance = item.wallet_balance,
-          .hold = NaN,  // note! we don't see this
-          .borrowed = NaN,
-          .external_account = {},
-          .update_type = UpdateType::INCREMENTAL,
-          .exchange_time_utc = account_update.transaction_time,
-          .sending_time_utc = account_update.event_time,
-      };
-      create_trace_and_dispatch(handler_, trace_info, funds_update, true);
-      if (!std::isnan(item.cross_wallet_balance)) {
+    log::warn("DEBUG account_update={}"sv, account_update);
+    if (!shared_.settings.misc.test_alt_funds_update) {
+      for (auto &item : account_update.data.balances) {
+        log::info<2>("item={}"sv, item);
         auto funds_update = FundsUpdate{
             .stream_id = stream_id_,
             .account = account_.name,
             .currency = item.asset,
-            .margin_mode = MarginMode::CROSS,
-            .balance = item.cross_wallet_balance,
+            .margin_mode = MarginMode::PORTFOLIO,
+            .balance = item.wallet_balance,
             .hold = NaN,  // note! we don't see this
             .borrowed = NaN,
             .external_account = {},
@@ -402,9 +388,24 @@ void DropCopyPortfolio::operator()(Trace<json::AccountUpdate> const &event) {
             .sending_time_utc = account_update.event_time,
         };
         create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+        if (!std::isnan(item.cross_wallet_balance)) {
+          auto funds_update = FundsUpdate{
+              .stream_id = stream_id_,
+              .account = account_.name,
+              .currency = item.asset,
+              .margin_mode = MarginMode::CROSS,
+              .balance = item.cross_wallet_balance,
+              .hold = NaN,  // note! we don't see this
+              .borrowed = NaN,
+              .external_account = {},
+              .update_type = UpdateType::INCREMENTAL,
+              .exchange_time_utc = account_update.transaction_time,
+              .sending_time_utc = account_update.event_time,
+          };
+          create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+        }
       }
     }
-#endif
     for (auto &item : account_update.data.positions) {
       if (shared_.discard_symbol(item.symbol)) {
         continue;
@@ -584,25 +585,25 @@ void DropCopyPortfolio::operator()(Trace<json::OutboundAccountPosition> const &e
     auto &[trace_info, outbound_account_position] = event;
     log::info<2>("outbound_account_position={}"sv, outbound_account_position);
     log::warn("DEBUG outbound_account_position={}"sv, outbound_account_position);
-#if (NEW_FUNDS_UPDATE)
-    for (auto &item : outbound_account_position.balances) {
-      log::info<2>("item={}"sv, item);
-      auto funds_update = FundsUpdate{
-          .stream_id = stream_id_,
-          .account = account_.name,
-          .currency = item.asset,
-          .margin_mode = MarginMode::PORTFOLIO,
-          .balance = item.free,
-          .hold = item.locked,
-          .borrowed = NaN,
-          .external_account = {},
-          .update_type = UpdateType::INCREMENTAL,
-          .exchange_time_utc = outbound_account_position.last_account_update,  // ???
-          .sending_time_utc = outbound_account_position.event_time,
-      };
-      create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+    if (shared_.settings.misc.test_alt_funds_update) {
+      for (auto &item : outbound_account_position.balances) {
+        log::info<2>("item={}"sv, item);
+        auto funds_update = FundsUpdate{
+            .stream_id = stream_id_,
+            .account = account_.name,
+            .currency = item.asset,
+            .margin_mode = MarginMode::PORTFOLIO,
+            .balance = item.free,
+            .hold = item.locked,
+            .borrowed = NaN,
+            .external_account = {},
+            .update_type = UpdateType::INCREMENTAL,
+            .exchange_time_utc = outbound_account_position.last_account_update,  // ???
+            .sending_time_utc = outbound_account_position.event_time,
+        };
+        create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+      }
     }
-#endif
   });
 }
 

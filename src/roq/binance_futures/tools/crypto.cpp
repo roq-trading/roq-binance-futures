@@ -44,9 +44,12 @@ template <typename R>
 auto create_mac(auto &secret, auto margin_mode, auto &secret_2) {
   using result_type = std::remove_cvref_t<R>;
   if (margin_mode == MarginMode::PORTFOLIO) {
+    if (!std::empty(secret_2)) {
+      log::fatal("Unexpected: secret_2 is now allowed in PORTFOLIO mode"sv);
+    }
     return result_type{secret};
   }
-  return result_type::create(secret_2, false);
+  return result_type::create(std::empty(secret_2) ? secret : secret_2, false);
 }
 }  // namespace
 

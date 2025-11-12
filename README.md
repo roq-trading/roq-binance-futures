@@ -9,6 +9,12 @@ You will not find the full commit history on GitHub.
 This is done for privacy reasons.
 
 
+## Building
+
+This project depends on proprietary solutions, e.g. for auto-generated code.
+For this reason, you will **NOT** be able to build this project!
+
+
 ## Links
 
 * [Roq GmbH (website)](https://roq-trading.com/)

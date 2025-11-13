@@ -167,11 +167,12 @@ void OrderEntryPortfolio::operator()(Event<Stop> const &) {
 void OrderEntryPortfolio::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
-  refresh_listen_key();
+  refresh_listen_key(now);
+  refresh_balance(now);
   if (ready() && !downloading()) {
     if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
-      get_balance();
+      get_balance(false);
       download_balance_ = true;
     }
     if (!downloading() && request_.respond_account < request_.request_account) {
@@ -398,6 +399,7 @@ void OrderEntryPortfolio::get_listen_key() {
       Trace event{trace_info, response};
       get_listen_key_ack(event, sequence);
     };
+    log::info<1>("Download listen-key..."sv);
     (*connection_)("listen-key"sv, request, callback);
   });
 }
@@ -406,7 +408,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
   auto const STATE = OrderEntryState::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download listen-key has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       if (download_.downloading()) {
         download_.retry(STATE);
       }
@@ -415,6 +417,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
       json::ListenKey listen_key{body};
       Trace event_2{event, listen_key};
       (*this)(event_2);
+      log::info<1>("Download listen-key has COMPLETED!"sv);
       download_.check_relaxed(STATE);
     };
     process_response(event, handle_error, handle_success);
@@ -445,7 +448,8 @@ void OrderEntryPortfolio::operator()(Trace<json::ListenKey> const &event) {
 
 // balance
 
-void OrderEntryPortfolio::get_balance() {
+void OrderEntryPortfolio::get_balance(bool polling) {
+  log::warn("DEBUG HERE {}"sv, polling);
   profile_.balance([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();
@@ -459,28 +463,32 @@ void OrderEntryPortfolio::get_balance() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, polling = polling]([[maybe_unused]] auto &request_id, auto &response) {
       TraceInfo trace_info;
       Trace event{trace_info, response};
-      get_balance_ack(event);
+      get_balance_ack(event, polling);
     };
+    log::info<1>("Download balance... (polling={})"sv, polling);
     (*connection_)("balance"sv, request, callback);
   });
 }
 
-void OrderEntryPortfolio::get_balance_ack(Trace<web::rest::Response> const &event) {
+void OrderEntryPortfolio::get_balance_ack(Trace<web::rest::Response> const &event, bool polling) {
   profile_.balance_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download balance has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
       json::Balance balance{body, decode_buffer_};
       Trace event_2{event, balance};
       (*this)(event_2);
-      // completion
-      request_.respond_balance = clock::get_system();
-      download_balance_ = false;
+      if (!polling) {
+        // completion
+        request_.respond_balance = clock::get_system();
+        download_balance_ = false;
+      }
+      log::info<1>("Download balance has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -548,6 +556,7 @@ void OrderEntryPortfolio::get_account() {
       Trace event{trace_info, response};
       get_account_ack(event);
     };
+    log::info<1>("Download account..."sv);
     (*connection_)("account"sv, request, callback);
   });
 }
@@ -555,7 +564,7 @@ void OrderEntryPortfolio::get_account() {
 void OrderEntryPortfolio::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download account has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -565,6 +574,7 @@ void OrderEntryPortfolio::get_account_ack(Trace<web::rest::Response> const &even
       // completion
       request_.respond_account = clock::get_system();
       download_account_ = false;
+      log::info<1>("Download account has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -619,6 +629,7 @@ void OrderEntryPortfolio::get_position() {
       Trace event{trace_info, response};
       get_position_ack(event);
     };
+    log::info<1>("Download position..."sv);
     (*connection_)("position"sv, request, callback);
   });
 }
@@ -626,7 +637,7 @@ void OrderEntryPortfolio::get_position() {
 void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &event) {
   profile_.position_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download position has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_position_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -636,6 +647,7 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
       // completion
       request_.respond_position = clock::get_system();
       download_position_ = false;
+      log::info<1>("Download position has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -689,6 +701,7 @@ void OrderEntryPortfolio::get_open_orders() {
       Trace event{trace_info, response};
       get_open_orders_ack(event);
     };
+    log::info<1>("Download open-orders..."sv);
     (*connection_)("open-orders"sv, request, callback);
   });
 }
@@ -696,7 +709,7 @@ void OrderEntryPortfolio::get_open_orders() {
 void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download open-orders has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -706,6 +719,7 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
       // completion
       request_.respond_orders = clock::get_system();
       download_orders_ = false;
+      log::info<1>("Download open-orders has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -792,6 +806,7 @@ void OrderEntryPortfolio::get_trades() {
         Trace event{trace_info, response};
         get_trades_ack(event);
       };
+      log::info<1>("Download trades..."sv);
       (*connection_)("trades"sv, request, callback);
     }
   });
@@ -800,7 +815,7 @@ void OrderEntryPortfolio::get_trades() {
 void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      log::warn(R"(Download trades has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -811,6 +826,7 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
       request_.respond_trades = clock::get_system();
       download_trades_ = false;
       download_trades_is_first_ = false;
+      log::info<1>("Download trades has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -868,17 +884,31 @@ void OrderEntryPortfolio::operator()(Trace<json::Trades> const &event) {
 
 // ...
 
-void OrderEntryPortfolio::refresh_listen_key() {
+void OrderEntryPortfolio::refresh_listen_key(std::chrono::nanoseconds now) {
   if (!ready()) {
     return;
   }
-  auto now = clock::get_system();
   if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
     return;
   }
   log::info("Refreshing listen key..."sv);
   listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
   get_listen_key();
+}
+
+void OrderEntryPortfolio::refresh_balance(std::chrono::nanoseconds now) {
+  if (!ready()) {
+    return;
+  }
+  if (shared_.settings.misc.test_pm_balance_freq.count() == 0) {
+    return;
+  }
+  if (now < balance_refresh_) {
+    return;
+  }
+  log::info("Refreshing balance..."sv);
+  balance_refresh_ = now + shared_.settings.misc.test_pm_balance_freq;
+  get_balance(true);
 }
 
 // new-order

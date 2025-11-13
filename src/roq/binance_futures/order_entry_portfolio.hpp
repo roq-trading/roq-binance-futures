@@ -98,8 +98,8 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<json::ListenKey> const &);
 
-  void get_balance();
-  void get_balance_ack(Trace<web::rest::Response> const &);
+  void get_balance(bool request);
+  void get_balance_ack(Trace<web::rest::Response> const &, bool request);
   void operator()(Trace<json::Balance> const &);
 
   void get_account();
@@ -118,7 +118,8 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void get_trades_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::Trades> const &);
 
-  void refresh_listen_key();
+  void refresh_listen_key(std::chrono::nanoseconds now);
+  void refresh_balance(std::chrono::nanoseconds now);
 
   void new_order(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
   void new_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
@@ -186,6 +187,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   std::string listen_key_;
   // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
+  std::chrono::nanoseconds balance_refresh_ = {};
   ConnectionStatus status_ = {};
   core::Download<OrderEntryState> download_;
   // experimental

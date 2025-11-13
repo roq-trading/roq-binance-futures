@@ -98,8 +98,8 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<json::ListenKey> const &);
 
-  void get_balance(bool request);
-  void get_balance_ack(Trace<web::rest::Response> const &, bool request);
+  void get_balance(bool polling);
+  void get_balance_ack(Trace<web::rest::Response> const &, bool polling);
   void operator()(Trace<json::Balance> const &);
 
   void get_account();

@@ -449,7 +449,6 @@ void OrderEntryPortfolio::operator()(Trace<json::ListenKey> const &event) {
 // balance
 
 void OrderEntryPortfolio::get_balance(bool polling) {
-  log::warn("DEBUG HERE {}"sv, polling);
   profile_.balance([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();

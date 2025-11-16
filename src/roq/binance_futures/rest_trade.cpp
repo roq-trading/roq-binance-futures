@@ -528,6 +528,7 @@ void RestTrade::operator()(Trace<json::OpenOrders> const &event) {
         .quantity = item.orig_qty,
         .price = item.price,
         .stop_price = item.stop_price,
+        .leverage = NaN,
         .remaining_quantity = NaN,
         .traded_quantity = item.executed_qty,
         .average_traded_price = item.avg_price,

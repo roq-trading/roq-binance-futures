@@ -53,6 +53,7 @@ auto create_order(double quantity, double price) {
       .quantity = quantity,
       .price = price,
       .stop_price = {},
+      .leverage = NaN,
       .risk_exposure = {},
       .remaining_quantity = {},
       .traded_quantity = {},

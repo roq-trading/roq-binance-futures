@@ -291,6 +291,7 @@ void DropCopyClassic::operator()(Trace<json::OrderTradeUpdate> const &event) {
         .quantity = execution_report.original_quantity,
         .price = execution_report.original_price,
         .stop_price = execution_report.stop_price,
+        .leverage = NaN,
         .remaining_quantity = NaN,
         .traded_quantity = execution_report.order_filled_accumulated_quantity,
         .average_traded_price = execution_report.average_price,

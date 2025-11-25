@@ -197,6 +197,11 @@
       "name": "good_till_date",
       "type": "std/milliseconds",
       "comment": "XXX 20231206 not sure about milliseconds"
+    },
+    {
+      "raw": "er",
+      "name": "expired_reason",
+      "type": "std/string_view"
     }
   ]
 }

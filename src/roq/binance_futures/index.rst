@@ -194,7 +194,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-fapi.cfg
+      $ --flagfile $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-fapi.cfg
 
    .. include:: flags/prod/flags-fapi.cfg
      :code: ini
@@ -203,7 +203,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-dapi.cfg
+      $ --flagfile $CONDA_PREFIX/share/roq-binance-futures/flags/prod/flags-dapi.cfg
 
    .. include:: flags/prod/flags-dapi.cfg
      :code: ini
@@ -212,7 +212,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-fapi.cfg
+      $ --flagfile $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-fapi.cfg
 
    .. include:: flags/test/flags-fapi.cfg
      :code: ini
@@ -221,7 +221,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-dapi.cfg
+      $ --flagfile $CONDA_PREFIX/share/roq-binance-futures/flags/test/flags-dapi.cfg
 
    .. include:: flags/test/flags-dapi.cfg
      :code: ini
@@ -232,7 +232,7 @@ Configuration
 
 .. code-block:: shell
 
-   $ $CONDA_PREFIX/share/roq-binance-futures/config.toml
+   $ --flagfile $CONDA_PREFIX/share/roq-binance-futures/config.toml
 
 .. important::
 

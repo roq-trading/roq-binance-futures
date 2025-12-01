@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/account_config_update.hpp"
+#include "user_stream_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -23,15 +21,16 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"("s":"BTCUSDT",)"
                  R"("l":25)"
                  R"(})"
-                 R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::AccountConfigUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
-  CHECK(obj.event_time == 1611646737479ms);
-  CHECK(obj.transaction_time == 1611646737476ms);
-  auto &data = obj.data1;
-  CHECK(data.symbol == "BTCUSDT"sv);
-  CHECK(data.leverage == 25.0_a);
+                 R"(})"sv;
+  auto helper = [](json::AccountConfigUpdate const &obj) {
+    CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
+    CHECK(obj.event_time == 1611646737479ms);
+    CHECK(obj.transaction_time == 1611646737476ms);
+    auto &data = obj.data1;
+    CHECK(data.symbol == "BTCUSDT"sv);
+    CHECK(data.leverage == 25.0_a);
+  };
+  UserStreamTester<json::AccountConfigUpdate>::dispatch(helper, message, 8192, 1);
 }
 
 TEST_CASE("simple_2", "[json_account_config_update]") {
@@ -42,12 +41,16 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"("ai":{)"
                  R"("j":true)"
                  R"(})"
-                 R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::AccountConfigUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
-  CHECK(obj.event_time == 1611646737479ms);
-  CHECK(obj.transaction_time == 1611646737476ms);
-  auto &data = obj.data2;
-  CHECK(data.multi_asset_mode == true);
+                 R"(})"sv;
+  UserStreamTester<json::AccountConfigUpdate>::dispatch(
+      [](auto &obj) {
+        CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
+        CHECK(obj.event_time == 1611646737479ms);
+        CHECK(obj.transaction_time == 1611646737476ms);
+        auto &data = obj.data2;
+        CHECK(data.multi_asset_mode == true);
+      },
+      message,
+      8192,
+      1);
 }

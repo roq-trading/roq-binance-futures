@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/Account",
+  "name": "roq/binance_futures/json/AccountStatusAck",
   "type": "dictionary",
   "values": [
     {

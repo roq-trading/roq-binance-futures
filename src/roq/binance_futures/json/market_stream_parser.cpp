@@ -69,6 +69,7 @@ bool MarketStreamParser::dispatch(
           break;
         case DATA:
           // XXX FIXME TODO why the need for recursive here ???
+          // 2025-12-06 -- maybe it was an old format where the event was wrapper
           dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, allow_unknown_event_types);
           return true;
         case EVENT_TYPE: {

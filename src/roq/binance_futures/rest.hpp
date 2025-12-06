@@ -26,13 +26,16 @@
 #include "roq/binance_futures/rest_state.hpp"
 #include "roq/binance_futures/shared.hpp"
 
-#include "roq/binance_futures/json/account.hpp"
-#include "roq/binance_futures/json/cancel_order.hpp"
-#include "roq/binance_futures/json/depth.hpp"
-#include "roq/binance_futures/json/exchange_info.hpp"
+// #include "roq/binance_futures/json/account.hpp"
+
+// #include "roq/binance_futures/json/listen_key.hpp"
+
+#include "roq/binance_futures/json/depth_ack.hpp"
+#include "roq/binance_futures/json/exchange_info_ack.hpp"
 #include "roq/binance_futures/json/kline_ack.hpp"
-#include "roq/binance_futures/json/listen_key.hpp"
-#include "roq/binance_futures/json/new_order.hpp"
+
+// #include "roq/binance_futures/json/new_order.hpp"
+// #include "roq/binance_futures/json/cancel_order.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -67,6 +70,7 @@ struct Rest final : public web::rest::Client::Handler {
 
  protected:
   // web::rest::Client::Handler
+
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
@@ -78,17 +82,25 @@ struct Rest final : public web::rest::Client::Handler {
 
   uint32_t download(RestState state);
 
+  // exchange-info
+
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::ExchangeInfo> const &);
+  void operator()(Trace<json::ExchangeInfoAck> const &);
+
+  // depth
 
   void get_depth(std::string_view const &symbol);
   void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
-  void operator()(Trace<json::Depth> const &, std::string_view const &symbol);
+  void operator()(Trace<json::DepthAck> const &, std::string_view const &symbol);
+
+  // kline
 
   void get_kline(std::string_view const &symbol);
   void get_kline_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
   void operator()(Trace<json::KlineAck> const &, std::string_view const &symbol);
+
+  // helpers
 
   void check_request_queue(std::chrono::nanoseconds now);
 

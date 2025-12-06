@@ -12,7 +12,7 @@
     },
     {
       "name": "result",
-      "type": "roq/binance_futures/json/ListenKey"
+      "type": "roq/binance_futures/json/ListenKeyAck"
     },
     {
       "name": "error",

@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/liability_change.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -13,6 +11,8 @@ using namespace std::literals;
 using namespace std::chrono_literals;
 
 using namespace Catch::literals;
+
+using value_type = json::LiabilityChange;
 
 TEST_CASE("simple", "[json_liability_change]") {
   auto message = R"({)"
@@ -25,7 +25,9 @@ TEST_CASE("simple", "[json_liability_change]") {
                  R"("i":"0",)"
                  R"("l":"1.03476851")"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::LiabilityChange obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::LIABILITY_CHANGE);
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::LIABILITY_CHANGE);
+    CHECK(obj.event_time == 1573200697110ms);
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

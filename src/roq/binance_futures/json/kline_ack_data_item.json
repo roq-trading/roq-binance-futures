@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/KlineAckItem",
+  "name": "roq/binance_futures/json/KlineAckDataItem",
   "type": "by_index",
   "values": [
     {

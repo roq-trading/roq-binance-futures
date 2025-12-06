@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/ExchangeInfo",
+  "name": "roq/binance_futures/json/ExchangeInfoAck",
   "type": "dictionary",
   "values": [
     {
@@ -30,7 +30,7 @@
     },
     {
       "name": "assets",
-      "type": "roq/binance_futures/json/ExchangeInfoAsset",
+      "type": "roq/binance_futures/json/ExchangeInfoAckAssetsItem",
       "array": "std/span"
     }
   ]

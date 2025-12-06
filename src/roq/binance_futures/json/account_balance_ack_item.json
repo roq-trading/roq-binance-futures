@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/BalanceItem",
+  "name": "roq/binance_futures/json/AccountBalanceAckItem",
   "type": "dictionary",
   "values": [
     {

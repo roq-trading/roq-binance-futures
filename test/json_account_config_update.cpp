@@ -2,7 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "user_stream_tester.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -11,6 +11,8 @@ using namespace std::literals;
 using namespace std::chrono_literals;
 
 using namespace Catch::literals;
+
+using value_type = json::AccountConfigUpdate;
 
 TEST_CASE("simple_1", "[json_account_config_update]") {
   auto message = R"({)"
@@ -22,7 +24,7 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"("l":25)"
                  R"(})"
                  R"(})"sv;
-  auto helper = [](json::AccountConfigUpdate const &obj) {
+  auto helper = [](value_type const &obj) {
     CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
     CHECK(obj.event_time == 1611646737479ms);
     CHECK(obj.transaction_time == 1611646737476ms);
@@ -30,7 +32,7 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
     CHECK(data.symbol == "BTCUSDT"sv);
     CHECK(data.leverage == 25.0_a);
   };
-  UserStreamTester<json::AccountConfigUpdate>::dispatch(helper, message, 8192, 1);
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
 
 TEST_CASE("simple_2", "[json_account_config_update]") {
@@ -42,15 +44,12 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"("j":true)"
                  R"(})"
                  R"(})"sv;
-  UserStreamTester<json::AccountConfigUpdate>::dispatch(
-      [](auto &obj) {
-        CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
-        CHECK(obj.event_time == 1611646737479ms);
-        CHECK(obj.transaction_time == 1611646737476ms);
-        auto &data = obj.data2;
-        CHECK(data.multi_asset_mode == true);
-      },
-      message,
-      8192,
-      1);
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
+    CHECK(obj.event_time == 1611646737479ms);
+    CHECK(obj.transaction_time == 1611646737476ms);
+    auto &data = obj.data2;
+    CHECK(data.multi_asset_mode == true);
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

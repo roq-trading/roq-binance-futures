@@ -1,0 +1,14 @@
+{
+  "name": "roq/binance_futures/json/DepthUpdateBidsAsksItem",
+  "type": "by_index",
+  "values": [
+    {
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "name": "qty",
+      "type": "std/double"
+    }
+  ]
+}

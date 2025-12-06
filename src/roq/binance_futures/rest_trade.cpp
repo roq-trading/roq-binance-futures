@@ -119,10 +119,10 @@ RestTrade::RestTrade(Handler &handler, io::Context &context, uint16_t stream_id,
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
       profile_{
-          .balance = create_metrics(shared.settings, name_, "balance"sv),
-          .balance_ack = create_metrics(shared.settings, name_, "balance_ack"sv),
-          .account = create_metrics(shared.settings, name_, "account"sv),
-          .account_ack = create_metrics(shared.settings, name_, "account_ack"sv),
+          .account_balance = create_metrics(shared.settings, name_, "account_balance"sv),
+          .account_balance_ack = create_metrics(shared.settings, name_, "account_balance_ack"sv),
+          .account_status = create_metrics(shared.settings, name_, "account_status"sv),
+          .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
           .open_orders = create_metrics(shared.settings, name_, "open_orders"sv),
           .open_orders_ack = create_metrics(shared.settings, name_, "open_orders_ack"sv),
           .trades = create_metrics(shared.settings, name_, "trades"sv),
@@ -180,10 +180,10 @@ void RestTrade::operator()(metrics::Writer &writer) {
       // counter
       .write(counter_.disconnect, metrics::Type::COUNTER)
       // profile
-      .write(profile_.balance, metrics::Type::PROFILE)
-      .write(profile_.balance_ack, metrics::Type::PROFILE)
-      .write(profile_.account, metrics::Type::PROFILE)
-      .write(profile_.account_ack, metrics::Type::PROFILE)
+      .write(profile_.account_balance, metrics::Type::PROFILE)
+      .write(profile_.account_balance_ack, metrics::Type::PROFILE)
+      .write(profile_.account_status, metrics::Type::PROFILE)
+      .write(profile_.account_status_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders, metrics::Type::PROFILE)
       .write(profile_.open_orders_ack, metrics::Type::PROFILE)
       .write(profile_.trades, metrics::Type::PROFILE)
@@ -194,6 +194,8 @@ void RestTrade::operator()(metrics::Writer &writer) {
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
+
+// web::rest::Client::Handler
 
 void RestTrade::operator()(Trace<web::rest::Client::Connected> const &) {
   (*this)(ConnectionStatus::READY);
@@ -296,16 +298,16 @@ void RestTrade::operator()(ConnectionStatus status) {
   }
 }
 
-// balance
+// account-balance
 
-void RestTrade::get_balance() {
-  return;
-  profile_.balance([&]() {
+void RestTrade::get_account_balance() {
+  return;  // note!
+  profile_.account_balance([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.simple.balance,
+        .path = shared_.api.simple.account_balance,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -316,22 +318,22 @@ void RestTrade::get_balance() {
     auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
       TraceInfo trace_info;
       Trace event{trace_info, response};
-      get_balance_ack(event);
+      get_account_balance_ack(event);
     };
     log::info<1>("Download balance..."sv);
-    (*connection_)("balance"sv, request, callback);
+    (*connection_)("account-balance"sv, request, callback);
   });
 }
 
-void RestTrade::get_balance_ack(Trace<web::rest::Response> const &event) {
-  profile_.balance_ack([&]() {
+void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event) {
+  profile_.account_balance_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download balance has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::Balance balance{body, decode_buffer_};
-      Trace event_2{event, balance};
+      json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
+      Trace event_2{event, account_balance_ack};
       (*this)(event_2);
       // completion
       log::info<1>("Download balance has COMPLETED!"sv);
@@ -342,10 +344,10 @@ void RestTrade::get_balance_ack(Trace<web::rest::Response> const &event) {
   });
 }
 
-void RestTrade::operator()(Trace<json::Balance> const &event) {
-  auto &[trace_info, balance] = event;
-  log::info<2>("balance={}"sv, balance);
-  for (auto &item : balance.data) {
+void RestTrade::operator()(Trace<json::AccountBalanceAck> const &event) {
+  auto &[trace_info, account_balance_ack] = event;
+  log::info<2>("account_balance_ack={}"sv, account_balance_ack);
+  for (auto &item : account_balance_ack.data) {
     log::info<2>("item={}"sv, item);
     auto hold = item.balance - item.available_balance;
     auto funds_update = FundsUpdate{
@@ -379,16 +381,16 @@ void RestTrade::operator()(Trace<json::Balance> const &event) {
   }
 }
 
-// account
+// account-status
 
-void RestTrade::get_account() {
-  return;
-  profile_.account([&]() {
+void RestTrade::get_account_status() {
+  return;  // note!
+  profile_.account_status([&]() {
     auto query = account_.create_rest_signature();
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
-        .path = shared_.api.simple.account,
+        .path = shared_.api.simple.account_status,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
@@ -399,22 +401,22 @@ void RestTrade::get_account() {
     auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
       TraceInfo trace_info;
       Trace event{trace_info, response};
-      get_account_ack(event);
+      get_account_status_ack(event);
     };
     log::info<1>("Download account..."sv);
-    (*connection_)("account"sv, request, callback);
+    (*connection_)("account-status"sv, request, callback);
   });
 }
 
-void RestTrade::get_account_ack(Trace<web::rest::Response> const &event) {
-  profile_.account_ack([&]() {
+void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) {
+  profile_.account_status_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download account has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::Account account{body, decode_buffer_};
-      Trace event_2{event, account};
+      json::AccountStatusAck account_status_ack{body, decode_buffer_};
+      Trace event_2{event, account_status_ack};
       (*this)(event_2);
       // completion
       log::info<1>("Download account has COMPLETED!"sv);
@@ -425,10 +427,10 @@ void RestTrade::get_account_ack(Trace<web::rest::Response> const &event) {
   });
 }
 
-void RestTrade::operator()(Trace<json::Account> const &event) {
-  auto &[trace_info, account] = event;
-  log::info<2>("account={}"sv, account);
-  for (auto &item : account.positions) {
+void RestTrade::operator()(Trace<json::AccountStatusAck> const &event) {
+  auto &[trace_info, account_status_ack] = event;
+  log::info<2>("account_status_ack={}"sv, account_status_ack);
+  for (auto &item : account_status_ack.positions) {
     if (shared_.discard_symbol(item.symbol)) {
       continue;
     }
@@ -446,7 +448,7 @@ void RestTrade::operator()(Trace<json::Account> const &event) {
         .long_quantity = long_quantity,
         .short_quantity = short_quantity,
         .update_type = UpdateType::SNAPSHOT,
-        .exchange_time_utc = account.update_time,
+        .exchange_time_utc = account_status_ack.update_time,
         .sending_time_utc = {},
     };
     create_trace_and_dispatch(handler_, trace_info, position_update, true);
@@ -486,8 +488,8 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::OpenOrders open_orders{body, decode_buffer_};
-      Trace event_2{event, open_orders};
+      json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
+      Trace event_2{event, open_orders_ack};
       (*this)(event_2);
       // completion
       log::info<1>("Download open-orders has COMPLETED!"sv);
@@ -498,10 +500,10 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   });
 }
 
-void RestTrade::operator()(Trace<json::OpenOrders> const &event) {
-  auto &[trace_info, open_orders] = event;
-  log::info<2>("open_orders={}"sv, open_orders);
-  for (auto &item : open_orders.data) {
+void RestTrade::operator()(Trace<json::OpenOrdersAck> const &event) {
+  auto &[trace_info, open_orders_ack] = event;
+  log::info<2>("open_orders_ack={}"sv, open_orders_ack);
+  for (auto &item : open_orders_ack.data) {
     log::info<2>("item={}"sv, item);
     if (std::empty(item.client_order_id)) {
       continue;
@@ -598,8 +600,8 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::Trades trades{body, decode_buffer_};
-      Trace event_2{event, trades};
+      json::TradesAck trades_ack{body, decode_buffer_};
+      Trace event_2{event, trades_ack};
       (*this)(event_2);
       // completion
       log::info<1>("Download user-trades has COMPLETED!"sv);
@@ -612,10 +614,10 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
 }
 
 // note! always external because we don't get ClOrdID
-void RestTrade::operator()(Trace<json::Trades> const &event) {
-  auto &[trace_info, trades] = event;
-  log::info<2>("trades={}"sv, trades);
-  for (auto &item : trades.data) {
+void RestTrade::operator()(Trace<json::TradesAck> const &event) {
+  auto &[trace_info, trades_ack] = event;
+  log::info<2>("trades_ack={}"sv, trades_ack);
+  for (auto &item : trades_ack.data) {
     log::info<2>("item={}"sv, item);
     auto liquidity = item.maker ? Liquidity::MAKER : Liquidity::TAKER;
     auto side = map(item.side).template get<Side>();

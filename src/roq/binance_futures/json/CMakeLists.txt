@@ -12,10 +12,12 @@ set(SOURCES
 include(RoqAutogen)
 
 set(AUTOGEN_SCHEMAS
+    account_balance_ack_item.json
+    account_balance_ack.json
     account_config_update_data1.json
     account_config_update_data2.json
     account_config_update.json
-    account.json
+    account_status_ack.json
     account_update_data_balance.json
     account_update_data.json
     account_update_data_position.json
@@ -23,23 +25,20 @@ set(AUTOGEN_SCHEMAS
     agg_trade.json
     asset.json
     auto_cancel_all_open_orders.json
-    balance_item.json
-    balance.json
     balances_item.json
     balance_update.json
     book_ticker.json
-    cancel_all_open_orders.json
-    cancel_order.json
     contract_status.json
     contract_type.json
-    depth_item.json
-    depth.json
+    depth_ack_bids_asks_item.json
+    depth_ack.json
+    depth_update_bids_asks_item.json
     depth_update.json
     error.json
     event_reason.json
     event_type.json
-    exchange_info_asset.json
-    exchange_info.json
+    exchange_info_ack_assets_item.json
+    exchange_info_ack.json
     execution_report_2.json
     execution_report.json
     execution_type.json
@@ -51,21 +50,23 @@ set(AUTOGEN_SCHEMAS
     grid_update_data.json
     grid_update.json
     interval.json
-    kline_ack_item.json
+    kline_ack_data_item.json
     kline_ack.json
     kline_data.json
     kline.json
     liability_change.json
-    listen_key.json
+    listen_key_ack.json
     margin_call_item.json
     margin_call.json
     margin_type.json
     mark_price_update.json
     mini_ticker.json
-    modify_order.json
-    new_order.json
-    open_orders.json
+    open_orders_ack.json
+    open_orders_cancel_all_ack.json
+    order_cancel_ack.json
     order.json
+    order_modify_ack.json
+    order_place_ack.json
     order_status.json
     order_trade_update.json
     order_type.json
@@ -87,16 +88,16 @@ set(AUTOGEN_SCHEMAS
     time_in_force.json
     trade.json
     trade_lite.json
-    trades.json
+    trades_ack.json
     working_type.json
     wsapi_account_balance.json
     wsapi_account_position.json
     wsapi_account_status.json
-    wsapi_cancel_open_orders.json
-    wsapi_cancel_order.json
     wsapi_listen_key.json
-    wsapi_modify_order.json
+    wsapi_open_orders_cancel_all.json
     wsapi_open_orders.json
+    wsapi_order_cancel.json
+    wsapi_order_modify.json
     wsapi_order_place.json
     wsapi_rate_limits_item.json
     wsapi_session_logon.json

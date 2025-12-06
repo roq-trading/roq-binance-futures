@@ -1,10 +1,10 @@
 {
-  "name": "roq/binance_futures/json/Balance",
+  "name": "roq/binance_futures/json/OpenOrdersAck",
   "type": "array",
   "values": [
     {
       "name": "data",
-      "type": "roq/binance_futures/json/BalanceItem",
+      "type": "roq/binance_futures/json/Order",
       "array": "std/span"
     }
   ]

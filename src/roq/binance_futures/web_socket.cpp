@@ -501,7 +501,7 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::new_order_ws_json(encode_buffer_, create_order, order, request_id, recv_window, now);
+    auto params = json::Encoder::order_place_ws_json(encode_buffer_, create_order, order, request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_PLACE,
@@ -535,10 +535,10 @@ void WebSocket::order_modify(
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::modify_order_ws_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now);
+    auto params = json::Encoder::order_modify_ws_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ORDER_CANCEL,
+        .type = json::WSAPIType::ORDER_MODIFY,
         .user_id = message_info.source,
         .order_id = modify_order.order_id,
         .version = modify_order.version,
@@ -569,7 +569,7 @@ void WebSocket::order_cancel(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::cancel_order_ws_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now);
+    auto params = json::Encoder::order_cancel_ws_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -846,7 +846,7 @@ void WebSocket::operator()(Trace<json::WSAPITrades> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void WebSocket::operator()(Trace<json::WSAPICancelOpenOrders> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, json::WSAPIRequest const &request) {
   profile_.open_orders_cancel_all_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -1006,7 +1006,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIModifyOrder> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSAPIRequest const &request) {
   profile_.order_modify_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);
@@ -1085,7 +1085,7 @@ void WebSocket::operator()(Trace<json::WSAPIModifyOrder> const &event, json::WSA
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPICancelOrder> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSAPIRequest const &request) {
   profile_.order_cancel_ack([&]() {
     auto &[trace_info, message] = event;
     log::info<2>("message={}, request={}"sv, message, request);

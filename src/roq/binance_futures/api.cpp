@@ -23,8 +23,8 @@ API API::create(Settings const &settings) {
         },
         .simple{
             .listen_key = "/fapi/v1/listenKey"sv,
-            .balance = "/fapi/v2/balance"sv,
-            .account = "/fapi/v2/account"sv,
+            .account_balance = "/fapi/v2/balance"sv,
+            .account_status = "/fapi/v2/account"sv,
             .open_orders = "/fapi/v1/openOrders"sv,
             .user_trades = "/fapi/v1/userTrades"sv,
             .order = "/fapi/v1/order"sv,
@@ -33,8 +33,8 @@ API API::create(Settings const &settings) {
         },
         .papi{
             .listen_key = "/papi/v1/listenKey"sv,
-            .balance = "/papi/v1/balance"sv,
-            .account = "/papi/v1/account"sv,
+            .account_balance = "/papi/v1/balance"sv,
+            .account_status = "/papi/v1/account"sv,
             .position_risk = "/papi/v1/um/positionRisk"sv,
             .open_orders = "/papi/v1/um/openOrders"sv,
             .user_trades = "/papi/v1/um/userTrades"sv,
@@ -54,8 +54,8 @@ API API::create(Settings const &settings) {
         },
         .simple{
             .listen_key = "/dapi/v1/listenKey"sv,
-            .balance = "/dapi/v1/balance"sv,
-            .account = "/dapi/v1/account"sv,
+            .account_balance = "/dapi/v1/balance"sv,
+            .account_status = "/dapi/v1/account"sv,
             .open_orders = "/dapi/v1/openOrders"sv,
             .user_trades = "/dapi/v1/userTrades"sv,
             .order = "/dapi/v1/order"sv,
@@ -64,8 +64,8 @@ API API::create(Settings const &settings) {
         },
         .papi{
             .listen_key = "/papi/v1/listenKey"sv,
-            .balance = "/papi/v1/balance"sv,
-            .account = "/papi/v1/account"sv,
+            .account_balance = "/papi/v1/balance"sv,
+            .account_status = "/papi/v1/account"sv,
             .position_risk = "/papi/v1/cm/positionRisk"sv,
             .open_orders = "/papi/v1/cm/openOrders"sv,
             .user_trades = "/papi/v1/cm/userTrades"sv,

@@ -17,8 +17,8 @@ struct API final {
   } market_data;
   struct {
     std::string_view listen_key;
-    std::string_view balance;
-    std::string_view account;
+    std::string_view account_balance;
+    std::string_view account_status;
     std::string_view open_orders;
     std::string_view user_trades;
     std::string_view order;
@@ -27,8 +27,8 @@ struct API final {
   } simple;
   struct {
     std::string_view listen_key;
-    std::string_view balance;
-    std::string_view account;
+    std::string_view account_balance;
+    std::string_view account_status;
     std::string_view position_risk;
     std::string_view open_orders;
     std::string_view user_trades;

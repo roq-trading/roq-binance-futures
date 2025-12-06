@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/WSAPICancelOpenOrders",
+  "name": "roq/binance_futures/json/WSAPIOrderModify",
   "type": "dictionary",
   "values": [
     {
@@ -12,8 +12,7 @@
     },
     {
       "name": "result",
-      "type": "roq/binance_futures/json/Order",
-      "array": "std/span"
+      "type": "roq/binance_futures/json/OrderModifyAck"
     },
     {
       "name": "error",

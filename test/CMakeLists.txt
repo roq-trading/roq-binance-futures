@@ -3,35 +3,35 @@ include(RoqAutogen)
 set(TARGET_NAME ${PROJECT_NAME}-test)
 
 set(SOURCES
+    json_account_balance_ack.cpp
     json_account_config_update.cpp
-    json_account.cpp
+    json_account_status_ack.cpp
     json_account_update.cpp
     json_account_update_papi.cpp
     json_auto_cancel_all_open_orders.cpp
-    json_balance.cpp
     json_balance_update.cpp
     json_book_ticker.cpp
-    json_cancel_order.cpp
-    json_depth.cpp
+    json_depth_ack.cpp
     json_depth_update.cpp
     json_encoder.cpp
     json_error.cpp
-    json_exchange_info.cpp
+    json_exchange_info_ack.cpp
     json_filters.cpp
     json_grid_update.cpp
     json_liability_change.cpp
-    json_listen_key.cpp
+    json_listen_key_ack.cpp
     json_margin_call.cpp
     json_mini_ticker.cpp
-    json_new_order.cpp
-    json_open_orders.cpp
+    json_open_orders_ack.cpp
+    json_order_cancel_ack.cpp
+    json_order_place_ack.cpp
     json_order_trade_update.cpp
     json_order_trade_update_papi.cpp
     json_outbound_account_position.cpp
-    json_position_papi.cpp
     json_session_logon.cpp
     json_strategy_update.cpp
-    json_trades.cpp
+    json_trades_ack.cpp
+    json_zzz_position_papi.cpp
     main.cpp)
 
 roq_gitignore(OUTPUT .gitignore SOURCES ${TARGET_NAME})

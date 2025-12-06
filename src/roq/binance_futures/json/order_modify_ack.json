@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/ModifyOrder",
+  "name": "roq/binance_futures/json/OrderModifyAck",
   "type": "dictionary",
   "values": [
     {

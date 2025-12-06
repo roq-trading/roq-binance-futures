@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/order_trade_update.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +12,9 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_order_trade_update_simple_new", "[json_order_trade_update]") {
+using value_type = json::OrderTradeUpdate;
+
+TEST_CASE("new", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634553049579,)"
@@ -51,42 +51,43 @@ TEST_CASE("json_order_trade_update_simple_new", "[json_order_trade_update]") {
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::OrderTradeUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
-  CHECK(obj.transaction_time == 1634553049579ms);
-  CHECK(obj.event_time == 1634553049581ms);
-  auto &execution_report = obj.execution_report;
-  CHECK(execution_report.symbol == "XRPUSDT"sv);
-  CHECK(execution_report.client_order_id == "mwAC6QMAAQAA1UL7ndIW"sv);
-  CHECK(execution_report.side == json::Side::BUY);
-  CHECK(execution_report.order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
-  CHECK(execution_report.original_quantity == 5.0_a);
-  CHECK(execution_report.original_price == 1.0741_a);
-  CHECK(execution_report.average_price == 0.0_a);
-  CHECK(execution_report.stop_price == 0.0_a);
-  CHECK(execution_report.execution_type == json::ExecutionType::NEW);
-  CHECK(execution_report.order_status == json::OrderStatus::NEW);
-  CHECK(execution_report.order_id == 17761651527);
-  CHECK(execution_report.last_filled_quantity == 0.0_a);
-  CHECK(execution_report.order_filled_accumulated_quantity == 0.0_a);
-  CHECK(execution_report.last_filled_price == 0.0_a);
-  CHECK(execution_report.order_trade_time == 1634553049579ms);
-  CHECK(execution_report.trade_id == 0);
-  CHECK(execution_report.bids_notional == 5.3705_a);
-  CHECK(execution_report.asks_notional == 0.0_a);
-  CHECK(execution_report.is_trade_maker == false);
-  CHECK(execution_report.is_reduce_only == false);
-  CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
-  CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.position_side == json::PositionSide::BOTH);
-  CHECK(execution_report.if_close_all == false);
-  CHECK(execution_report.realized_profit == 0.0_a);
-  // unknown from here
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
+    CHECK(obj.transaction_time == 1634553049579ms);
+    CHECK(obj.event_time == 1634553049581ms);
+    auto &execution_report = obj.execution_report;
+    CHECK(execution_report.symbol == "XRPUSDT"sv);
+    CHECK(execution_report.client_order_id == "mwAC6QMAAQAA1UL7ndIW"sv);
+    CHECK(execution_report.side == json::Side::BUY);
+    CHECK(execution_report.order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
+    CHECK(execution_report.original_quantity == 5.0_a);
+    CHECK(execution_report.original_price == 1.0741_a);
+    CHECK(execution_report.average_price == 0.0_a);
+    CHECK(execution_report.stop_price == 0.0_a);
+    CHECK(execution_report.execution_type == json::ExecutionType::NEW);
+    CHECK(execution_report.order_status == json::OrderStatus::NEW);
+    CHECK(execution_report.order_id == 17761651527);
+    CHECK(execution_report.last_filled_quantity == 0.0_a);
+    CHECK(execution_report.order_filled_accumulated_quantity == 0.0_a);
+    CHECK(execution_report.last_filled_price == 0.0_a);
+    CHECK(execution_report.order_trade_time == 1634553049579ms);
+    CHECK(execution_report.trade_id == 0);
+    CHECK(execution_report.bids_notional == 5.3705_a);
+    CHECK(execution_report.asks_notional == 0.0_a);
+    CHECK(execution_report.is_trade_maker == false);
+    CHECK(execution_report.is_reduce_only == false);
+    CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.position_side == json::PositionSide::BOTH);
+    CHECK(execution_report.if_close_all == false);
+    CHECK(execution_report.realized_profit == 0.0_a);
+    // unknown from here
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
 
-TEST_CASE("json_order_trade_update_simple_canceled", "[json_order_trade_update]") {
+TEST_CASE("canceled", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634561771964,)"
@@ -123,42 +124,43 @@ TEST_CASE("json_order_trade_update_simple_canceled", "[json_order_trade_update]"
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::OrderTradeUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
-  CHECK(obj.transaction_time == 1634561771964ms);
-  CHECK(obj.event_time == 1634561771970ms);
-  auto &execution_report = obj.execution_report;
-  CHECK(execution_report.symbol == "XRPUSDT"sv);
-  CHECK(execution_report.client_order_id == "KQAC6QMAAQAASLsSpNQW"sv);
-  CHECK(execution_report.side == json::Side::BUY);
-  CHECK(execution_report.order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
-  CHECK(execution_report.original_quantity == 5.0_a);
-  CHECK(execution_report.original_price == 1.0667_a);
-  CHECK(execution_report.average_price == 0.0_a);
-  CHECK(execution_report.stop_price == 0.0_a);
-  CHECK(execution_report.execution_type == json::ExecutionType::CANCELED);
-  CHECK(execution_report.order_status == json::OrderStatus::CANCELED);
-  CHECK(execution_report.order_id == 17763431911);
-  CHECK(execution_report.last_filled_quantity == 0.0_a);
-  CHECK(execution_report.order_filled_accumulated_quantity == 0.0_a);
-  CHECK(execution_report.last_filled_price == 0.0_a);
-  CHECK(execution_report.order_trade_time == 1634561771964ms);
-  CHECK(execution_report.trade_id == 0);
-  CHECK(execution_report.bids_notional == 0.0_a);
-  CHECK(execution_report.asks_notional == 0.0_a);
-  CHECK(execution_report.is_trade_maker == false);
-  CHECK(execution_report.is_reduce_only == false);
-  CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
-  CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.position_side == json::PositionSide::BOTH);
-  CHECK(execution_report.if_close_all == false);
-  CHECK(execution_report.realized_profit == 0.0_a);
-  // unknown from here
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
+    CHECK(obj.transaction_time == 1634561771964ms);
+    CHECK(obj.event_time == 1634561771970ms);
+    auto &execution_report = obj.execution_report;
+    CHECK(execution_report.symbol == "XRPUSDT"sv);
+    CHECK(execution_report.client_order_id == "KQAC6QMAAQAASLsSpNQW"sv);
+    CHECK(execution_report.side == json::Side::BUY);
+    CHECK(execution_report.order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
+    CHECK(execution_report.original_quantity == 5.0_a);
+    CHECK(execution_report.original_price == 1.0667_a);
+    CHECK(execution_report.average_price == 0.0_a);
+    CHECK(execution_report.stop_price == 0.0_a);
+    CHECK(execution_report.execution_type == json::ExecutionType::CANCELED);
+    CHECK(execution_report.order_status == json::OrderStatus::CANCELED);
+    CHECK(execution_report.order_id == 17763431911);
+    CHECK(execution_report.last_filled_quantity == 0.0_a);
+    CHECK(execution_report.order_filled_accumulated_quantity == 0.0_a);
+    CHECK(execution_report.last_filled_price == 0.0_a);
+    CHECK(execution_report.order_trade_time == 1634561771964ms);
+    CHECK(execution_report.trade_id == 0);
+    CHECK(execution_report.bids_notional == 0.0_a);
+    CHECK(execution_report.asks_notional == 0.0_a);
+    CHECK(execution_report.is_trade_maker == false);
+    CHECK(execution_report.is_reduce_only == false);
+    CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.position_side == json::PositionSide::BOTH);
+    CHECK(execution_report.if_close_all == false);
+    CHECK(execution_report.realized_profit == 0.0_a);
+    // unknown from here
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
 
-TEST_CASE("json_order_trade_update_simple_filled_maker", "[json_order_trade_update]") {
+TEST_CASE("filled_maker", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634812374563,)"
@@ -197,44 +199,45 @@ TEST_CASE("json_order_trade_update_simple_filled_maker", "[json_order_trade_upda
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::OrderTradeUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
-  CHECK(obj.transaction_time == 1634812374563ms);
-  CHECK(obj.event_time == 1634812374567ms);
-  auto &execution_report = obj.execution_report;
-  CHECK(execution_report.symbol == "XRPUSDT"sv);
-  CHECK(execution_report.client_order_id == "-gAC6QMAAQAAYIZV_g4X"sv);
-  CHECK(execution_report.side == json::Side::SELL);
-  CHECK(execution_report.order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
-  CHECK(execution_report.original_quantity == 5.0_a);
-  CHECK(execution_report.original_price == 1.1583_a);
-  CHECK(execution_report.average_price == 1.1583_a);
-  CHECK(execution_report.stop_price == 0.0_a);
-  CHECK(execution_report.execution_type == json::ExecutionType::TRADE);
-  CHECK(execution_report.order_status == json::OrderStatus::FILLED);
-  CHECK(execution_report.order_id == 17803846427);
-  CHECK(execution_report.last_filled_quantity == 5.0_a);
-  CHECK(execution_report.order_filled_accumulated_quantity == 5.0_a);
-  CHECK(execution_report.last_filled_price == 1.1583_a);
-  CHECK(execution_report.commission == 0.00115829_a);
-  CHECK(execution_report.commission_asset == "USDT"sv);
-  CHECK(execution_report.order_trade_time == 1634812374563ms);
-  CHECK(execution_report.trade_id == 673747843);
-  CHECK(execution_report.bids_notional == 0.0_a);
-  CHECK(execution_report.asks_notional == 0.0_a);
-  CHECK(execution_report.is_trade_maker == true);  // note!
-  CHECK(execution_report.is_reduce_only == false);
-  CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
-  CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.position_side == json::PositionSide::BOTH);
-  CHECK(execution_report.if_close_all == false);
-  CHECK(execution_report.realized_profit == 0.0_a);
-  // unknown from here
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
+    CHECK(obj.transaction_time == 1634812374563ms);
+    CHECK(obj.event_time == 1634812374567ms);
+    auto &execution_report = obj.execution_report;
+    CHECK(execution_report.symbol == "XRPUSDT"sv);
+    CHECK(execution_report.client_order_id == "-gAC6QMAAQAAYIZV_g4X"sv);
+    CHECK(execution_report.side == json::Side::SELL);
+    CHECK(execution_report.order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
+    CHECK(execution_report.original_quantity == 5.0_a);
+    CHECK(execution_report.original_price == 1.1583_a);
+    CHECK(execution_report.average_price == 1.1583_a);
+    CHECK(execution_report.stop_price == 0.0_a);
+    CHECK(execution_report.execution_type == json::ExecutionType::TRADE);
+    CHECK(execution_report.order_status == json::OrderStatus::FILLED);
+    CHECK(execution_report.order_id == 17803846427);
+    CHECK(execution_report.last_filled_quantity == 5.0_a);
+    CHECK(execution_report.order_filled_accumulated_quantity == 5.0_a);
+    CHECK(execution_report.last_filled_price == 1.1583_a);
+    CHECK(execution_report.commission == 0.00115829_a);
+    CHECK(execution_report.commission_asset == "USDT"sv);
+    CHECK(execution_report.order_trade_time == 1634812374563ms);
+    CHECK(execution_report.trade_id == 673747843);
+    CHECK(execution_report.bids_notional == 0.0_a);
+    CHECK(execution_report.asks_notional == 0.0_a);
+    CHECK(execution_report.is_trade_maker == true);  // note!
+    CHECK(execution_report.is_reduce_only == false);
+    CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.position_side == json::PositionSide::BOTH);
+    CHECK(execution_report.if_close_all == false);
+    CHECK(execution_report.realized_profit == 0.0_a);
+    // unknown from here
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
 
-TEST_CASE("json_order_trade_update_simple_filled_taker", "[json_order_trade_update]") {
+TEST_CASE("filled_taker", "[json_order_trade_update]") {
   auto message = R"({)"
                  R"("e":"ORDER_TRADE_UPDATE",)"
                  R"("T":1634814520988,)"
@@ -273,39 +276,40 @@ TEST_CASE("json_order_trade_update_simple_filled_taker", "[json_order_trade_upda
                  R"("ss":0)"
                  R"(})"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::OrderTradeUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
-  CHECK(obj.transaction_time == 1634814520988ms);
-  CHECK(obj.event_time == 1634814520998ms);
-  auto &execution_report = obj.execution_report;
-  CHECK(execution_report.symbol == "XRPUSDT"sv);
-  CHECK(execution_report.client_order_id == "mwAC6QMAAQAAH6jkfg8X"sv);
-  CHECK(execution_report.side == json::Side::BUY);
-  CHECK(execution_report.order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
-  CHECK(execution_report.original_quantity == 10.0_a);
-  CHECK(execution_report.original_price == 1.1559_a);
-  CHECK(execution_report.average_price == 1.1559_a);
-  CHECK(execution_report.stop_price == 0.0_a);
-  CHECK(execution_report.execution_type == json::ExecutionType::TRADE);
-  CHECK(execution_report.order_status == json::OrderStatus::FILLED);
-  CHECK(execution_report.order_id == 17804214275);
-  CHECK(execution_report.last_filled_quantity == 10.0_a);
-  CHECK(execution_report.order_filled_accumulated_quantity == 10.0_a);
-  CHECK(execution_report.last_filled_price == 1.1559_a);
-  CHECK(execution_report.commission == 0.00462360_a);
-  CHECK(execution_report.commission_asset == "USDT"sv);
-  CHECK(execution_report.order_trade_time == 1634814520988ms);
-  CHECK(execution_report.trade_id == 673771916);
-  CHECK(execution_report.bids_notional == 0.0_a);
-  CHECK(execution_report.asks_notional == 0.0_a);
-  CHECK(execution_report.is_trade_maker == false);  // note!
-  CHECK(execution_report.is_reduce_only == false);
-  CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
-  CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
-  CHECK(execution_report.position_side == json::PositionSide::BOTH);
-  CHECK(execution_report.if_close_all == false);
-  CHECK(execution_report.realized_profit == 0.0095_a);
-  // unknown from here
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::ORDER_TRADE_UPDATE);
+    CHECK(obj.transaction_time == 1634814520988ms);
+    CHECK(obj.event_time == 1634814520998ms);
+    auto &execution_report = obj.execution_report;
+    CHECK(execution_report.symbol == "XRPUSDT"sv);
+    CHECK(execution_report.client_order_id == "mwAC6QMAAQAAH6jkfg8X"sv);
+    CHECK(execution_report.side == json::Side::BUY);
+    CHECK(execution_report.order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.time_in_force == json::TimeInForce::GTC);
+    CHECK(execution_report.original_quantity == 10.0_a);
+    CHECK(execution_report.original_price == 1.1559_a);
+    CHECK(execution_report.average_price == 1.1559_a);
+    CHECK(execution_report.stop_price == 0.0_a);
+    CHECK(execution_report.execution_type == json::ExecutionType::TRADE);
+    CHECK(execution_report.order_status == json::OrderStatus::FILLED);
+    CHECK(execution_report.order_id == 17804214275);
+    CHECK(execution_report.last_filled_quantity == 10.0_a);
+    CHECK(execution_report.order_filled_accumulated_quantity == 10.0_a);
+    CHECK(execution_report.last_filled_price == 1.1559_a);
+    CHECK(execution_report.commission == 0.00462360_a);
+    CHECK(execution_report.commission_asset == "USDT"sv);
+    CHECK(execution_report.order_trade_time == 1634814520988ms);
+    CHECK(execution_report.trade_id == 673771916);
+    CHECK(execution_report.bids_notional == 0.0_a);
+    CHECK(execution_report.asks_notional == 0.0_a);
+    CHECK(execution_report.is_trade_maker == false);  // note!
+    CHECK(execution_report.is_reduce_only == false);
+    CHECK(execution_report.stop_price_working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(execution_report.original_order_type == json::OrderType::LIMIT);
+    CHECK(execution_report.position_side == json::PositionSide::BOTH);
+    CHECK(execution_report.if_close_all == false);
+    CHECK(execution_report.realized_profit == 0.0095_a);
+    // unknown from here
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/depth.hpp"
+#include "roq/binance_futures/json/depth_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,8 +14,10 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
+using value_type = json::DepthAck;
+
 // note! truncated
-TEST_CASE("json_depth_simple_coin_m", "[json_depth]") {
+TEST_CASE("coin_m", "[json_depth_ack]") {
   auto message = R"({)"
                  R"("lastUpdateId":300700442819,)"
                  R"("E":1640249388590,)"
@@ -31,6 +33,11 @@ TEST_CASE("json_depth_simple_coin_m", "[json_depth]") {
                  R"(["49498.8","7"])"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  [[maybe_unused]] json::Depth obj{message, buffer};
+  auto helper = [&](value_type &obj) {
+    CHECK(obj.last_update_id == 300700442819);
+    CHECK(obj.message_output_time == 1640249388590ms);
+  };
+  core::json::BufferStack buffers{8192, 1};
+  value_type obj{message, buffers};
+  helper(obj);
 }

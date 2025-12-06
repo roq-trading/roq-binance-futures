@@ -85,16 +85,16 @@ bool WSAPIParser2::dispatch(
       dispatch_helper<WSAPITrades>(handler, message, buffer_stack, trace_info);
       return true;
     case OPEN_ORDERS_CANCEL_ALL:
-      dispatch_helper<WSAPICancelOpenOrders>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIOpenOrdersCancelAll>(handler, message, buffer_stack, trace_info, request);
       return true;
     case ORDER_PLACE:
       dispatch_helper<WSAPIOrderPlace>(handler, message, buffer_stack, trace_info, request);
       return true;
     case ORDER_MODIFY:
-      dispatch_helper<WSAPIModifyOrder>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIOrderModify>(handler, message, buffer_stack, trace_info, request);
       return true;
     case ORDER_CANCEL:
-      dispatch_helper<WSAPICancelOrder>(handler, message, buffer_stack, trace_info, request);
+      dispatch_helper<WSAPIOrderCancel>(handler, message, buffer_stack, trace_info, request);
       return true;
   }
   log::fatal(R"(Unexpected: message="{}")"sv, message);

@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/depth_update.hpp"
+#include "market_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +12,9 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_depth_update_simple_coin_m", "[json_depth_update]") {
+using value_type = json::DepthUpdate;
+
+TEST_CASE("coin_m", "[json_depth_update]") {
   auto message = R"({)"
                  R"("e":"depthUpdate",)"
                  R"("E":1640247455980,)"
@@ -38,6 +38,9 @@ TEST_CASE("json_depth_update_simple_coin_m", "[json_depth_update]") {
                  R"(["49527.2","74"])"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  [[maybe_unused]] json::DepthUpdate obj{message, buffer};
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::DEPTH_UPDATE);
+    CHECK(obj.event_time == 1640247455980ms);
+  };
+  MarketStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

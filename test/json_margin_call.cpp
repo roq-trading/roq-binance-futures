@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/margin_call.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +12,9 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
+using value_type = json::MarginCall;
+
+TEST_CASE("online_example", "[json_margin_call]") {
   auto message = R"({)"
                  R"("e":"MARGIN_CALL",)"
                  R"("E":1587727187525,)"
@@ -31,13 +31,14 @@ TEST_CASE("json_margin_call_online_example", "[json_margin_call]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::MarginCall obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::MARGIN_CALL);
-  CHECK(obj.event_time == 1587727187525ms);
-  CHECK(obj.cross_wallet_balance == 3.16812045_a);
-  auto &positions = obj.positions;
-  REQUIRE(std::size(positions) == 1);
-  auto &position_0 = positions[0];
-  CHECK(position_0.symbol == "ETHUSDT"sv);
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::MARGIN_CALL);
+    CHECK(obj.event_time == 1587727187525ms);
+    CHECK(obj.cross_wallet_balance == 3.16812045_a);
+    auto &positions = obj.positions;
+    REQUIRE(std::size(positions) == 1);
+    auto &position_0 = positions[0];
+    CHECK(position_0.symbol == "ETHUSDT"sv);
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

@@ -3,9 +3,8 @@
 #include <catch2/catch_all.hpp>
 
 #include "roq/core/json/buffer_stack.hpp"
-#include "roq/core/json/parser.hpp"
 
-#include "roq/binance_futures/json/exchange_info.hpp"
+#include "roq/binance_futures/json/exchange_info_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -15,8 +14,10 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
+using value_type = json::ExchangeInfoAck;
+
 // note: symbols heavily truncated
-TEST_CASE("json_exchange_info_simple_usd_m", "[json_exchange_info]") {
+TEST_CASE("usd_m", "[json_exchange_info_ack]") {
   auto message = R"({)"
                  R"("timezone":"UTC",)"
                  R"("serverTime":1634122324532,)"
@@ -124,91 +125,94 @@ TEST_CASE("json_exchange_info_simple_usd_m", "[json_exchange_info]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{65536, 2};
-  json::ExchangeInfo obj{message, buffer};
-  CHECK(obj.timezone == "UTC"sv);
-  CHECK(obj.server_time == 1634122324532ms);
-  CHECK(obj.futures_type == "U_MARGINED"sv);
-  // not parsed: rate_limits
-  // not parsed: exchange_filters
-  auto &assets = obj.assets;
-  REQUIRE(std::size(assets) == 5);
-  auto &asset_0 = assets[0];
-  CHECK(asset_0.asset == "USDT"sv);
-  CHECK(asset_0.margin_available == true);
-  CHECK(asset_0.auto_asset_exchange == -10000.0_a);
-  auto &asset_1 = assets[1];
-  CHECK(asset_1.asset == "BTC"sv);
-  CHECK(asset_1.margin_available == true);
-  CHECK(asset_1.auto_asset_exchange == -0.001_a);
-  auto &asset_2 = assets[2];
-  CHECK(asset_2.asset == "BNB"sv);
-  CHECK(asset_2.margin_available == true);
-  CHECK(asset_2.auto_asset_exchange == -10.0_a);
-  auto &asset_3 = assets[3];
-  CHECK(asset_3.asset == "ETH"sv);
-  CHECK(asset_3.margin_available == true);
-  CHECK(asset_3.auto_asset_exchange == -5.0_a);
-  auto &asset_4 = assets[4];
-  CHECK(asset_4.asset == "BUSD"sv);
-  CHECK(asset_4.margin_available == true);
-  CHECK(asset_4.auto_asset_exchange == -10000.0_a);
-  auto &symbols = obj.symbols;
-  REQUIRE(std::size(symbols) == 2);
-  auto &symbol_0 = symbols[0];
-  CHECK(symbol_0.symbol == "BTCUSDT"sv);
-  CHECK(symbol_0.pair == "BTCUSDT"sv);
-  CHECK(symbol_0.contract_type == json::ContractType::PERPETUAL);
-  CHECK(symbol_0.delivery_date == 4133404800000ms);
-  CHECK(symbol_0.onboard_date == 1569398400000ms);
-  CHECK(symbol_0.status == json::SymbolStatus::TRADING);
-  CHECK(symbol_0.maint_margin_percent == 2.5_a);
-  CHECK(symbol_0.required_margin_percent == 5.0_a);
-  CHECK(symbol_0.base_asset == "BTC"sv);
-  CHECK(symbol_0.quote_asset == "USDT"sv);
-  CHECK(symbol_0.margin_asset == "USDT"sv);
-  CHECK(symbol_0.price_precision == 2);
-  CHECK(symbol_0.quantity_precision == 3);
-  CHECK(symbol_0.base_asset_precision == 8);
-  CHECK(symbol_0.quote_precision == 8);
-  CHECK(symbol_0.underlying_type == "COIN"sv);
-  // not parsed: underlying_sub_type
-  CHECK(symbol_0.settle_plan == 0);
-  CHECK(symbol_0.trigger_protect == 0.05_a);
-  CHECK(symbol_0.liquidation_fee == 0.015_a);
-  CHECK(symbol_0.market_take_bound == 0.05_a);
-  // not parsed: filters
-  // not parsed: order_type
-  // not parsed: time_in_force
-  auto &symbol_1 = symbols[1];
-  CHECK(symbol_1.symbol == "ETHUSDT"sv);
-  CHECK(symbol_1.pair == "ETHUSDT"sv);
-  CHECK(symbol_1.contract_type == json::ContractType::PERPETUAL);
-  CHECK(symbol_1.delivery_date == 4133404800000ms);
-  CHECK(symbol_1.onboard_date == 1569398400000ms);
-  CHECK(symbol_1.status == json::SymbolStatus::TRADING);
-  CHECK(symbol_1.maint_margin_percent == 2.5_a);
-  CHECK(symbol_1.required_margin_percent == 5.0_a);
-  CHECK(symbol_1.base_asset == "ETH"sv);
-  CHECK(symbol_1.quote_asset == "USDT"sv);
-  CHECK(symbol_1.margin_asset == "USDT"sv);
-  CHECK(symbol_1.price_precision == 2);
-  CHECK(symbol_1.quantity_precision == 3);
-  CHECK(symbol_1.base_asset_precision == 8);
-  CHECK(symbol_1.quote_precision == 8);
-  CHECK(symbol_1.underlying_type == "COIN"sv);
-  // not parsed: underlying_sub_type
-  CHECK(symbol_1.settle_plan == 0);
-  CHECK(symbol_1.trigger_protect == 0.05_a);
-  CHECK(symbol_1.liquidation_fee == 0.01_a);
-  CHECK(symbol_1.market_take_bound == 0.05_a);
-  // not parsed: filters
-  // not parsed: order_type
-  // not parsed: time_in_force
+  auto helper = [&](value_type &obj) {
+    CHECK(obj.timezone == "UTC"sv);
+    CHECK(obj.server_time == 1634122324532ms);
+    CHECK(obj.futures_type == "U_MARGINED"sv);
+    // not parsed: rate_limits
+    // not parsed: exchange_filters
+    auto &assets = obj.assets;
+    REQUIRE(std::size(assets) == 5);
+    auto &asset_0 = assets[0];
+    CHECK(asset_0.asset == "USDT"sv);
+    CHECK(asset_0.margin_available == true);
+    CHECK(asset_0.auto_asset_exchange == -10000.0_a);
+    auto &asset_1 = assets[1];
+    CHECK(asset_1.asset == "BTC"sv);
+    CHECK(asset_1.margin_available == true);
+    CHECK(asset_1.auto_asset_exchange == -0.001_a);
+    auto &asset_2 = assets[2];
+    CHECK(asset_2.asset == "BNB"sv);
+    CHECK(asset_2.margin_available == true);
+    CHECK(asset_2.auto_asset_exchange == -10.0_a);
+    auto &asset_3 = assets[3];
+    CHECK(asset_3.asset == "ETH"sv);
+    CHECK(asset_3.margin_available == true);
+    CHECK(asset_3.auto_asset_exchange == -5.0_a);
+    auto &asset_4 = assets[4];
+    CHECK(asset_4.asset == "BUSD"sv);
+    CHECK(asset_4.margin_available == true);
+    CHECK(asset_4.auto_asset_exchange == -10000.0_a);
+    auto &symbols = obj.symbols;
+    REQUIRE(std::size(symbols) == 2);
+    auto &symbol_0 = symbols[0];
+    CHECK(symbol_0.symbol == "BTCUSDT"sv);
+    CHECK(symbol_0.pair == "BTCUSDT"sv);
+    CHECK(symbol_0.contract_type == json::ContractType::PERPETUAL);
+    CHECK(symbol_0.delivery_date == 4133404800000ms);
+    CHECK(symbol_0.onboard_date == 1569398400000ms);
+    CHECK(symbol_0.status == json::SymbolStatus::TRADING);
+    CHECK(symbol_0.maint_margin_percent == 2.5_a);
+    CHECK(symbol_0.required_margin_percent == 5.0_a);
+    CHECK(symbol_0.base_asset == "BTC"sv);
+    CHECK(symbol_0.quote_asset == "USDT"sv);
+    CHECK(symbol_0.margin_asset == "USDT"sv);
+    CHECK(symbol_0.price_precision == 2);
+    CHECK(symbol_0.quantity_precision == 3);
+    CHECK(symbol_0.base_asset_precision == 8);
+    CHECK(symbol_0.quote_precision == 8);
+    CHECK(symbol_0.underlying_type == "COIN"sv);
+    // not parsed: underlying_sub_type
+    CHECK(symbol_0.settle_plan == 0);
+    CHECK(symbol_0.trigger_protect == 0.05_a);
+    CHECK(symbol_0.liquidation_fee == 0.015_a);
+    CHECK(symbol_0.market_take_bound == 0.05_a);
+    // not parsed: filters
+    // not parsed: order_type
+    // not parsed: time_in_force
+    auto &symbol_1 = symbols[1];
+    CHECK(symbol_1.symbol == "ETHUSDT"sv);
+    CHECK(symbol_1.pair == "ETHUSDT"sv);
+    CHECK(symbol_1.contract_type == json::ContractType::PERPETUAL);
+    CHECK(symbol_1.delivery_date == 4133404800000ms);
+    CHECK(symbol_1.onboard_date == 1569398400000ms);
+    CHECK(symbol_1.status == json::SymbolStatus::TRADING);
+    CHECK(symbol_1.maint_margin_percent == 2.5_a);
+    CHECK(symbol_1.required_margin_percent == 5.0_a);
+    CHECK(symbol_1.base_asset == "ETH"sv);
+    CHECK(symbol_1.quote_asset == "USDT"sv);
+    CHECK(symbol_1.margin_asset == "USDT"sv);
+    CHECK(symbol_1.price_precision == 2);
+    CHECK(symbol_1.quantity_precision == 3);
+    CHECK(symbol_1.base_asset_precision == 8);
+    CHECK(symbol_1.quote_precision == 8);
+    CHECK(symbol_1.underlying_type == "COIN"sv);
+    // not parsed: underlying_sub_type
+    CHECK(symbol_1.settle_plan == 0);
+    CHECK(symbol_1.trigger_protect == 0.05_a);
+    CHECK(symbol_1.liquidation_fee == 0.01_a);
+    CHECK(symbol_1.market_take_bound == 0.05_a);
+    // not parsed: filters
+    // not parsed: order_type
+    // not parsed: time_in_force
+  };
+  core::json::BufferStack buffers{65536, 2};
+  value_type obj{message, buffers};
+  helper(obj);
 }
 
 // note: symbols heavily truncated
-TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
+TEST_CASE("coin_m", "[json_exchange_info_ack]") {
   auto message = R"({)"
                  R"("timezone":"UTC",)"
                  R"("serverTime":1640230201523,)"
@@ -301,6 +305,11 @@ TEST_CASE("json_exchange_info_simple_coin_m", "[json_exchange_info]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{65536, 2};
-  [[maybe_unused]] json::ExchangeInfo obj{message, buffer};
+  auto helper = [&](value_type &obj) {
+    CHECK(obj.timezone == "UTC"sv);
+    CHECK(obj.server_time == 1640230201523ms);
+  };
+  core::json::BufferStack buffers{65536, 2};
+  value_type obj{message, buffers};
+  helper(obj);
 }

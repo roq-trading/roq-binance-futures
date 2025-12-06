@@ -94,6 +94,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void order_cancel(Event<CancelOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
 
   // web::socket::Client::Handler
+
   void operator()(web::socket::Client::Connected const &) override;
   void operator()(web::socket::Client::Disconnected const &) override;
   void operator()(web::socket::Client::Ready const &) override;
@@ -110,6 +111,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void parse(std::string_view const &message);
 
   // json::WSAPIParser2::Handler
+
   void operator()(Trace<json::WSAPISessionLogon> const &) override;
   void operator()(Trace<json::WSAPIListenKey> const &) override;
   void operator()(Trace<json::WSAPIAccountBalance> const &) override;
@@ -117,10 +119,10 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void operator()(Trace<json::WSAPIAccountPosition> const &) override;
   void operator()(Trace<json::WSAPIOpenOrders> const &) override;
   void operator()(Trace<json::WSAPITrades> const &) override;
-  void operator()(Trace<json::WSAPICancelOpenOrders> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOrderPlace> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIModifyOrder> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPICancelOrder> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIOrderModify> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<json::WSAPIOrderCancel> const &, json::WSAPIRequest const &) override;
 
   void update_rate_limits(auto &event);
 

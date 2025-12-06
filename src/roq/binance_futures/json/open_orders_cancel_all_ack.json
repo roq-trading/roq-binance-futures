@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/CancelAllOpenOrders",
+  "name": "roq/binance_futures/json/OpenOrdersCancelAllAck",
   "type": "dictionary",
   "values": [
     {

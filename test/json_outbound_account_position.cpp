@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/outbound_account_position.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -13,6 +11,8 @@ using namespace std::literals;
 using namespace std::chrono_literals;
 
 using namespace Catch::literals;
+
+using value_type = json::OutboundAccountPosition;
 
 TEST_CASE("simple", "[json_outbound_account_position]") {
   auto message = R"({)"
@@ -27,8 +27,9 @@ TEST_CASE("simple", "[json_outbound_account_position]") {
                  R"(})"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffer{8192, 2};
-  json::OutboundAccountPosition obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::OUTBOUND_ACCOUNT_POSITION);
-  REQUIRE(std::size(obj.balances) == 1);
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::OUTBOUND_ACCOUNT_POSITION);
+    CHECK(obj.event_time == 1758021107347ms);
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

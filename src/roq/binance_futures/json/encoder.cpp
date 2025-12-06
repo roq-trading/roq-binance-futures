@@ -44,7 +44,7 @@ std::string_view Encoder::trades(
 
 // new
 
-std::string_view Encoder::new_order(
+std::string_view Encoder::order_place(
     std::vector<char> &buffer,
     CreateOrder const &create_order,
     server::oms::Order const &order,
@@ -99,7 +99,7 @@ std::string_view Encoder::new_order(
   return result;
 }
 
-std::string_view Encoder::new_order_ws_url(
+std::string_view Encoder::order_place_ws_url(
     std::vector<char> &buffer,
     CreateOrder const &create_order,
     server::oms::Order const &order,
@@ -135,7 +135,7 @@ std::string_view Encoder::new_order_ws_url(
   return writer.finish();
 }
 
-std::string_view Encoder::new_order_ws_json(
+std::string_view Encoder::order_place_ws_json(
     std::vector<char> &buffer,
     CreateOrder const &create_order,
     server::oms::Order const &order,
@@ -171,17 +171,17 @@ std::string_view Encoder::new_order_ws_json(
 
 // modify
 
-std::string_view Encoder::modify_order(
+std::string_view Encoder::order_modify(
     std::vector<char> &buffer,
     roq::ModifyOrder const &modify_order,
     server::oms::Order const &order,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
-    bool modify_order_full) {
+    bool order_modify_full) {
   buffer.clear();
   auto side = map(order.side).template get<Side>();
-  if (modify_order_full) {  // fapi
+  if (order_modify_full) {  // fapi
     auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
     auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
     fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
@@ -244,7 +244,7 @@ std::string_view Encoder::modify_order(
   return result;
 }
 
-std::string_view Encoder::modify_order_ws_url(
+std::string_view Encoder::order_modify_ws_url(
     std::vector<char> &buffer,
     roq::ModifyOrder const &modify_order,
     server::oms::Order const &order,
@@ -276,7 +276,7 @@ std::string_view Encoder::modify_order_ws_url(
   return writer.finish();
 }
 
-std::string_view Encoder::modify_order_ws_json(
+std::string_view Encoder::order_modify_ws_json(
     std::vector<char> &buffer,
     roq::ModifyOrder const &modify_order,
     server::oms::Order const &order,
@@ -310,7 +310,7 @@ std::string_view Encoder::modify_order_ws_json(
 
 // cancel
 
-std::string_view Encoder::cancel_order(
+std::string_view Encoder::order_cancel(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
@@ -328,7 +328,7 @@ std::string_view Encoder::cancel_order(
   return result;
 }
 
-std::string_view Encoder::cancel_order_ws_url(
+std::string_view Encoder::order_cancel_ws_url(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
@@ -352,7 +352,7 @@ std::string_view Encoder::cancel_order_ws_url(
   return writer.finish();
 }
 
-std::string_view Encoder::cancel_order_ws_json(
+std::string_view Encoder::order_cancel_ws_json(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
@@ -376,7 +376,7 @@ std::string_view Encoder::cancel_order_ws_json(
   return writer.finish();
 }
 
-std::string_view Encoder::cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
+std::string_view Encoder::open_orders_cancel_all(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -388,7 +388,7 @@ std::string_view Encoder::cancel_all_open_orders(std::vector<char> &buffer, std:
   return result;
 }
 
-std::string_view Encoder::countdown_cancel_all_open_orders(
+std::string_view Encoder::countdown_cancel_open_orders(
     std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(

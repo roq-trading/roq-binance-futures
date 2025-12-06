@@ -4,7 +4,7 @@
   "values": [
     {
       "name": "data",
-      "type": "roq/binance_futures/json/KlineAckItem",
+      "type": "roq/binance_futures/json/KlineAckDataItem",
       "array": "std/span"
     }
   ]

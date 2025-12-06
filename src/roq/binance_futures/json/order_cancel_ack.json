@@ -1,5 +1,5 @@
 {
-  "name": "roq/binance_futures/json/NewOrder",
+  "name": "roq/binance_futures/json/OrderCancelAck",
   "type": "dictionary",
   "values": [
     {
@@ -9,11 +9,6 @@
     {
       "name": "symbol",
       "type": "std/string_view"
-    },
-    {
-      "name": "pair",
-      "type": "std/string_view",
-      "comment": "COIN-M"
     },
     {
       "name": "status",
@@ -46,11 +41,6 @@
     {
       "name": "cumQuote",
       "type": "std/double"
-    },
-    {
-      "name": "cumBase",
-      "type": "std/double",
-      "comment": "COIN-M"
     },
     {
       "name": "timeInForce",
@@ -108,6 +98,14 @@
       "name": "goodTillDate",
       "type": "std/milliseconds",
       "comment": "XXX 20231206 not sure about milliseconds"
+    },
+    {
+      "name": "cumBase",
+      "type": "std/double"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view"
     }
   ]
 }

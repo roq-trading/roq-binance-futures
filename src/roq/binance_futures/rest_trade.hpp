@@ -26,10 +26,10 @@
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
 
-#include "roq/binance_futures/json/account.hpp"
-#include "roq/binance_futures/json/balance.hpp"
-#include "roq/binance_futures/json/open_orders.hpp"
-#include "roq/binance_futures/json/trades.hpp"
+#include "roq/binance_futures/json/account_balance_ack.hpp"
+#include "roq/binance_futures/json/account_status_ack.hpp"
+#include "roq/binance_futures/json/open_orders_ack.hpp"
+#include "roq/binance_futures/json/trades_ack.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -65,6 +65,7 @@ struct RestTrade final : public web::rest::Client::Handler {
 
  protected:
   // web::rest::Client::Handler
+
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
@@ -74,21 +75,31 @@ struct RestTrade final : public web::rest::Client::Handler {
 
   void operator()(ConnectionStatus);
 
-  void get_balance();
-  void get_balance_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::Balance> const &);
+  // account-balance
 
-  void get_account();
-  void get_account_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::Account> const &);
+  void get_account_balance();
+  void get_account_balance_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<json::AccountBalanceAck> const &);
+
+  // account-status
+
+  void get_account_status();
+  void get_account_status_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<json::AccountStatusAck> const &);
+
+  // open-orders
 
   void get_open_orders();
   void get_open_orders_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::OpenOrders> const &);
+  void operator()(Trace<json::OpenOrdersAck> const &);
+
+  // trades
 
   void get_trades();
   void get_trades_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::Trades> const &);
+  void operator()(Trace<json::TradesAck> const &);
+
+  // helpers
 
   void process_response(web::rest::Response const &, auto error_handler, auto success_handler);
 
@@ -114,10 +125,10 @@ struct RestTrade final : public web::rest::Client::Handler {
   } counter_;
   struct {
     utils::metrics::Profile  //
-        balance,
-        balance_ack,                   //
-        account, account_ack,          //
-        open_orders, open_orders_ack,  //
+        account_balance,
+        account_balance_ack,                 //
+        account_status, account_status_ack,  //
+        open_orders, open_orders_ack,        //
         trades, trades_ack;
   } profile_;
   struct {

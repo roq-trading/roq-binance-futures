@@ -298,8 +298,8 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
       if (download_.skip(sequence, STATE)) {
         log::info("Download state={} has already been processed"sv, STATE);
       } else {
-        json::ExchangeInfo exchange_info{body, decode_buffer_};
-        Trace event_2{event, exchange_info};
+        json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
+        Trace event_2{event, exchange_info_ack};
         (*this)(event_2);
         download_.check(STATE);
       }
@@ -308,11 +308,11 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
   });
 }
 
-void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
-  auto &[trace_info, exchange_info] = event;
-  log::info<2>("exchange_info={}"sv, exchange_info);
+void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
+  auto &[trace_info, exchange_info_ack] = event;
+  log::info<2>("exchange_info_ack={}"sv, exchange_info_ack);
   // rate-limits
-  for (auto &item : exchange_info.rate_limits) {
+  for (auto &item : exchange_info_ack.rate_limits) {
     log::info<2>("item={}"sv, item);
     if (item.rate_limit_type == json::RateLimitType::REQUEST_WEIGHT) {
       if (item.interval == json::Interval::MINUTE && item.interval_num == 1) {
@@ -331,7 +331,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
   // symbols
   std::vector<Symbol> symbols;
   size_t counter = {};
-  for (auto const &item : exchange_info.symbols) {
+  for (auto const &item : exchange_info_ack.symbols) {
     log::info<2>("item={}"sv, item);
     auto discard = shared_.discard_symbol(item.symbol);
     // fall-back values
@@ -415,7 +415,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .expiry_datetime_utc = {},
         .exchange_time_utc = {},
         .exchange_sequence = {},
-        .sending_time_utc = exchange_info.server_time,
+        .sending_time_utc = exchange_info_ack.server_time,
         .discard = discard,
     };
     create_trace_and_dispatch(handler_, trace_info, reference_data, false);
@@ -440,11 +440,11 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .trading_status = json::trading_status_helper(item.status, item.contract_status),
         .exchange_time_utc = {},
         .exchange_sequence = {},
-        .sending_time_utc = exchange_info.server_time,
+        .sending_time_utc = exchange_info_ack.server_time,
     };
     create_trace_and_dispatch(handler_, trace_info, market_status, true);
   }
-  log::info("Exchange info: including symbols {}/{}"sv, counter, std::size(exchange_info.symbols));
+  log::info("Exchange info: including symbols {}/{}"sv, counter, std::size(exchange_info_ack.symbols));
   if (!std::empty(symbols)) {
     auto symbols_update = SymbolsUpdate{
         .symbols = symbols,
@@ -484,18 +484,18 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
       // XXX WHAT ???
     };
     auto handle_success = [&](auto &body) {
-      json::Depth depth{body, decode_buffer_};
-      Trace event_2{event, depth};
+      json::DepthAck depth_ack{body, decode_buffer_};
+      Trace event_2{event, depth_ack};
       (*this)(event_2, symbol);
     };
     process_response(event, handle_error, handle_success);
   });
 }
 
-void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &symbol) {
-  auto &[trace_info, depth] = event;
-  log::info<4>("depth={}"sv, depth);
-  auto sequence = depth.last_update_id;
+void Rest::operator()(Trace<json::DepthAck> const &event, std::string_view const &symbol) {
+  auto &[trace_info, depth_ack] = event;
+  log::info<4>("depth_ack={}"sv, depth_ack);
+  auto sequence = depth_ack.last_update_id;
   auto &instrument = shared_.get_instrument(symbol);
   auto &sequencer = instrument.sequencer;
   auto &mbp = shared_.get_mbp();
@@ -510,10 +510,10 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
     };
     result.emplace_back(std::move(mbp_update));
   };
-  for (auto &item : depth.bids) {
+  for (auto &item : depth_ack.bids) {
     emplace_back(mbp.bids, item);
   }
-  for (auto &item : depth.asks) {
+  for (auto &item : depth_ack.asks) {
     emplace_back(mbp.asks, item);
   }
   try {
@@ -531,9 +531,9 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
           .bids = bids,
           .asks = asks,
           .update_type = UpdateType::SNAPSHOT,
-          .exchange_time_utc = depth.transaction_time,
+          .exchange_time_utc = depth_ack.transaction_time,
           .exchange_sequence = sequencer.last_sequence(),
-          .sending_time_utc = depth.message_output_time,
+          .sending_time_utc = depth_ack.message_output_time,
           .price_precision = {},
           .quantity_precision = {},
           .checksum = {},

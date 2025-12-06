@@ -2,9 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/binance_futures/json/balance_update.hpp"
+#include "user_stream_parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -13,6 +11,8 @@ using namespace std::literals;
 using namespace std::chrono_literals;
 
 using namespace Catch::literals;
+
+using value_type = json::BalanceUpdate;
 
 TEST_CASE("simple", "[json_balance_update]") {
   auto message = R"({)"
@@ -23,7 +23,9 @@ TEST_CASE("simple", "[json_balance_update]") {
                  R"("U":2239237878416,)"
                  R"("T":1758021107347)"
                  R"(})";
-  core::json::BufferStack buffer{8192, 1};
-  json::BalanceUpdate obj{message, buffer};
-  CHECK(obj.event_type == json::EventType::BALANCE_UPDATE);
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.event_type == json::EventType::BALANCE_UPDATE);
+    CHECK(obj.event_time == 1758021107347ms);
+  };
+  UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

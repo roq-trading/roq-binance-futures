@@ -29,10 +29,10 @@ struct Encoder final {
 
   // new
 
-  static std::string_view new_order(
+  static std::string_view order_place(
       std::vector<char> &buffer, CreateOrder const &, server::oms::Order const &, std::string_view const &request_id, std::chrono::milliseconds recv_window);
 
-  static std::string_view new_order_ws_url(
+  static std::string_view order_place_ws_url(
       std::vector<char> &buffer,
       CreateOrder const &,
       server::oms::Order const &,
@@ -41,7 +41,7 @@ struct Encoder final {
       std::string_view const &api_key,
       std::chrono::milliseconds now);
 
-  static std::string_view new_order_ws_json(
+  static std::string_view order_place_ws_json(
       std::vector<char> &buffer,
       CreateOrder const &,
       server::oms::Order const &,
@@ -51,7 +51,7 @@ struct Encoder final {
 
   // modify
 
-  static std::string_view modify_order(
+  static std::string_view order_modify(
       std::vector<char> &buffer,
       roq::ModifyOrder const &,
       server::oms::Order const &,
@@ -60,7 +60,7 @@ struct Encoder final {
       std::chrono::milliseconds recv_window,
       bool modify_order_full);
 
-  static std::string_view modify_order_ws_url(
+  static std::string_view order_modify_ws_url(
       std::vector<char> &buffer,
       roq::ModifyOrder const &,
       server::oms::Order const &,
@@ -70,7 +70,7 @@ struct Encoder final {
       std::string_view const &api_key,
       std::chrono::milliseconds now);
 
-  static std::string_view modify_order_ws_json(
+  static std::string_view order_modify_ws_json(
       std::vector<char> &buffer,
       roq::ModifyOrder const &,
       server::oms::Order const &,
@@ -81,7 +81,7 @@ struct Encoder final {
 
   // cancel
 
-  static std::string_view cancel_order(
+  static std::string_view order_cancel(
       std::vector<char> &buffer,
       roq::CancelOrder const &,
       server::oms::Order const &,
@@ -89,7 +89,7 @@ struct Encoder final {
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window);
 
-  static std::string_view cancel_order_ws_url(
+  static std::string_view order_cancel_ws_url(
       std::vector<char> &buffer,
       roq::CancelOrder const &,
       server::oms::Order const &,
@@ -99,7 +99,7 @@ struct Encoder final {
       std::string_view const &api_key,
       std::chrono::milliseconds now);
 
-  static std::string_view cancel_order_ws_json(
+  static std::string_view order_cancel_ws_json(
       std::vector<char> &buffer,
       roq::CancelOrder const &,
       server::oms::Order const &,
@@ -108,9 +108,9 @@ struct Encoder final {
       std::chrono::milliseconds recv_window,
       std::chrono::milliseconds now);
 
-  static std::string_view cancel_all_open_orders(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
+  static std::string_view open_orders_cancel_all(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
 
-  static std::string_view countdown_cancel_all_open_orders(
+  static std::string_view countdown_cancel_open_orders(
       std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window);
 };
 

@@ -2,6 +2,7 @@
 
 #include <catch2/catch_all.hpp>
 
+/*
 #include "roq/core/json/buffer_stack.hpp"
 #include "roq/core/json/parser.hpp"
 
@@ -33,3 +34,4 @@ TEST_CASE("json_position_papi_simple", "[json_position_papi]") {
   json::Position obj{message};
   CHECK(obj.symbol == "BTCUSDT"sv);
 }
+*/

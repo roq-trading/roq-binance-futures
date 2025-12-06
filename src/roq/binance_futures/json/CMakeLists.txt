@@ -24,12 +24,12 @@ set(AUTOGEN_SCHEMAS
     account_update.json
     agg_trade.json
     asset.json
-    auto_cancel_all_open_orders.json
     balances_item.json
     balance_update.json
     book_ticker.json
     contract_status.json
     contract_type.json
+    countdown_cancel_all_ack.json
     depth_ack_bids_asks_item.json
     depth_ack.json
     depth_update_bids_asks_item.json

@@ -40,7 +40,7 @@
 #include "roq/binance_futures/json/order_modify_ack.hpp"
 #include "roq/binance_futures/json/order_place_ack.hpp"
 
-#include "roq/binance_futures/json/auto_cancel_all_open_orders.hpp"
+#include "roq/binance_futures/json/countdown_cancel_all_ack.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -156,11 +156,11 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   void open_orders_cancel_all_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
   void operator()(Trace<json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
 
-  // auto-cancel-all-open-orders
+  // countdown-cancel-all
 
-  void auto_open_orders_cancel_all();
-  void auto_open_orders_cancel_all_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::AutoCancelAllOpenOrders> const &);
+  void countdown_cancel_all();
+  void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<json::CountdownCancelAllAck> const &);
 
   // helpers
 
@@ -198,7 +198,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
         order_modify, order_modify_ack,                      //
         order_cancel, order_cancel_ack,                      //
         open_orders_cancel_all, open_orders_cancel_all_ack,  //
-        auto_open_orders_cancel_all, auto_open_orders_cancel_all_ack;
+        countdown_cancel_all, countdown_cancel_all_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;

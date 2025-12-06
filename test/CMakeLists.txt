@@ -8,9 +8,9 @@ set(SOURCES
     json_account_status_ack.cpp
     json_account_update.cpp
     json_account_update_papi.cpp
-    json_auto_cancel_all_open_orders.cpp
     json_balance_update.cpp
     json_book_ticker.cpp
+    json_countdown_cancel_all_ack.cpp
     json_depth_ack.cpp
     json_depth_update.cpp
     json_encoder.cpp

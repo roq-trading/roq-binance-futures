@@ -143,8 +143,8 @@ OrderEntryClassic::OrderEntryClassic(Handler &handler, io::Context &context, uin
           .order_cancel_ack = create_metrics(shared.settings, name_, "order_cancel_ack"sv),
           .open_orders_cancel_all = create_metrics(shared.settings, name_, "open_orders_cancel_all"sv),
           .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
-          .auto_open_orders_cancel_all = create_metrics(shared.settings, name_, "auto_open_orders_cancel_all"sv),
-          .auto_open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "auto_open_orders_cancel_all_ack"sv),
+          .countdown_cancel_all = create_metrics(shared.settings, name_, "countdown_cancel_all"sv),
+          .countdown_cancel_all_ack = create_metrics(shared.settings, name_, "countdown_cancel_all_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -170,7 +170,7 @@ void OrderEntryClassic::operator()(Event<Timer> const &event) {
   refresh_listen_key();
   if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < now) {
     next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
-    auto_open_orders_cancel_all();
+    countdown_cancel_all();
   }
   if (ready() && !downloading()) {
     if (!downloading() && request_.respond_balance < request_.request_balance) {
@@ -219,8 +219,8 @@ void OrderEntryClassic::operator()(metrics::Writer &writer) const {
       .write(profile_.order_cancel_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
-      .write(profile_.auto_open_orders_cancel_all, metrics::Type::PROFILE)
-      .write(profile_.auto_open_orders_cancel_all_ack, metrics::Type::PROFILE)
+      .write(profile_.countdown_cancel_all, metrics::Type::PROFILE)
+      .write(profile_.countdown_cancel_all_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
@@ -1241,10 +1241,10 @@ void OrderEntryClassic::operator()(Trace<json::OpenOrdersCancelAllAck> const &ev
   shared_(event_2);
 }
 
-// auto-cancel-all-orders
+// countdown-cancel-all
 
-void OrderEntryClassic::auto_open_orders_cancel_all() {
-  profile_.auto_open_orders_cancel_all([&]() {
+void OrderEntryClassic::countdown_cancel_all() {
+  profile_.countdown_cancel_all([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
@@ -1264,30 +1264,30 @@ void OrderEntryClassic::auto_open_orders_cancel_all() {
       auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
         TraceInfo trace_info;
         Trace event{trace_info, response};
-        auto_open_orders_cancel_all_ack(event);
+        countdown_cancel_all_ack(event);
       };
       (*connection_)("auto-cancel"sv, request, callback);
     }
   });
 }
 
-void OrderEntryClassic::auto_open_orders_cancel_all_ack(Trace<web::rest::Response> const &event) {
-  profile_.auto_open_orders_cancel_all_ack([&]() {
+void OrderEntryClassic::countdown_cancel_all_ack(Trace<web::rest::Response> const &event) {
+  profile_.countdown_cancel_all_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
-      json::AutoCancelAllOpenOrders auto_open_orders_cancel_all{body};
-      Trace event_2{event, auto_open_orders_cancel_all};
+      json::CountdownCancelAllAck countdown_cancel_all_ack{body};
+      Trace event_2{event, countdown_cancel_all_ack};
       (*this)(event_2);
     };
     process_response(event, handle_error, handle_success);
   });
 }
 
-void OrderEntryClassic::operator()(Trace<json::AutoCancelAllOpenOrders> const &event) {
-  auto &[trace_info, auto_open_orders_cancel_all] = event;
-  log::info<2>("auto_open_orders_cancel_all={}"sv, auto_open_orders_cancel_all);
+void OrderEntryClassic::operator()(Trace<json::CountdownCancelAllAck> const &event) {
+  auto &[trace_info, countdown_cancel_all_ack] = event;
+  log::info<2>("countdown_cancel_all_ack={}"sv, countdown_cancel_all_ack);
 }
 
 // helpers

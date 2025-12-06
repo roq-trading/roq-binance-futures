@@ -12,12 +12,12 @@ account_update_data_position.hpp
 account_update.hpp
 agg_trade.hpp
 asset.hpp
-auto_cancel_all_open_orders.hpp
 balances_item.hpp
 balance_update.hpp
 book_ticker.hpp
 contract_status.hpp
 contract_type.hpp
+countdown_cancel_all_ack.hpp
 depth_ack_bids_asks_item.hpp
 depth_ack.hpp
 depth_update_bids_asks_item.hpp
@@ -104,12 +104,12 @@ account_update_data_position.cpp
 account_update.cpp
 agg_trade.cpp
 asset.cpp
-auto_cancel_all_open_orders.cpp
 balances_item.cpp
 balance_update.cpp
 book_ticker.cpp
 contract_status.cpp
 contract_type.cpp
+countdown_cancel_all_ack.cpp
 depth_ack_bids_asks_item.cpp
 depth_ack.cpp
 depth_update_bids_asks_item.cpp

@@ -880,42 +880,47 @@ void OrderEntryClassic::operator()(Trace<json::OrderPlaceAck> const &event, uint
       .quantity = order_place_ack.orig_qty,
       .price = order_place_ack.price,
   };
-  auto order_update = server::oms::OrderUpdate{
-      .account = account_.name,
-      .exchange = shared_.settings.exchange,
-      .symbol = order_place_ack.symbol,
-      .side = map(order_place_ack.side),
-      .position_effect = {},
-      .margin_mode = {},
-      .max_show_quantity = NaN,
-      .order_type = map(order_place_ack.type),
-      .time_in_force = map(order_place_ack.time_in_force),
-      .execution_instructions = {},
-      .create_time_utc = {},
-      .update_time_utc = order_place_ack.update_time,
-      .external_account = {},
-      .external_order_id = external_order_id,
-      .client_order_id = {},
-      .order_status = map(order_place_ack.status),
-      .quantity = order_place_ack.orig_qty,
-      .price = order_place_ack.price,
-      .stop_price = order_place_ack.stop_price,
-      .leverage = NaN,
-      .remaining_quantity = NaN,
-      .traded_quantity = order_place_ack.executed_qty,
-      .average_traded_price = order_place_ack.avg_price,
-      .last_traded_quantity = NaN,
-      .last_traded_price = NaN,
-      .last_liquidity = {},
-      .routing_id = {},
-      .max_request_version = {},
-      .max_response_version = {},
-      .max_accepted_version = {},
-      .update_type = UpdateType::INCREMENTAL,
-      .sending_time_utc = {},
-  };
-  Trace event_2{trace_info, response};
-  (*this)(event_2, user_id, order_id, order_update);
+  if (shared_.settings.rest.drop_order_update) {
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id);
+  } else {
+    auto order_update = server::oms::OrderUpdate{
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = order_place_ack.symbol,
+        .side = map(order_place_ack.side),
+        .position_effect = {},
+        .margin_mode = {},
+        .max_show_quantity = NaN,
+        .order_type = map(order_place_ack.type),
+        .time_in_force = map(order_place_ack.time_in_force),
+        .execution_instructions = {},
+        .create_time_utc = {},
+        .update_time_utc = order_place_ack.update_time,
+        .external_account = {},
+        .external_order_id = external_order_id,
+        .client_order_id = {},
+        .order_status = map(order_place_ack.status),
+        .quantity = order_place_ack.orig_qty,
+        .price = order_place_ack.price,
+        .stop_price = order_place_ack.stop_price,
+        .leverage = NaN,
+        .remaining_quantity = NaN,
+        .traded_quantity = order_place_ack.executed_qty,
+        .average_traded_price = order_place_ack.avg_price,
+        .last_traded_quantity = NaN,
+        .last_traded_price = NaN,
+        .last_liquidity = {},
+        .routing_id = {},
+        .max_request_version = {},
+        .max_response_version = {},
+        .max_accepted_version = {},
+        .update_type = UpdateType::INCREMENTAL,
+        .sending_time_utc = {},
+    };
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id, order_update);
+  }
 }
 
 // order-modify
@@ -992,42 +997,47 @@ void OrderEntryClassic::operator()(Trace<json::OrderModifyAck> const &event, uin
       .quantity = order_modify_ack.orig_qty,
       .price = order_modify_ack.price,
   };
-  auto order_update = server::oms::OrderUpdate{
-      .account = account_.name,
-      .exchange = shared_.settings.exchange,
-      .symbol = order_modify_ack.symbol,
-      .side = map(order_modify_ack.side),
-      .position_effect = {},
-      .margin_mode = {},
-      .max_show_quantity = NaN,
-      .order_type = map(order_modify_ack.type),
-      .time_in_force = map(order_modify_ack.time_in_force),
-      .execution_instructions = {},
-      .create_time_utc = {},
-      .update_time_utc = order_modify_ack.update_time,
-      .external_account = {},
-      .external_order_id = external_order_id,
-      .client_order_id = {},
-      .order_status = map(order_modify_ack.status),
-      .quantity = order_modify_ack.orig_qty,
-      .price = order_modify_ack.price,
-      .stop_price = order_modify_ack.stop_price,
-      .leverage = NaN,
-      .remaining_quantity = NaN,
-      .traded_quantity = order_modify_ack.executed_qty,
-      .average_traded_price = order_modify_ack.avg_price,
-      .last_traded_quantity = NaN,
-      .last_traded_price = NaN,
-      .last_liquidity = {},
-      .routing_id = {},
-      .max_request_version = {},
-      .max_response_version = {},
-      .max_accepted_version = {},
-      .update_type = UpdateType::INCREMENTAL,
-      .sending_time_utc = {},
-  };
-  Trace event_2{trace_info, response};
-  (*this)(event_2, user_id, order_id, order_update);
+  if (shared_.settings.rest.drop_order_update) {
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id);
+  } else {
+    auto order_update = server::oms::OrderUpdate{
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = order_modify_ack.symbol,
+        .side = map(order_modify_ack.side),
+        .position_effect = {},
+        .margin_mode = {},
+        .max_show_quantity = NaN,
+        .order_type = map(order_modify_ack.type),
+        .time_in_force = map(order_modify_ack.time_in_force),
+        .execution_instructions = {},
+        .create_time_utc = {},
+        .update_time_utc = order_modify_ack.update_time,
+        .external_account = {},
+        .external_order_id = external_order_id,
+        .client_order_id = {},
+        .order_status = map(order_modify_ack.status),
+        .quantity = order_modify_ack.orig_qty,
+        .price = order_modify_ack.price,
+        .stop_price = order_modify_ack.stop_price,
+        .leverage = NaN,
+        .remaining_quantity = NaN,
+        .traded_quantity = order_modify_ack.executed_qty,
+        .average_traded_price = order_modify_ack.avg_price,
+        .last_traded_quantity = NaN,
+        .last_traded_price = NaN,
+        .last_liquidity = {},
+        .routing_id = {},
+        .max_request_version = {},
+        .max_response_version = {},
+        .max_accepted_version = {},
+        .update_type = UpdateType::INCREMENTAL,
+        .sending_time_utc = {},
+    };
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id, order_update);
+  }
 }
 
 // order-cancel
@@ -1104,42 +1114,47 @@ void OrderEntryClassic::operator()(Trace<json::OrderCancelAck> const &event, uin
       .quantity = order_cancel_ack.orig_qty,
       .price = order_cancel_ack.price,
   };
-  auto order_update = server::oms::OrderUpdate{
-      .account = account_.name,
-      .exchange = shared_.settings.exchange,
-      .symbol = order_cancel_ack.symbol,
-      .side = map(order_cancel_ack.side),
-      .position_effect = {},
-      .margin_mode = {},
-      .max_show_quantity = NaN,
-      .order_type = map(order_cancel_ack.type),
-      .time_in_force = map(order_cancel_ack.time_in_force),
-      .execution_instructions = {},
-      .create_time_utc = {},
-      .update_time_utc = order_cancel_ack.update_time,
-      .external_account = {},
-      .external_order_id = external_order_id,
-      .client_order_id = {},
-      .order_status = map(order_cancel_ack.status),
-      .quantity = order_cancel_ack.orig_qty,
-      .price = order_cancel_ack.price,
-      .stop_price = order_cancel_ack.stop_price,
-      .leverage = NaN,
-      .remaining_quantity = NaN,
-      .traded_quantity = order_cancel_ack.executed_qty,
-      .average_traded_price = order_cancel_ack.avg_price,
-      .last_traded_quantity = NaN,
-      .last_traded_price = NaN,
-      .last_liquidity = {},
-      .routing_id = {},
-      .max_request_version = {},
-      .max_response_version = {},
-      .max_accepted_version = {},
-      .update_type = UpdateType::INCREMENTAL,
-      .sending_time_utc = {},
-  };
-  Trace event_2{trace_info, response};
-  (*this)(event_2, user_id, order_id, order_update);
+  if (shared_.settings.rest.drop_order_update) {
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id);
+  } else {
+    auto order_update = server::oms::OrderUpdate{
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = order_cancel_ack.symbol,
+        .side = map(order_cancel_ack.side),
+        .position_effect = {},
+        .margin_mode = {},
+        .max_show_quantity = NaN,
+        .order_type = map(order_cancel_ack.type),
+        .time_in_force = map(order_cancel_ack.time_in_force),
+        .execution_instructions = {},
+        .create_time_utc = {},
+        .update_time_utc = order_cancel_ack.update_time,
+        .external_account = {},
+        .external_order_id = external_order_id,
+        .client_order_id = {},
+        .order_status = map(order_cancel_ack.status),
+        .quantity = order_cancel_ack.orig_qty,
+        .price = order_cancel_ack.price,
+        .stop_price = order_cancel_ack.stop_price,
+        .leverage = NaN,
+        .remaining_quantity = NaN,
+        .traded_quantity = order_cancel_ack.executed_qty,
+        .average_traded_price = order_cancel_ack.avg_price,
+        .last_traded_quantity = NaN,
+        .last_traded_price = NaN,
+        .last_liquidity = {},
+        .routing_id = {},
+        .max_request_version = {},
+        .max_response_version = {},
+        .max_accepted_version = {},
+        .update_type = UpdateType::INCREMENTAL,
+        .sending_time_utc = {},
+    };
+    Trace event_2{trace_info, response};
+    (*this)(event_2, user_id, order_id, order_update);
+  }
 }
 
 // open-orders-cancel-all

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Adding `--rest_drop_order_update` to suppress `OrderUpdate` from REST (#534)
+
 ## 1.1.0 &ndash; 2025-11-22
 
 ## 1.0.9 &ndash; 2025-09-26

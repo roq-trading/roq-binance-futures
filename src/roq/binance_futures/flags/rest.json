@@ -92,6 +92,12 @@
       "validator": "roq/flags/validators/TimePeriod",
       "default": "300s",
       "description": "(TEST) Time to wait before retrying a rejected request"
+    },
+    {
+      "name": "drop_order_update",
+      "type": "std/bool",
+      "default": false,
+      "description": "(TEST) Drop order updates from REST?"
     }
   ]
 }

@@ -329,6 +329,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
   profile_.account_balance_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download balance has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      request_.respond_balance = clock::get_system();
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -412,6 +413,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
   profile_.account_status_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download account has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      request_.respond_account = clock::get_system();
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -485,6 +487,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download open-orders has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      request_.respond_orders = clock::get_system();
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -597,6 +600,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download user-trades has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      request_.respond_trades = clock::get_system();
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {

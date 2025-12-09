@@ -28,3 +28,5 @@ TEST_CASE("simple", "[json_error]") {
   value_type obj{message, buffers};
   helper(obj);
 }
+
+// {"id":null,"status":400,"error":{"code":-1000,"msg":"Invalid JSON request."}

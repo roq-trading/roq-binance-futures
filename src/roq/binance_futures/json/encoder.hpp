@@ -19,7 +19,9 @@ namespace binance_futures {
 namespace json {
 
 struct Encoder final {
-  static std::string_view trades(
+  // user-trades
+
+  static std::string_view user_trades_url(
       std::vector<char> &buffer,
       std::string_view const &symbol,
       std::chrono::milliseconds start_time,
@@ -27,31 +29,22 @@ struct Encoder final {
       uint32_t limit,
       std::chrono::milliseconds recv_window);
 
-  // new
+  // order-place
 
-  static std::string_view order_place(
+  static std::string_view order_place_url(
       std::vector<char> &buffer, CreateOrder const &, server::oms::Order const &, std::string_view const &request_id, std::chrono::milliseconds recv_window);
 
-  static std::string_view order_place_ws_url(
+  static std::string_view order_place_json(
       std::vector<char> &buffer,
       CreateOrder const &,
       server::oms::Order const &,
       std::string_view const &request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now);
+      std::chrono::milliseconds now_utc);
 
-  static std::string_view order_place_ws_json(
-      std::vector<char> &buffer,
-      CreateOrder const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::chrono::milliseconds recv_window,
-      std::chrono::milliseconds now);
+  // order-modify
 
-  // modify
-
-  static std::string_view order_modify(
+  static std::string_view order_modify_url(
       std::vector<char> &buffer,
       roq::ModifyOrder const &,
       server::oms::Order const &,
@@ -60,28 +53,18 @@ struct Encoder final {
       std::chrono::milliseconds recv_window,
       bool modify_order_full);
 
-  static std::string_view order_modify_ws_url(
+  static std::string_view order_modify_json(
       std::vector<char> &buffer,
       roq::ModifyOrder const &,
       server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now);
+      std::chrono::milliseconds now_utc);
 
-  static std::string_view order_modify_ws_json(
-      std::vector<char> &buffer,
-      roq::ModifyOrder const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id,
-      std::chrono::milliseconds recv_window,
-      std::chrono::milliseconds now);
+  // order-cancel
 
-  // cancel
-
-  static std::string_view order_cancel(
+  static std::string_view order_cancel_url(
       std::vector<char> &buffer,
       roq::CancelOrder const &,
       server::oms::Order const &,
@@ -89,28 +72,22 @@ struct Encoder final {
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window);
 
-  static std::string_view order_cancel_ws_url(
+  static std::string_view order_cancel_json(
       std::vector<char> &buffer,
       roq::CancelOrder const &,
       server::oms::Order const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window,
-      std::string_view const &api_key,
-      std::chrono::milliseconds now);
+      std::chrono::milliseconds now_utc);
 
-  static std::string_view order_cancel_ws_json(
-      std::vector<char> &buffer,
-      roq::CancelOrder const &,
-      server::oms::Order const &,
-      std::string_view const &request_id,
-      std::string_view const &previous_request_id,
-      std::chrono::milliseconds recv_window,
-      std::chrono::milliseconds now);
+  // all-open-orders
 
-  static std::string_view open_orders_cancel_all(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
+  static std::string_view all_open_orders_url(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
 
-  static std::string_view countdown_cancel_open_orders(
+  // countdown
+
+  static std::string_view countdown_cancel_open_orders_url(
       std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window);
 };
 

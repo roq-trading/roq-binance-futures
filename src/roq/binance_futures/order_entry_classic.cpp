@@ -699,7 +699,7 @@ void OrderEntryClassic::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
-      auto body = json::Encoder::trades(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto body = json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_rest_signature_query(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -816,7 +816,7 @@ void OrderEntryClassic::order_place(Event<CreateOrder> const &event, server::oms
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_place(encode_buffer_, create_order, order, request_id, recv_window);
+    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, request_id, recv_window);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -933,7 +933,8 @@ void OrderEntryClassic::order_modify(
     }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_modify(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
+    auto body =
+        json::Encoder::order_modify_url(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -1050,7 +1051,7 @@ void OrderEntryClassic::order_cancel(
     }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_cancel(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
+    auto body = json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -1167,7 +1168,7 @@ void OrderEntryClassic::open_orders_cancel_all(Event<CancelAllOrders> const &eve
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
       }
-      auto body = json::Encoder::open_orders_cancel_all(encode_buffer_, symbol, recv_window);
+      auto body = json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
       auto query = account_.create_rest_signature_body(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -1263,7 +1264,7 @@ void OrderEntryClassic::countdown_cancel_all() {
     for (auto &symbol : open_orders_symbols_) {
       auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-      auto body = json::Encoder::countdown_cancel_open_orders(encode_buffer_, symbol, countdown_time, recv_window);
+      auto body = json::Encoder::countdown_cancel_open_orders_url(encode_buffer_, symbol, countdown_time, recv_window);
       auto query = account_.create_rest_signature_body(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{

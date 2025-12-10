@@ -127,6 +127,8 @@ WebSocket::WebSocket(
           .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
           .account_position = create_metrics(shared.settings, name_, "account_position"sv),
           .account_position_ack = create_metrics(shared.settings, name_, "account_position_ack"sv),
+          .order_status = create_metrics(shared.settings, name_, "order_status"sv),
+          .order_status_ack = create_metrics(shared.settings, name_, "order_status_ack"sv),
           .open_orders_cancel_all = create_metrics(shared.settings, name_, "open_orders_cancel_all"sv),
           .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
           .order_place = create_metrics(shared.settings, name_, "order_place"sv),
@@ -173,6 +175,15 @@ void WebSocket::operator()(Event<Timer> const &event) {
       account_status();
       download_account_ = true;
     }
+    /* XXX FIXME this is wrong -- we can only download a single order
+    if (!downloading() && request_.respond_orders < request_.request_orders) {
+      log::info("Download orders..."sv);
+      if (order_status()) {
+        download_orders_ = true;
+      } else {
+      }
+    }
+    */
   }
 }
 
@@ -195,6 +206,8 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       .write(profile_.account_status_ack, metrics::Type::PROFILE)
       .write(profile_.account_position, metrics::Type::PROFILE)
       .write(profile_.account_position_ack, metrics::Type::PROFILE)
+      .write(profile_.order_status, metrics::Type::PROFILE)
+      .write(profile_.order_status_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all, metrics::Type::PROFILE)
       .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
       .write(profile_.order_place, metrics::Type::PROFILE)
@@ -210,12 +223,6 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_10s, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1d, metrics::Type::RATE_LIMITER);
-}
-
-void WebSocket::operator()(Event<Disconnected> const &) {
-  ++counter_.disconnect;
-  (*this)(ConnectionStatus::DISCONNECTED);
-  download_.reset();
 }
 
 uint16_t WebSocket::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
@@ -235,16 +242,18 @@ uint16_t WebSocket::operator()(
   return stream_id_;
 }
 
+// XXX FIXME not supported
 uint16_t WebSocket::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
-  open_orders_cancel_all(event, request_id);
-  return stream_id_;
+  log::fatal("Unexpected"sv);
+  // open_orders_cancel_all(event, request_id);
+  // return stream_id_;
 }
 
 // session-logon
 
 void WebSocket::session_logon() {
   profile_.session_logon([&]() {
-    auto timestamp = clock::get_realtime<std::chrono::milliseconds>();
+    auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::SESSION_LOGON,
@@ -254,21 +263,8 @@ void WebSocket::session_logon() {
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto signature = account_.create_session_logon_signature(timestamp);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"session.logon",)"
-        R"("params":{{)"
-        R"("apiKey":"{}",)"
-        R"("timestamp":{},)"
-        R"("signature":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        account_.get_key(),
-        timestamp.count(),
-        signature);
+    auto signature = account_.create_session_logon_signature(now_utc);
+    auto message = json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, signature, request_id);
     (*connection_).send_text(message);
     (*this)(ConnectionStatus::LOGIN_SENT);
   });
@@ -280,23 +276,15 @@ void WebSocket::user_data_stream_start() {
   profile_.user_data_stream_start([&]() {
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::LISTEN_KEY_CREATE,
+        .type = json::WSAPIType::USER_DATA_STREAM_START,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"userDataStream.start",)"
-        R"("params":{{)"
-        R"("apiKey":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        account_.get_key());
+    auto message = json::Encoder::user_data_stream_start_json(encode_buffer_, account_.get_key(), request_id);
+    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -316,25 +304,15 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
     listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::LISTEN_KEY_PING,
+        .type = json::WSAPIType::USER_DATA_STREAM_PING,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"userDataStream.ping",)"
-        R"("params":{{)"
-        R"("apiKey":"{}",)"
-        R"("listenKey":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        account_.get_key(),
-        listen_key_);
+    auto message = json::Encoder::user_data_stream_ping_json(encode_buffer_, account_.get_key(), request_id);
+    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -353,16 +331,8 @@ void WebSocket::account_balance() {
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"account.balance",)"
-        R"("params":{{)"
-        R"("timestamp":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        now_utc.count());
+    auto message = json::Encoder::account_balance_json(encode_buffer_, now_utc, request_id);
+    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -381,16 +351,8 @@ void WebSocket::account_status() {
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"account.status",)"
-        R"("params":{{)"
-        R"("timestamp":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        now_utc.count());
+    auto message = json::Encoder::account_status_json(encode_buffer_, now_utc, request_id);
+    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -409,24 +371,45 @@ void WebSocket::account_position() {
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"account.position",)"
-        R"("params":{{)"
-        R"("timestamp":"{}")"
-        R"(}})"
-        R"(}})"sv,
-        request_id,
-        now_utc.count());
+    auto message = json::Encoder::account_position_json(encode_buffer_, now_utc, request_id);
+    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
 
-// XXX open-orders does not exist => rest
+// order-status
+// XXX FIXME following is wrong -- we can only request a single order
+
+bool WebSocket::order_status() {
+  auto &symbols = shared_.settings.download.symbols;
+  for (auto &item : symbols) {
+    order_status(item);
+  }
+  return !std::empty(symbols);
+}
+
+void WebSocket::order_status(std::string_view const &symbol) {
+  profile_.order_status([&]() {
+    auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
+    auto request = json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = json::WSAPIType::ORDERS_STATUS,
+        .user_id = {},
+        .order_id = {},
+        .version = {},
+        .order_id_2 = {},
+    };
+    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = json::Encoder::order_status_json(encode_buffer_, symbol, now_utc, request_id);
+    log::warn(R"(DEBUG {})"sv, message);
+    (*connection_).send_text(message);
+  });
+}
+
 // XXX my-trades does not exist => rest
 
 // open-orders-cancel-all
+// XXX FIXME not supported
 
 void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
@@ -501,7 +484,6 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::order_place_json(encode_buffer_, create_order, order, request_id, recv_window, now_utc);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_PLACE,
@@ -511,14 +493,7 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"order.place",)"
-        R"("params":{})"
-        R"(}})"sv,
-        request_id_2,
-        params);
+    auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
@@ -536,7 +511,6 @@ void WebSocket::order_modify(
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::order_modify_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now_utc);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_MODIFY,
@@ -546,14 +520,7 @@ void WebSocket::order_modify(
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"order.modify",)"
-        R"("params":{})"
-        R"(}})"sv,
-        request_id_2,
-        params);
+    auto message = json::Encoder::order_modify_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
@@ -571,7 +538,6 @@ void WebSocket::order_cancel(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto params = json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now_utc);
     auto request = json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = json::WSAPIType::ORDER_CANCEL,
@@ -581,14 +547,7 @@ void WebSocket::order_cancel(
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = fmt::format(
-        R"({{)"
-        R"("id":"{}",)"
-        R"("method":"order.cancel",)"
-        R"("params":{})"
-        R"(}})"sv,
-        request_id_2,
-        params);
+    auto message = json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
@@ -602,19 +561,13 @@ void WebSocket::operator()(web::socket::Client::Disconnected const &) {
   ++counter_.disconnect;
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
+  download_.reset();
   // XXX FIXME also reset the download_* latches?
 }
 
 void WebSocket::operator()(web::socket::Client::Ready const &) {
-  /*
-  if (master_) {
-    user_data_stream_start();
-    (*this)(ConnectionStatus::LOGIN_SENT);
-  } else {
-    (*this)(ConnectionStatus::READY);
-  }
-  */
   download_.begin();
+  (*this)(ConnectionStatus::DOWNLOADING);
 }
 
 void WebSocket::operator()(web::socket::Client::Close const &) {
@@ -673,6 +626,9 @@ uint32_t WebSocket::download(WebSocketState state) {
     case USER_DATA_STREAM_START:
       user_data_stream_start();
       return 1;
+    case ACCOUNT_POSITION:
+      account_position();  // just testing -- not used
+      return 0;
     case DONE:
       (*this)(ConnectionStatus::READY);
       return 0;

@@ -12,7 +12,8 @@
     },
     {
       "name": "result",
-      "type": "roq/binance_futures/json/AccountStatusAck"
+      "type": "roq/binance_futures/json/WSAPIAccountPositionResultItem",
+      "array": "std/span"
     },
     {
       "name": "error",

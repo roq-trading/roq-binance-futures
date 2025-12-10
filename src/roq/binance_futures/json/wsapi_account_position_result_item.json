@@ -1,0 +1,87 @@
+{
+  "name": "roq/binance_futures/json/WSAPIAccountPositionResultItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "positionAmt",
+      "type": "std/double"
+    },
+    {
+      "name": "entryPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "breakEvenPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "markPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "unRealizedProfit",
+      "type": "std/double"
+    },
+    {
+      "name": "liquidationPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "leverage",
+      "type": "std/double"
+    },
+    {
+      "name": "maxNotionalValue",
+      "type": "std/double"
+    },
+    {
+      "name": "marginType",
+      "type": "roq/binance_futures/json/MarginType"
+    },
+    {
+      "name": "isolatedMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "isAutoAddMargin",
+      "type": "std/bool"
+    },
+    {
+      "name": "positionSide",
+      "type": "roq/binance_futures/json/PositionSide"
+    },
+    {
+      "name": "notional",
+      "type": "std/double"
+    },
+    {
+      "name": "isolatedWallet",
+      "type": "std/double"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "isolated",
+      "type": "std/bool"
+    },
+    {
+      "name": "adlQuantile",
+      "type": "std/double",
+      "comment": "???"
+    },
+    {
+      "name": "maxQty",
+      "type": "std/double"
+    },
+    {
+      "name": "notionalValue",
+      "type": "std/double"
+    }
+  ]
+}

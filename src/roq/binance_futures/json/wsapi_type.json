@@ -6,10 +6,10 @@
       "name": "SESSION_LOGON"
     },
     {
-      "name": "LISTEN_KEY_CREATE"
+      "name": "USER_DATA_STREAM_START"
     },
     {
-      "name": "LISTEN_KEY_PING"
+      "name": "USER_DATA_STREAM_PING"
     },
     {
       "name": "ACCOUNT_BALANCE"
@@ -21,7 +21,7 @@
       "name": "ACCOUNT_POSITION"
     },
     {
-      "name": "OPEN_ORDERS_STATUS"
+      "name": "ORDERS_STATUS"
     },
     {
       "name": "OPEN_ORDERS_CANCEL_ALL"

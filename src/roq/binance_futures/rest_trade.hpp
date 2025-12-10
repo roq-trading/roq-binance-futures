@@ -31,6 +31,8 @@
 #include "roq/binance_futures/json/open_orders_ack.hpp"
 #include "roq/binance_futures/json/trades_ack.hpp"
 
+#include "roq/binance_futures/json/open_orders_cancel_all_ack.hpp"
+
 namespace roq {
 namespace binance_futures {
 
@@ -62,6 +64,8 @@ struct RestTrade final : public web::rest::Client::Handler {
   void operator()(Event<Timer> const &);
 
   void operator()(metrics::Writer &);
+
+  uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
  protected:
   // web::rest::Client::Handler
@@ -99,6 +103,12 @@ struct RestTrade final : public web::rest::Client::Handler {
   void get_trades_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<json::TradesAck> const &);
 
+  // open-orders-cancel-all
+
+  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+  void open_orders_cancel_all_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
+  void operator()(Trace<json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
+
   // helpers
 
   void process_response(web::rest::Response const &, auto error_handler, auto success_handler);
@@ -129,7 +139,8 @@ struct RestTrade final : public web::rest::Client::Handler {
         account_balance_ack,                 //
         account_status, account_status_ack,  //
         open_orders, open_orders_ack,        //
-        trades, trades_ack;
+        trades, trades_ack,                  //
+        open_orders_cancel_all, open_orders_cancel_all_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;

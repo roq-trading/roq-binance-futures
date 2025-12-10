@@ -140,6 +140,8 @@ TEST_CASE("rounding_issue_oc45", "[json_encoder]") {
   auto order = create_order(1.0, old_price);
   order.price_precision = {0.1, Precision::_1};
   auto modify_order = create_modify_order(1.0, price);
-  auto result = json::Encoder::order_modify_json(buffer, modify_order, order, {}, {}, 5s, {});
-  CHECK(result == R"({"symbol":"BTC","side":"BUY","orderId":oid:1234,"quantity":"1","price":"90085.7","recvWindow":5000,"timestamp":0})"sv);
+  auto result = json::Encoder::order_modify_json(buffer, modify_order, order, {}, {}, 5s, {}, "SOME_ID");
+  CHECK(
+      result ==
+      R"({"id":"SOME_ID","method":"order.modify","params":{"symbol":"BTC","side":"BUY","orderId":oid:1234,"quantity":"1","price":"90085.7","recvWindow":5000,"timestamp":0}})"sv);
 }

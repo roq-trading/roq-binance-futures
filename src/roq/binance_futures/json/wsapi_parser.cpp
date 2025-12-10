@@ -60,10 +60,10 @@ bool WSAPIParser::dispatch(
             case SESSION_LOGON:
               result = dispatch_helper<WSAPISessionLogon>(handler, message, buffer_stack, trace_info);
               return true;
-            case LISTEN_KEY_CREATE:
+            case USER_DATA_STREAM_START:
               result = dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info);
               return true;
-            case LISTEN_KEY_PING:
+            case USER_DATA_STREAM_PING:
               // note! drop
               return false;
             case ACCOUNT_BALANCE:
@@ -75,7 +75,7 @@ bool WSAPIParser::dispatch(
             case ACCOUNT_POSITION:
               result = dispatch_helper<WSAPIAccountPosition>(handler, message, buffer_stack, trace_info);
               return true;
-            case OPEN_ORDERS_STATUS:
+            case ORDERS_STATUS:
               result = dispatch_helper<WSAPIOpenOrders>(handler, message, buffer_stack, trace_info);
               return true;
             case MY_TRADES:

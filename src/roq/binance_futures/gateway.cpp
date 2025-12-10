@@ -302,7 +302,11 @@ uint16_t Gateway::operator()(
 uint16_t Gateway::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   auto &cancel_all_orders = event.value;
   assert(!std::empty(cancel_all_orders.account));
-  return get_order_entry(cancel_all_orders.account)(event, request_id);
+  if (shared_.settings.ws_api) {
+    return get_rest_trade(cancel_all_orders.account)(event, request_id);
+  } else {
+    return get_order_entry(cancel_all_orders.account)(event, request_id);
+  }
 }
 
 uint16_t Gateway::operator()(Event<MassQuote> const &) {
@@ -364,6 +368,14 @@ Request &Gateway::get_request(std::string_view const &account) {
 OrderEntry &Gateway::get_order_entry(std::string_view const &account) {
   auto iter = order_entry_.find(account);
   if (iter != std::end(order_entry_)) {
+    return *(*iter).second;
+  }
+  throw RuntimeError{R"(Unknown account="{}")"sv, account};
+}
+
+RestTrade &Gateway::get_rest_trade(std::string_view const &account) {
+  auto iter = download_.find(account);
+  if (iter != std::end(download_)) {
     return *(*iter).second;
   }
   throw RuntimeError{R"(Unknown account="{}")"sv, account};

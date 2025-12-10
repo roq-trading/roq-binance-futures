@@ -66,8 +66,6 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   void operator()(metrics::Writer &) const override;
 
-  void operator()(Event<Disconnected> const &);
-
   uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id) override;
   uint16_t operator()(
       Event<ModifyOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id) override;
@@ -76,7 +74,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
-  bool downloading() const { return download_balance_ || download_account_; }
+  bool downloading() const { return download_balance_ || download_account_ | download_orders_; }
 
   void session_logon();
 
@@ -86,6 +84,9 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void account_balance();
   void account_status();
   void account_position();
+
+  bool order_status();
+  void order_status(std::string_view const &symbol);
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
@@ -156,6 +157,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
         account_balance, account_balance_ack,                //
         account_status, account_status_ack,                  //
         account_position, account_position_ack,              //
+        order_status, order_status_ack,                      //
         open_orders_cancel_all,                              //
         open_orders_cancel_all_ack,                          //
         order_place, order_place_ack,                        //
@@ -179,6 +181,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   std::chrono::nanoseconds listen_key_refresh_ = {};
   bool download_balance_ = false;
   bool download_account_ = false;
+  bool download_orders_ = false;
   utils::unordered_set<std::string> open_orders_symbols_;
   std::vector<char> request_encode_buffer_;
   std::vector<char> encode_buffer_;

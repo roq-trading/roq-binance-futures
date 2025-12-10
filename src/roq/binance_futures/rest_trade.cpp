@@ -127,6 +127,8 @@ RestTrade::RestTrade(Handler &handler, io::Context &context, uint16_t stream_id,
           .open_orders_ack = create_metrics(shared.settings, name_, "open_orders_ack"sv),
           .trades = create_metrics(shared.settings, name_, "trades"sv),
           .trades_ack = create_metrics(shared.settings, name_, "trades_ack"sv),
+          .open_orders_cancel_all = create_metrics(shared.settings, name_, "open_orders_cancel_all"sv),
+          .open_orders_cancel_all_ack = create_metrics(shared.settings, name_, "open_orders_cancel_all_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -188,11 +190,18 @@ void RestTrade::operator()(metrics::Writer &writer) {
       .write(profile_.open_orders_ack, metrics::Type::PROFILE)
       .write(profile_.trades, metrics::Type::PROFILE)
       .write(profile_.trades_ack, metrics::Type::PROFILE)
+      .write(profile_.open_orders_cancel_all, metrics::Type::PROFILE)
+      .write(profile_.open_orders_cancel_all_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
+}
+
+uint16_t RestTrade::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+  open_orders_cancel_all(event, request_id);
+  return stream_id_;
 }
 
 // web::rest::Client::Handler
@@ -666,6 +675,106 @@ void RestTrade::operator()(Trace<json::TradesAck> const &event) {
     std::string_view client_order_id;  // note! unavailable
     create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_order_id);
   }
+}
+
+// open-orders-cancel-all
+
+void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+  profile_.open_orders_cancel_all([&]() {
+    auto &cancel_all_orders = event.value;
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
+    for (auto &symbol : open_orders_symbols_) {
+      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
+        continue;
+      }
+      auto body = json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
+      auto query = account_.create_rest_signature_body(body);
+      auto headers = account_.get_rest_headers();
+      auto request = web::rest::Request{
+          .method = web::http::Method::DELETE,
+          .path = shared_.api.simple.all_open_orders,
+          .query = query,
+          .accept = web::http::Accept::APPLICATION_JSON,
+          .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+          .headers = headers,
+          .body = body,
+          .quality_of_service = io::QualityOfService::IMMEDIATE,
+      };
+      auto callback = [this](auto &request_id, auto &response) {
+        TraceInfo trace_info;
+        Trace event{trace_info, response};
+        open_orders_cancel_all_ack(event, request_id);
+      };
+      (*connection_)(request_id, request, callback);
+      auto cancel_all_orders_ack = CancelAllOrdersAck{
+          .stream_id = stream_id_,
+          .account = account_.name,
+          .order_id = {},
+          .exchange = cancel_all_orders.exchange,
+          .symbol = cancel_all_orders.symbol,
+          .side = cancel_all_orders.side,
+          .origin = Origin::GATEWAY,
+          .request_status = RequestStatus::FORWARDED,
+          .error = {},
+          .text = {},
+          .request_id = request_id,
+          .external_account = {},
+          .number_of_affected_orders = {},
+          .round_trip_latency = {},
+          .user = {},
+          .strategy_id = {},
+      };
+      TraceInfo trace_info;
+      Trace event_2{trace_info, cancel_all_orders_ack};
+      shared_(event_2);
+    }
+  });
+}
+
+void RestTrade::open_orders_cancel_all_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
+  profile_.open_orders_cancel_all_ack([&]() {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+    };
+    auto handle_success = [&](auto &body) {
+      log::debug("{}"sv, body);
+      json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
+      Trace event_2{event, open_orders_cancel_all_ack};
+      (*this)(event_2, request_id);
+    };
+    process_response(event, handle_error, handle_success);
+  });
+}
+
+void RestTrade::operator()(Trace<json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
+  auto &[trace_info, open_orders_cancel_all_ack] = event;
+  auto status = [&]() {
+    if (open_orders_cancel_all_ack.code == 200) {
+      return RequestStatus::ACCEPTED;
+    }
+    return RequestStatus::REJECTED;
+  }();
+  auto error = json::guess_error(open_orders_cancel_all_ack.code);
+  auto cancel_all_orders_ack = CancelAllOrdersAck{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .order_id = {},
+      .exchange = {},
+      .symbol = {},
+      .side = {},
+      .origin = Origin::EXCHANGE,
+      .request_status = status,
+      .error = error,
+      .text = open_orders_cancel_all_ack.msg,
+      .request_id = request_id,
+      .external_account = {},
+      .number_of_affected_orders = {},
+      .round_trip_latency = {},
+      .user = {},
+      .strategy_id = {},
+  };
+  Trace event_2{trace_info, cancel_all_orders_ack};
+  shared_(event_2);
 }
 
 // helpers

@@ -80,6 +80,7 @@ trades_ack.hpp
 working_type.hpp
 wsapi_account_balance.hpp
 wsapi_account_position.hpp
+wsapi_account_position_result_item.hpp
 wsapi_account_status.hpp
 wsapi_error.hpp
 wsapi_listen_key.hpp
@@ -173,6 +174,7 @@ trades_ack.cpp
 working_type.cpp
 wsapi_account_balance.cpp
 wsapi_account_position.cpp
+wsapi_account_position_result_item.cpp
 wsapi_account_status.cpp
 wsapi_error.cpp
 wsapi_listen_key.cpp

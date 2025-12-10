@@ -9,6 +9,9 @@
       "name": "user_data_stream_start"
     },
     {
+      "name": "account_position"
+    },
+    {
       "name": "done"
     }
   ]

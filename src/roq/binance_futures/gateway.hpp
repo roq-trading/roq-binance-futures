@@ -103,6 +103,7 @@ struct Gateway final : public server::Handler,
   Account &get_account(std::string_view const &account) const;
   Request &get_request(std::string_view const &account);
   OrderEntry &get_order_entry(std::string_view const &account);
+  RestTrade &get_rest_trade(std::string_view const &account);
 
  private:
   server::Dispatcher &dispatcher_;

@@ -92,6 +92,7 @@ set(AUTOGEN_SCHEMAS
     working_type.json
     wsapi_account_balance.json
     wsapi_account_position.json
+    wsapi_account_position_result_item.json
     wsapi_account_status.json
     wsapi_error.json
     wsapi_listen_key.json

@@ -81,6 +81,7 @@ working_type.hpp
 wsapi_account_balance.hpp
 wsapi_account_position.hpp
 wsapi_account_status.hpp
+wsapi_error.hpp
 wsapi_listen_key.hpp
 wsapi_open_orders_cancel_all.hpp
 wsapi_open_orders.hpp
@@ -173,6 +174,7 @@ working_type.cpp
 wsapi_account_balance.cpp
 wsapi_account_position.cpp
 wsapi_account_status.cpp
+wsapi_error.cpp
 wsapi_listen_key.cpp
 wsapi_open_orders_cancel_all.cpp
 wsapi_open_orders.cpp

@@ -34,12 +34,12 @@
 #include "roq/binance_futures/shared.hpp"
 #include "roq/binance_futures/web_socket_state.hpp"
 
-#include "roq/binance_futures/json/wsapi_parser_2.hpp"
+#include "roq/binance_futures/json/wsapi_parser.hpp"
 
 namespace roq {
 namespace binance_futures {
 
-struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public json::WSAPIParser2::Handler {
+struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public json::WSAPIParser::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -110,8 +110,9 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   void parse(std::string_view const &message);
 
-  // json::WSAPIParser2::Handler
+  // json::WSAPIParser::Handler
 
+  void operator()(Trace<json::WSAPIError> const &) override;
   void operator()(Trace<json::WSAPISessionLogon> const &) override;
   void operator()(Trace<json::WSAPIListenKey> const &) override;
   void operator()(Trace<json::WSAPIAccountBalance> const &) override;
@@ -123,6 +124,8 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void operator()(Trace<json::WSAPIOrderPlace> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOrderModify> const &, json::WSAPIRequest const &) override;
   void operator()(Trace<json::WSAPIOrderCancel> const &, json::WSAPIRequest const &) override;
+
+  // helpers
 
   void update_rate_limits(auto &event);
 

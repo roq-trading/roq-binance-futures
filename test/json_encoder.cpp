@@ -133,16 +133,13 @@ TEST_CASE("dapi_both", "[json_encoder]") {
   CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false));
 }
 
-// rounding error
-TEST_CASE("issue_oc45", "[json_encoder]") {
+TEST_CASE("rounding_issue_oc45", "[json_encoder]") {
   std::vector<char> buffer(4096);
   auto old_price = 90066.2;
   auto price = 90085.7 - 1.0e-12;
   auto order = create_order(1.0, old_price);
   order.price_precision = {0.1, Precision::_1};
-  log::warn("{}"sv, order);
   auto modify_order = create_modify_order(1.0, price);
-  log::warn("{}"sv, modify_order);
   auto result = json::Encoder::order_modify_json(buffer, modify_order, order, {}, {}, 5s, {});
   CHECK(result == R"({"symbol":"BTC","side":"BUY","orderId":oid:1234,"quantity":"1","price":"90085.7","recvWindow":5000,"timestamp":0})"sv);
 }

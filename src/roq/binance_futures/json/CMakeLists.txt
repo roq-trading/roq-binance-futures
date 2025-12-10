@@ -6,7 +6,7 @@ set(SOURCES
     market_stream_parser.cpp
     user_stream_parser.cpp
     utils.cpp
-    wsapi_parser_2.cpp
+    wsapi_parser.cpp
     wsapi_request.cpp)
 
 include(RoqAutogen)
@@ -93,6 +93,7 @@ set(AUTOGEN_SCHEMAS
     wsapi_account_balance.json
     wsapi_account_position.json
     wsapi_account_status.json
+    wsapi_error.json
     wsapi_listen_key.json
     wsapi_open_orders_cancel_all.json
     wsapi_open_orders.json

@@ -41,12 +41,13 @@ bool WSAPIParser::dispatch(
     TraceInfo const &trace_info,
     bool allow_unknown_event_types) {
   auto result = false;
+  bool error = false;
   auto helper = [&](auto &key, auto &value) {
     auto key_2 = utils::hash::FNV::compute(key);
     switch (key_2) {
       case utils::hash::FNV::compute(KEY_ERROR):
-        result = dispatch_helper<WSAPIError>(handler, message, buffer_stack, trace_info);
-        return true;
+        error = true;  // a valid field for many messages, but could also be a general error => set flag for now
+        break;
       case utils::hash::FNV::compute(KEY_ID): {
         auto value_2 = core::json::get<std::string_view>(value);
         if (!std::empty(value_2)) {
@@ -101,6 +102,9 @@ bool WSAPIParser::dispatch(
     return result;
   };
   core::json::Parser::dispatch<core::json::Object>(helper, message);
+  if (!result && error) {  // general error, see comment above
+    result = dispatch_helper<WSAPIError>(handler, message, buffer_stack, trace_info);
+  }
   if (result || allow_unknown_event_types) {
     return result;
   }

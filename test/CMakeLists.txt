@@ -7,7 +7,6 @@ set(SOURCES
     json_account_config_update.cpp
     json_account_status_ack.cpp
     json_account_update.cpp
-    json_account_update_papi.cpp
     json_balance_update.cpp
     json_book_ticker.cpp
     json_countdown_cancel_all_ack.cpp
@@ -26,7 +25,6 @@ set(SOURCES
     json_order_cancel_ack.cpp
     json_order_place_ack.cpp
     json_order_trade_update.cpp
-    json_order_trade_update_papi.cpp
     json_outbound_account_position.cpp
     json_session_logon.cpp
     json_strategy_update.cpp

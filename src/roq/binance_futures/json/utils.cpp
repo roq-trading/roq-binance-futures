@@ -17,7 +17,7 @@ namespace json {
 Error guess_error([[maybe_unused]] int32_t code) {
   switch (code) {
     case -2011:  // CANCEL_REJECTED
-      return Error::UNKNOWN_EXTERNAL_ORDER_ID;
+      return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
     case -2013:  // NO_SUCH_ORDER
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
     case -4197:  // SAME_ORDER

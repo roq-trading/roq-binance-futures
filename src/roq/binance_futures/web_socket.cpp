@@ -900,6 +900,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
           .text = text,
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -939,6 +940,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
           .text = {},
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1002,6 +1004,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
           .text = text,
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1018,6 +1021,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
           .text = {},
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1081,6 +1085,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
           .text = text,
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1097,6 +1102,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
           .text = {},
           .version = request.version,
           .request_id = {},
+          .external_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };

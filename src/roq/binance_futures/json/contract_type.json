@@ -18,6 +18,9 @@
     {
       "raw": "PERPETUAL DELIVERING",
       "name": "PERPETUAL_DELIVERING"
+    },
+    {
+      "name": "TRADIFI_PERPETUAL"
     }
   ]
 }

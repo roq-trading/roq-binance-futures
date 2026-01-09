@@ -90,6 +90,8 @@ constexpr Helper<binance_futures::json::ContractType>::operator std::optional<ro
       return roq::SecurityType::FUTURES;
     case PERPETUAL_DELIVERING:
       return roq::SecurityType::FUTURES;
+    case TRADIFI_PERPETUAL:
+      return roq::SecurityType::SWAP;
   }
   return {};
 }
@@ -100,6 +102,7 @@ static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::NEXT_QUARTER}} == roq::SecurityType::FUTURES);
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::CURRENT_QUARTER_DELIVERING}} == roq::SecurityType::FUTURES);
 static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::PERPETUAL_DELIVERING}} == roq::SecurityType::FUTURES);
+static_assert(Helper{binance_futures::json::ContractType{binance_futures::json::ContractType::TRADIFI_PERPETUAL}} == roq::SecurityType::SWAP);
 
 template <>
 template <>

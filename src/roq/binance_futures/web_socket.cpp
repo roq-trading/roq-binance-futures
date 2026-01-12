@@ -243,7 +243,7 @@ uint16_t WebSocket::operator()(
 }
 
 // XXX FIXME not supported
-uint16_t WebSocket::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] std::string_view const &request_id) {
   log::fatal("Unexpected"sv);
   // open_orders_cancel_all(event, request_id);
   // return stream_id_;

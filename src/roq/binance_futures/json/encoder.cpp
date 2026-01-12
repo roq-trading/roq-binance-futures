@@ -533,8 +533,8 @@ std::string_view Encoder::order_cancel_json(
     std::vector<char> &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
-    std::string_view const &request_id,
-    std::string_view const &previous_request_id,
+    [[maybe_unused]] std::string_view const &request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
     std::chrono::milliseconds now_utc,
     std::string_view const &id) {

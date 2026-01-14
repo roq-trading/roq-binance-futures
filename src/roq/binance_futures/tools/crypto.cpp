@@ -64,6 +64,20 @@ Crypto::Crypto(
   }
 }
 
+// ed25519
+
+std::string_view Crypto::create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc) {
+  assert(!std::empty(pkey_));
+  auto payload = fmt::format("apiKey={}&timestamp={}"sv, key_, now_utc.count());
+  digest_.clear();
+  context_.reset();
+  pkey_.sign(digest_, payload, context_);
+  utils::codec::Base64::encode(buffer, digest_, false, false);
+  return buffer;
+}
+
+// classic
+
 std::string Crypto::create_rest_signature(std::chrono::milliseconds now_utc) {
   assert(!std::empty(mac_));
   auto timestamp = fmt::format("timestamp={}"sv, now_utc.count());
@@ -97,16 +111,6 @@ std::string Crypto::create_rest_signature_query(std::chrono::milliseconds now_ut
   std::string signature;
   utils::codec::Hex::encode(signature, digest);
   return fmt::format("?{}&signature={}"sv, tmp, signature);
-}
-
-std::string_view Crypto::create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc) {
-  assert(!std::empty(pkey_));
-  auto payload = fmt::format("apiKey={}&timestamp={}"sv, key_, now_utc.count());
-  digest_.clear();
-  context_.reset();
-  pkey_.sign(digest_, payload, context_);
-  utils::codec::Base64::encode(buffer, digest_, false, false);
-  return buffer;
 }
 
 }  // namespace tools

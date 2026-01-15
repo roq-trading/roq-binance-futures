@@ -51,6 +51,11 @@
       "raw": "m",
       "name": "buyer_is_maker",
       "type": "std/bool"
+    },
+    {
+      "raw": "nq",
+      "name": "quantity_excl_rpi",
+      "type": "std/double"
     }
   ]
 }

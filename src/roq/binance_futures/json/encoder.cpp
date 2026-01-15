@@ -8,11 +8,7 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
-#include "roq/utils/text/writer.hpp"
-
 #include "roq/binance_futures/json/map.hpp"
-
-#define WS_USE_FMT
 
 using namespace std::literals;
 
@@ -391,7 +387,6 @@ std::string_view Encoder::order_place_json(
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
   auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
-#if defined(WS_USE_FMT)
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -429,30 +424,6 @@ std::string_view Encoder::order_place_json(
       now_utc.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;
-#else
-  buffer.resize(512);
-  std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
-  utils::text::Writer writer{buffer_2};
-  writer.write("{"sv);
-  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
-  if (!std::isnan(create_order.price)) {
-    writer.write(R"(,"price":")"sv).write(Decimal{create_order.price, order.price_precision.precision}).write(R"(")"sv);
-  }
-  writer.write(R"(,"quantity":")"sv).write(Decimal{create_order.quantity, order.quantity_precision.precision}).write(R"(")"sv);
-  writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
-  writer.write(R"(,"side":")"sv).write(side.as_raw_text()).write(R"(")"sv);
-  if (!std::isnan(create_order.stop_price)) {
-    writer.write(R"(,"stopPrice":")"sv).write(Decimal{create_order.stop_price, order.price_precision.precision}).write(R"(")"sv);
-  }
-  writer.write(R"(,"symbol":")"sv).write(create_order.symbol).write(R"(")"sv);
-  if (time_in_force != json::TimeInForce{}) {
-    writer.write(R"(,"timeInForce":")"sv).write(time_in_force.as_raw_text()).write(R"(")"sv);
-  }
-  writer.write(R"(,"timestamp":)"sv).write(now_utc.count());
-  writer.write(R"(,"type":")"sv).write(type.as_raw_text()).write(R"(")"sv);
-  writer.write("}"sv);
-  return writer.finish();
-#endif
 }
 
 // order-modify
@@ -470,7 +441,6 @@ std::string_view Encoder::order_modify_json(
   auto side = map(order.side).template get<Side>();
   auto quantity = std::isnan(modify_order.quantity) ? order.quantity : modify_order.quantity;
   auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
-#if defined(WS_USE_FMT)
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -502,29 +472,6 @@ std::string_view Encoder::order_modify_json(
       now_utc.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;
-#else
-  buffer.resize(512);
-  std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
-  utils::text::Writer writer{buffer_2};
-  writer.write("{"sv);
-  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
-  if (!std::empty(order.external_order_id)) {
-    writer.write(R"(,"orderId":)"sv).write(order.external_order_id);  // note! integer
-  }
-  writer.write(R"(,"origClientOrderId":")"sv).write(previous_request_id).write(R"(")"sv);
-  writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
-  if (!std::isnan(modify_order.price)) {
-    writer.write(R"(,"price":")"sv).write(Decimal{modify_order.price, order.price_precision.precision}).write(R"(")"sv);
-  }
-  if (!std::isnan(modify_order.quantity)) {
-    writer.write(R"(,"quantity":")"sv).write(Decimal{modify_order.quantity, order.quantity_precision.precision}).write(R"(")"sv);
-  }
-  writer.write(R"(,"side":")"sv).write(side.as_raw_text()).write(R"(")"sv);
-  writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
-  writer.write(R"(,"timestamp":)"sv).write(now_utc.count());
-  writer.write("}"sv);
-  return writer.finish();
-#endif
 }
 
 // order-cancel
@@ -538,7 +485,6 @@ std::string_view Encoder::order_cancel_json(
     std::chrono::milliseconds recv_window,
     std::chrono::milliseconds now_utc,
     std::string_view const &id) {
-#if defined(WS_USE_FMT)
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -564,22 +510,6 @@ std::string_view Encoder::order_cancel_json(
       now_utc.count());
   std::string_view result{std::data(buffer), std::size(buffer)};
   return result;
-#else
-  buffer.resize(512);
-  std::span buffer_2{reinterpret_cast<std::byte *>(std::data(buffer)), std::size(buffer)};
-  utils::text::Writer writer{buffer_2};
-  writer.write("{"sv);
-  writer.write(R"("newClientOrderId":")"sv).write(request_id).write(R"(")"sv);
-  if (!std::empty(order.external_order_id)) {
-    writer.write(R"(,"orderId":)"sv).write(order.external_order_id);  // note! integer
-  }
-  writer.write(R"(,"origClientOrderId":")"sv).write(previous_request_id).write(R"(")"sv);
-  writer.write(R"(,"recvWindow":)"sv).write(recv_window.count());
-  writer.write(R"(,"symbol":")"sv).write(order.symbol).write(R"(")"sv);
-  writer.write(R"(,"timestamp":)"sv).write(now_utc.count());
-  writer.write("}"sv);
-  return writer.finish();
-#endif
 }
 
 }  // namespace json

@@ -420,18 +420,22 @@ std::optional<binance_futures::json::Side> Map<roq::Side>::helper() const {
   return Helper{args_};
 }
 
-// roq::TimeInForce ==> binance_futures::json::TimeInForce
+// {roq::TimeInForce, Mask<roq::ExecutionInstruction>} ==> binance_futures::json::TimeInForce
 
 template <>
 template <>
-constexpr Helper<roq::TimeInForce>::operator std::optional<binance_futures::json::TimeInForce>() const {
-  switch (std::get<0>(args_)) {
+constexpr Helper<roq::TimeInForce, Mask<ExecutionInstruction>>::operator std::optional<binance_futures::json::TimeInForce>() const {
+  auto [time_in_force, execution_instructions] = args_;
+  switch (time_in_force) {
     using enum roq::TimeInForce;
     case UNDEFINED:
       return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GFD:
       return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
     case GTC:
+      if (execution_instructions.has(ExecutionInstruction::PARTICIPATE_DO_NOT_INITIATE)) {
+        return binance_futures::json::TimeInForce::GTX;
+      }
       return binance_futures::json::TimeInForce::GTC;
     case OPG:
       return binance_futures::json::TimeInForce::UNDEFINED_INTERNAL;
@@ -459,24 +463,45 @@ constexpr Helper<roq::TimeInForce>::operator std::optional<binance_futures::json
   return {};
 }
 
-static_assert(Helper{roq::TimeInForce::UNDEFINED} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GFD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GTC} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTC});
-static_assert(Helper{roq::TimeInForce::OPG} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::IOC} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::IOC});
-static_assert(Helper{roq::TimeInForce::FOK} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::FOK});
-static_assert(Helper{roq::TimeInForce::GTX} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTX});
-static_assert(Helper{roq::TimeInForce::GTD} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::AT_THE_CLOSE} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::AT_CROSSING} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GOOD_FOR_TIME} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GFA} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
-static_assert(Helper{roq::TimeInForce::GFM} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::UNDEFINED, Mask<ExecutionInstruction>{}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::GFD, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::GTC, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTC});
+static_assert(
+    Helper{roq::TimeInForce::OPG, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(Helper{roq::TimeInForce::IOC, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::IOC});
+static_assert(Helper{roq::TimeInForce::FOK, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::FOK});
+static_assert(Helper{roq::TimeInForce::GTX, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTX});
+static_assert(
+    Helper{roq::TimeInForce::GTD, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::AT_THE_CLOSE, Mask<ExecutionInstruction>{}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING, Mask<ExecutionInstruction>{}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::AT_CROSSING, Mask<ExecutionInstruction>{}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::GOOD_FOR_TIME, Mask<ExecutionInstruction>{}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::GFA, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+static_assert(
+    Helper{roq::TimeInForce::GFM, Mask<ExecutionInstruction>{}} == binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::UNDEFINED_INTERNAL});
+
+// special
+
+static_assert(
+    Helper{roq::TimeInForce::GTC, Mask{ExecutionInstruction::PARTICIPATE_DO_NOT_INITIATE}} ==
+    binance_futures::json::TimeInForce{binance_futures::json::TimeInForce::GTX});
 
 template <>
 template <>
-std::optional<binance_futures::json::TimeInForce> Map<roq::TimeInForce>::helper() const {
+std::optional<binance_futures::json::TimeInForce> Map<roq::TimeInForce, Mask<ExecutionInstruction>>::helper() const {
   return Helper{args_};
 }
 

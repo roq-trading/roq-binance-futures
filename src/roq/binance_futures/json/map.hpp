@@ -65,6 +65,6 @@ std::optional<binance_futures::json::Side> Map<Side>::helper() const;
 
 template <>
 template <>
-std::optional<binance_futures::json::TimeInForce> Map<TimeInForce>::helper() const;
+std::optional<binance_futures::json::TimeInForce> Map<TimeInForce, Mask<ExecutionInstruction>>::helper() const;
 
 }  // namespace roq

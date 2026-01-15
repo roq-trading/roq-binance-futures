@@ -78,7 +78,7 @@ std::string_view Encoder::order_place_url(
       break;
     case LIMIT: {
       assert(!std::isnan(create_order.price));
-      auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
+      auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions).template get<TimeInForce>();
       fmt::format_to(
           std::back_inserter(buffer),
           R"(timeInForce={}&)"
@@ -386,7 +386,7 @@ std::string_view Encoder::order_place_json(
     std::string_view const &id) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
-  auto time_in_force = map(create_order.time_in_force).template get<TimeInForce>();
+  auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions).template get<TimeInForce>();
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),

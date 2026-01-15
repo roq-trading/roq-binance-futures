@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* Missing mapping from execution instruction `PARTICIPATE_DO_NOT_INITIATE` to GTX (#545)
+
 ## 1.1.1 &ndash; 20251214
 
 ### Changed

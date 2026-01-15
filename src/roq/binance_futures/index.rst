@@ -586,15 +586,9 @@ Comments
     The matching engine will not report fills directly, rather it will hand the update off to centralized logic that
     will udpate and validate portfolio margin.
 
-* WSAPI is **WORK-IN-PROGRESS**
+* The :code:`PARTICIPATE_DO_NOT_INITIATE` execution instruction is mapped to Binance's :code:`GTX` time in force when
+  Roq's time in force is :code:`GTC`
 
-  * Some exchange features are missing (they are available from spot WSAPI):
-
-    * Download working orders
-
-    * Download trade history
-
-    * Cancel all working orders
 
 
 References

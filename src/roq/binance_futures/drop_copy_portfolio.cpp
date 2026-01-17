@@ -319,7 +319,7 @@ void DropCopyPortfolio::operator()(Trace<json::OrderTradeUpdate> const &event) {
           strategy_id = order.strategy_id;
         })) {
     } else {
-      log::warn<2>("DEBUG: execution_report={}"sv, execution_report);
+      log::warn<2>("DEBUG execution_report={}"sv, execution_report);
     }
     if (execution_report.execution_type != json::ExecutionType::TRADE) {
       return;
@@ -371,7 +371,6 @@ void DropCopyPortfolio::operator()(Trace<json::AccountUpdate> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
-    log::warn("DEBUG account_update={}"sv, account_update);
     if (!shared_.settings.misc.test_alt_funds_update) {
       for (auto &item : account_update.data.balances) {
         log::info<2>("item={}"sv, item);
@@ -464,7 +463,6 @@ void DropCopyPortfolio::operator()(Trace<json::TradeLite> const &event) {
   profile_.trade_lite([&]() {
     auto &[trace_info, trade_lite] = event;
     log::info<2>("trade_lite={}"sv, trade_lite);
-    log::warn("DEBUG trade_lite={}"sv, trade_lite);
   });
 }
 
@@ -518,7 +516,7 @@ void DropCopyPortfolio::operator()(Trace<json::ExecutionReport2> const &event) {
           strategy_id = order.strategy_id;
         })) {
     } else {
-      log::warn<2>("DEBUG: execution_report={}"sv, execution_report);
+      log::warn<2>("DEBUG execution_report={}"sv, execution_report);
     }
     if (execution_report.execution_type != json::ExecutionType::TRADE) {
       return;
@@ -570,7 +568,6 @@ void DropCopyPortfolio::operator()(Trace<json::BalanceUpdate> const &event) {
   profile_.balance_update([&]() {
     auto &[trace_info, balance_update] = event;
     log::info<2>("balance_update={}"sv, balance_update);
-    log::warn("DEBUG balance_update={}"sv, balance_update);
   });
 }
 
@@ -578,7 +575,6 @@ void DropCopyPortfolio::operator()(Trace<json::LiabilityChange> const &event) {
   profile_.liability_change([&]() {
     auto &[trace_info, liability_change] = event;
     log::info<2>("liability_change={}"sv, liability_change);
-    log::warn("DEBUG liability_change={}"sv, liability_change);
   });
 }
 
@@ -586,7 +582,6 @@ void DropCopyPortfolio::operator()(Trace<json::OutboundAccountPosition> const &e
   profile_.outbound_account_position([&]() {
     auto &[trace_info, outbound_account_position] = event;
     log::info<2>("outbound_account_position={}"sv, outbound_account_position);
-    log::warn("DEBUG outbound_account_position={}"sv, outbound_account_position);
     if (shared_.settings.misc.test_alt_funds_update) {
       for (auto &item : outbound_account_position.balances) {
         log::info<2>("item={}"sv, item);

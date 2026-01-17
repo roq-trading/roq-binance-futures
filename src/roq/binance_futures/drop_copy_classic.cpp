@@ -470,7 +470,6 @@ void DropCopyClassic::operator()(Trace<json::TradeLite> const &event) {
   profile_.trade_lite([&]() {
     auto &[trace_info, trade_lite] = event;
     log::info<2>("trade_lite={}"sv, trade_lite);
-    log::warn("DEBUG trade_lite={}"sv, trade_lite);
   });
 }
 
@@ -479,7 +478,6 @@ void DropCopyClassic::operator()(Trace<json::ExecutionReport2> const &event) {
   profile_.execution_report([&]() {
     auto &[trace_info, execution_report] = event;
     log::info<2>("execution_report={}"sv, execution_report);
-    log::warn("DEBUG execution_report={}"sv, execution_report);
   });
 }
 
@@ -487,7 +485,6 @@ void DropCopyClassic::operator()(Trace<json::BalanceUpdate> const &event) {
   profile_.balance_update([&]() {
     auto &[trace_info, balance_update] = event;
     log::info<2>("balance_update={}"sv, balance_update);
-    log::warn("DEBUG balance_update={}"sv, balance_update);
   });
 }
 
@@ -495,7 +492,6 @@ void DropCopyClassic::operator()(Trace<json::LiabilityChange> const &event) {
   profile_.liability_change([&]() {
     auto &[trace_info, liability_change] = event;
     log::info<2>("liability_change={}"sv, liability_change);
-    log::warn("DEBUG liability_change={}"sv, liability_change);
   });
 }
 
@@ -503,7 +499,6 @@ void DropCopyClassic::operator()(Trace<json::OutboundAccountPosition> const &eve
   profile_.outbound_account_position([&]() {
     auto &[trace_info, outbound_account_position] = event;
     log::info<2>("outbound_account_position={}"sv, outbound_account_position);
-    log::warn("DEBUG outbound_account_position={}"sv, outbound_account_position);
   });
 }
 

@@ -284,7 +284,6 @@ void WebSocket::user_data_stream_start() {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::user_data_stream_start_json(encode_buffer_, account_.get_key(), request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -312,7 +311,6 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::user_data_stream_ping_json(encode_buffer_, account_.get_key(), request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -332,7 +330,6 @@ void WebSocket::account_balance() {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::account_balance_json(encode_buffer_, now_utc, request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -352,7 +349,6 @@ void WebSocket::account_status() {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::account_status_json(encode_buffer_, now_utc, request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -372,7 +368,6 @@ void WebSocket::account_position() {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::account_position_json(encode_buffer_, now_utc, request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -401,7 +396,6 @@ void WebSocket::order_status(std::string_view const &symbol) {
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::order_status_json(encode_buffer_, symbol, now_utc, request_id);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -495,7 +489,6 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -522,7 +515,6 @@ void WebSocket::order_modify(
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::order_modify_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -549,7 +541,6 @@ void WebSocket::order_cancel(
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
-    log::warn(R"(DEBUG {})"sv, message);
     (*connection_).send_text(message);
   });
 }
@@ -657,14 +648,14 @@ void WebSocket::parse(std::string_view const &message) {
 
 void WebSocket::operator()(Trace<json::WSAPIError> const &event) {
   auto &[trace_info, error] = event;
-  log::fatal("error={}"sv, error);
+  log::fatal("wsapi_error={}"sv, error);
 }
 
 void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
   auto const STATE = WebSocketState::SESSION_LOGON;
   profile_.session_logon([&]() {
-    auto &[trace_info, session_logon] = event;
-    log::info<2>("session_logon={}"sv, session_logon);
+    auto &[trace_info, wsapi_session_logon] = event;
+    log::info<2>("wsapi_session_logon={}"sv, wsapi_session_logon);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       if (download_.downloading()) {
@@ -672,10 +663,10 @@ void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
       }
     };
     auto handle_success = [&]([[maybe_unused]] auto &result) { download_.check_relaxed(STATE); };
-    if (session_logon.status == 200) {
-      handle_success(session_logon.result);
+    if (wsapi_session_logon.status == 200) {
+      handle_success(wsapi_session_logon.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(session_logon.error.code), session_logon.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_session_logon.error.code), wsapi_session_logon.error.msg);
     }
     update_rate_limits(event);
   });
@@ -684,8 +675,8 @@ void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
 void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
   auto const STATE = WebSocketState::USER_DATA_STREAM_START;
   profile_.user_data_stream_start_ack([&]() {
-    auto &[trace_info, listen_key] = event;
-    log::info<2>("listen_key={}"sv, listen_key);
+    auto &[trace_info, wsapi_listen_key] = event;
+    log::info<2>("wsapi_listen_key={}"sv, wsapi_listen_key);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       if (download_.downloading()) {
@@ -704,10 +695,10 @@ void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
       auto now = clock::get_system();
       listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
     };
-    if (listen_key.status == 200) {
-      handle_success(listen_key.result);
+    if (wsapi_listen_key.status == 200) {
+      handle_success(wsapi_listen_key.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(listen_key.error.code), listen_key.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_listen_key.error.code), wsapi_listen_key.error.msg);
     }
     update_rate_limits(event);
   });
@@ -715,8 +706,8 @@ void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
 
 void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
   profile_.account_balance_ack([&]() {
-    auto &[trace_info, account_balance] = event;
-    log::info<2>("account_balance={}"sv, account_balance);
+    auto &[trace_info, wsapi_account_balance] = event;
+    log::info<2>("wsapi_account_balance={}"sv, wsapi_account_balance);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
     };
@@ -738,10 +729,10 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
         create_trace_and_dispatch(handler_, trace_info, funds_update, true);
       }
     };
-    if (account_balance.status == 200) {
-      handle_success(account_balance.result);
+    if (wsapi_account_balance.status == 200) {
+      handle_success(wsapi_account_balance.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(account_balance.error.code), account_balance.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_balance.error.code), wsapi_account_balance.error.msg);
     }
     update_rate_limits(event);
     log::info<1>("Balance download has completed!"sv);
@@ -752,8 +743,8 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
 
 void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
   profile_.account_status_ack([&]() {
-    auto &[trace_info, account_status] = event;
-    log::info<2>("account_status={}"sv, account_status);
+    auto &[trace_info, wsapi_account_status] = event;
+    log::info<2>("wsapi_account_status={}"sv, wsapi_account_status);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
     };
@@ -782,10 +773,10 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
         create_trace_and_dispatch(handler_, trace_info, position_update, true);
       }
     };
-    if (account_status.status == 200) {
-      handle_success(account_status.result);
+    if (wsapi_account_status.status == 200) {
+      handle_success(wsapi_account_status.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(account_status.error.code), account_status.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_status.error.code), wsapi_account_status.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -797,18 +788,18 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
 
 void WebSocket::operator()(Trace<json::WSAPIAccountPosition> const &event) {
   profile_.account_position_ack([&]() {
-    auto &[trace_info, account_position] = event;
-    log::info<2>("account_position={}"sv, account_position);
+    auto &[trace_info, wsapi_account_position] = event;
+    log::info<2>("wsapi_account_position={}"sv, wsapi_account_position);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
     };
     auto handle_success = [&]([[maybe_unused]] auto &result) {
       // XXX FIXME TODO
     };
-    if (account_position.status == 200) {
-      handle_success(account_position.result);
+    if (wsapi_account_position.status == 200) {
+      handle_success(wsapi_account_position.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(account_position.error.code), account_position.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_position.error.code), wsapi_account_position.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -827,8 +818,8 @@ void WebSocket::operator()(Trace<json::WSAPITrades> const &) {
 
 void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, json::WSAPIRequest const &request) {
   profile_.open_orders_cancel_all_ack([&]() {
-    auto &[trace_info, open_orders_cancel_all] = event;
-    log::info<2>("open_orders_cancel_all={}, request={}"sv, open_orders_cancel_all, request);
+    auto &[trace_info, wsapi_open_orders_cancel_all] = event;
+    log::info<2>("wsapi_open_orders_cancel_all={}, request={}"sv, wsapi_open_orders_cancel_all, request);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       // XXX FIXME TODO ack
@@ -877,10 +868,11 @@ void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, j
         shared_.update_order(item.client_order_id, stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
       }
     };
-    if (open_orders_cancel_all.status == 200) {
-      handle_success(open_orders_cancel_all.result);
+    if (wsapi_open_orders_cancel_all.status == 200) {
+      handle_success(wsapi_open_orders_cancel_all.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(open_orders_cancel_all.error.code), open_orders_cancel_all.error.msg);
+      handle_error(
+          Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_open_orders_cancel_all.error.code), wsapi_open_orders_cancel_all.error.msg);
     }
     update_rate_limits(event);
   });
@@ -888,8 +880,8 @@ void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, j
 
 void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAPIRequest const &request) {
   profile_.order_place_ack([&]() {
-    auto &[trace_info, order_place] = event;
-    log::info<2>("order_place={}, request={}"sv, order_place, request);
+    auto &[trace_info, wsapi_order_place] = event;
+    log::info<2>("wsapi_order_place={}, request={}"sv, wsapi_order_place, request);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
@@ -981,10 +973,10 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
       Trace event_2{trace_info, response};
       (*this)(event_2, request.user_id, request.order_id, order_update);
     };
-    if (order_place.status == 200) {
-      handle_success(order_place.result);
+    if (wsapi_order_place.status == 200) {
+      handle_success(wsapi_order_place.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(order_place.error.code), order_place.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_place.error.code), wsapi_order_place.error.msg);
     }
     update_rate_limits(event);
   });
@@ -992,8 +984,8 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
 
 void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSAPIRequest const &request) {
   profile_.order_modify_ack([&]() {
-    auto &[trace_info, order_modify] = event;
-    log::info<2>("order_modify={}, request={}"sv, order_modify, request);
+    auto &[trace_info, wsapi_order_modify] = event;
+    log::info<2>("wsapi_order_modify={}, request={}"sv, wsapi_order_modify, request);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
@@ -1062,10 +1054,10 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
       Trace event_2{trace_info, response};
       (*this)(event_2, request.user_id, request.order_id, order_update);
     };
-    if (order_modify.status == 200) {
-      handle_success(order_modify.result);
+    if (wsapi_order_modify.status == 200) {
+      handle_success(wsapi_order_modify.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(order_modify.error.code), order_modify.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_modify.error.code), wsapi_order_modify.error.msg);
     }
     update_rate_limits(event);
   });
@@ -1073,8 +1065,8 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
 
 void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSAPIRequest const &request) {
   profile_.order_cancel_ack([&]() {
-    auto &[trace_info, order_cancel] = event;
-    log::info<2>("order_cancel={}, request={}"sv, order_cancel, request);
+    auto &[trace_info, wsapi_order_cancel] = event;
+    log::info<2>("wsapi_order_cancel={}, request={}"sv, wsapi_order_cancel, request);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
@@ -1143,10 +1135,10 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
       Trace event_2{trace_info, response};
       (*this)(event_2, request.user_id, request.order_id, order_update);
     };
-    if (order_cancel.status == 200) {
-      handle_success(order_cancel.result);
+    if (wsapi_order_cancel.status == 200) {
+      handle_success(wsapi_order_cancel.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(order_cancel.error.code), order_cancel.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_cancel.error.code), wsapi_order_cancel.error.msg);
     }
     update_rate_limits(event);
   });

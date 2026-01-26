@@ -277,6 +277,9 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
   }
 }
 
+void Gateway::operator()(Event<Subscribe> const &) {
+}
+
 uint16_t Gateway::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
   auto &create_order = event.value;
   assert(!std::empty(create_order.account));

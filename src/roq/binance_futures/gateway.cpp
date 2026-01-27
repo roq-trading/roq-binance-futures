@@ -277,7 +277,20 @@ void Gateway::create_drop_copy_helper(auto &listen_key_update) {
   }
 }
 
-void Gateway::operator()(Event<Subscribe> const &) {
+void Gateway::operator()(Event<Subscribe> const &event) {
+  auto &[message_info, subscribe] = event;
+  std::vector<Symbol> symbols;
+  for (auto &item : subscribe.symbols) {
+    if (shared_.all_symbols.emplace(item).second) {
+      symbols.emplace_back(item);
+    } else {
+      log::warn(R"(*** DUPLICATE SUBSCRIPTION *** (symbol="{}")"sv, item);
+    }
+  }
+  auto symbols_update = Rest::SymbolsUpdate{
+      .symbols = symbols,
+  };
+  (*this)(symbols_update);
 }
 
 uint16_t Gateway::operator()(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {

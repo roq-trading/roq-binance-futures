@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* WSAPI is now the default (#547)
+
 ### Fixed
 
 * Missing mapping from execution instruction `PARTICIPATE_DO_NOT_INITIATE` to GTX (#545)

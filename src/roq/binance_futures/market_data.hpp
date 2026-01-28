@@ -81,6 +81,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
   void operator()(Trace<json::Result> const &, int32_t id) override;
 
   // update
+  void operator()(Trace<json::Trade2> const &) override;
   void operator()(Trace<json::AggTrade> const &) override;
   void operator()(Trace<json::MarkPriceUpdate> const &) override;
   void operator()(Trace<json::MiniTicker> const &) override;
@@ -105,7 +106,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, book_ticker, depth_update, kline;
+    utils::metrics::Profile parse, error, result, trade, agg_trade, mark_price_update, mini_ticker, book_ticker, depth_update, kline;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

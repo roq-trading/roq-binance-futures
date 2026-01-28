@@ -32,6 +32,7 @@ struct MarketStreamParserTester final : public json::MarketStreamParser::Handler
   void operator()(Trace<json::Error> const &event, [[maybe_unused]] int32_t request_id) override { dispatch_helper(event); }
   void operator()(Trace<json::Result> const &event, [[maybe_unused]] int32_t request_id) override { dispatch_helper(event); }
   // update
+  void operator()(Trace<json::Trade2> const &event) override { dispatch_helper(event); }
   void operator()(Trace<json::AggTrade> const &event) override { dispatch_helper(event); }
   void operator()(Trace<json::MiniTicker> const &event) override { dispatch_helper(event); }
   void operator()(Trace<json::BookTicker> const &event) override { dispatch_helper(event); }

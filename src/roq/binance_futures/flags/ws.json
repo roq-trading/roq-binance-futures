@@ -54,6 +54,12 @@
       "description": "Depth update frequency"
     },
     {
+      "name": "subscribe_trade_details",
+      "type": "std/bool",
+      "default": false,
+      "description": "Should trade summary reports include individual matches?"
+    },
+    {
       "name": "mbp_request_delay",
       "type": "std/nanoseconds",
       "validator": "roq/flags/validators/TimePeriod",

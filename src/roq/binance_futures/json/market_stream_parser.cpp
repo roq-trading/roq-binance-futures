@@ -83,6 +83,9 @@ bool MarketStreamParser::dispatch(
                 log::fatal("Unexpected"sv);
               }
               return false;
+            case TRADE:
+              dispatch_helper<Trade2>(handler, message, buffer_stack, trace_info);
+              return true;
             case AGG_TRADE:
               dispatch_helper<AggTrade>(handler, message, buffer_stack, trace_info);
               return true;

@@ -31,6 +31,7 @@ set(SOURCES
     json_outbound_account_position.cpp
     json_session_logon.cpp
     json_strategy_update.cpp
+    json_trade.cpp
     json_trades_ack.cpp
     json_wsapi_account_balance.cpp
     json_wsapi_account_position.cpp

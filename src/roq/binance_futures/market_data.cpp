@@ -122,6 +122,7 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
           .parse = create_metrics(shared.settings, name_, "parse"sv),
           .error = create_metrics(shared.settings, name_, "error"sv),
           .result = create_metrics(shared.settings, name_, "result"sv),
+          .trade = create_metrics(shared.settings, name_, "trade"sv),
           .agg_trade = create_metrics(shared.settings, name_, "agg_trade"sv),
           .mark_price_update = create_metrics(shared.settings, name_, "mark_price_update"sv),
           .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
@@ -161,6 +162,7 @@ void MarketData::operator()(metrics::Writer &writer) const {
       .write(profile_.parse, metrics::Type::PROFILE)
       .write(profile_.error, metrics::Type::PROFILE)
       .write(profile_.result, metrics::Type::PROFILE)
+      .write(profile_.trade, metrics::Type::PROFILE)
       .write(profile_.agg_trade, metrics::Type::PROFILE)
       .write(profile_.mark_price_update, metrics::Type::PROFILE)
       .write(profile_.mini_ticker, metrics::Type::PROFILE)
@@ -242,7 +244,11 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols) {
     return;
   }
   if (priority_ == Priority::PRIMARY) {
-    subscribe(symbols, "aggTrade"sv);
+    if (shared_.settings.ws.subscribe_trade_details) {
+      subscribe(symbols, "trade"sv);
+    } else {
+      subscribe(symbols, "aggTrade"sv);
+    }
     subscribe(symbols, "markPrice"sv);
     subscribe(symbols, "miniTicker"sv);
   }
@@ -300,6 +306,33 @@ void MarketData::operator()(Trace<json::Result> const &event, int32_t id) {
   profile_.result([&]() {
     auto &[trace_info, result] = event;
     log::info("result={}, id={}"sv, result, id);
+  });
+}
+
+void MarketData::operator()(Trace<json::Trade2> const &event) {
+  profile_.trade([&]() {
+    auto &[trace_info, trade] = event;
+    log::info<3>("trade={}"sv, trade);
+    (*connection_).touch(trace_info.source_receive_time);
+    auto side = trade.buyer_is_maker ? Side::SELL : Side::BUY;
+    auto trade_2 = Trade{
+        .side = side,
+        .price = trade.price,
+        .quantity = trade.quantity,
+        .trade_id = {},
+        .taker_order_id = {},
+        .maker_order_id = {},
+    };
+    auto trade_summary = TradeSummary{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = trade.symbol,
+        .trades = {&trade_2, 1},
+        .exchange_time_utc = trade.trade_time,
+        .exchange_sequence = {},
+        .sending_time_utc = trade.event_time,
+    };
+    create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
   });
 }
 

@@ -38,6 +38,7 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
       }
       break;
     case UNDEFINED_INTERNAL:
+    case TRADE:
     case AGG_TRADE:
     case _24HR_MINI_TICKER:
     case BOOK_TICKER:

@@ -86,6 +86,7 @@ set(AUTOGEN_SCHEMAS
     symbol_status.json
     ticker.json
     time_in_force.json
+    trade_2.json
     trade.json
     trade_lite.json
     trades_ack.json

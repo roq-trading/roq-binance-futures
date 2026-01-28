@@ -74,6 +74,7 @@ symbol.hpp
 symbol_status.hpp
 ticker.hpp
 time_in_force.hpp
+trade_2.hpp
 trade.hpp
 trade_lite.hpp
 trades_ack.hpp
@@ -168,6 +169,7 @@ symbol.cpp
 symbol_status.cpp
 ticker.cpp
 time_in_force.cpp
+trade_2.cpp
 trade.cpp
 trade_lite.cpp
 trades_ack.cpp

@@ -391,6 +391,7 @@ void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
         .symbol = item.symbol,
         .description = {},
         .security_type = map(item.contract_type),
+        .external_security_id = {},
         .cfi_code = {},
         .base_currency = item.base_asset,
         .quote_currency = item.quote_asset,

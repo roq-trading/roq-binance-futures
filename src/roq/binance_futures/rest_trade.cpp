@@ -539,6 +539,8 @@ void RestTrade::operator()(Trace<json::OpenOrdersAck> const &event) {
         .external_order_id = external_order_id,
         .client_order_id = item.client_order_id,
         .order_status = map(item.status),
+        .error = {},
+        .text = {},
         .quantity = item.orig_qty,
         .price = item.price,
         .stop_price = item.stop_price,

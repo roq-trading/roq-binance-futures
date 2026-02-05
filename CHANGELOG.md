@@ -4,6 +4,8 @@ All notable changes will be documented in this file.
 
 ## Head
 
+## 1.1.2 &ndash; 2026-02-08
+
 ### Changed
 
 * WSAPI is now the default (#547)
@@ -12,7 +14,7 @@ All notable changes will be documented in this file.
 
 * Missing mapping from execution instruction `PARTICIPATE_DO_NOT_INITIATE` to GTX (#545)
 
-## 1.1.1 &ndash; 20251214
+## 1.1.1 &ndash; 2025-12-14
 
 ### Changed
 

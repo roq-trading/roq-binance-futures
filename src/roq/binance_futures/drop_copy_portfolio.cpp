@@ -465,6 +465,61 @@ void DropCopyPortfolio::operator()(Trace<json::TradeLite> const &event) {
   profile_.trade_lite([&]() {
     auto &[trace_info, trade_lite] = event;
     log::info<2>("trade_lite={}"sv, trade_lite);
+    if (!shared_.settings.ws.trade_lite) {
+      return;
+    }
+    auto callback = [&](auto &order) {
+      auto liquidity = [&]() {
+        if (trade_lite.maker) {
+          return Liquidity::MAKER;
+        }
+        return Liquidity::TAKER;
+      }();
+      auto side = map(trade_lite.side).template get<Side>();
+      auto ref_data = shared_.get_ref_data(shared_.settings.exchange, trade_lite.symbol);
+      auto profit_loss_amount = utils::compute_profit_loss_amount(side, trade_lite.last_filled_quantity, trade_lite.last_filled_price, ref_data.multiplier);
+      auto fill = Fill{
+          .exchange_time_utc = trade_lite.transaction_time,
+          .external_trade_id = {},  // see below
+          .quantity = trade_lite.last_filled_quantity,
+          .price = trade_lite.last_filled_price,
+          .liquidity = liquidity,
+          .commission_amount = NaN,   // note!
+          .commission_currency = {},  // note!
+          .base_amount = NaN,
+          .quote_amount = NaN,
+          .profit_loss_amount = profit_loss_amount,
+      };
+      fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade_lite.trade_id);
+      auto external_order_id = fmt::format("{}"sv, trade_lite.order_id);
+      auto trade_update = TradeUpdate{
+          .stream_id = stream_id_,
+          .account = account_.name,
+          .order_id = order.order_id,
+          .exchange = shared_.settings.exchange,
+          .symbol = trade_lite.symbol,
+          .side = map(trade_lite.side),
+          .position_effect = {},
+          .margin_mode = MarginMode::PORTFOLIO,
+          .quantity_type = {},
+          .create_time_utc = trade_lite.transaction_time,
+          .update_time_utc = trade_lite.transaction_time,
+          .external_account = {},
+          .external_order_id = external_order_id,
+          .client_order_id = {},
+          .fills = {&fill, 1},
+          .routing_id = {},
+          .update_type = UpdateType::INCREMENTAL,
+          .sending_time_utc = trade_lite.event_time,
+          .user = {},
+          .strategy_id = order.strategy_id,
+      };
+      create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id, trade_lite.client_order_id);
+    };
+    if (shared_.find_order(trade_lite.client_order_id, callback)) {
+    } else {
+      log::warn("*** EXTERNAL ORDER ***"sv);
+    }
   });
 }
 
@@ -523,6 +578,9 @@ void DropCopyPortfolio::operator()(Trace<json::ExecutionReport2> const &event) {
       log::warn<2>("DEBUG execution_report={}"sv, execution_report);
     }
     if (execution_report.execution_type != json::ExecutionType::TRADE) {
+      return;
+    }
+    if (shared_.settings.ws.trade_lite) {
       return;
     }
     auto side = map(execution_report.side).template get<Side>();

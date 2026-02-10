@@ -77,6 +77,12 @@
       "type": "std/bool",
       "default": false,
       "description": "Create secondary market data connection?"
+    },
+    {
+      "name": "trade_lite",
+      "type": "std/bool",
+      "default": false,
+      "description": "Prefer the trade-lite feed (to the order-trade-update feed)?"
     }
   ]
 }

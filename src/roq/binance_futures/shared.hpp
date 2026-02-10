@@ -47,6 +47,11 @@ struct Shared final {
     return dispatcher_.get_ref_data(std::forward<Args>(args)...);
   }
 
+  template <typename... Args>
+  auto find_order(Args &&...args) {
+    return dispatcher_.find_order(std::forward<Args>(args)...);
+  }
+
  public:
   Settings const &settings;
   API const api;

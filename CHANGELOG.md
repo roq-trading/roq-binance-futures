@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Added
+
+* Add flag to use the `TRADE_LITE` message for fills (#559)
+
 ## 1.1.2 &ndash; 2026-02-08
 
 ### Changed

@@ -65,7 +65,7 @@ bool WSAPIParser::dispatch(
               result = dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info);
               return true;
             case USER_DATA_STREAM_PING:
-              // note! drop
+              result = dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info);
               return false;
             case ACCOUNT_BALANCE:
               result = dispatch_helper<WSAPIAccountBalance>(handler, message, buffer_stack, trace_info);

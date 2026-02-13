@@ -37,3 +37,26 @@ TEST_CASE("dapi", "[json_wsapi_listen_key]") {
   };
   WSAPIParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
+
+TEST_CASE("ping", "[json_wsapi_listen_key]") {
+  auto message = R"({)"
+                 R"("id":"Bgk9AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",)"
+                 R"("status":200,)"
+                 R"("result":{)"
+                 R"("listenKey":"1Tg8zBGnrys0mqxF4b7yF1SHOu9t3dXenjYk92ze9V59Wq6l2ps1mRPBlQ74V5UF")"
+                 R"(},)"
+                 R"("rateLimits":[{)"
+                 R"("rateLimitType":"REQUEST_WEIGHT",)"
+                 R"("interval":"MINUTE",)"
+                 R"("intervalNum":1,)"
+                 R"("limit":2400,)"
+                 R"("count":1)"
+                 R"(})"
+                 R"(])"
+                 R"(})"sv;
+  auto helper = [](value_type const &obj) {
+    CHECK(obj.id == "Bgk9AAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"sv);
+    CHECK(obj.status == 200);
+  };
+  WSAPIParserTester<value_type>::dispatch(helper, message, 8192, 1);
+}

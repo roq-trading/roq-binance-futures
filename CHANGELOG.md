@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* WSAPI Listen Key ping would terminate the application (#561)
+
 ### Added
 
 * Add flag to use the `TRADE_LITE` message for fills (#559)

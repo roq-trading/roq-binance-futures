@@ -229,28 +229,28 @@ void OrderEntryClassic::operator()(metrics::Writer &writer) const {
 }
 
 uint16_t OrderEntryClassic::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &, std::string_view const &request_id) {
-  order_place(event, order, request_id);
+    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
+  order_place(event, order, ref_data, request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntryClassic::operator()(
     Event<ModifyOrder> const &event,
     server::oms::Order const &order,
-    server::oms::RefData const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  order_modify(event, order, request_id, previous_request_id);
+  order_modify(event, order, ref_data, request_id, previous_request_id);
   return stream_id_;
 }
 
 uint16_t OrderEntryClassic::operator()(
     Event<CancelOrder> const &event,
     server::oms::Order const &order,
-    server::oms::RefData const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  order_cancel(event, order, request_id, previous_request_id);
+  order_cancel(event, order, ref_data, request_id, previous_request_id);
   return stream_id_;
 }
 
@@ -819,7 +819,8 @@ void OrderEntryClassic::refresh_listen_key() {
 
 // order-place
 
-void OrderEntryClassic::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void OrderEntryClassic::order_place(
+    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   profile_.order_place([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
@@ -827,7 +828,7 @@ void OrderEntryClassic::order_place(Event<CreateOrder> const &event, server::oms
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, request_id, recv_window);
+    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -941,15 +942,19 @@ void OrderEntryClassic::operator()(Trace<json::OrderPlaceAck> const &event, uint
 // order-modify
 
 void OrderEntryClassic::order_modify(
-    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event,
+    server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
   profile_.order_modify([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
     }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body =
-        json::Encoder::order_modify_url(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
+    auto body = json::Encoder::order_modify_url(
+        encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -1063,14 +1068,18 @@ void OrderEntryClassic::operator()(Trace<json::OrderModifyAck> const &event, uin
 // order-cancel
 
 void OrderEntryClassic::order_cancel(
-    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event,
+    server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
   profile_.order_cancel([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
     }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window);
+    auto body = json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{

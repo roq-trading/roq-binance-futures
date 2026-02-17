@@ -226,28 +226,28 @@ void WebSocket::operator()(metrics::Writer &writer) const {
 }
 
 uint16_t WebSocket::operator()(
-    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &, std::string_view const &request_id) {
-  order_place(event, order, request_id);
+    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
+  order_place(event, order, ref_data, request_id);
   return stream_id_;
 }
 
 uint16_t WebSocket::operator()(
     Event<ModifyOrder> const &event,
     server::oms::Order const &order,
-    server::oms::RefData const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  order_modify(event, order, request_id, previous_request_id);
+  order_modify(event, order, ref_data, request_id, previous_request_id);
   return stream_id_;
 }
 
 uint16_t WebSocket::operator()(
     Event<CancelOrder> const &event,
     server::oms::Order const &order,
-    server::oms::RefData const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  order_cancel(event, order, request_id, previous_request_id);
+  order_cancel(event, order, ref_data, request_id, previous_request_id);
   return stream_id_;
 }
 
@@ -478,7 +478,8 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
 
 // order-place
 
-void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order const &order, std::string_view const &request_id) {
+void WebSocket::order_place(
+    Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   profile_.order_place([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
@@ -496,7 +497,7 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, request_id, recv_window, now_utc, request_id_2);
+    auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, ref_data, request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
@@ -505,7 +506,11 @@ void WebSocket::order_place(Event<CreateOrder> const &event, server::oms::Order 
 // order-modify
 
 void WebSocket::order_modify(
-    Event<ModifyOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+    Event<ModifyOrder> const &event,
+    server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
   profile_.order_modify([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
@@ -522,7 +527,8 @@ void WebSocket::order_modify(
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_modify_json(encode_buffer_, modify_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
+    auto message =
+        json::Encoder::order_modify_json(encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
@@ -531,7 +537,11 @@ void WebSocket::order_modify(
 // order-cancel
 
 void WebSocket::order_cancel(
-    Event<CancelOrder> const &event, server::oms::Order const &order, std::string_view const &request_id, std::string_view const &previous_request_id) {
+    Event<CancelOrder> const &event,
+    server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
+    std::string_view const &request_id,
+    std::string_view const &previous_request_id) {
   profile_.order_cancel([&]() {
     if (!ready()) {
       throw server::oms::NotReady{"not ready"sv};
@@ -548,7 +558,8 @@ void WebSocket::order_cancel(
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, request_id, previous_request_id, recv_window, now_utc, request_id_2);
+    auto message =
+        json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });

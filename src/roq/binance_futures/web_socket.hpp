@@ -98,9 +98,19 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
-  void order_place(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
-  void order_modify(Event<ModifyOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
-  void order_cancel(Event<CancelOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
+  void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
+  void order_modify(
+      Event<ModifyOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
+  void order_cancel(
+      Event<CancelOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
 
   // web::socket::Client::Handler
 
@@ -191,8 +201,8 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   bool download_account_ = false;
   bool download_orders_ = false;
   utils::unordered_set<std::string> open_orders_symbols_;
-  std::vector<char> request_encode_buffer_;
-  std::vector<char> encode_buffer_;
+  std::string request_encode_buffer_;
+  std::string encode_buffer_;
   // state
   bool ready_ = false;
   ConnectionStatus status_ = {};

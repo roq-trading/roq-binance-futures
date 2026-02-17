@@ -142,19 +142,29 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
 
   // order-place
 
-  void order_place(Event<CreateOrder> const &, server::oms::Order const &, std::string_view const &request_id);
+  void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
   void order_place_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<json::OrderPlaceAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // order-modify
 
-  void order_modify(Event<ModifyOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
+  void order_modify(
+      Event<ModifyOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
   void order_modify_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<json::OrderModifyAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // order-cancel
 
-  void order_cancel(Event<CancelOrder> const &, server::oms::Order const &, std::string_view const &request_id, std::string_view const &previous_request_id);
+  void order_cancel(
+      Event<CancelOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id);
   void order_cancel_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<json::OrderCancelAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
@@ -231,7 +241,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   bool download_account_ = false;
   bool download_orders_ = false;
   bool download_trades_ = false;
-  std::vector<char> encode_buffer_;
+  std::string encode_buffer_;
   bool download_trades_is_first_ = true;
 };
 

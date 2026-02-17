@@ -68,79 +68,96 @@ auto create_order(double quantity, double price) {
       .max_response_version = {},
       .max_accepted_version = {},
       .security_type = {},
-      .quantity_precision = {},
-      .price_precision = {},
       .update_type = {},
       .user = {},
       .strategy_id = {},
   };
   return order;
 }
+auto create_ref_data() {
+  auto ref_data = server::oms::RefData{
+      .security_type = {},
+      .external_security_id = {},
+      .multiplier = NaN,
+      .quantity = {},
+      .price = {},
+      .has_tick_size_steps = false,
+  };
+  return ref_data;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
 
 TEST_CASE("dapi_none_1", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(1.0, 1.0);
   auto order = create_order(1.0, 1.0);
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false));
+  auto ref_data = create_ref_data();
+  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("dapi_none_2", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(NaN, NaN);
   auto order = create_order(1.0, 1.0);
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false));
+  auto ref_data = create_ref_data();
+  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("dapi_price_1", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(1.0, 2.0);
   auto order = create_order(1.0, 1.0);
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false);
+  auto ref_data = create_ref_data();
+  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&price=2&recvWindow=5000"sv);
 }
 
 TEST_CASE("dapi_price_2", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(NaN, 2.0);
   auto order = create_order(1.0, 1.0);
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false);
+  auto ref_data = create_ref_data();
+  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&price=2&recvWindow=5000"sv);
 }
 
 TEST_CASE("dapi_quantity_1", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(2.0, 1.0);
   auto order = create_order(1.0, 1.0);
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false);
+  auto ref_data = create_ref_data();
+  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&quantity=2&recvWindow=5000"sv);
 }
 
 TEST_CASE("dapi_quantity_2", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(2.0, NaN);
   auto order = create_order(1.0, 1.0);
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false);
+  auto ref_data = create_ref_data();
+  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&quantity=2&recvWindow=5000"sv);
 }
 
 TEST_CASE("dapi_both", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto modify_order = create_modify_order(2.0, 2.0);
   auto order = create_order(1.0, 1.0);
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, {}, {}, 5s, false));
+  auto ref_data = create_ref_data();
+  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("rounding_issue_oc45", "[json_encoder]") {
-  std::vector<char> buffer(4096);
+  std::string buffer;
   auto old_price = 90066.2;
   auto price = 90085.7 - 1.0e-12;
   auto order = create_order(1.0, old_price);
-  order.price_precision = {0.1, Precision::_1};
+  auto ref_data = create_ref_data();
+  ref_data.price = {0.1, Precision::_1};
   auto modify_order = create_modify_order(1.0, price);
-  auto result = json::Encoder::order_modify_json(buffer, modify_order, order, {}, {}, 5s, {}, "SOME_ID");
+  auto result = json::Encoder::order_modify_json(buffer, modify_order, order, ref_data, {}, {}, 5s, {}, "SOME_ID");
   CHECK(
       result ==
       R"({"id":"SOME_ID","method":"order.modify","params":{"symbol":"BTC","side":"BUY","orderId":oid:1234,"quantity":"1","price":"90085.7","recvWindow":5000,"timestamp":0}})"sv);

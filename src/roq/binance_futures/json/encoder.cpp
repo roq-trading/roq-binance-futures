@@ -21,7 +21,7 @@ namespace json {
 // user-trades
 
 std::string_view Encoder::user_trades_url(
-    std::vector<char> &buffer,
+    std::string &buffer,
     std::string_view const &symbol,
     std::chrono::milliseconds start_time,
     std::chrono::milliseconds end_time,
@@ -40,16 +40,16 @@ std::string_view Encoder::user_trades_url(
       end_time.count(),
       limit,
       recv_window.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-place
 
 std::string_view Encoder::order_place_url(
-    std::vector<char> &buffer,
+    std::string &buffer,
     CreateOrder const &create_order,
-    server::oms::Order const &order,
+    server::oms::Order const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window) {
   auto side = map(create_order.side).template get<Side>();
@@ -66,7 +66,7 @@ std::string_view Encoder::order_place_url(
       create_order.symbol,
       side.as_raw_text(),
       type.as_raw_text(),
-      Decimal{create_order.quantity, order.quantity_precision.precision},
+      Decimal{create_order.quantity, ref_data.quantity.precision},
       reduce_only);
   switch (create_order.order_type) {
     using enum roq::OrderType;
@@ -84,12 +84,12 @@ std::string_view Encoder::order_place_url(
           R"(timeInForce={}&)"
           R"(price={}&)"sv,
           time_in_force.as_raw_text(),
-          Decimal{create_order.price, order.price_precision.precision});
+          Decimal{create_order.price, ref_data.price.precision});
       break;
     }
   }
   if (!std::isnan(create_order.stop_price)) {
-    fmt::format_to(std::back_inserter(buffer), R"(stopPrice={}&)"sv, Decimal{create_order.stop_price, order.price_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(stopPrice={}&)"sv, Decimal{create_order.stop_price, ref_data.price.precision});
   }
   fmt::format_to(
       std::back_inserter(buffer),
@@ -97,16 +97,16 @@ std::string_view Encoder::order_place_url(
       R"(recvWindow={})"sv,
       request_id,
       recv_window.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-modify
 
 std::string_view Encoder::order_modify_url(
-    std::vector<char> &buffer,
+    std::string &buffer,
     roq::ModifyOrder const &modify_order,
     server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
@@ -128,8 +128,8 @@ std::string_view Encoder::order_modify_url(
         R"(price={}&)"
         R"(recvWindow={})"sv,
         side.as_raw_text(),
-        Decimal{quantity, order.quantity_precision.precision},
-        Decimal{price, order.price_precision.precision},
+        Decimal{quantity, ref_data.quantity.precision},
+        Decimal{price, ref_data.price.precision},
         recv_window.count());
   } else {  // dapi
     auto helper = [](auto value, auto last_value) {
@@ -152,7 +152,7 @@ std::string_view Encoder::order_modify_url(
           R"(quantity={}&)"
           R"(recvWindow={})"sv,
           side.as_raw_text(),
-          Decimal{modify_order.quantity, order.quantity_precision.precision},
+          Decimal{modify_order.quantity, ref_data.quantity.precision},
           recv_window.count());
     } else if (std::isnan(quantity) && !std::isnan(price)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
@@ -166,22 +166,22 @@ std::string_view Encoder::order_modify_url(
           R"(price={}&)"
           R"(recvWindow={})"sv,
           side.as_raw_text(),
-          Decimal{modify_order.price, order.price_precision.precision},
+          Decimal{modify_order.price, ref_data.price.precision},
           recv_window.count());
     } else {
       throw server::oms::Rejected{Origin::GATEWAY, Error::INVALID_REQUEST_ARGS, "Missing quantity or price"sv};
     }
   }
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-cancel
 
 std::string_view Encoder::order_cancel_url(
-    std::vector<char> &buffer,
+    std::string &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
+    server::oms::RefData const &,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window) {
@@ -192,13 +192,12 @@ std::string_view Encoder::order_cancel_url(
   }
   fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
   fmt::format_to(std::back_inserter(buffer), R"(recvWindow={})"sv, recv_window.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // all-open-orders
 
-std::string_view Encoder::all_open_orders_url(std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
+std::string_view Encoder::all_open_orders_url(std::string &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -206,14 +205,13 @@ std::string_view Encoder::all_open_orders_url(std::vector<char> &buffer, std::st
       R"(recvWindow={})"sv,
       symbol,
       recv_window.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // countdown
 
 std::string_view Encoder::countdown_cancel_open_orders_url(
-    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window) {
+    std::string &buffer, std::string_view const &symbol, std::chrono::milliseconds countdown_time, std::chrono::milliseconds recv_window) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -223,8 +221,7 @@ std::string_view Encoder::countdown_cancel_open_orders_url(
       symbol,
       countdown_time.count(),
       recv_window.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // JSON
@@ -232,11 +229,7 @@ std::string_view Encoder::countdown_cancel_open_orders_url(
 // session-logon
 
 std::string_view Encoder::session_logon_json(
-    std::vector<char> &buffer,
-    std::string_view const &api_key,
-    std::chrono::milliseconds now_utc,
-    std::string_view const &signature,
-    std::string_view const &id) {
+    std::string &buffer, std::string_view const &api_key, std::chrono::milliseconds now_utc, std::string_view const &signature, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -253,13 +246,12 @@ std::string_view Encoder::session_logon_json(
       api_key,
       now_utc.count(),
       signature);
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // user-data-stream-start
 
-std::string_view Encoder::user_data_stream_start_json(std::vector<char> &buffer, std::string_view const &api_key, std::string_view const &id) {
+std::string_view Encoder::user_data_stream_start_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -272,13 +264,12 @@ std::string_view Encoder::user_data_stream_start_json(std::vector<char> &buffer,
       R"(}})"sv,
       id,
       api_key);
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // user-data-stream-ping
 
-std::string_view Encoder::user_data_stream_ping_json(std::vector<char> &buffer, std::string_view const &api_key, std::string_view const &id) {
+std::string_view Encoder::user_data_stream_ping_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -291,13 +282,12 @@ std::string_view Encoder::user_data_stream_ping_json(std::vector<char> &buffer, 
       R"(}})"sv,
       id,
       api_key);
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // account-balance
 
-std::string_view Encoder::account_balance_json(std::vector<char> &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
+std::string_view Encoder::account_balance_json(std::string &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -310,13 +300,12 @@ std::string_view Encoder::account_balance_json(std::vector<char> &buffer, std::c
       R"(}})"sv,
       id,
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // account-status
 
-std::string_view Encoder::account_status_json(std::vector<char> &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
+std::string_view Encoder::account_status_json(std::string &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -329,13 +318,12 @@ std::string_view Encoder::account_status_json(std::vector<char> &buffer, std::ch
       R"(}})"sv,
       id,
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // account-position
 
-std::string_view Encoder::account_position_json(std::vector<char> &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
+std::string_view Encoder::account_position_json(std::string &buffer, std::chrono::milliseconds now_utc, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -348,14 +336,13 @@ std::string_view Encoder::account_position_json(std::vector<char> &buffer, std::
       R"(}})"sv,
       id,
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-status
 
 std::string_view Encoder::order_status_json(
-    std::vector<char> &buffer, std::string_view const &symbol, std::chrono::milliseconds now_utc, std::string_view const &id) {
+    std::string &buffer, std::string_view const &symbol, std::chrono::milliseconds now_utc, std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -370,16 +357,16 @@ std::string_view Encoder::order_status_json(
       id,
       symbol,
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-place
 
 std::string_view Encoder::order_place_json(
-    std::vector<char> &buffer,
+    std::string &buffer,
     CreateOrder const &create_order,
-    server::oms::Order const &order,
+    server::oms::Order const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window,
     std::chrono::milliseconds now_utc,
@@ -404,15 +391,15 @@ std::string_view Encoder::order_place_json(
       create_order.symbol,
       side.as_raw_text(),
       type.as_raw_text(),
-      Decimal{create_order.quantity, order.quantity_precision.precision});
+      Decimal{create_order.quantity, ref_data.quantity.precision});
   if (time_in_force != json::TimeInForce{}) {
     fmt::format_to(std::back_inserter(buffer), R"(,"timeInForce":"{}")"sv, time_in_force.as_raw_text());
   }
   if (!std::isnan(create_order.price)) {
-    fmt::format_to(std::back_inserter(buffer), R"(,"price":"{}")"sv, Decimal{create_order.price, order.price_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(,"price":"{}")"sv, Decimal{create_order.price, ref_data.price.precision});
   }
   if (!std::isnan(create_order.stop_price)) {
-    fmt::format_to(std::back_inserter(buffer), R"(,"stopPrice":"{}")"sv, Decimal{create_order.stop_price, order.price_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(,"stopPrice":"{}")"sv, Decimal{create_order.stop_price, ref_data.price.precision});
   }
   fmt::format_to(
       std::back_inserter(buffer),
@@ -422,17 +409,17 @@ std::string_view Encoder::order_place_json(
       R"(}})"sv,
       recv_window.count(),
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-modify
 
 // note! both quantity and price must be sent (different from dapi/rest)
 std::string_view Encoder::order_modify_json(
-    std::vector<char> &buffer,
+    std::string &buffer,
     roq::ModifyOrder const &modify_order,
     server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
@@ -466,20 +453,20 @@ std::string_view Encoder::order_modify_json(
       R"(,"timestamp":{})"
       R"(}})"
       R"(}})"sv,
-      Decimal{quantity, order.quantity_precision.precision},
-      Decimal{price, order.price_precision.precision},
+      Decimal{quantity, ref_data.quantity.precision},
+      Decimal{price, ref_data.price.precision},
       recv_window.count(),
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 // order-cancel
 
 std::string_view Encoder::order_cancel_json(
-    std::vector<char> &buffer,
+    std::string &buffer,
     roq::CancelOrder const &,
     server::oms::Order const &order,
+    server::oms::RefData const &,
     [[maybe_unused]] std::string_view const &request_id,
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
@@ -508,8 +495,7 @@ std::string_view Encoder::order_cancel_json(
       R"(}})"sv,
       recv_window.count(),
       now_utc.count());
-  std::string_view result{std::data(buffer), std::size(buffer)};
-  return result;
+  return buffer;
 }
 
 }  // namespace json

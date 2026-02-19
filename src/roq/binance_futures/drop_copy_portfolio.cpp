@@ -48,15 +48,19 @@ auto create_name(auto stream_id) {
   return fmt::format("{}:{}"sv, stream_id, NAME);
 }
 
-auto create_uri(auto &settings, auto &listen_key) {
+auto create_query(auto &listen_key) {
   assert(!std::empty(listen_key));
+  return fmt::format("/{}"sv, listen_key);
+}
+
+auto create_uri(auto &settings) {
   auto &uri = settings.ws.pm_uri;
-  auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
+  auto result = fmt::format("{}://{}{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path());
   return io::web::URI{result};
 }
 
-auto create_connection(auto &handler, auto &settings, auto &context, auto &listen_key) {
-  auto uri = create_uri(settings, listen_key);
+auto create_connection(auto &handler, auto &settings, auto &context) {
+  auto uri = create_uri(settings);
   auto config = web::socket::Client::Config{
       // connection
       .interface = {},
@@ -70,7 +74,6 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &liste
       // proxy
       .proxy = {},
       // http
-      .query = {},
       .user_agent = ROQ_PACKAGE_NAME,
       .request_timeout = {},
       .ping_frequency = settings.ws.ping_freq,
@@ -90,8 +93,8 @@ struct create_metrics final : public utils::metrics::Factory {
 
 DropCopyPortfolio::DropCopyPortfolio(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context, listen_key)},
-      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, query_{create_query(listen_key)},
+      connection_{create_connection(*this, shared.settings, context)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },

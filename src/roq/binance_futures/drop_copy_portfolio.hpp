@@ -64,7 +64,7 @@ struct DropCopyPortfolio final : public DropCopy, public web::socket::Client::Ha
   std::string_view get_query() const override { return query_; }
 
  private:
-  void operator()(ConnectionStatus);
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   uint32_t download(DropCopyPortfolioState);
 
@@ -121,7 +121,7 @@ struct DropCopyPortfolio final : public DropCopy, public web::socket::Client::Ha
   Request &request_;
   // state
   bool ready_ = false;
-  ConnectionStatus status_ = {};
+  ConnectionStatus connection_status_ = {};
   core::Download<DropCopyPortfolioState> download_;
 };
 

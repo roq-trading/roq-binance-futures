@@ -66,7 +66,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   OrderEntryPortfolio(OrderEntryPortfolio &&) = delete;
   OrderEntryPortfolio(OrderEntryPortfolio const &) = delete;
 
-  bool ready() const { return status_ == ConnectionStatus::READY; }
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
   bool downloading() const { return download_balance_ || download_account_ || download_position_ || download_orders_ || download_trades_; }
 
   void operator()(Event<Start> const &) override;
@@ -101,7 +101,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
 
-  void operator()(ConnectionStatus);
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   uint32_t download(OrderEntryState state);
 
@@ -233,7 +233,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
   std::chrono::nanoseconds balance_refresh_ = {};
-  ConnectionStatus status_ = {};
+  ConnectionStatus connection_status_ = {};
   core::Download<OrderEntryState> download_;
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;

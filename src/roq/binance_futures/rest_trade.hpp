@@ -56,7 +56,7 @@ struct RestTrade final : public web::rest::Client::Handler {
   RestTrade(RestTrade &&) = delete;
   RestTrade(RestTrade const &) = delete;
 
-  bool ready() const { return status_ == ConnectionStatus::READY; }
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
   bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
 
   void operator()(Event<Start> const &);
@@ -77,7 +77,7 @@ struct RestTrade final : public web::rest::Client::Handler {
   void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
 
-  void operator()(ConnectionStatus);
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   // account-balance
 
@@ -154,7 +154,7 @@ struct RestTrade final : public web::rest::Client::Handler {
   Shared &shared_;
   Request &request_;
   // state
-  ConnectionStatus status_ = {};
+  ConnectionStatus connection_status_ = {};
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   bool download_balance_ = false;

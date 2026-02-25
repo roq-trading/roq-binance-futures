@@ -577,7 +577,6 @@ void WebSocket::operator()(web::socket::Client::Disconnected const &) {
 
 void WebSocket::operator()(web::socket::Client::Ready const &) {
   download_.begin();
-  (*this)(ConnectionStatus::DOWNLOADING);
 }
 
 void WebSocket::operator()(web::socket::Client::Close const &) {
@@ -602,26 +601,26 @@ void WebSocket::operator()(web::socket::Client::Binary const &) {
   log::fatal("Unexpected"sv);
 }
 
-void WebSocket::operator()(ConnectionStatus status) {
-  if (utils::update(status_, status)) {
-    TraceInfo trace_info;
-    auto stream_status = StreamStatus{
-        .stream_id = stream_id_,
-        .account = account_.name,
-        .supports = SUPPORTS,
-        .transport = Transport::TCP,
-        .protocol = Protocol::WS,
-        .encoding = {Encoding::JSON},
-        .priority = Priority::PRIMARY,
-        .connection_status = status_,
-        .interface = (*connection_).get_interface(),
-        .authority = (*connection_).get_current_authority(),
-        .path = (*connection_).get_current_path(),
-        .proxy = (*connection_).get_proxy(),
-    };
-    log::info("stream_status={}"sv, stream_status);
-    create_trace_and_dispatch(handler_, trace_info, stream_status);
-  }
+void WebSocket::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
+  connection_status_ = connection_status;
+  TraceInfo trace_info;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::WS,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(handler_, trace_info, stream_status);
 }
 
 uint32_t WebSocket::download(WebSocketState state) {
@@ -631,12 +630,15 @@ uint32_t WebSocket::download(WebSocketState state) {
       assert(false);
       break;
     case SESSION_LOGON:
+      (*this)(ConnectionStatus::DOWNLOADING, "session-logon"sv);
       session_logon();
       return 1;
     case USER_DATA_STREAM_START:
+      (*this)(ConnectionStatus::DOWNLOADING, "user-data-stream-start"sv);
       user_data_stream_start();
       return 1;
     case ACCOUNT_POSITION:
+      (*this)(ConnectionStatus::DOWNLOADING, "account-position"sv);
       account_position();  // just testing -- not used
       return 0;
     case DONE:

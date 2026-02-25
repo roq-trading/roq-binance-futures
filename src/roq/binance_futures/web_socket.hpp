@@ -58,7 +58,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
 
-  bool ready() const { return status_ == ConnectionStatus::READY; }
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
@@ -123,7 +123,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void operator()(web::socket::Client::Binary const &) override;
 
  private:
-  void operator()(ConnectionStatus);
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   uint32_t download(WebSocketState state);
 
@@ -205,7 +205,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   std::string encode_buffer_;
   // state
   bool ready_ = false;
-  ConnectionStatus status_ = {};
+  ConnectionStatus connection_status_ = {};
   core::Download<WebSocketState> download_;
   [[maybe_unused]] bool download_trades_is_first_ = true;
 };

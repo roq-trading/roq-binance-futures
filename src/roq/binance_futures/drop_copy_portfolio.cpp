@@ -210,6 +210,7 @@ void DropCopyPortfolio::operator()(ConnectionStatus connection_status, std::stri
       .encoding = {Encoding::JSON},
       .priority = Priority::PRIMARY,
       .connection_status = connection_status_,
+      .reason = reason,
       .interface = (*connection_).get_interface(),
       .authority = (*connection_).get_current_authority(),
       .path = (*connection_).get_current_path(),

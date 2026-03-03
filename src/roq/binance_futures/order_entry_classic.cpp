@@ -507,6 +507,7 @@ void OrderEntryClassic::operator()(Trace<json::AccountBalanceAck> const &event) 
         .balance = item.balance,
         .hold = hold,
         .borrowed = NaN,
+        .unrealized_pnl = NaN,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -522,6 +523,7 @@ void OrderEntryClassic::operator()(Trace<json::AccountBalanceAck> const &event) 
           .balance = item.cross_wallet_balance,
           .hold = NaN,  // ???
           .borrowed = NaN,
+          .unrealized_pnl = NaN,
           .external_account = {},
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = item.update_time,

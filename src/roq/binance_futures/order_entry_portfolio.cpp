@@ -516,6 +516,7 @@ void OrderEntryPortfolio::operator()(Trace<json::AccountBalanceAck> const &event
         .balance = item.total_wallet_balance,
         .hold = hold,
         .borrowed = NaN,
+        .unrealized_pnl = NaN,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -532,6 +533,7 @@ void OrderEntryPortfolio::operator()(Trace<json::AccountBalanceAck> const &event
           .balance = item.cross_wallet_balance,
           .hold = NaN,  // ???
           .borrowed = NaN,
+            .unrealized_pnl=NaN,
           .external_account = {},
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = item.update_time,

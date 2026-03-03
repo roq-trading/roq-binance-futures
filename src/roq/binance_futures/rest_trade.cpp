@@ -367,6 +367,7 @@ void RestTrade::operator()(Trace<json::AccountBalanceAck> const &event) {
         .margin_mode = {},
         .balance = item.balance,
         .hold = hold,
+        .unrealized_pnl = NaN,
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -381,6 +382,7 @@ void RestTrade::operator()(Trace<json::AccountBalanceAck> const &event) {
           .margin_mode = MarginMode::CROSS,
           .balance = item.cross_wallet_balance,
           .hold = NaN,  // ???
+          .unrealized_pnl = NaN,
           .external_account = {},
           .update_type = UpdateType::SNAPSHOT,
           .exchange_time_utc = item.update_time,

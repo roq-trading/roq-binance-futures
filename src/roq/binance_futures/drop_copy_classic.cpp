@@ -388,6 +388,7 @@ void DropCopyClassic::operator()(Trace<json::AccountUpdate> const &event) {
           .balance = item.wallet_balance,
           .hold = NaN,  // note! we don't see this
           .borrowed = NaN,
+          .unrealized_pnl = NaN,
           .external_account = {},
           .update_type = UpdateType::INCREMENTAL,
           .exchange_time_utc = account_update.transaction_time,
@@ -403,6 +404,7 @@ void DropCopyClassic::operator()(Trace<json::AccountUpdate> const &event) {
             .balance = item.cross_wallet_balance,
             .hold = NaN,  // note! we don't see this
             .borrowed = NaN,
+            .unrealized_pnl = NaN,
             .external_account = {},
             .update_type = UpdateType::INCREMENTAL,
             .exchange_time_utc = account_update.transaction_time,

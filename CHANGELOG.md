@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* WSAPI did not use the reduceOnly flag when placing orders (#572)
 * WSAPI Listen Key ping would terminate the application (#561)
 
 ### Added

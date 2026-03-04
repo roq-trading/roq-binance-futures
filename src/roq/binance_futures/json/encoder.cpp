@@ -54,7 +54,7 @@ std::string_view Encoder::order_place_url(
     std::chrono::milliseconds recv_window) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
-  auto reduce_only = false;
+  auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -373,6 +373,7 @@ std::string_view Encoder::order_place_json(
     std::string_view const &id) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
+  auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
   auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions).template get<TimeInForce>();
   buffer.clear();
   fmt::format_to(
@@ -385,12 +386,14 @@ std::string_view Encoder::order_place_json(
       R"(,"symbol":"{}")"
       R"(,"side":"{}")"
       R"(,"type":"{}")"
+      R"(,"reduceOnly":"{}")"
       R"(,"quantity":"{}")"sv,
       id,
       request_id,
       create_order.symbol,
       side.as_raw_text(),
       type.as_raw_text(),
+      reduce_only,
       Decimal{create_order.quantity, ref_data.quantity.precision});
   if (time_in_force != json::TimeInForce{}) {
     fmt::format_to(std::back_inserter(buffer), R"(,"timeInForce":"{}")"sv, time_in_force.as_raw_text());

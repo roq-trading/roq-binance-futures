@@ -497,6 +497,7 @@ void WebSocket::order_place(
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, ref_data, request_id, recv_window, now_utc, request_id_2);
+    log::warn("{}"sv, message);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });

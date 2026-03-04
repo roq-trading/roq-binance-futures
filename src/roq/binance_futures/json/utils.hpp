@@ -40,6 +40,15 @@ extern roq::Error guess_error(int32_t code);
 
 extern TradingStatus trading_status_helper(SymbolStatus, ContractStatus);
 
+inline double get_unrealized_pnl(double um_unrealized_pnl, double cm_unrealized_pnl) {
+  auto has_um = !std::isnan(um_unrealized_pnl);
+  auto has_cm = !std::isnan(cm_unrealized_pnl);
+  if (!has_um && !has_cm) {
+    return NaN;
+  }
+  return (has_um ? um_unrealized_pnl : 0.0) + (has_cm ? cm_unrealized_pnl : 0.0);
+}
+
 }  // namespace json
 }  // namespace binance_futures
 }  // namespace roq

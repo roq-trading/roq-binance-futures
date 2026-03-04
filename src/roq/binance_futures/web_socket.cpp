@@ -742,6 +742,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
             .balance = item.available_balance,
             .hold = NaN,
             .borrowed = NaN,
+            .unrealized_pnl = json::get_unrealized_pnl(item.um_unrealized_pnl, item.cm_unrealized_pnl),
             .external_account = {},
             .update_type = UpdateType::SNAPSHOT,
             .exchange_time_utc = item.update_time,

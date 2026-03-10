@@ -130,11 +130,13 @@ void DropCopyClassic::operator()(Event<Stop> const &) {
 }
 
 void DropCopyClassic::operator()(Event<Timer> const &event) {
-  (*connection_).refresh(event.value.now);
+  auto now = event.value.now;
+  (*connection_).refresh(now);
   check_response_balance();
   check_response_account();
   check_response_orders();
   check_response_trades();
+  refresh_balance(now);
 }
 
 void DropCopyClassic::operator()(metrics::Writer &writer) const {
@@ -568,6 +570,25 @@ void DropCopyClassic::operator()(Trace<json::OutboundAccountPosition> const &eve
     auto &[trace_info, outbound_account_position] = event;
     log::info<2>("outbound_account_position={}"sv, outbound_account_position);
   });
+}
+
+// helpers
+
+void DropCopyClassic::refresh_balance(std::chrono::nanoseconds now) {
+  if (!ready()) {
+    return;
+  }
+  if (shared_.settings.misc.poll_balance_freq.count() == 0) {
+    return;
+  }
+  if (now < balance_refresh_) {
+    return;
+  }
+  log::info("Refreshing balance..."sv);
+  balance_refresh_ = now + shared_.settings.misc.poll_balance_freq;
+  if (request_.request_balance < now) {
+    request_balance();
+  }
 }
 
 // request

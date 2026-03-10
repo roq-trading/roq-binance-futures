@@ -913,14 +913,14 @@ void OrderEntryPortfolio::refresh_balance(std::chrono::nanoseconds now) {
   if (!ready()) {
     return;
   }
-  if (shared_.settings.misc.test_pm_balance_freq.count() == 0) {
+  if (shared_.settings.misc.poll_balance_freq.count() == 0) {
     return;
   }
   if (now < balance_refresh_) {
     return;
   }
   log::info("Refreshing balance..."sv);
-  balance_refresh_ = now + shared_.settings.misc.test_pm_balance_freq;
+  balance_refresh_ = now + shared_.settings.misc.poll_balance_freq;
   get_account_balance(true);
 }
 

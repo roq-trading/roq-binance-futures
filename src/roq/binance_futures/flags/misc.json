@@ -17,6 +17,13 @@
       "description": "Decode buffer size"
     },
     {
+      "name": "poll_balance_freq",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "default": "0s",
+      "description": "Polling frequency for balance"
+    },
+    {
       "name": "continue_with_unknown_event_type",
       "type": "std/bool",
       "default": false,
@@ -27,13 +34,6 @@
       "type": "std/bool",
       "default": false,
       "description": "Test alternative FundsUpdate?"
-    },
-    {
-      "name": "test_pm_balance_freq",
-      "type": "std/nanoseconds",
-      "validator": "roq/flags/validators/TimePeriod",
-      "default": "10s",
-      "description": "Balance polling frequency (PAPI)"
     }
   ]
 }

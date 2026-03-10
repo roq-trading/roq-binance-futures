@@ -82,6 +82,10 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   void operator()(Trace<json::LiabilityChange> const &) override;
   void operator()(Trace<json::OutboundAccountPosition> const &) override;
 
+  // helpers
+
+  void refresh_balance(std::chrono::nanoseconds now);
+
   void request_balance();
   void request_account();
   void request_orders();
@@ -121,6 +125,8 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
   core::Download<DropCopyState> download_;
+  // ...
+  std::chrono::nanoseconds balance_refresh_ = {};
 };
 
 }  // namespace binance_futures

@@ -27,6 +27,7 @@ auto create_modify_order(double quantity, double price) {
       .routing_id = {},
       .version = {},
       .conditional_on_version = {},
+      .release_time_utc = {},
   };
   return modify_order;
 }

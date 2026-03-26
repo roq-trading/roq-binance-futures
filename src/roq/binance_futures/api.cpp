@@ -2,6 +2,8 @@
 
 #include "roq/binance_futures/api.hpp"
 
+#include "roq/logging.hpp"
+
 #include "roq/exceptions.hpp"
 
 using namespace std::literals;
@@ -9,10 +11,26 @@ using namespace std::literals;
 namespace roq {
 namespace binance_futures {
 
+// === HELPERS ===
+
+namespace {
+auto parse_self_trade_prevention(auto &value) -> json::SelfTradePrevention {
+  if (std::empty(value)) {
+    return {};
+  }
+  std::string tmp{value};
+  std::ranges::transform(tmp, std::begin(tmp), [](auto item) { return std::toupper(item); });  // note! convert to uppercase
+  json::SelfTradePrevention result{std::string_view{tmp}};
+  log::warn("Using self_trade_prevention_mode={}"sv, result);
+  return result;
+}
+}  // namespace
+
 // === IMPLEMENTATION ===
 
 API API::create(Settings const &settings) {
   auto api = settings.app.api;
+  auto self_trade_prevention = parse_self_trade_prevention(settings.misc.self_trade_prevention_mode);
   // USD-M futures
   if (api == "fapi"sv) {
     return {
@@ -42,6 +60,7 @@ API API::create(Settings const &settings) {
             .all_open_orders = "/papi/v1/um/allOpenOrders"sv,
         },
         .modify_order_full = true,
+        .self_trade_prevention = self_trade_prevention,
     };
   }
   // COIN-M futures
@@ -73,6 +92,7 @@ API API::create(Settings const &settings) {
             .all_open_orders = "/papi/v1/cm/allOpenOrders"sv,
         },
         .modify_order_full = false,
+        .self_trade_prevention = self_trade_prevention,
     };
   }
   throw RuntimeError{R"(Unknown api="{}")"sv, api};

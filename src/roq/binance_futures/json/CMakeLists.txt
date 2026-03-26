@@ -78,6 +78,7 @@ set(AUTOGEN_SCHEMAS
     rate_limit.json
     rate_limit_type.json
     result.json
+    self_trade_prevention.json
     side.json
     strategy_update_data.json
     strategy_update.json

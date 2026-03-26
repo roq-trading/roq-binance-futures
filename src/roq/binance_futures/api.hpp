@@ -6,6 +6,8 @@
 
 #include "roq/binance_futures/settings.hpp"
 
+#include "roq/binance_futures/json/self_trade_prevention.hpp"
+
 namespace roq {
 namespace binance_futures {
 
@@ -37,6 +39,7 @@ struct API final {
   } papi;
   // oms
   bool modify_order_full = {};
+  json::SelfTradePrevention self_trade_prevention = {};
 
   // factory
   static API create(Settings const &);

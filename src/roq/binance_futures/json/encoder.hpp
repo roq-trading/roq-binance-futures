@@ -14,6 +14,8 @@
 #include "roq/server/oms/order.hpp"
 #include "roq/server/oms/ref_data.hpp"
 
+#include "roq/binance_futures/json/self_trade_prevention.hpp"
+
 namespace roq {
 namespace binance_futures {
 namespace json {
@@ -39,7 +41,8 @@ struct Encoder final {
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
-      std::chrono::milliseconds recv_window);
+      std::chrono::milliseconds recv_window,
+      SelfTradePrevention);
 
   // order-modify
 
@@ -78,7 +81,12 @@ struct Encoder final {
   // session-logon
 
   static std::string_view session_logon_json(
-      std::string &buffer, std::string_view const &api_key, std::chrono::milliseconds now_utc, std::string_view const &signature, std::string_view const &id);
+      std::string &buffer,
+      std::string_view const &api_key,
+      std::chrono::milliseconds now_utc,
+      std::chrono::milliseconds recv_window,
+      std::string_view const &signature,
+      std::string_view const &id);
 
   // user-data-stream-start
 
@@ -114,7 +122,8 @@ struct Encoder final {
       std::string_view const &request_id,
       std::chrono::milliseconds recv_window,
       std::chrono::milliseconds now_utc,
-      std::string_view const &id);
+      std::string_view const &id,
+      SelfTradePrevention);
 
   // order-modify
 

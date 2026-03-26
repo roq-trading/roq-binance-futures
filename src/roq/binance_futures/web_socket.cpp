@@ -271,8 +271,10 @@ void WebSocket::session_logon() {
         .order_id_2 = {},
     };
     auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto signature = account_.create_session_logon_signature(now_utc);
-    auto message = json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, signature, request_id);
+    auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
+    auto signature = account_.create_session_logon_signature(now_utc, recv_window);
+    auto message = json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, recv_window, signature, request_id);
+    log::warn(R"(DEBUG message="{}")"sv, message);
     (*connection_).send_text(message);
     (*this)(ConnectionStatus::LOGIN_SENT);
   });
@@ -496,7 +498,8 @@ void WebSocket::order_place(
         .order_id_2 = {},
     };
     auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_place_json(encode_buffer_, create_order, order, ref_data, request_id, recv_window, now_utc, request_id_2);
+    auto message = json::Encoder::order_place_json(
+        encode_buffer_, create_order, order, ref_data, request_id, recv_window, now_utc, request_id_2, shared_.api.self_trade_prevention);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });

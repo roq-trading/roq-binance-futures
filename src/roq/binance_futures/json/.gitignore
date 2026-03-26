@@ -66,6 +66,7 @@ position_side.hpp
 rate_limit.hpp
 rate_limit_type.hpp
 result.hpp
+self_trade_prevention.hpp
 side.hpp
 strategy_update_data.hpp
 strategy_update.hpp
@@ -161,6 +162,7 @@ position_side.cpp
 rate_limit.cpp
 rate_limit_type.cpp
 result.cpp
+self_trade_prevention.cpp
 side.cpp
 strategy_update_data.cpp
 strategy_update.cpp

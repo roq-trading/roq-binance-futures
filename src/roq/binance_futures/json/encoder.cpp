@@ -51,7 +51,8 @@ std::string_view Encoder::order_place_url(
     server::oms::Order const &,
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
-    std::chrono::milliseconds recv_window) {
+    std::chrono::milliseconds recv_window,
+    SelfTradePrevention self_trade_prevention) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
   auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
@@ -90,6 +91,9 @@ std::string_view Encoder::order_place_url(
   }
   if (!std::isnan(create_order.stop_price)) {
     fmt::format_to(std::back_inserter(buffer), R"(stopPrice={}&)"sv, Decimal{create_order.stop_price, ref_data.price.precision});
+  }
+  if (self_trade_prevention != SelfTradePrevention::UNDEFINED_INTERNAL) {
+    fmt::format_to(std::back_inserter(buffer), R"(selfTradePreventionMode={}&)"sv, self_trade_prevention.as_raw_text());
   }
   fmt::format_to(
       std::back_inserter(buffer),
@@ -229,7 +233,12 @@ std::string_view Encoder::countdown_cancel_open_orders_url(
 // session-logon
 
 std::string_view Encoder::session_logon_json(
-    std::string &buffer, std::string_view const &api_key, std::chrono::milliseconds now_utc, std::string_view const &signature, std::string_view const &id) {
+    std::string &buffer,
+    std::string_view const &api_key,
+    std::chrono::milliseconds now_utc,
+    std::chrono::milliseconds recv_window,
+    std::string_view const &signature,
+    std::string_view const &id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -239,12 +248,14 @@ std::string_view Encoder::session_logon_json(
       R"("params":{{)"
       R"("apiKey":"{}",)"
       R"("timestamp":{},)"
+      R"("recvWindow":{},)"
       R"("signature":"{}")"
       R"(}})"
       R"(}})"sv,
       id,
       api_key,
       now_utc.count(),
+      recv_window.count(),
       signature);
   return buffer;
 }
@@ -370,7 +381,8 @@ std::string_view Encoder::order_place_json(
     std::string_view const &request_id,
     std::chrono::milliseconds recv_window,
     std::chrono::milliseconds now_utc,
-    std::string_view const &id) {
+    std::string_view const &id,
+    SelfTradePrevention self_trade_prevention) {
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
   auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
@@ -403,6 +415,9 @@ std::string_view Encoder::order_place_json(
   }
   if (!std::isnan(create_order.stop_price)) {
     fmt::format_to(std::back_inserter(buffer), R"(,"stopPrice":"{}")"sv, Decimal{create_order.stop_price, ref_data.price.precision});
+  }
+  if (self_trade_prevention != SelfTradePrevention::UNDEFINED_INTERNAL) {
+    fmt::format_to(std::back_inserter(buffer), R"(,"selfTradePreventionMode":"{}")"sv, self_trade_prevention.as_raw_text());
   }
   fmt::format_to(
       std::back_inserter(buffer),

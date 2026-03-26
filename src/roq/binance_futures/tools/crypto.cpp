@@ -66,9 +66,9 @@ Crypto::Crypto(
 
 // ed25519
 
-std::string_view Crypto::create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc) {
+std::string_view Crypto::create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc, std::chrono::milliseconds recv_window) {
   assert(!std::empty(pkey_));
-  auto payload = fmt::format("apiKey={}&timestamp={}"sv, key_, now_utc.count());
+  auto payload = fmt::format("apiKey={}&recvWindow={}&timestamp={}"sv, key_, recv_window.count(), now_utc.count());
   digest_.clear();
   context_.reset();
   pkey_.sign(digest_, payload, context_);

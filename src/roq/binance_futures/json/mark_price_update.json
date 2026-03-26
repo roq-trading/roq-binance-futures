@@ -38,6 +38,11 @@
       "type": "std/double"
     },
     {
+      "raw": "ap",
+      "name": "mark_price_moving_average",
+      "type": "std/double"
+    },
+    {
       "raw": "T",
       "name": "next_funding_time",
       "type": "std/milliseconds"

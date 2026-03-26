@@ -31,7 +31,9 @@ struct Account final {
 
   // ed25519
 
-  std::string_view create_session_logon_signature(std::chrono::milliseconds now_utc) { return crypto_.create_session_logon_signature(sign_buffer_, now_utc); }
+  std::string_view create_session_logon_signature(std::chrono::milliseconds now_utc, std::chrono::milliseconds recv_window) {
+    return crypto_.create_session_logon_signature(sign_buffer_, now_utc, recv_window);
+  }
 
   std::string const name;
   MarginMode const margin_mode;

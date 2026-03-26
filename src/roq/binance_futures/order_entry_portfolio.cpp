@@ -935,7 +935,7 @@ void OrderEntryPortfolio::order_place(
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window);
+    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window, shared_.api.self_trade_prevention);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{

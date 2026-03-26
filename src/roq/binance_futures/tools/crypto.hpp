@@ -35,7 +35,7 @@ struct Crypto final {
   std::string create_rest_signature_body(std::chrono::milliseconds now_utc, std::string_view const &body);
   std::string create_rest_signature_query(std::chrono::milliseconds now_utc, std::string_view const &query);
 
-  std::string_view create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc);
+  std::string_view create_session_logon_signature(std::string &buffer, std::chrono::milliseconds now_utc, std::chrono::milliseconds recv_window);
 
   static constexpr auto const QUERY_BUFFER_LENGTH = 128uz;  // note! expected length == 99
 

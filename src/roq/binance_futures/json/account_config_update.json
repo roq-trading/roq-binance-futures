@@ -26,6 +26,11 @@
       "raw": "ai",
       "name": "data2",
       "type": "roq/binance_futures/json/AccountConfigUpdateData2"
+    },
+    {
+      "raw": "i",
+      "name": "zzz_unknown",
+      "type": "std/string_view"
     }
   ]
 }

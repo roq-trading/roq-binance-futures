@@ -11,6 +11,13 @@
       "description": "Exchange end-point"
     },
     {
+      "name": "user_uri",
+      "type": "roq/io/web/URI",
+      "validator": "roq/core/flags/URI",
+      "default": "wss://stream.binancefuture.com",
+      "description": "Exchange end-point"
+    },
+    {
       "name": "host",
       "type": "std/string",
       "description": "Host (when URI is an IP address)"

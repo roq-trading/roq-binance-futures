@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* New URLs for user-stream (#583)
+
 ## 1.1.4 &ndash; 2026-04-20
 
 ### Added

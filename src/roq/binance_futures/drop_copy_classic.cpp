@@ -52,7 +52,7 @@ auto create_query(auto &listen_key) {
 }
 
 auto create_uri(auto &settings) {
-  auto &uri = settings.ws.uri;
+  auto &uri = settings.ws.user_uri;
   auto result = fmt::format("{}://{}{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path());
   return io::web::URI{result};
 }

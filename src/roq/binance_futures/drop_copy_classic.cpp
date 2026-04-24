@@ -274,7 +274,7 @@ void DropCopyClassic::operator()(Trace<json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
-    log::info<3>("order_trade_update={}"sv, order_trade_update);
+    log::info<2>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
     auto external_order_id = fmt::format("{}"sv, execution_report.order_id);  // alloc
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;

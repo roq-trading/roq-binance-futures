@@ -18,6 +18,7 @@
 #include "roq/binance_futures/drop_copy_classic.hpp"
 #include "roq/binance_futures/drop_copy_portfolio.hpp"
 #include "roq/binance_futures/market_data.hpp"
+#include "roq/binance_futures/market_data_2.hpp"
 #include "roq/binance_futures/order_entry_classic.hpp"
 #include "roq/binance_futures/order_entry_portfolio.hpp"
 #include "roq/binance_futures/request.hpp"
@@ -33,6 +34,7 @@ namespace binance_futures {
 struct Gateway final : public server::Handler,
                        public Rest::Handler,
                        public MarketData::Handler,
+                       public MarketData2::Handler,
                        public WebSocket::Handler,
                        public OrderEntryClassic::Handler,
                        public OrderEntryPortfolio::Handler,
@@ -128,7 +130,8 @@ struct Gateway final : public server::Handler,
   uint16_t stream_id_ = {};
   // streams
   Rest rest_;
-  std::vector<std::unique_ptr<MarketData>> market_data_1_, market_data_2_;
+  std::vector<std::unique_ptr<MarketData>> market_data_a_, market_data_b_;
+  std::vector<std::unique_ptr<MarketData2>> market_data_2_;
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;

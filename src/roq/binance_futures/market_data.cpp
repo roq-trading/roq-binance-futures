@@ -29,15 +29,7 @@ namespace binance_futures {
 namespace {
 auto const NAME = "md"sv;
 
-auto const SUPPORTS_PRIMARY = Mask{
-    SupportType::TOP_OF_BOOK,
-    SupportType::MARKET_BY_PRICE,
-    SupportType::TRADE_SUMMARY,
-    SupportType::STATISTICS,
-};
-
-auto const SUPPORTS_SECONDARY = Mask{
-    SupportType::TOP_OF_BOOK,
+auto const SUPPORTS = Mask{
     SupportType::MARKET_BY_PRICE,
 };
 
@@ -54,10 +46,10 @@ auto create_name(auto stream_id, auto priority) {
     case UNDEFINED:
       break;
     case PRIMARY:
-      result.append(":1"sv);
+      result.append(":a"sv);
       break;
     case SECONDARY:
-      result.append(":2"sv);
+      result.append(":b"sv);
       break;
   }
   return result;
@@ -91,20 +83,6 @@ auto create_connection(auto &handler, auto &settings, auto &context) {
 struct create_metrics final : public utils::metrics::Factory {
   create_metrics(auto &settings, auto &group, auto const &function) : utils::metrics::Factory{settings.app.name, group, function} {}
 };
-
-auto get_supports(auto priority) {
-  switch (priority) {
-    using enum Priority;
-    case UNDEFINED:
-      log::fatal("Unexpected"sv);
-      break;
-    case PRIMARY:
-      break;
-    case SECONDARY:
-      return SUPPORTS_SECONDARY;
-  }
-  return SUPPORTS_PRIMARY;
-}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -121,13 +99,8 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
           .parse = create_metrics(shared.settings, name_, "parse"sv),
           .error = create_metrics(shared.settings, name_, "error"sv),
           .result = create_metrics(shared.settings, name_, "result"sv),
-          .trade = create_metrics(shared.settings, name_, "trade"sv),
-          .agg_trade = create_metrics(shared.settings, name_, "agg_trade"sv),
-          .mark_price_update = create_metrics(shared.settings, name_, "mark_price_update"sv),
-          .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
           .book_ticker = create_metrics(shared.settings, name_, "book_ticker"sv),
           .depth_update = create_metrics(shared.settings, name_, "depth_update"sv),
-          .kline = create_metrics(shared.settings, name_, "kline"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -161,13 +134,8 @@ void MarketData::operator()(metrics::Writer &writer) const {
       .write(profile_.parse, metrics::Type::PROFILE)
       .write(profile_.error, metrics::Type::PROFILE)
       .write(profile_.result, metrics::Type::PROFILE)
-      .write(profile_.trade, metrics::Type::PROFILE)
-      .write(profile_.agg_trade, metrics::Type::PROFILE)
-      .write(profile_.mark_price_update, metrics::Type::PROFILE)
-      .write(profile_.mini_ticker, metrics::Type::PROFILE)
       .write(profile_.book_ticker, metrics::Type::PROFILE)
       .write(profile_.depth_update, metrics::Type::PROFILE)
-      .write(profile_.kline, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -222,11 +190,11 @@ void MarketData::operator()(ConnectionStatus connection_status, std::string_view
   auto stream_status = StreamStatus{
       .stream_id = stream_id_,
       .account = {},
-      .supports = get_supports(priority_),
+      .supports = SUPPORTS,
       .transport = Transport::TCP,
       .protocol = Protocol::WS,
       .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
+      .priority = priority_,
       .connection_status = connection_status_,
       .reason = reason,
       .interface = (*connection_).get_interface(),
@@ -242,26 +210,11 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols) {
   if (std::empty(symbols)) {
     return;
   }
-  if (priority_ == Priority::PRIMARY) {
-    if (shared_.settings.ws.subscribe_trade_details) {
-      subscribe(symbols, "trade"sv);
-    } else {
-      subscribe(symbols, "aggTrade"sv);
-    }
-    subscribe(symbols, "markPrice"sv);
-    subscribe(symbols, "miniTicker"sv);
-  }
   subscribe(symbols, "bookTicker"sv);
   if (shared_.settings.ws.subscribe_depth_levels) {
     auto frequency = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.ws.subscribe_depth_freq);
-    auto depth = fmt::format(R"(depth@{}ms)"sv, frequency.count());
+    auto depth = fmt::format(R"(depth@{}ms)"sv, frequency.count());  // hft
     subscribe(symbols, depth);
-  }
-  if (shared_.settings.download.time_series_lookback.count()) {
-    subscribe(symbols, "kline_1m"sv);
-    for (auto &symbol : symbols) {
-      shared_.time_series_request_queue.emplace_back(symbol);
-    }
   }
 }
 
@@ -310,116 +263,16 @@ void MarketData::operator()(Trace<json::Result> const &event, int32_t id) {
   });
 }
 
-void MarketData::operator()(Trace<json::Trade2> const &event) {
-  profile_.trade([&]() {
-    auto &[trace_info, trade] = event;
-    log::info<3>("trade={}"sv, trade);
-    (*connection_).touch(trace_info.source_receive_time);
-    if (utils::is_zero(trade.quantity)) {
-      return;
-    }
-    auto side = trade.buyer_is_maker ? Side::SELL : Side::BUY;
-    auto trade_2 = Trade{
-        .side = side,
-        .price = trade.price,
-        .quantity = trade.quantity,
-        .trade_id = {},
-        .taker_order_id = {},
-        .maker_order_id = {},
-    };
-    auto trade_summary = TradeSummary{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = trade.symbol,
-        .trades = {&trade_2, 1},
-        .exchange_time_utc = trade.trade_time,
-        .exchange_sequence = {},
-        .sending_time_utc = trade.event_time,
-    };
-    create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
-  });
+void MarketData::operator()(Trace<json::Trade2> const &) {
+  log::fatal("Unexpected"sv);
 }
 
-void MarketData::operator()(Trace<json::AggTrade> const &event) {
-  profile_.agg_trade([&]() {
-    auto &[trace_info, agg_trade] = event;
-    log::info<3>("agg_trade={}"sv, agg_trade);
-    (*connection_).touch(trace_info.source_receive_time);
-    if (utils::is_zero(agg_trade.quantity)) {
-      return;
-    }
-    auto side = agg_trade.buyer_is_maker ? Side::SELL : Side::BUY;
-    auto trade = Trade{
-        .side = side,
-        .price = agg_trade.price,
-        .quantity = agg_trade.quantity,
-        .trade_id = {},
-        .taker_order_id = {},
-        .maker_order_id = {},
-    };
-    utils::charconv::to_string(std::back_inserter(trade.trade_id), agg_trade.agg_trade_id);
-    auto trade_summary = TradeSummary{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = agg_trade.symbol,
-        .trades = {&trade, 1},
-        .exchange_time_utc = agg_trade.trade_time,
-        .exchange_sequence = {},
-        .sending_time_utc = agg_trade.event_time,
-    };
-    create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
-  });
+void MarketData::operator()(Trace<json::AggTrade> const &) {
+  log::fatal("Unexpected"sv);
 }
 
-void MarketData::operator()(Trace<json::MiniTicker> const &event) {
-  profile_.mini_ticker([&]() {
-    auto &[trace_info, mini_ticker] = event;
-    log::info<3>("mini_ticker={}"sv, mini_ticker);
-    (*connection_).touch(trace_info.source_receive_time);
-    std::array<Statistics, 5> statistics{{
-        {
-            .type = StatisticsType::HIGHEST_TRADED_PRICE,
-            .value = mini_ticker.high_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::LOWEST_TRADED_PRICE,
-            .value = mini_ticker.low_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::OPEN_PRICE,
-            .value = mini_ticker.open_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::CLOSE_PRICE,
-            .value = mini_ticker.close_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::TRADE_VOLUME,
-            .value = mini_ticker.total_traded_base_asset_volume,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-    }};
-    auto statistics_update = StatisticsUpdate{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = mini_ticker.symbol,
-        .statistics = statistics,
-        .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = {},
-        .exchange_sequence = {},
-        .sending_time_utc = mini_ticker.event_time,
-    };
-    create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
-  });
+void MarketData::operator()(Trace<json::MiniTicker> const &) {
+  log::fatal("Unexpected"sv);
 }
 
 void MarketData::operator()(Trace<json::BookTicker> const &event) {
@@ -533,86 +386,12 @@ void MarketData::operator()(Trace<json::DepthUpdate> const &event) {
   });
 }
 
-void MarketData::operator()(Trace<json::MarkPriceUpdate> const &event) {
-  profile_.mark_price_update([&]() {
-    auto &[trace_info, mark_price_update] = event;
-    log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
-    (*connection_).touch(trace_info.source_receive_time);
-    auto &mark_price = event.value;
-    std::array<Statistics, 4> statistics{{
-        {
-            .type = StatisticsType::SETTLEMENT_PRICE,
-            .value = mark_price.mark_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::PRE_SETTLEMENT_PRICE,
-            .value = mark_price.est_settle_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::INDEX_VALUE,
-            .value = mark_price.index_price,
-            .begin_time_utc = {},
-            .end_time_utc = {},
-        },
-        {
-            .type = StatisticsType::FUNDING_RATE,
-            .value = mark_price.funding_rate,
-            .begin_time_utc = utils::safe_cast(mark_price.event_time),
-            .end_time_utc = utils::safe_cast(mark_price.next_funding_time),
-        },
-    }};
-    auto statistics_update = StatisticsUpdate{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = mark_price.symbol,
-        .statistics = statistics,
-        .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = {},
-        .exchange_sequence = {},
-        .sending_time_utc = mark_price.event_time,
-    };
-    create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
-  });
+void MarketData::operator()(Trace<json::MarkPriceUpdate> const &) {
+  log::fatal("Unexpected"sv);
 }
 
-void MarketData::operator()(Trace<json::Kline> const &event) {
-  profile_.kline([&]() {
-    auto &[trace_info, kline] = event;
-    log::info<3>(R"(kline={})"sv, kline);
-    (*connection_).touch(trace_info.source_receive_time);
-    if (!kline.data.closed && !shared_.settings.time_series.realtime) {
-      return;
-    }
-    auto bar = Bar{
-        .begin_time_utc = utils::safe_cast(kline.data.begin_time),
-        .confirmed = kline.data.closed,
-        .open_price = kline.data.open_price,
-        .high_price = kline.data.high_price,
-        .low_price = kline.data.low_price,
-        .close_price = kline.data.close_price,
-        .quantity = NaN,
-        .base_amount = kline.data.base_asset_volume,
-        .quote_amount = kline.data.quote_asset_volume,
-        .number_of_trades = kline.data.number_of_trades,
-        .vwap = NaN,
-    };
-    auto time_series_update = TimeSeriesUpdate{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = kline.data.symbol,
-        .data_source = DataSource::TRADE_SUMMARY,
-        .interval = shared_.settings.time_series.interval,
-        .origin = Origin::EXCHANGE,
-        .bars = {&bar, 1},
-        .update_type = UpdateType::INCREMENTAL,
-        .exchange_time_utc = kline.event_time,
-    };
-    create_trace_and_dispatch(handler_, trace_info, time_series_update, true);
-  });
+void MarketData::operator()(Trace<json::Kline> const &) {
+  log::fatal("Unexpected"sv);
 }
 
 // request

@@ -126,7 +126,8 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
 
 void Gateway::operator()(Event<Start> const &event) {
   log::info("Starting..."sv);
-  assert(std::empty(market_data_1_));
+  assert(std::empty(market_data_a_));
+  assert(std::empty(market_data_b_));
   assert(std::empty(market_data_2_));
   dispatch(event);
 }
@@ -218,7 +219,10 @@ void Gateway::operator()(Trace<PositionUpdate> const &event, bool is_last) {
 void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
   ensure_symbol_slices(size);
-  for (auto &item : market_data_1_) {
+  for (auto &item : market_data_a_) {
+    (*item).subscribe(start_from);
+  }
+  for (auto &item : market_data_b_) {
     (*item).subscribe(start_from);
   }
   for (auto &item : market_data_2_) {
@@ -237,14 +241,26 @@ void Gateway::ensure_symbol_slices(size_t size) {
     create_event_and_dispatch(*market_data, message_info, start);
     container.emplace_back(std::move(market_data));
   };
-  while (std::size(market_data_1_) < size) {
-    helper(market_data_1_, Priority::PRIMARY);
+  while (std::size(market_data_a_) < size) {
+    helper(market_data_a_, Priority::PRIMARY);
   }
-  if (!shared_.settings.ws.enable_secondary) {
-    return;  // note!
+  if (shared_.settings.ws.enable_secondary) {
+    while (std::size(market_data_b_) < size) {
+      helper(market_data_b_, Priority::SECONDARY);
+    }
   }
+  auto helper_2 = [&](auto &container) {
+    auto stream_id = ++stream_id_;
+    auto index = std::size(container);
+    log::info("Create MarketData2 (stream_id={}, index={})"sv, stream_id, index);
+    auto market_data = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
+    MessageInfo message_info;
+    Start start;
+    create_event_and_dispatch(*market_data, message_info, start);
+    container.emplace_back(std::move(market_data));
+  };
   while (std::size(market_data_2_) < size) {
-    helper(market_data_2_, Priority::SECONDARY);
+    helper_2(market_data_2_);
   }
 }
 
@@ -355,7 +371,10 @@ template <typename... Args>
 void Gateway::dispatch_helper(auto &self, Args &&...args) {
   auto helper = [&](auto &target) { target(std::forward<Args>(args)...); };
   helper(self.rest_);
-  for (auto &item : self.market_data_1_) {
+  for (auto &item : self.market_data_a_) {
+    helper(*item);
+  }
+  for (auto &item : self.market_data_b_) {
     helper(*item);
   }
   for (auto &item : self.market_data_2_) {

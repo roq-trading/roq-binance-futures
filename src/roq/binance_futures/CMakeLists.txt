@@ -11,6 +11,7 @@ set(SOURCES
     drop_copy_portfolio.cpp
     gateway.cpp
     market_data.cpp
+    market_data_2.cpp
     order_entry_classic.cpp
     order_entry_portfolio.cpp
     rest.cpp

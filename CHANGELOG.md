@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* New URLs for market data streams (#584)
 * New URLs for user-stream (#583)
 
 ## 1.1.4 &ndash; 2026-04-20

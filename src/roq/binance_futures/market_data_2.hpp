@@ -31,17 +31,18 @@
 namespace roq {
 namespace binance_futures {
 
-struct MarketData final : public web::socket::Client::Handler, public json::MarketStreamParser::Handler {
+struct MarketData2 final : public web::socket::Client::Handler, public json::MarketStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
-    virtual void operator()(Trace<TopOfBook> const &, bool is_last) = 0;
-    virtual void operator()(Trace<MarketByPriceUpdate> const &, bool is_last) = 0;
+    virtual void operator()(Trace<TradeSummary> const &, bool is_last) = 0;
+    virtual void operator()(Trace<StatisticsUpdate> const &, bool is_last) = 0;
+    virtual void operator()(Trace<TimeSeriesUpdate> const &, bool is_last) = 0;
   };
 
-  MarketData(Handler &, io::Context &, uint16_t stream_id, Priority, Shared &, size_t index);
+  MarketData2(Handler &, io::Context &, uint16_t stream_id, Shared &, size_t index);
 
-  MarketData(MarketData const &) = delete;
+  MarketData2(MarketData2 const &) = delete;
 
   bool ready() const { return connection_status_ == ConnectionStatus::READY; }
 
@@ -89,7 +90,6 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
   Handler &handler_;
   // config
   uint16_t const stream_id_;
-  Priority const priority_;
   std::string const name_;
   size_t const index_;
   // web socket
@@ -103,7 +103,7 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, book_ticker, depth_update;
+    utils::metrics::Profile parse, error, result, trade, agg_trade, mark_price_update, mini_ticker, kline;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

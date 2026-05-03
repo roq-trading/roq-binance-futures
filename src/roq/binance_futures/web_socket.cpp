@@ -654,7 +654,7 @@ uint32_t WebSocket::download(WebSocketState state) {
 
 void WebSocket::parse(std::string_view const &message) {
   profile_.parse([&]() {
-    log::debug("{}"sv, message);
+    log::info<3>("message={}"sv, message);
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
@@ -1085,7 +1085,31 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
       Trace event_2{trace_info, response};
       (*this)(event_2, request.user_id, request.order_id, order_update);
     };
-    if (wsapi_order_modify.status == json::OrderStatus::CANCELED) {  // special case probably triggered by stp=expire-maker (#586)
+    auto working = [&]() {
+      switch (wsapi_order_modify.status) {
+        using enum json::OrderStatus::type_t;
+        case UNDEFINED_INTERNAL:
+          break;
+        case UNKNOWN_INTERNAL:
+          break;
+        case NEW:
+          return true;
+        case PARTIALLY_FILLED:
+          return true;
+        case FILLED:
+          return true;  // XXX this is confusing -- could be due to modify but also external event / race condition
+        case CANCELED:
+          return false;
+        case EXPIRED:
+          return false;
+        case NEW_INSURANCE:
+          break;
+        case NEW_ADL:
+          break;
+      }
+      return true;
+    }();
+    if (!working) {  // special case probably triggered by stp=expire-maker (#586)
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, wsapi_order_modify.error.msg);
     } else if (wsapi_order_modify.status == 200) {
       handle_success(wsapi_order_modify.result);

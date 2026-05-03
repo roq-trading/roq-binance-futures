@@ -48,7 +48,8 @@ auto create_name(auto stream_id) {
 
 auto create_query(auto &listen_key) {
   assert(!std::empty(listen_key));
-  return fmt::format("/{}"sv, listen_key);
+  // https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/Important-WebSocket-Change-Notice
+  return fmt::format("/{}"sv, listen_key);  // XXX
 }
 
 auto create_uri(auto &settings) {

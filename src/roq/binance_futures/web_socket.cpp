@@ -1085,7 +1085,9 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
       Trace event_2{trace_info, response};
       (*this)(event_2, request.user_id, request.order_id, order_update);
     };
-    if (wsapi_order_modify.status == 200) {
+    if (wsapi_order_modify.status == json::OrderStatus::CANCELED) {  // special case probably triggered by stp=expire-maker (#586)
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, wsapi_order_modify.error.msg);
+    } else if (wsapi_order_modify.status == 200) {
       handle_success(wsapi_order_modify.result);
     } else {
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_modify.error.code), wsapi_order_modify.error.msg);

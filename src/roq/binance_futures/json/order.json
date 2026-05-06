@@ -105,6 +105,10 @@
     {
       "name": "cumBase",
       "type": "std/double"
+    },
+    {
+      "name": "strategyType",
+      "type": "std/string_view"
     }
   ]
 }

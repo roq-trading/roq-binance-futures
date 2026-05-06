@@ -61,6 +61,10 @@
     {
       "name": "outboundAccountPosition",
       "comment": "reported by client"
+    },
+    {
+      "name": "POSITION_HISTORY_UPDATE",
+      "comment": "reported by client"
     }
   ]
 }

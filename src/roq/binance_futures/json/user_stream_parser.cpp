@@ -83,6 +83,9 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
     case OUTBOUND_ACCOUNT_POSITION:
       dispatch_helper<OutboundAccountPosition>(handler, message, buffer_stack, trace_info);
       return true;
+    case POSITION_HISTORY_UPDATE:
+      // XXX FIXME TODO need parsing
+      return true;
   }
   log::fatal(R"(Unexpected: message="{}")"sv, message);
 }

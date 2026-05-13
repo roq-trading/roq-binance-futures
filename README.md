@@ -1,18 +1,21 @@
-# roq-binance-futures
+# [roq-binance-futures](https://roq-trading.com/docs/reference/gateways/crypto/roq-binance-futures/)
 
 Roq's Binance futures gateway.
 
 
-## GitHub
+## Contact
 
-You will not find the full commit history on GitHub.
-This is done for privacy reasons.
+Please reach out by [email](mailto:info@roq-trading.com) if you're interested in licensing this software.
+
+
+## Documentation
+
+Reference documentation can be found [here](https://roq-trading.com/docs/reference/gateways/crypto/roq-binance-futures/).
 
 
 ## Building
 
-This project depends on proprietary solutions, e.g. for auto-generated code.
-For this reason, you will **NOT** be able to build this project!
+This is proprietary software: you will **NOT** be able to build this project!
 
 
 ## Links
@@ -23,7 +26,6 @@ For this reason, you will **NOT** be able to build this project!
 * [Releases](https://roq-trading.com/docs/releases/)
 * [Gateways](https://roq-trading.com/docs/introduction/gateways/)
 * [Samples](https://github.com/roq-trading/roq-cpp-samples/)
-* [Roadmap](https://roq-trading.com/docs/introduction/roadmap/)
 * [Pricing](https://roq-trading.com/#pricing)
 * [LinkedIn](https://www.linkedin.com/company/35447832/)
 * [Telegram](https://t.me/roq_trading/)

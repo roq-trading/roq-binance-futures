@@ -21,7 +21,6 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/drop_copy.hpp"
-#include "roq/binance_futures/drop_copy_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
 
@@ -66,7 +65,16 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
  private:
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(DropCopyState);
+  enum class State {
+    UNDEFINED = 0,
+    BALANCE,
+    ACCOUNT,
+    ORDERS,
+    TRADES,
+    DONE,
+  };
+
+  uint32_t download(State);
 
   void parse(std::string_view const &message);
 
@@ -124,7 +132,7 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   // state
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
-  core::Download<DropCopyState> download_;
+  core::Download<State> download_;
   // ...
   std::chrono::nanoseconds balance_refresh_ = {};
 };

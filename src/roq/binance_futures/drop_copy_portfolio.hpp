@@ -21,7 +21,6 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/drop_copy.hpp"
-#include "roq/binance_futures/drop_copy_portfolio_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
 
@@ -66,7 +65,17 @@ struct DropCopyPortfolio final : public DropCopy, public web::socket::Client::Ha
  private:
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(DropCopyPortfolioState);
+  enum class State {
+    UNDEFINED = 0,
+    BALANCE,
+    ACCOUNT,
+    POSITION,
+    ORDERS,
+    TRADES,
+    DONE,
+  };
+
+  uint32_t download(State);
 
   void parse(std::string_view const &message);
 
@@ -122,7 +131,7 @@ struct DropCopyPortfolio final : public DropCopy, public web::socket::Client::Ha
   // state
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
-  core::Download<DropCopyPortfolioState> download_;
+  core::Download<State> download_;
 };
 
 }  // namespace binance_futures

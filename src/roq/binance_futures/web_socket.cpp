@@ -626,9 +626,9 @@ void WebSocket::operator()(ConnectionStatus connection_status, std::string_view 
   create_trace_and_dispatch(handler_, trace_info, stream_status);
 }
 
-uint32_t WebSocket::download(WebSocketState state) {
+uint32_t WebSocket::download(State state) {
   switch (state) {
-    using enum WebSocketState;
+    using enum State;
     case UNDEFINED:
       assert(false);
       break;
@@ -676,7 +676,7 @@ void WebSocket::operator()(Trace<json::WSAPIError> const &event) {
 }
 
 void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
-  auto const STATE = WebSocketState::SESSION_LOGON;
+  auto const STATE = State::SESSION_LOGON;
   profile_.session_logon([&]() {
     auto &[trace_info, wsapi_session_logon] = event;
     log::info<2>("wsapi_session_logon={}"sv, wsapi_session_logon);
@@ -697,7 +697,7 @@ void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
 }
 
 void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
-  auto const STATE = WebSocketState::USER_DATA_STREAM_START;
+  auto const STATE = State::USER_DATA_STREAM_START;
   profile_.user_data_stream_start_ack([&]() {
     auto &[trace_info, wsapi_listen_key] = event;
     log::info<2>("wsapi_listen_key={}"sv, wsapi_listen_key);

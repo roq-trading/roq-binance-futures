@@ -32,7 +32,6 @@
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
-#include "roq/binance_futures/web_socket_state.hpp"
 
 #include "roq/binance_futures/json/wsapi_parser.hpp"
 
@@ -125,7 +124,15 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
  private:
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(WebSocketState state);
+  enum class State {
+    UNDEFINED = 0,
+    SESSION_LOGON,
+    USER_DATA_STREAM_START,
+    ACCOUNT_POSITION,
+    DONE,
+  };
+
+  uint32_t download(State state);
 
   void parse(std::string_view const &message);
 
@@ -206,7 +213,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   // state
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
-  core::Download<WebSocketState> download_;
+  core::Download<State> download_;
   [[maybe_unused]] bool download_trades_is_first_ = true;
 };
 

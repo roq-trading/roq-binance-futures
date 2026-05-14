@@ -24,7 +24,6 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/order_entry.hpp"
-#include "roq/binance_futures/order_entry_state.hpp"
 #include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/shared.hpp"
 
@@ -104,7 +103,13 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(OrderEntryState state);
+  enum class State {
+    UNDEFINED = 0,
+    LISTEN_KEY,
+    DONE,
+  };
+
+  uint32_t download(State state);
 
   // listen-key
 
@@ -233,7 +238,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
   ConnectionStatus connection_status_ = {};
-  core::Download<OrderEntryState> download_;
+  core::Download<State> download_;
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};

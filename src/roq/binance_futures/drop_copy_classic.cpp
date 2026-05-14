@@ -220,9 +220,9 @@ void DropCopyClassic::operator()(ConnectionStatus connection_status, std::string
   create_trace_and_dispatch(handler_, trace_info, stream_status);
 }
 
-uint32_t DropCopyClassic::download(DropCopyState state) {
+uint32_t DropCopyClassic::download(State state) {
   switch (state) {
-    using enum DropCopyState;
+    using enum State;
     case UNDEFINED:
       assert(false);
       break;
@@ -617,42 +617,42 @@ void DropCopyClassic::request_trades() {
 // response
 
 void DropCopyClassic::check_response_balance() {
-  if (download_.state() != DropCopyState::BALANCE) {
+  if (download_.state() != State::BALANCE) {
     return;
   }
   if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
-    download_.check(DropCopyState::BALANCE);
+    download_.check(State::BALANCE);
   }
 }
 
 void DropCopyClassic::check_response_account() {
-  if (download_.state() != DropCopyState::ACCOUNT) {
+  if (download_.state() != State::ACCOUNT) {
     return;
   }
   if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
-    download_.check(DropCopyState::ACCOUNT);
+    download_.check(State::ACCOUNT);
   }
 }
 
 void DropCopyClassic::check_response_orders() {
-  if (download_.state() != DropCopyState::ORDERS) {
+  if (download_.state() != State::ORDERS) {
     return;
   }
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
-    download_.check(DropCopyState::ORDERS);
+    download_.check(State::ORDERS);
   }
 }
 
 void DropCopyClassic::check_response_trades() {
-  if (download_.state() != DropCopyState::TRADES) {
+  if (download_.state() != State::TRADES) {
     return;
   }
   if (request_.request_trades < request_.respond_trades) {
     log::info("Trades download has completed!"sv);
-    download_.check(DropCopyState::TRADES);
+    download_.check(State::TRADES);
   }
 }
 

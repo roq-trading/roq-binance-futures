@@ -23,19 +23,11 @@
 
 #include "roq/server.hpp"
 
-#include "roq/binance_futures/rest_state.hpp"
 #include "roq/binance_futures/shared.hpp"
-
-// #include "roq/binance_futures/json/account.hpp"
-
-// #include "roq/binance_futures/json/listen_key.hpp"
 
 #include "roq/binance_futures/json/depth_ack.hpp"
 #include "roq/binance_futures/json/exchange_info_ack.hpp"
 #include "roq/binance_futures/json/kline_ack.hpp"
-
-// #include "roq/binance_futures/json/new_order.hpp"
-// #include "roq/binance_futures/json/cancel_order.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -80,7 +72,13 @@ struct Rest final : public web::rest::Client::Handler {
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(RestState state);
+  enum class State {
+    UNDEFINED = 0,
+    EXCHANGE_INFO,
+    DONE,
+  };
+
+  uint32_t download(State state);
 
   // exchange-info
 
@@ -134,7 +132,7 @@ struct Rest final : public web::rest::Client::Handler {
   Shared &shared_;
   // state
   ConnectionStatus connection_status_ = {};
-  core::Download<RestState> download_;
+  core::Download<State> download_;
 };
 
 }  // namespace binance_futures

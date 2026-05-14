@@ -220,9 +220,9 @@ void DropCopyPortfolio::operator()(ConnectionStatus connection_status, std::stri
   create_trace_and_dispatch(handler_, trace_info, stream_status);
 }
 
-uint32_t DropCopyPortfolio::download(DropCopyPortfolioState state) {
+uint32_t DropCopyPortfolio::download(State state) {
   switch (state) {
-    using enum DropCopyPortfolioState;
+    using enum State;
     case UNDEFINED:
       assert(false);
       break;
@@ -706,52 +706,52 @@ void DropCopyPortfolio::request_trades() {
 // response
 
 void DropCopyPortfolio::check_response_balance() {
-  if (download_.state() != DropCopyPortfolioState::BALANCE) {
+  if (download_.state() != State::BALANCE) {
     return;
   }
   if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
-    download_.check(DropCopyPortfolioState::BALANCE);
+    download_.check(State::BALANCE);
   }
 }
 
 void DropCopyPortfolio::check_response_account() {
-  if (download_.state() != DropCopyPortfolioState::ACCOUNT) {
+  if (download_.state() != State::ACCOUNT) {
     return;
   }
   if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
-    download_.check(DropCopyPortfolioState::ACCOUNT);
+    download_.check(State::ACCOUNT);
   }
 }
 
 void DropCopyPortfolio::check_response_position() {
-  if (download_.state() != DropCopyPortfolioState::POSITION) {
+  if (download_.state() != State::POSITION) {
     return;
   }
   if (request_.request_position < request_.respond_position) {
     log::info("Position download has completed!"sv);
-    download_.check(DropCopyPortfolioState::POSITION);
+    download_.check(State::POSITION);
   }
 }
 
 void DropCopyPortfolio::check_response_orders() {
-  if (download_.state() != DropCopyPortfolioState::ORDERS) {
+  if (download_.state() != State::ORDERS) {
     return;
   }
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
-    download_.check(DropCopyPortfolioState::ORDERS);
+    download_.check(State::ORDERS);
   }
 }
 
 void DropCopyPortfolio::check_response_trades() {
-  if (download_.state() != DropCopyPortfolioState::TRADES) {
+  if (download_.state() != State::TRADES) {
     return;
   }
   if (request_.request_trades < request_.respond_trades) {
     log::info("Trades download has completed!"sv);
-    download_.check(DropCopyPortfolioState::TRADES);
+    download_.check(State::TRADES);
   }
 }
 

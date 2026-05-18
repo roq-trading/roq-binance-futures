@@ -124,6 +124,8 @@ Gateway::Gateway(server::Dispatcher &dispatcher, Settings const &settings, Confi
   }
 }
 
+// server::Handler
+
 void Gateway::operator()(Event<Start> const &event) {
   log::info("Starting..."sv);
   assert(std::empty(market_data_a_));
@@ -161,136 +163,6 @@ void Gateway::operator()(Event<Connected> const &) {
 }
 
 void Gateway::operator()(Event<Disconnected> const &) {
-}
-
-void Gateway::operator()(Trace<StreamStatus> const &event) {
-  dispatcher_(event);
-}
-
-void Gateway::operator()(Trace<ExternalLatency> const &event) {
-  dispatcher_(event);
-}
-
-void Gateway::operator()(Trace<RateLimitsUpdate> const &event) {
-  dispatcher_(event);
-}
-
-void Gateway::operator()(Trace<ReferenceData> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<MarketStatus> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<TopOfBook> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<MarketByPriceUpdate> const &event, bool is_last) {
-  auto callback = []([[maybe_unused]] auto &market_by_price) {};
-  dispatcher_(event, is_last, bids_, asks_, callback);
-}
-
-void Gateway::operator()(Trace<TradeSummary> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<StatisticsUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<TimeSeriesUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<TradeUpdate> const &event, bool is_last, uint8_t user_id, std::string_view const &request_id) {
-  dispatcher_(event, is_last, user_id, request_id);
-}
-
-void Gateway::operator()(Trace<FundsUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Trace<PositionUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
-  auto [size, start_from] = shared_.symbols(symbols_update.symbols);
-  ensure_symbol_slices(size);
-  for (auto &item : market_data_a_) {
-    (*item).subscribe(start_from);
-  }
-  for (auto &item : market_data_b_) {
-    (*item).subscribe(start_from);
-  }
-  for (auto &item : market_data_2_) {
-    (*item).subscribe(start_from);
-  }
-}
-
-void Gateway::ensure_symbol_slices(size_t size) {
-  auto helper = [&](auto &container, auto priority) {
-    auto stream_id = ++stream_id_;
-    auto index = std::size(container);
-    log::info("Create MarketData (stream_id={}, priority={}, index={})"sv, stream_id, priority, index);
-    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, priority, shared_, index);
-    MessageInfo message_info;
-    Start start;
-    create_event_and_dispatch(*market_data, message_info, start);
-    container.emplace_back(std::move(market_data));
-  };
-  while (std::size(market_data_a_) < size) {
-    helper(market_data_a_, Priority::PRIMARY);
-  }
-  if (shared_.settings.ws.enable_secondary) {
-    while (std::size(market_data_b_) < size) {
-      helper(market_data_b_, Priority::SECONDARY);
-    }
-  }
-  auto helper_2 = [&](auto &container) {
-    auto stream_id = ++stream_id_;
-    auto index = std::size(container);
-    log::info("Create MarketData2 (stream_id={}, index={})"sv, stream_id, index);
-    auto market_data = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
-    MessageInfo message_info;
-    Start start;
-    create_event_and_dispatch(*market_data, message_info, start);
-    container.emplace_back(std::move(market_data));
-  };
-  while (std::size(market_data_2_) < size) {
-    helper_2(market_data_2_);
-  }
-}
-
-void Gateway::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
-}
-
-void Gateway::operator()(OrderEntryClassic::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
-}
-
-void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);
-}
-
-template <typename T>
-void Gateway::create_drop_copy_helper(auto &listen_key_update) {
-  auto &account = listen_key_update.account;
-  assert(!std::empty(account));
-  auto iter = drop_copy_.find(account);
-  if (iter == std::end(drop_copy_)) {
-    log::fatal(R"(Unexpected: account="{}")"sv, account);
-  } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create DropCopy (user-stream) for account="{}")"sv, account);
-    auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
-    MessageInfo message_info;
-    Start start;
-    create_event_and_dispatch(*drop_copy, message_info, start);
-    (*iter).second = std::move(drop_copy);
-  }
 }
 
 void Gateway::operator()(Event<Subscribe> const &event) {
@@ -360,6 +232,140 @@ uint16_t Gateway::operator()(Event<CancelQuotes> const &) {
 
 void Gateway::operator()(metrics::Writer &writer) const {
   dispatch_helper(*this, writer);
+}
+
+// streams
+
+void Gateway::operator()(Trace<StreamStatus> const &event) {
+  dispatcher_(event);
+}
+
+void Gateway::operator()(Trace<ExternalLatency> const &event) {
+  dispatcher_(event);
+}
+
+void Gateway::operator()(Trace<RateLimitsUpdate> const &event) {
+  dispatcher_(event);
+}
+
+void Gateway::operator()(Trace<ReferenceData> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<MarketStatus> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<TopOfBook> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<MarketByPriceUpdate> const &event, bool is_last) {
+  auto callback = []([[maybe_unused]] auto &market_by_price) {};
+  dispatcher_(event, is_last, bids_, asks_, callback);
+}
+
+void Gateway::operator()(Trace<TradeSummary> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<StatisticsUpdate> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<TimeSeriesUpdate> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<TradeUpdate> const &event, bool is_last, uint8_t user_id, std::string_view const &request_id) {
+  dispatcher_(event, is_last, user_id, request_id);
+}
+
+void Gateway::operator()(Trace<FundsUpdate> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Trace<PositionUpdate> const &event, bool is_last) {
+  dispatcher_(event, is_last);
+}
+
+void Gateway::operator()(Rest::SymbolsUpdate &symbols_update) {
+  auto [size, start_from] = shared_.symbols(symbols_update.symbols);
+  ensure_symbol_slices(size);
+  for (auto &item : market_data_a_) {
+    (*item).subscribe(start_from);
+  }
+  for (auto &item : market_data_b_) {
+    (*item).subscribe(start_from);
+  }
+  for (auto &item : market_data_2_) {
+    (*item).subscribe(start_from);
+  }
+}
+
+void Gateway::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
+}
+
+void Gateway::operator()(OrderEntryClassic::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
+}
+
+void Gateway::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
+  create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);
+}
+
+// utilities
+
+template <typename T>
+void Gateway::create_drop_copy_helper(auto &listen_key_update) {
+  auto &account = listen_key_update.account;
+  assert(!std::empty(account));
+  auto iter = drop_copy_.find(account);
+  if (iter == std::end(drop_copy_)) {
+    log::fatal(R"(Unexpected: account="{}")"sv, account);
+  } else if (!static_cast<bool>((*iter).second)) {
+    log::info(R"(Create DropCopy (user-stream) for account="{}")"sv, account);
+    auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
+    MessageInfo message_info;
+    Start start;
+    create_event_and_dispatch(*drop_copy, message_info, start);
+    (*iter).second = std::move(drop_copy);
+  }
+}
+
+void Gateway::ensure_symbol_slices(size_t size) {
+  auto helper = [&](auto &container, auto priority) {
+    auto stream_id = ++stream_id_;
+    auto index = std::size(container);
+    log::info("Create MarketData (stream_id={}, priority={}, index={})"sv, stream_id, priority, index);
+    auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, priority, shared_, index);
+    MessageInfo message_info;
+    Start start;
+    create_event_and_dispatch(*market_data, message_info, start);
+    container.emplace_back(std::move(market_data));
+  };
+  while (std::size(market_data_a_) < size) {
+    helper(market_data_a_, Priority::PRIMARY);
+  }
+  if (shared_.settings.ws.enable_secondary) {
+    while (std::size(market_data_b_) < size) {
+      helper(market_data_b_, Priority::SECONDARY);
+    }
+  }
+  auto helper_2 = [&](auto &container) {
+    auto stream_id = ++stream_id_;
+    auto index = std::size(container);
+    log::info("Create MarketData2 (stream_id={}, index={})"sv, stream_id, index);
+    auto market_data = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
+    MessageInfo message_info;
+    Start start;
+    create_event_and_dispatch(*market_data, message_info, start);
+    container.emplace_back(std::move(market_data));
+  };
+  while (std::size(market_data_2_) < size) {
+    helper_2(market_data_2_);
+  }
 }
 
 template <typename... Args>

@@ -15,17 +15,18 @@
 
 #include "roq/binance_futures/account.hpp"
 #include "roq/binance_futures/config.hpp"
+#include "roq/binance_futures/request.hpp"
+#include "roq/binance_futures/settings.hpp"
+#include "roq/binance_futures/shared.hpp"
+
 #include "roq/binance_futures/drop_copy_classic.hpp"
 #include "roq/binance_futures/drop_copy_portfolio.hpp"
 #include "roq/binance_futures/market_data.hpp"
 #include "roq/binance_futures/market_data_2.hpp"
 #include "roq/binance_futures/order_entry_classic.hpp"
 #include "roq/binance_futures/order_entry_portfolio.hpp"
-#include "roq/binance_futures/request.hpp"
 #include "roq/binance_futures/rest.hpp"
 #include "roq/binance_futures/rest_trade.hpp"
-#include "roq/binance_futures/settings.hpp"
-#include "roq/binance_futures/shared.hpp"
 #include "roq/binance_futures/web_socket.hpp"
 
 namespace roq {
@@ -46,6 +47,8 @@ struct Gateway final : public server::Handler,
   Gateway(Gateway const &) = delete;
 
  protected:
+  // server::Handler
+
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
   void operator()(Event<Timer> const &) override;
@@ -77,7 +80,7 @@ struct Gateway final : public server::Handler,
 
   void operator()(metrics::Writer &) const override;
 
-  // many
+  // streams
 
   void operator()(Trace<StreamStatus> const &) override;
   void operator()(Trace<ExternalLatency> const &) override;
@@ -95,16 +98,16 @@ struct Gateway final : public server::Handler,
 
   void operator()(Rest::SymbolsUpdate &) override;
 
-  void ensure_symbol_slices(size_t size);
-
   void operator()(WebSocket::ListenKeyUpdate const &) override;
   void operator()(OrderEntryClassic::ListenKeyUpdate const &) override;
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
+  // utilities
+
   template <typename T>
   void create_drop_copy_helper(auto &listen_key_update);
 
-  // utilities
+  void ensure_symbol_slices(size_t size);
 
   template <typename... Args>
   void dispatch(Args &&...);

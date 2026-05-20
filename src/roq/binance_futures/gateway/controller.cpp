@@ -114,6 +114,10 @@ R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts,
 
 // === IMPLEMENTATION ===
 
+std::unique_ptr<server::Handler> Controller::create(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context) {
+  return std::make_unique<Controller>(dispatcher, settings, config, context);
+}
+
 Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
     : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context}, shared_{dispatcher, settings},
       requests_{create_requests<decltype(requests_)>(config)}, rest_{*this, context_, ++stream_id_, shared_},

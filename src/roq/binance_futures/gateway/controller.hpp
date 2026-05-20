@@ -43,9 +43,13 @@ struct Controller final : public server::Handler,
                           public DropCopyClassic::Handler,
                           public DropCopyPortfolio::Handler,
                           public RestTrade::Handler {
+  ROQ_PUBLIC static std::unique_ptr<server::Handler> create(server::Dispatcher &, Settings const &, Config const &, io::Context &);
+
   Controller(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
   Controller(Controller const &) = delete;
+
+  virtual ~Controller() = default;
 
  protected:
   // server::Handler

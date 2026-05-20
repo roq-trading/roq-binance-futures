@@ -1,0 +1,714 @@
+/* Copyright (c) 2017-2026, Hans Erik Thrane */
+
+#include "roq/binance_futures/gateway/rest.hpp"
+
+#include <algorithm>
+#include <utility>
+
+#include "roq/mask.hpp"
+
+#include "roq/utils/compare.hpp"
+#include "roq/utils/safe_cast.hpp"
+#include "roq/utils/update.hpp"
+
+#include "roq/utils/charconv/from_chars.hpp"
+
+#include "roq/utils/metrics/factory.hpp"
+
+#include "roq/binance_futures/json/error.hpp"
+#include "roq/binance_futures/json/filters.hpp"
+#include "roq/binance_futures/json/map.hpp"
+#include "roq/binance_futures/json/utils.hpp"
+
+using namespace std::literals;
+
+namespace roq {
+namespace binance_futures {
+namespace gateway {
+
+// === CONSTANTS ===
+
+namespace {
+auto const NAME = "om"sv;
+
+auto const SUPPORTS = Mask{
+    SupportType::REFERENCE_DATA,
+    SupportType::MARKET_STATUS,
+};
+
+auto const X_MBX_USED_WEIGHT_1M = "x-mbx-used-weight-1m"sv;
+
+size_t const MAX_DECODE_BUFFER_DEPTH = 2;
+}  // namespace
+
+// === HELPERS ===
+
+namespace {
+auto create_name(auto stream_id) {
+  return fmt::format("{}:{}"sv, stream_id, NAME);
+}
+
+auto create_connection(auto &handler, auto &settings, auto &context) {
+  auto uri = settings.rest.uri;
+  auto ping_path = fmt::format("/{}{}"sv, settings.app.api, settings.rest.ping_path);
+  auto config = web::rest::Client::Config{
+      // connection
+      .interface = {},
+      .proxy = settings.rest.proxy,
+      .uris = {&uri, 1},
+      .host = settings.rest.host,
+      .validate_certificate = settings.net.tls_validate_certificate,
+      // connection manager
+      .connection_timeout = {},
+      .disconnect_on_idle_timeout = {},
+      .connection = web::http::Connection::KEEP_ALIVE,
+      // request
+      .allow_pipelining = true,
+      .request_timeout = settings.rest.request_timeout,
+      // response
+      .suspend_on_retry_after = true,
+      // http
+      .query = {},
+      .user_agent = ROQ_PACKAGE_NAME,
+      .ping_frequency = settings.rest.ping_freq,
+      .ping_path = ping_path,
+      // implementation
+      .decode_buffer_size = settings.misc.decode_buffer_size,
+      .encode_buffer_size = settings.misc.encode_buffer_size,
+  };
+  return web::rest::Client::create(handler, context, config);
+}
+
+struct create_metrics final : public utils::metrics::Factory {
+  create_metrics(auto &settings, auto &group, auto const &function) : utils::metrics::Factory{settings.app.name, group, function} {}
+  create_metrics(auto &settings, auto &group, auto const &function, auto const &period) : utils::metrics::Factory{settings.app.name, group, function, period} {}
+};
+
+auto get_retry_after(auto &response) {
+  std::chrono::nanoseconds result = {};
+  response.dispatch(web::http::Header::RETRY_AFTER, [&](auto &value) {
+    try {
+      // XXX FIXME could also be a datetime (see https://datatracker.ietf.org/doc/html/rfc7231)
+      auto seconds = utils::charconv::from_string_relaxed<int64_t>(value);
+      result = std::chrono::seconds{seconds};
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, value);
+    }
+  });
+  return result;
+}
+}  // namespace
+
+// === IMPLEMENTATION ===
+
+Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context)},
+      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
+      counter_{
+          .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
+      },
+      profile_{
+          .exchange_info = create_metrics(shared.settings, name_, "exchange_info"sv),
+          .exchange_info_ack = create_metrics(shared.settings, name_, "exchange_info_ack"sv),
+          .depth = create_metrics(shared.settings, name_, "depth"sv),
+          .depth_ack = create_metrics(shared.settings, name_, "depth_ack"sv),
+          .kline = create_metrics(shared.settings, name_, "kline"sv),
+          .kline_ack = create_metrics(shared.settings, name_, "kline_ack"sv),
+      },
+      latency_{
+          .ping = create_metrics(shared.settings, name_, "ping"sv),
+      },
+      rate_limiter_{
+          .request_weight_1m = create_metrics(shared.settings, name_, "requests"sv, "1m"sv),
+      },
+      shared_{shared}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+}
+
+void Rest::operator()(Event<Start> const &) {
+  (*connection_).start();
+}
+
+void Rest::operator()(Event<Stop> const &) {
+  (*connection_).stop();
+}
+
+void Rest::operator()(Event<Timer> const &event) {
+  auto now = event.value.now;
+  (*connection_).refresh(now);
+  if (ready()) {
+    check_request_queue(now);
+  }
+}
+
+void Rest::operator()(metrics::Writer &writer) const {
+  writer
+      // counter
+      .write(counter_.disconnect, metrics::Type::COUNTER)
+      // profile
+      .write(profile_.exchange_info, metrics::Type::PROFILE)
+      .write(profile_.exchange_info_ack, metrics::Type::PROFILE)
+      .write(profile_.depth, metrics::Type::PROFILE)
+      .write(profile_.depth_ack, metrics::Type::PROFILE)
+      .write(profile_.kline, metrics::Type::PROFILE)
+      .write(profile_.kline_ack, metrics::Type::PROFILE)
+      // latency
+      .write(latency_.ping, metrics::Type::LATENCY)
+      // rate limiter
+      .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER);
+}
+
+void Rest::operator()(Trace<web::rest::Client::Connected> const &) {
+  if (download_.downloading()) {
+    download_.bump();
+  } else {
+    download_.begin();
+  }
+}
+
+void Rest::operator()(Trace<web::rest::Client::Disconnected> const &) {
+  ++counter_.disconnect;
+  (*this)(ConnectionStatus::DISCONNECTED);
+  if (!download_.downloading()) {
+    download_.reset();
+  }
+}
+
+void Rest::operator()(Trace<web::rest::Client::Latency> const &event) {
+  auto &[trace_info, latency] = event;
+  auto external_latency = ExternalLatency{
+      .stream_id = stream_id_,
+      .account = {},
+      .latency = latency.sample,
+  };
+  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  latency_.ping.update(latency.sample);
+}
+
+void Rest::operator()(Trace<web::rest::Client::MessageBegin> const &) {
+  shared_.rate_limits.clear();
+}
+
+void Rest::operator()(Trace<web::rest::Client::Header> const &event) {
+  auto &header = event.value;
+  if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
+    try {
+      auto value = utils::charconv::from_string_relaxed<uint32_t>(header.value);
+      auto rate_limit = RateLimit{
+          .type = RateLimitType::REQUEST_WEIGHT,
+          .period = 1min,
+          .end_time_utc = {},
+          .limit = shared_.limits.request_weight_1m,
+          .value = value,
+      };
+      shared_.rate_limits.emplace_back(rate_limit);
+      rate_limiter_.request_weight_1m.set(value);
+    } catch (RuntimeError &) {
+      log::warn<5>(R"(Failed to parse text="{}")"sv, header.value);
+    }
+  }
+}
+
+void Rest::operator()(Trace<web::rest::Client::MessageEnd> const &event) {
+  auto &trace_info = event.trace_info;
+  if (std::empty(shared_.rate_limits)) {
+    return;
+  }
+  auto rate_limits_update = RateLimitsUpdate{
+      .stream_id = stream_id_,
+      .account = {},
+      .origin = Origin::EXCHANGE,
+      .rate_limits = shared_.rate_limits,
+  };
+  create_trace_and_dispatch(handler_, trace_info, rate_limits_update);
+  shared_.rate_limits.clear();
+}
+
+void Rest::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
+  connection_status_ = connection_status;
+  TraceInfo trace_info;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = {},
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::HTTP,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(handler_, trace_info, stream_status);
+}
+
+uint32_t Rest::download(State state) {
+  switch (state) {
+    using enum State;
+    case UNDEFINED:
+      assert(false);
+      break;
+    case EXCHANGE_INFO:
+      (*this)(ConnectionStatus::DOWNLOADING, "exchange-info"sv);
+      get_exchange_info();
+      return 1;
+    case DONE:
+      (*this)(ConnectionStatus::READY);
+      return 0;
+  }
+  assert(false);
+  return 0;
+}
+
+// exchange-info
+
+void Rest::get_exchange_info() {
+  profile_.exchange_info([&]() {
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.market_data.exchange_info,
+        .query = {},
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_exchange_info_ack(event, sequence);
+    };
+    (*connection_)("exchange-info"sv, request, callback);
+  });
+}
+
+void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
+  auto const STATE = State::EXCHANGE_INFO;
+  profile_.exchange_info_ack([&]() {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      if (download_.downloading()) {
+        download_.retry(STATE);
+      }
+    };
+    auto handle_success = [&](auto &body) {
+      if (download_.skip(sequence, STATE)) {
+        log::info("Download state={} has already been processed"sv, STATE);
+      } else {
+        json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
+        Trace event_2{event, exchange_info_ack};
+        (*this)(event_2);
+        download_.check(STATE);
+      }
+    };
+    process_response(event, handle_error, handle_success);
+  });
+}
+
+void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
+  auto &[trace_info, exchange_info_ack] = event;
+  log::info<2>("exchange_info_ack={}"sv, exchange_info_ack);
+  // rate-limits
+  for (auto &item : exchange_info_ack.rate_limits) {
+    log::info<2>("item={}"sv, item);
+    if (item.rate_limit_type == json::RateLimitType::REQUEST_WEIGHT) {
+      if (item.interval == json::Interval::MINUTE && item.interval_num == 1) {
+        shared_.limits.request_weight_1m = item.limit;
+      }
+    }
+    if (item.rate_limit_type == json::RateLimitType::ORDERS) {
+      if (item.interval == json::Interval::SECOND && item.interval_num == 10) {
+        shared_.limits.create_order_10s = item.limit;
+      }
+      if (item.interval == json::Interval::MINUTE && item.interval_num == 1) {
+        shared_.limits.create_order_1m = item.limit;
+      }
+    }
+  }
+  // symbols
+  std::vector<Symbol> symbols;
+  size_t counter = {};
+  for (auto const &item : exchange_info_ack.symbols) {
+    log::info<2>("item={}"sv, item);
+    auto discard = shared_.discard_symbol(item.symbol);
+    // fall-back values
+    auto tick_size = std::pow(10.0, -static_cast<double>(item.quote_precision));
+    auto min_notional = NaN;
+    auto min_trade_vol = std::pow(10.0, -static_cast<double>(item.base_asset_precision));
+    auto max_trade_vol = NaN;
+    auto trade_vol_step_size = min_trade_vol;
+    for (auto &filter : item.filters) {
+      switch (filter.filter_type) {
+        using enum json::FilterType::type_t;
+        case UNDEFINED_INTERNAL:
+        case UNKNOWN_INTERNAL:
+          break;
+        case PRICE_FILTER:
+          tick_size = filter.tick_size;
+          break;
+        case PERCENT_PRICE:
+          break;
+        case LOT_SIZE:
+          min_trade_vol = filter.min_qty;
+          max_trade_vol = filter.max_qty;
+          trade_vol_step_size = filter.step_size;
+          break;
+        case MIN_NOTIONAL:
+          // min_notional = filter.min_notional;
+          break;
+        case ICEBERG_PARTS:
+          break;
+        case MARKET_LOT_SIZE:
+          break;
+        case MAX_NUM_ORDERS:
+          break;
+        case MAX_NUM_ALGO_ORDERS:
+          break;
+        case MAX_NUM_ICEBERG_ORDERS:
+          break;
+        case MAX_POSITION:
+          break;
+        case EXCHANGE_MAX_NUM_ORDERS:
+          break;
+        case EXCHANGE_MAX_NUM_ALGO_ORDERS:
+          break;
+        case POSITION_RISK_CONTROL:
+          break;
+      }
+    }
+    auto settlement_currency = [&]() {
+      if (item.margin_asset == item.base_asset) {
+        return item.quote_asset;
+      }
+      return item.base_asset;
+    }();
+    auto reference_data = ReferenceData{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = item.symbol,
+        .description = {},
+        .security_type = map(item.contract_type),
+        .external_security_id = {},
+        .cfi_code = {},
+        .base_currency = item.base_asset,
+        .quote_currency = item.quote_asset,
+        .settlement_currency = settlement_currency,
+        .margin_currency = item.margin_asset,
+        .commission_currency = {},
+        .tick_size = tick_size,
+        .tick_size_steps = {},
+        .multiplier = item.contract_size,  // XXX ???
+        .min_notional = min_notional,
+        .min_trade_vol = min_trade_vol,
+        .max_trade_vol = max_trade_vol,
+        .trade_vol_step_size = trade_vol_step_size,
+        .option_type = {},
+        .strike_currency = {},
+        .strike_price = NaN,
+        .underlying = item.pair,
+        .time_zone = {},
+        .issue_date = utils::safe_cast{item.onboard_date},
+        .settlement_date = utils::safe_cast{item.delivery_date},
+        .expiry_datetime = {},
+        .expiry_datetime_utc = {},
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = exchange_info_ack.server_time,
+        .discard = discard,
+    };
+    create_trace_and_dispatch(handler_, trace_info, reference_data, false);
+    if (discard) {
+      log::info<1>(R"(Drop symbol="{}")"sv, item.symbol);
+      continue;
+    }
+    auto create_symbol = [](auto const &value) {
+      std::string tmp{value};
+      std::ranges::transform(tmp, std::begin(tmp), [](auto item) { return std::tolower(item); });
+      return tmp;
+    };
+    auto symbol = create_symbol(item.symbol);
+    if (shared_.all_symbols.emplace(symbol).second) {  // only include new
+      symbols.emplace_back(symbol);
+    }
+    ++counter;
+    auto market_status = MarketStatus{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = item.symbol,
+        .trading_status = json::trading_status_helper(item.status, item.contract_status),
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = exchange_info_ack.server_time,
+    };
+    create_trace_and_dispatch(handler_, trace_info, market_status, true);
+  }
+  log::info("Exchange info: including symbols {}/{}"sv, counter, std::size(exchange_info_ack.symbols));
+  if (!std::empty(symbols)) {
+    auto symbols_update = SymbolsUpdate{
+        .symbols = symbols,
+    };
+    handler_(symbols_update);
+  }
+}
+
+// depth
+
+void Rest::get_depth(std::string_view const &symbol) {
+  profile_.depth([&]() {
+    auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.ws.subscribe_depth_levels);
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.market_data.depth,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_depth_ack(event, symbol);
+    };
+    (*connection_)("depth"sv, request, callback);
+  });
+}
+
+void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
+  profile_.depth_ack([&]() {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      // XXX WHAT ???
+    };
+    auto handle_success = [&](auto &body) {
+      json::DepthAck depth_ack{body, decode_buffer_};
+      Trace event_2{event, depth_ack};
+      (*this)(event_2, symbol);
+    };
+    process_response(event, handle_error, handle_success);
+  });
+}
+
+void Rest::operator()(Trace<json::DepthAck> const &event, std::string_view const &symbol) {
+  auto &[trace_info, depth_ack] = event;
+  log::info<4>("depth_ack={}"sv, depth_ack);
+  auto sequence = depth_ack.last_update_id;
+  auto &instrument = shared_.get_instrument(symbol);
+  auto &sequencer = instrument.sequencer;
+  auto &mbp = shared_.get_mbp();
+  auto emplace_back = [](auto &result, auto &value) {
+    auto mbp_update = MBPUpdate{
+        .price = value.price,
+        .quantity = value.qty,
+        .implied_quantity = NaN,
+        .number_of_orders = {},
+        .update_action = {},
+        .price_level = {},
+    };
+    result.emplace_back(std::move(mbp_update));
+  };
+  for (auto &item : depth_ack.bids) {
+    emplace_back(mbp.bids, item);
+  }
+  for (auto &item : depth_ack.asks) {
+    emplace_back(mbp.asks, item);
+  }
+  try {
+    auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence, auto retries, auto delay) {
+      log::info(
+          R"(DEBUG PUBLISH SNAPSHOT symbol="{}", sequence={}, retries={}, delay={})"sv,
+          symbol,
+          sequence,
+          retries,
+          std::chrono::duration_cast<std::chrono::milliseconds>(delay));
+      auto market_by_price_update = MarketByPriceUpdate{
+          .stream_id = stream_id_,
+          .exchange = shared_.settings.exchange,
+          .symbol = symbol,
+          .bids = bids,
+          .asks = asks,
+          .update_type = UpdateType::SNAPSHOT,
+          .exchange_time_utc = depth_ack.transaction_time,
+          .exchange_sequence = sequencer.last_sequence(),
+          .sending_time_utc = depth_ack.message_output_time,
+          .price_precision = {},
+          .quantity_precision = {},
+          .checksum = {},
+      };
+      auto apply_updates = [&](auto &market_by_price) { sequencer.apply(market_by_price, sequence, true); };
+      Trace event{trace_info, market_by_price_update};
+      shared_(event, true, apply_updates);
+    };
+    auto request_snapshot = [&](auto retries) {
+      log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, symbol, retries);
+      if (shared_.settings.ws.mbp_request_max_retries && shared_.settings.ws.mbp_request_max_retries < retries) {
+        log::fatal(R"(Unexpected: symbol="{}", retries={})"sv, symbol, retries);
+      }
+      shared_.depth_request_queue.emplace_back(symbol);
+    };
+    sequencer(mbp.bids, mbp.asks, sequence, false, publish_snapshot, request_snapshot);
+  } catch (BadState &) {
+    log::warn(R"(RESUBSCRIBE symbol="{}")"sv, symbol);
+    // XXX HANS publish stale
+    sequencer.clear();
+    shared_.depth_request_queue.emplace_back(symbol);
+  }
+}
+
+// kline
+
+void Rest::get_kline(std::string_view const &symbol) {
+  profile_.kline([&]() {
+    auto query = fmt::format("?symbol={}&interval=1m"sv, symbol);
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.market_data.kline,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_kline_ack(event, symbol);
+    };
+    (*connection_)("kline"sv, request, callback);
+  });
+}
+
+void Rest::get_kline_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
+  profile_.kline_ack([&]() {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      // XXX WHAT ???
+    };
+    auto handle_success = [&](auto &body) {
+      log::debug("{}"sv, body);
+      json::KlineAck kline_ack{body, decode_buffer_};
+      Trace event_2{event, kline_ack};
+      (*this)(event_2, symbol);
+    };
+    process_response(event, handle_error, handle_success);
+  });
+}
+
+void Rest::operator()(Trace<json::KlineAck> const &event, std::string_view const &symbol) {
+  auto &[trace_info, kline_ack] = event;
+  log::info<4>("kline_ack={}"sv, kline_ack);
+  auto &bars = shared_.bars;
+  bars.clear();
+  for (auto &item : kline_ack.data) {
+    auto bar = Bar{
+        .begin_time_utc = utils::safe_cast(item.begin_time),
+        .confirmed = true,
+        .open_price = item.open_price,
+        .high_price = item.high_price,
+        .low_price = item.low_price,
+        .close_price = item.close_price,
+        .quantity = NaN,
+        .base_amount = item.base_asset_volume,
+        .quote_amount = item.quote_asset_volume,
+        .number_of_trades = item.number_of_trades,
+        .vwap = NaN,
+    };
+    bars.emplace_back(std::move(bar));
+  }
+  if (!std::empty(bars)) {
+    auto time_series_update = TimeSeriesUpdate{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = symbol,
+        .data_source = DataSource::TRADE_SUMMARY,
+        .interval = shared_.settings.time_series.interval,
+        .origin = Origin::EXCHANGE,
+        .bars = bars,
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = {},  // XXX FIXME
+    };
+    create_trace_and_dispatch(handler_, trace_info, time_series_update, true);
+  }
+}
+
+// request
+
+void Rest::check_request_queue(std::chrono::nanoseconds now) {
+  shared_.depth_request_queue.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_depth(symbol); }, now);
+  shared_.time_series_request_queue.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &symbol) { get_kline(symbol); }, now);
+}
+
+// helpers
+
+void Rest::process_response(web::rest::Response const &response, auto error_handler, auto success_handler) {
+  try {
+    auto [status, category, body] = response.result();
+    switch (category) {
+      using enum web::http::Category;
+      case UNKNOWN:
+      case INFORMATIONAL_RESPONSE:
+        response.expect(web::http::Status::OK);  // throws
+        break;
+      case SUCCESS:
+        success_handler(body);
+        break;
+      case REDIRECTION:
+        log::fatal("Unexpected: URL is being redirected"sv);
+      case CLIENT_ERROR:
+        switch (status) {
+          using enum web::http::Status;
+          case FORBIDDEN:           // 403
+            waf_limit_violation();  // note! this is *very* serious
+            [[fallthrough]];
+          case I_AM_A_TEAPOT:        // 418
+          case TOO_MANY_REQUESTS: {  // 429
+            auto retry_after = get_retry_after(response);
+            if (retry_after.count()) {
+              (*connection_).suspend(retry_after);
+            }
+            auto message = fmt::format("{}"sv, status);
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::REQUEST_RATE_LIMIT_REACHED, message);
+            break;
+          }
+          case CONFLICT:  // 409
+            assert(false);
+            [[fallthrough]];
+          default: {
+            json::Error error{body};
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(error.code), error.msg);
+          }
+        }
+        break;
+      case SERVER_ERROR: {
+        auto message = fmt::format("{}"sv, status);
+        error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::UNKNOWN, message);
+        break;
+      }
+    }
+  } catch (NetworkError &e) {
+    log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
+    error_handler(Origin::GATEWAY, e.request_status(), e.error(), e.what());
+  } catch (std::exception &e) {
+    log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
+    error_handler(Origin::EXCHANGE, RequestStatus::ERROR, Error::UNKNOWN, e.what());
+  }
+}
+
+void Rest::waf_limit_violation() {
+  if (shared_.settings.rest.terminate_on_403) {
+    log::fatal("WAF limit violation"sv);
+  } else {
+    log::warn("WAF limit violation"sv);
+    (*connection_).suspend(shared_.settings.rest.back_off_delay);
+  }
+}
+
+}  // namespace gateway
+}  // namespace binance_futures
+}  // namespace roq

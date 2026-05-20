@@ -2,9 +2,10 @@
 
 #include "roq/binance_futures/application.hpp"
 
-#include "roq/binance_futures/config.hpp"
-#include "roq/binance_futures/gateway.hpp"
-#include "roq/binance_futures/settings.hpp"
+#include "roq/binance_futures/gateway/config.hpp"
+#include "roq/binance_futures/gateway/controller.hpp"
+
+#include "roq/binance_futures/flags/settings.hpp"
 
 using namespace std::literals;
 
@@ -36,11 +37,11 @@ auto parse_api(auto &settings) {
 // === IMPLEMENTATION ===
 
 int Application::main(args::Parser const &args) {
-  Settings settings{args};
+  flags::Settings settings{args};
   auto api = parse_api(settings);
-  Config config{settings};
+  gateway::Config config{settings};
   auto context = server::create_io_context(settings);
-  server::Trading<Gateway>{settings, config, *context, api}.dispatch();
+  server::Trading<gateway::Controller>{settings, config, *context, api}.dispatch();
   return EXIT_SUCCESS;
 }
 

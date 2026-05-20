@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "roq/compat.hpp"
+
 #include <fmt/ranges.h>
 
 #include <string>
@@ -20,7 +22,7 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct Config final : public server::config::Dispatcher, public server::config::Reader::Handler {
+struct ROQ_PUBLIC Config final : public server::config::Dispatcher, public server::config::Reader::Handler {
   explicit Config(Settings const &);
 
   Config(Config const &) = delete;

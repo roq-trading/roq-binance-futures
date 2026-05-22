@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Removed
+
+* Drop subscription to `@trade` (the `--ws_subscribe_trade_details` flag) (#591)
+
 ### Fixed
 
 * WSAPI modify request appeared successful but was rejected (#586)

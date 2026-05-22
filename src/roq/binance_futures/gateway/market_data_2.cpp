@@ -91,7 +91,6 @@ MarketData2::MarketData2(Handler &handler, io::Context &context, uint16_t stream
           .parse = create_metrics(shared.settings, name_, "parse"sv),
           .error = create_metrics(shared.settings, name_, "error"sv),
           .result = create_metrics(shared.settings, name_, "result"sv),
-          .trade = create_metrics(shared.settings, name_, "trade"sv),
           .agg_trade = create_metrics(shared.settings, name_, "agg_trade"sv),
           .mark_price_update = create_metrics(shared.settings, name_, "mark_price_update"sv),
           .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
@@ -129,7 +128,6 @@ void MarketData2::operator()(metrics::Writer &writer) const {
       .write(profile_.parse, metrics::Type::PROFILE)
       .write(profile_.error, metrics::Type::PROFILE)
       .write(profile_.result, metrics::Type::PROFILE)
-      .write(profile_.trade, metrics::Type::PROFILE)
       .write(profile_.agg_trade, metrics::Type::PROFILE)
       .write(profile_.mark_price_update, metrics::Type::PROFILE)
       .write(profile_.mini_ticker, metrics::Type::PROFILE)
@@ -208,11 +206,7 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
   if (std::empty(symbols)) {
     return;
   }
-  if (shared_.settings.ws.subscribe_trade_details) {
-    subscribe(symbols, "trade"sv);
-  } else {
-    subscribe(symbols, "aggTrade"sv);
-  }
+  subscribe(symbols, "aggTrade"sv);
   subscribe(symbols, "markPrice"sv);
   subscribe(symbols, "miniTicker"sv);
   if (shared_.settings.download.time_series_lookback.count()) {
@@ -268,34 +262,8 @@ void MarketData2::operator()(Trace<json::Result> const &event, int32_t id) {
   });
 }
 
-void MarketData2::operator()(Trace<json::Trade2> const &event) {
-  profile_.trade([&]() {
-    auto &[trace_info, trade] = event;
-    log::info<3>("trade={}"sv, trade);
-    (*connection_).touch(trace_info.source_receive_time);
-    if (utils::is_zero(trade.quantity)) {
-      return;
-    }
-    auto side = trade.buyer_is_maker ? Side::SELL : Side::BUY;
-    auto trade_2 = Trade{
-        .side = side,
-        .price = trade.price,
-        .quantity = trade.quantity,
-        .trade_id = {},
-        .taker_order_id = {},
-        .maker_order_id = {},
-    };
-    auto trade_summary = TradeSummary{
-        .stream_id = stream_id_,
-        .exchange = shared_.settings.exchange,
-        .symbol = trade.symbol,
-        .trades = {&trade_2, 1},
-        .exchange_time_utc = trade.trade_time,
-        .exchange_sequence = {},
-        .sending_time_utc = trade.event_time,
-    };
-    create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
-  });
+void MarketData2::operator()(Trace<json::Trade2> const &) {
+  log::fatal("Unexpected"sv);  // DEPRECATED
 }
 
 void MarketData2::operator()(Trace<json::AggTrade> const &event) {

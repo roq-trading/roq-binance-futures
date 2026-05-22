@@ -104,7 +104,7 @@ struct MarketData2 final : public web::socket::Client::Handler, public json::Mar
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, trade, agg_trade, mark_price_update, mini_ticker, kline;
+    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, kline;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

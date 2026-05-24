@@ -135,6 +135,8 @@ constexpr Helper<binance_futures::json::OrderStatus>::operator std::optional<roq
       return roq::OrderStatus::UNDEFINED;
     case NEW_ADL:
       return roq::OrderStatus::UNDEFINED;
+    case EXPIRED_IN_MATCH:
+      return roq::OrderStatus::EXPIRED;
   }
   return {};
 }
@@ -147,6 +149,7 @@ static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::O
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::EXPIRED}} == roq::OrderStatus::EXPIRED);
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW_INSURANCE}} == roq::OrderStatus::UNDEFINED);
 static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW_ADL}} == roq::OrderStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::EXPIRED_IN_MATCH}} == roq::OrderStatus::EXPIRED);
 
 template <>
 template <>

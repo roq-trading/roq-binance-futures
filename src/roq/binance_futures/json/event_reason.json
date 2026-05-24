@@ -16,6 +16,9 @@
     },
     {
       "name": "DEPOSIT"
+    },
+    {
+      "name": "INSURANCE_CLEAR"
     }
   ]
 }

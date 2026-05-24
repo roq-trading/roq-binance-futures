@@ -22,6 +22,11 @@
       "name": "positions",
       "type": "roq/binance_futures/json/MarginCallItem",
       "array": "std/span"
+    },
+    {
+      "raw": "i",
+      "name": "undoc",
+      "type": "std/string_view"
     }
   ]
 }

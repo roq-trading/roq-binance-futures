@@ -22,6 +22,9 @@
     },
     {
       "name": "NEW_ADL"
+    },
+    {
+      "name": "EXPIRED_IN_MATCH"
     }
   ]
 }

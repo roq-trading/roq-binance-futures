@@ -13,8 +13,8 @@
 .. |footnote-3| unicode:: U+2778
 
 
-roq-binance-futures
-===================
+`roq-binance-futures <https://github.com/roq-trading/roq-binance-futures/>`__
+=============================================================================
 
 .. tab:: Unstable
 
@@ -602,6 +602,12 @@ Common
 * :ref:`Using Flags <abseil-cpp>`
 * :ref:`Gateway Flags <gateway-flags>`
 * :ref:`Gateway Config <gateway-config>`
+
+
+GitHub
+~~~~~~
+
+* `roq-binance-futures <https://github.com/roq-trading/roq-binance-futures/>`__
 
 
 Exchange

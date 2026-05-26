@@ -65,6 +65,10 @@
     {
       "name": "POSITION_HISTORY_UPDATE",
       "comment": "reported by client"
+    },
+    {
+      "name": "ALGO_UPDATE",
+      "comment": "reported by client"
     }
   ]
 }

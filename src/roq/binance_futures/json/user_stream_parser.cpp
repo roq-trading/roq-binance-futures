@@ -86,6 +86,9 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
     case POSITION_HISTORY_UPDATE:
       // XXX FIXME TODO need parsing
       return true;
+    case ALGO_UPDATE:
+      // XXX FIXME TODO need parsing
+      return true;
   }
   log::fatal(R"(Unexpected: message="{}")"sv, message);
 }

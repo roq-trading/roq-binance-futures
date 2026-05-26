@@ -10,6 +10,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* WSAPI / user-stream traded-quantity race-condition (#597)
 * WSAPI modify request appeared successful but was rejected (#586)
 * New URLs for market data streams (#584)
 * New URLs for user-stream (#583)

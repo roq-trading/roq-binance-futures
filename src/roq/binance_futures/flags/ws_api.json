@@ -27,6 +27,11 @@
       "validator": "roq/flags/validators/TimePeriod",
       "default": "5s",
       "description": "Ping frequency"
+    },
+    {
+      "name": "allow_order_update",
+      "type": "std/bool",
+      "description": "Allow OrderUpdate (with OrderAck)"
     }
   ]
 }

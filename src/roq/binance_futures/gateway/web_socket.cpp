@@ -1047,44 +1047,49 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
           .quantity = NaN,
           .price = NaN,
       };
-      auto order_update = server::oms::OrderUpdate{
-          .account = account_.name,
-          .exchange = shared_.settings.exchange,
-          .symbol = result.symbol,
-          .side = map(result.side),
-          .position_effect = {},
-          .margin_mode = {},
-          .max_show_quantity = NaN,
-          .order_type = map(result.type),
-          .time_in_force = map(result.time_in_force),
-          .execution_instructions = {},
-          .create_time_utc = {},
-          .update_time_utc = {},  // result.transact_time,
-          .external_account = {},
-          .external_order_id = external_order_id,
-          .client_order_id = {},
-          .order_status = map(result.status),
-          .error = {},
-          .text = {},
-          .quantity = result.orig_qty,
-          .price = result.price,
-          .stop_price = NaN,
-          .leverage = NaN,
-          .remaining_quantity = NaN,
-          .traded_quantity = result.executed_qty,
-          .average_traded_price = NaN,
-          .last_traded_quantity = NaN,
-          .last_traded_price = NaN,
-          .last_liquidity = {},
-          .routing_id = {},
-          .max_request_version = {},
-          .max_response_version = {},
-          .max_accepted_version = {},
-          .update_type = UpdateType::INCREMENTAL,
-          .sending_time_utc = {},
-      };
-      Trace event_2{trace_info, response};
-      (*this)(event_2, request.user_id, request.order_id, order_update);
+      if (!shared_.settings.ws_api_2.allow_order_update) {
+        Trace event_2{trace_info, response};
+        (*this)(event_2, request.user_id, request.order_id);
+      } else {
+        auto order_update = server::oms::OrderUpdate{
+            .account = account_.name,
+            .exchange = shared_.settings.exchange,
+            .symbol = result.symbol,
+            .side = map(result.side),
+            .position_effect = {},
+            .margin_mode = {},
+            .max_show_quantity = NaN,
+            .order_type = map(result.type),
+            .time_in_force = map(result.time_in_force),
+            .execution_instructions = {},
+            .create_time_utc = {},
+            .update_time_utc = {},  // result.transact_time,
+            .external_account = {},
+            .external_order_id = external_order_id,
+            .client_order_id = {},
+            .order_status = map(result.status),
+            .error = {},
+            .text = {},
+            .quantity = result.orig_qty,
+            .price = result.price,
+            .stop_price = NaN,
+            .leverage = NaN,
+            .remaining_quantity = NaN,
+            .traded_quantity = result.executed_qty,
+            .average_traded_price = NaN,
+            .last_traded_quantity = NaN,
+            .last_traded_price = NaN,
+            .last_liquidity = {},
+            .routing_id = {},
+            .max_request_version = {},
+            .max_response_version = {},
+            .max_accepted_version = {},
+            .update_type = UpdateType::INCREMENTAL,
+            .sending_time_utc = {},
+        };
+        Trace event_2{trace_info, response};
+        (*this)(event_2, request.user_id, request.order_id, order_update);
+      }
     };
     auto working = [&]() {
       switch (wsapi_order_modify.status) {

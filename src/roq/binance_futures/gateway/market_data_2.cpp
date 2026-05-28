@@ -207,7 +207,7 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
     return;
   }
   subscribe(symbols, "aggTrade"sv);
-  subscribe(symbols, "markPrice"sv);
+  subscribe(symbols, "markPrice"sv, shared_.settings.ws.mark_price_freq);
   subscribe(symbols, "miniTicker"sv);
   if (shared_.settings.download.time_series_lookback.count()) {
     subscribe(symbols, "kline_1m"sv);
@@ -217,18 +217,25 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
   }
 }
 
-void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel) {
+void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel, std::chrono::nanoseconds const freq) {
   assert(!std::empty(symbols));
   auto id = ++request_id_;
-  auto separator = fmt::format(R"(@{}",")"sv, channel);
+  auto postfix = [&]() -> std::string {
+    if (freq.count()) {
+      return fmt::format("@{}s", std::chrono::duration_cast<std::chrono::seconds>(freq).count());
+    }
+    return {};
+  }();
+  auto separator = fmt::format(R"(@{}{}",")"sv, channel, postfix);
   auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
-      R"("params":["{}@{}"],)"
+      R"("params":["{}@{}{}"],)"
       R"("id":{})"
       R"(}})"sv,
       fmt::join(symbols, separator),
       channel,
+      postfix,
       id);
   subscribe_queue_.emplace_back(message);
 }

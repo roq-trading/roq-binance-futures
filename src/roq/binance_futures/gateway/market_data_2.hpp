@@ -71,7 +71,7 @@ struct MarketData2 final : public web::socket::Client::Handler, public json::Mar
 
   void subscribe(std::span<Symbol const> const &symbols);
 
-  void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel);
+  void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel, std::chrono::nanoseconds const freq = {});
 
   void parse(std::string_view const &message);
 

@@ -91,6 +91,13 @@
       "type": "std/bool",
       "default": false,
       "description": "Prefer the trade-lite feed (to the order-trade-update feed)?"
+    },
+    {
+      "name": "mark_price_freq",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "default": "0s",
+      "description": "MarkPrice frequency (allowed values: 0s or 1s)"
     }
   ]
 }

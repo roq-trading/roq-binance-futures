@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Support :code:`<symbol>@markPrice@<freq>` subscription (#598)
+
 ### Removed
 
 * Drop subscription to `@trade` (the `--ws_subscribe_trade_details` flag) (#591)

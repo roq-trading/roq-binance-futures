@@ -25,8 +25,13 @@
     },
     {
       "raw": "i",
-      "name": "undoc",
+      "name": "undoc_1",
       "type": "std/string_view"
+    },
+    {
+      "raw": "mr",
+      "name": "undoc_2",
+      "type": "std/double"
     }
   ]
 }

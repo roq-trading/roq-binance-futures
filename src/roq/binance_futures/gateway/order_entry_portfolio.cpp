@@ -1118,10 +1118,35 @@ void OrderEntryPortfolio::operator()(Trace<json::OrderModifyAck> const &event, u
   auto &[trace_info, order_modify_ack] = event;
   log::info<2>("order_modify_ack={}, user_id={}, order_id={}, version={}"sv, order_modify_ack, user_id, order_id, version);
   auto external_order_id = fmt::format("{}"sv, order_modify_ack.order_id);  // alloc
+  auto request_status = [&]() {
+    switch (order_modify_ack.status) {
+      using enum json::OrderStatus::type_t;
+      case UNDEFINED_INTERNAL:
+      case UNKNOWN_INTERNAL:
+        break;
+      case NEW:
+        return RequestStatus::ACCEPTED;
+      case PARTIALLY_FILLED:
+        return RequestStatus::ACCEPTED;
+      case FILLED:
+        break;
+      case CANCELED:
+        break;
+      case EXPIRED:
+        break;
+      case NEW_INSURANCE:
+        break;
+      case NEW_ADL:
+        break;
+      case EXPIRED_IN_MATCH:
+        break;
+    }
+    return RequestStatus::REJECTED;
+  }();
   auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
-      .request_status = RequestStatus::ACCEPTED,
+      .request_status = request_status,
       .error = {},
       .text = {},
       .version = version,
@@ -1130,7 +1155,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OrderModifyAck> const &event, u
       .quantity = order_modify_ack.orig_qty,
       .price = order_modify_ack.price,
   };
-  if (shared_.settings.rest.drop_order_update) {
+  if (response.request_status != RequestStatus::ACCEPTED || shared_.settings.rest.drop_order_update) {
     Trace event_2{trace_info, response};
     (*this)(event_2, user_id, order_id);
   } else {

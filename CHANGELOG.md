@@ -16,6 +16,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* PAPI incorrect OrderAck from modify response when order was canceled (#603)
 * WSAPI / user-stream traded-quantity race-condition (#597)
 * WSAPI modify request appeared successful but was rejected (#586)
 * New URLs for market data streams (#584)

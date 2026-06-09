@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Option to disable fast OrderAck (#604)
+
 ### Fixed
 
 * Incorrect OrderAck from modify response when order was canceled (#603)

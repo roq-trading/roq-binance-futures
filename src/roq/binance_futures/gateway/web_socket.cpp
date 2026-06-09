@@ -914,8 +914,8 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
-          .origin = Origin::EXCHANGE,
-          .request_status = RequestStatus::REJECTED,
+          .origin = origin,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = request.version,
@@ -1020,8 +1020,8 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
-          .origin = Origin::EXCHANGE,
-          .request_status = RequestStatus::REJECTED,
+          .origin = origin,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = request.version,
@@ -1091,6 +1091,11 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
         (*this)(event_2, request.user_id, request.order_id, order_update);
       }
     };
+#if (0)  // wait confirmation from other changes
+    auto request_status = map(wsapi_order_modify.result.status).template get<RequestStatus>();
+    if (request_status != RequestStatus::ACCEPTED) {
+      handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, wsapi_order_modify.error.msg);
+#else
     auto working = [&]() {
       switch (wsapi_order_modify.status) {
         using enum json::OrderStatus::type_t;
@@ -1117,6 +1122,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
     }();
     if (!working) {  // special case probably triggered by stp=expire-maker (#586)
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, wsapi_order_modify.error.msg);
+#endif
     } else if (wsapi_order_modify.status == 200) {
       handle_success(wsapi_order_modify.result);
     } else {
@@ -1134,8 +1140,8 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
-          .origin = Origin::EXCHANGE,
-          .request_status = RequestStatus::REJECTED,
+          .origin = origin,
+          .request_status = status,
           .error = error,
           .text = text,
           .version = request.version,
@@ -1148,6 +1154,11 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
       (*this)(event_2, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
+      if (result.status == json::OrderStatus::FILLED) {
+        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
+      } else if (shared_.settings.misc.disable_fast_order_ack) {
+        return;  // note!
+      }
       auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
@@ -1157,7 +1168,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
           .text = {},
           .version = request.version,
           .request_id = {},
-          .external_order_id = {},
+          .external_order_id = {},  // ???
           .quantity = NaN,
           .price = NaN,
       };

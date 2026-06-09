@@ -1014,7 +1014,7 @@ void OrderEntryClassic::operator()(Trace<json::OrderModifyAck> const &event, uin
   auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
-      .request_status = RequestStatus::ACCEPTED,
+      .request_status = map(order_modify_ack.status),
       .error = {},
       .text = {},
       .version = version,
@@ -1023,7 +1023,7 @@ void OrderEntryClassic::operator()(Trace<json::OrderModifyAck> const &event, uin
       .quantity = order_modify_ack.orig_qty,
       .price = order_modify_ack.price,
   };
-  if (shared_.settings.rest.drop_order_update) {
+  if (response.request_status != RequestStatus::ACCEPTED || shared_.settings.rest.drop_order_update) {
     Trace event_2{trace_info, response};
     (*this)(event_2, user_id, order_id);
   } else {

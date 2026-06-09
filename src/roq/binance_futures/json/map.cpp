@@ -157,6 +157,53 @@ std::optional<roq::OrderStatus> Map<binance_futures::json::OrderStatus>::helper(
   return Helper{args_};
 }
 
+// binance_futures::json::OrderStatus ==> roq::RequestStatus
+
+template <>
+template <>
+constexpr Helper<binance_futures::json::OrderStatus>::operator std::optional<RequestStatus>() const {
+  switch (std::get<0>(args_)) {
+    using enum binance_futures::json::OrderStatus::type_t;
+    case UNDEFINED_INTERNAL:
+      return RequestStatus::UNDEFINED;
+    case UNKNOWN_INTERNAL:
+      return RequestStatus::UNDEFINED;
+    case NEW:
+      return RequestStatus::ACCEPTED;
+    case PARTIALLY_FILLED:
+      return RequestStatus::ACCEPTED;
+    case FILLED:
+      return RequestStatus::REJECTED;
+    case CANCELED:
+      return RequestStatus::REJECTED;
+    case EXPIRED:
+      return RequestStatus::REJECTED;
+    case NEW_INSURANCE:
+      return RequestStatus::REJECTED;
+    case NEW_ADL:
+      return RequestStatus::REJECTED;
+    case EXPIRED_IN_MATCH:
+      return RequestStatus::REJECTED;
+  }
+  return {};
+}
+
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::UNDEFINED_INTERNAL}} == RequestStatus::UNDEFINED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW}} == RequestStatus::ACCEPTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::PARTIALLY_FILLED}} == RequestStatus::ACCEPTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::FILLED}} == RequestStatus::REJECTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::CANCELED}} == RequestStatus::REJECTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::EXPIRED}} == RequestStatus::REJECTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW_INSURANCE}} == RequestStatus::REJECTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::NEW_ADL}} == RequestStatus::REJECTED);
+static_assert(Helper{binance_futures::json::OrderStatus{binance_futures::json::OrderStatus::EXPIRED_IN_MATCH}} == RequestStatus::REJECTED);
+
+template <>
+template <>
+std::optional<RequestStatus> Map<binance_futures::json::OrderStatus>::helper() const {
+  return Helper{args_};
+}
+
 // binance_futures::json::OrderType ==> roq::OrderType
 
 template <>

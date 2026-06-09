@@ -35,6 +35,10 @@ std::optional<OrderStatus> Map<binance_futures::json::OrderStatus>::helper() con
 
 template <>
 template <>
+std::optional<RequestStatus> Map<binance_futures::json::OrderStatus>::helper() const;
+
+template <>
+template <>
 std::optional<OrderType> Map<binance_futures::json::OrderType>::helper() const;
 
 template <>

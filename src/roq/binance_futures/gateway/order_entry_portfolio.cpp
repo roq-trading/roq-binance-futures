@@ -1118,35 +1118,10 @@ void OrderEntryPortfolio::operator()(Trace<json::OrderModifyAck> const &event, u
   auto &[trace_info, order_modify_ack] = event;
   log::info<2>("order_modify_ack={}, user_id={}, order_id={}, version={}"sv, order_modify_ack, user_id, order_id, version);
   auto external_order_id = fmt::format("{}"sv, order_modify_ack.order_id);  // alloc
-  auto request_status = [&]() {
-    switch (order_modify_ack.status) {
-      using enum json::OrderStatus::type_t;
-      case UNDEFINED_INTERNAL:
-      case UNKNOWN_INTERNAL:
-        break;
-      case NEW:
-        return RequestStatus::ACCEPTED;
-      case PARTIALLY_FILLED:
-        return RequestStatus::ACCEPTED;
-      case FILLED:
-        break;
-      case CANCELED:
-        break;
-      case EXPIRED:
-        break;
-      case NEW_INSURANCE:
-        break;
-      case NEW_ADL:
-        break;
-      case EXPIRED_IN_MATCH:
-        break;
-    }
-    return RequestStatus::REJECTED;
-  }();
   auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
-      .request_status = request_status,
+      .request_status = map(order_modify_ack.status),
       .error = {},
       .text = {},
       .version = version,

@@ -1038,7 +1038,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = Origin::EXCHANGE,
-          .request_status = RequestStatus::ACCEPTED,
+          .request_status = map(result.status),
           .error = {},
           .text = {},
           .version = request.version,
@@ -1047,7 +1047,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
           .quantity = NaN,
           .price = NaN,
       };
-      if (!shared_.settings.ws_api_2.allow_order_update) {
+      if (response.request_status != RequestStatus::ACCEPTED || !shared_.settings.ws_api_2.allow_order_update) {
         Trace event_2{trace_info, response};
         (*this)(event_2, request.user_id, request.order_id);
       } else {

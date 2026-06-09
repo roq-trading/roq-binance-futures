@@ -1156,7 +1156,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
     auto handle_success = [&](auto &result) {
       if (result.status == json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
-      } else if (shared_.settings.misc.disable_fast_order_ack) {
+      } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
       auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc

@@ -39,12 +39,6 @@
       "name": "self_trade_prevention_mode",
       "type": "std/string",
       "description": "Self-trade prevention (STP) mode, one of NONE, EXPIRE_MAKER, EXPIRE_TAKER, EXPIRE_BOTH"
-    },
-    {
-      "name": "disable_fast_order_ack",
-      "type": "std/bool",
-      "default": false,
-      "description": "Necessary for FIX bridge"
     }
   ]
 }

@@ -1038,10 +1038,15 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
     };
     auto handle_success = [&](auto &result) {
       auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc
+      auto request_status = map(result.status).template get<RequestStatus>();
+      if (request_status != RequestStatus::ACCEPTED) {
+        handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
+        return;
+      }
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = Origin::EXCHANGE,
-          .request_status = map(result.status),
+          .request_status = request_status,
           .error = {},
           .text = {},
           .version = request.version,
@@ -1050,7 +1055,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      if (response.request_status != RequestStatus::ACCEPTED || !shared_.settings.ws_api_2.allow_order_update) {
+      if (!shared_.settings.ws_api_2.allow_order_update) {
         Trace event_2{trace_info, response};
         (*this)(event_2, request.user_id, request.order_id);
       } else {
@@ -1158,7 +1163,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
     };
     auto handle_success = [&](auto &result) {
       if (result.status == protocol::json::OrderStatus::FILLED) {
-        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
+        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
+        return;
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }

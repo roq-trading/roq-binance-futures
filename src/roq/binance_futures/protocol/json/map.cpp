@@ -326,6 +326,10 @@ constexpr Helper<binance_futures::protocol::json::SymbolStatus>::operator std::o
       return roq::TradingStatus::UNDEFINED;
     case PRE_SETTLE:
       return roq::TradingStatus::OPEN;  // XXX REVIEW
+    case TRADING_HALT:
+      return roq::TradingStatus::HALT;
+    case TRADING_CANCEL_ONLY:
+      return roq::TradingStatus::HALT;
   }
   return {};
 }
@@ -348,6 +352,9 @@ static_assert(
 static_assert(
     Helper{binance_futures::protocol::json::SymbolStatus{binance_futures::protocol::json::SymbolStatus::DELIVERING}} == roq::TradingStatus::UNDEFINED);
 static_assert(Helper{binance_futures::protocol::json::SymbolStatus{binance_futures::protocol::json::SymbolStatus::PRE_SETTLE}} == roq::TradingStatus::OPEN);
+static_assert(Helper{binance_futures::protocol::json::SymbolStatus{binance_futures::protocol::json::SymbolStatus::TRADING_HALT}} == roq::TradingStatus::HALT);
+static_assert(
+    Helper{binance_futures::protocol::json::SymbolStatus{binance_futures::protocol::json::SymbolStatus::TRADING_CANCEL_ONLY}} == roq::TradingStatus::HALT);
 
 template <>
 template <>
@@ -374,6 +381,8 @@ constexpr Helper<binance_futures::protocol::json::TimeInForce>::operator std::op
       return roq::TimeInForce::FOK;
     case GTX:
       return roq::TimeInForce::GTX;
+    case OTC:
+      return roq::TimeInForce::UNDEFINED;
   }
   return {};
 }
@@ -384,6 +393,7 @@ static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_future
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::IOC}} == roq::TimeInForce::IOC);
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::FOK}} == roq::TimeInForce::FOK);
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::GTX}} == roq::TimeInForce::GTX);
+static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::OTC}} == roq::TimeInForce::UNDEFINED);
 
 template <>
 template <>

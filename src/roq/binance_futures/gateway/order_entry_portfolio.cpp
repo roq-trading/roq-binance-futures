@@ -1234,7 +1234,8 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
     auto handle_success = [&](auto &body) {
       protocol::json::OrderCancelAck order_cancel_ack{body};
       if (order_cancel_ack.status == protocol::json::OrderStatus::FILLED) {
-        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
+        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
+        return;
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }

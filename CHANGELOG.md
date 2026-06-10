@@ -10,6 +10,7 @@ All notable changes will be documented in this file.
 
 ### Fixed
 
+* Incorrect error/text from rejected modify requests (#605)
 * Incorrect OrderAck from modify response when order was canceled (#603)
 
 ## 1.1.5 &ndash; 2026-06-06

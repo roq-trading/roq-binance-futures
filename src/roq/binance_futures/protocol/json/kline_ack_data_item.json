@@ -1,0 +1,54 @@
+{
+  "name": "roq/binance_futures/protocol/json/KlineAckDataItem",
+  "type": "by_index",
+  "values": [
+    {
+      "name": "begin_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "open_price",
+      "type": "std/double"
+    },
+    {
+      "name": "high_price",
+      "type": "std/double"
+    },
+    {
+      "name": "low_price",
+      "type": "std/double"
+    },
+    {
+      "name": "close_price",
+      "type": "std/double"
+    },
+    {
+      "name": "base_asset_volume",
+      "type": "std/double"
+    },
+    {
+      "name": "end_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "quote_asset_volume",
+      "type": "std/double"
+    },
+    {
+      "name": "number_of_trades",
+      "type": "std/uint32"
+    },
+    {
+      "name": "taker_buy_base_asset_volume",
+      "type": "std/double"
+    },
+    {
+      "name": "taker_buy_quote_asset_volume",
+      "type": "std/double"
+    },
+    {
+      "name": "ignore",
+      "type": "std/int64"
+    }
+  ]
+}

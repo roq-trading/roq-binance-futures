@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/exchange_info_ack.hpp"
+#include "roq/binance_futures/protocol/json/exchange_info_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::ExchangeInfoAck;
+using value_type = protocol::json::ExchangeInfoAck;
 
 // note: symbols heavily truncated
 TEST_CASE("usd_m", "[json_exchange_info_ack]") {
@@ -158,10 +158,10 @@ TEST_CASE("usd_m", "[json_exchange_info_ack]") {
     auto &symbol_0 = symbols[0];
     CHECK(symbol_0.symbol == "BTCUSDT"sv);
     CHECK(symbol_0.pair == "BTCUSDT"sv);
-    CHECK(symbol_0.contract_type == json::ContractType::PERPETUAL);
+    CHECK(symbol_0.contract_type == protocol::json::ContractType::PERPETUAL);
     CHECK(symbol_0.delivery_date == 4133404800000ms);
     CHECK(symbol_0.onboard_date == 1569398400000ms);
-    CHECK(symbol_0.status == json::SymbolStatus::TRADING);
+    CHECK(symbol_0.status == protocol::json::SymbolStatus::TRADING);
     CHECK(symbol_0.maint_margin_percent == 2.5_a);
     CHECK(symbol_0.required_margin_percent == 5.0_a);
     CHECK(symbol_0.base_asset == "BTC"sv);
@@ -183,10 +183,10 @@ TEST_CASE("usd_m", "[json_exchange_info_ack]") {
     auto &symbol_1 = symbols[1];
     CHECK(symbol_1.symbol == "ETHUSDT"sv);
     CHECK(symbol_1.pair == "ETHUSDT"sv);
-    CHECK(symbol_1.contract_type == json::ContractType::PERPETUAL);
+    CHECK(symbol_1.contract_type == protocol::json::ContractType::PERPETUAL);
     CHECK(symbol_1.delivery_date == 4133404800000ms);
     CHECK(symbol_1.onboard_date == 1569398400000ms);
-    CHECK(symbol_1.status == json::SymbolStatus::TRADING);
+    CHECK(symbol_1.status == protocol::json::SymbolStatus::TRADING);
     CHECK(symbol_1.maint_margin_percent == 2.5_a);
     CHECK(symbol_1.required_margin_percent == 5.0_a);
     CHECK(symbol_1.base_asset == "ETH"sv);

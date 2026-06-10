@@ -24,13 +24,13 @@
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
 
-#include "roq/binance_futures/json/user_stream_parser.hpp"
+#include "roq/binance_futures/protocol/json/user_stream_parser.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct DropCopyClassic final : public DropCopy, public web::socket::Client::Handler, public json::UserStreamParser::Handler {
+struct DropCopyClassic final : public DropCopy, public web::socket::Client::Handler, public protocol::json::UserStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -79,17 +79,17 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
 
   void parse(std::string_view const &message);
 
-  void operator()(Trace<json::OrderTradeUpdate> const &) override;
-  void operator()(Trace<json::AccountUpdate> const &) override;
-  void operator()(Trace<json::MarginCall> const &) override;
-  void operator()(Trace<json::StrategyUpdate> const &) override;
-  void operator()(Trace<json::GridUpdate> const &) override;
-  void operator()(Trace<json::AccountConfigUpdate> const &) override;
-  void operator()(Trace<json::TradeLite> const &) override;
-  void operator()(Trace<json::ExecutionReport2> const &) override;
-  void operator()(Trace<json::BalanceUpdate> const &) override;
-  void operator()(Trace<json::LiabilityChange> const &) override;
-  void operator()(Trace<json::OutboundAccountPosition> const &) override;
+  void operator()(Trace<protocol::json::OrderTradeUpdate> const &) override;
+  void operator()(Trace<protocol::json::AccountUpdate> const &) override;
+  void operator()(Trace<protocol::json::MarginCall> const &) override;
+  void operator()(Trace<protocol::json::StrategyUpdate> const &) override;
+  void operator()(Trace<protocol::json::GridUpdate> const &) override;
+  void operator()(Trace<protocol::json::AccountConfigUpdate> const &) override;
+  void operator()(Trace<protocol::json::TradeLite> const &) override;
+  void operator()(Trace<protocol::json::ExecutionReport2> const &) override;
+  void operator()(Trace<protocol::json::BalanceUpdate> const &) override;
+  void operator()(Trace<protocol::json::LiabilityChange> const &) override;
+  void operator()(Trace<protocol::json::OutboundAccountPosition> const &) override;
 
   // helpers
 

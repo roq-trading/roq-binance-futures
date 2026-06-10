@@ -27,18 +27,18 @@
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
 
-#include "roq/binance_futures/json/listen_key_ack.hpp"
+#include "roq/binance_futures/protocol/json/listen_key_ack.hpp"
 
-#include "roq/binance_futures/json/account_balance_ack.hpp"
-#include "roq/binance_futures/json/account_status_ack.hpp"
-#include "roq/binance_futures/json/open_orders_ack.hpp"
-#include "roq/binance_futures/json/position_list.hpp"
-#include "roq/binance_futures/json/trades_ack.hpp"
+#include "roq/binance_futures/protocol/json/account_balance_ack.hpp"
+#include "roq/binance_futures/protocol/json/account_status_ack.hpp"
+#include "roq/binance_futures/protocol/json/open_orders_ack.hpp"
+#include "roq/binance_futures/protocol/json/position_list.hpp"
+#include "roq/binance_futures/protocol/json/trades_ack.hpp"
 
-#include "roq/binance_futures/json/open_orders_cancel_all_ack.hpp"
-#include "roq/binance_futures/json/order_cancel_ack.hpp"
-#include "roq/binance_futures/json/order_modify_ack.hpp"
-#include "roq/binance_futures/json/order_place_ack.hpp"
+#include "roq/binance_futures/protocol/json/open_orders_cancel_all_ack.hpp"
+#include "roq/binance_futures/protocol/json/order_cancel_ack.hpp"
+#include "roq/binance_futures/protocol/json/order_modify_ack.hpp"
+#include "roq/binance_futures/protocol/json/order_place_ack.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -115,37 +115,37 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   void get_listen_key();
   void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::ListenKeyAck> const &);
+  void operator()(Trace<protocol::json::ListenKeyAck> const &);
 
   // account-balance
 
   void get_account_balance(bool polling);
   void get_account_balance_ack(Trace<web::rest::Response> const &, bool polling);
-  void operator()(Trace<json::AccountBalanceAck> const &);
+  void operator()(Trace<protocol::json::AccountBalanceAck> const &);
 
   // account-status
 
   void get_account_status();
   void get_account_status_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::AccountStatusAck> const &);
+  void operator()(Trace<protocol::json::AccountStatusAck> const &);
 
   // position
 
   void get_position();
   void get_position_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::PositionList> const &);
+  void operator()(Trace<protocol::json::PositionList> const &);
 
   // open-orders
 
   void get_open_orders();
   void get_open_orders_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::OpenOrdersAck> const &);
+  void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
   // trades
 
   void get_trades();
   void get_trades_ack(Trace<web::rest::Response> const &);
-  void operator()(Trace<json::TradesAck> const &);
+  void operator()(Trace<protocol::json::TradesAck> const &);
 
   // refresh-listen-key
 
@@ -156,7 +156,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
   void order_place_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::OrderPlaceAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::OrderPlaceAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // order-modify
 
@@ -167,7 +167,7 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
   void order_modify_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::OrderModifyAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::OrderModifyAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // order-cancel
 
@@ -178,13 +178,13 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
   void order_cancel_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::OrderCancelAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::OrderCancelAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // open-orders-cancel-all
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
   void open_orders_cancel_all_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
-  void operator()(Trace<json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
+  void operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
 
   // helpers
 

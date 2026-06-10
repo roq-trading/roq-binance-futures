@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::MarginCall;
+using value_type = protocol::json::MarginCall;
 
 TEST_CASE("online_example", "[json_margin_call]") {
   auto message = R"({)"
@@ -32,7 +32,7 @@ TEST_CASE("online_example", "[json_margin_call]") {
                  R"(])"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::MARGIN_CALL);
+    CHECK(obj.event_type == protocol::json::EventType::MARGIN_CALL);
     CHECK(obj.event_time == 1587727187525ms);
     CHECK(obj.cross_wallet_balance == 3.16812045_a);
     auto &positions = obj.positions;

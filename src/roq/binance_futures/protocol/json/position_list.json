@@ -1,0 +1,11 @@
+{
+  "name": "roq/binance_futures/protocol/json/PositionList",
+  "type": "array",
+  "values": [
+    {
+      "name": "data",
+      "type": "roq/binance_futures/protocol/json/Position",
+      "array": "std/span"
+    }
+  ]
+}

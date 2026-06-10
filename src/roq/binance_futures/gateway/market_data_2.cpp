@@ -245,7 +245,7 @@ void MarketData2::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::MarketStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
+      if (!protocol::json::MarketStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }
     } catch (...) {
@@ -255,25 +255,25 @@ void MarketData2::parse(std::string_view const &message) {
   });
 }
 
-void MarketData2::operator()(Trace<json::Error> const &event, int32_t id) {
+void MarketData2::operator()(Trace<protocol::json::Error> const &event, int32_t id) {
   profile_.error([&]() {
     auto &[trace_info, error] = event;
     log::warn("error={}, id={}"sv, error, id);
   });
 }
 
-void MarketData2::operator()(Trace<json::Result> const &event, int32_t id) {
+void MarketData2::operator()(Trace<protocol::json::Result> const &event, int32_t id) {
   profile_.result([&]() {
     auto &[trace_info, result] = event;
     log::info("result={}, id={}"sv, result, id);
   });
 }
 
-void MarketData2::operator()(Trace<json::Trade2> const &) {
+void MarketData2::operator()(Trace<protocol::json::Trade2> const &) {
   log::fatal("Unexpected"sv);  // DEPRECATED
 }
 
-void MarketData2::operator()(Trace<json::AggTrade> const &event) {
+void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {
   profile_.agg_trade([&]() {
     auto &[trace_info, agg_trade] = event;
     log::info<3>("agg_trade={}"sv, agg_trade);
@@ -304,7 +304,7 @@ void MarketData2::operator()(Trace<json::AggTrade> const &event) {
   });
 }
 
-void MarketData2::operator()(Trace<json::MiniTicker> const &event) {
+void MarketData2::operator()(Trace<protocol::json::MiniTicker> const &event) {
   profile_.mini_ticker([&]() {
     auto &[trace_info, mini_ticker] = event;
     log::info<3>("mini_ticker={}"sv, mini_ticker);
@@ -355,15 +355,15 @@ void MarketData2::operator()(Trace<json::MiniTicker> const &event) {
   });
 }
 
-void MarketData2::operator()(Trace<json::BookTicker> const &) {
+void MarketData2::operator()(Trace<protocol::json::BookTicker> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void MarketData2::operator()(Trace<json::DepthUpdate> const &) {
+void MarketData2::operator()(Trace<protocol::json::DepthUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void MarketData2::operator()(Trace<json::MarkPriceUpdate> const &event) {
+void MarketData2::operator()(Trace<protocol::json::MarkPriceUpdate> const &event) {
   profile_.mark_price_update([&]() {
     auto &[trace_info, mark_price_update] = event;
     log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
@@ -409,7 +409,7 @@ void MarketData2::operator()(Trace<json::MarkPriceUpdate> const &event) {
   });
 }
 
-void MarketData2::operator()(Trace<json::Kline> const &event) {
+void MarketData2::operator()(Trace<protocol::json::Kline> const &event) {
   profile_.kline([&]() {
     auto &[trace_info, kline] = event;
     log::info<3>(R"(kline={})"sv, kline);

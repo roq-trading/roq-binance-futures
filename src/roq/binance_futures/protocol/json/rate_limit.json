@@ -1,0 +1,22 @@
+{
+  "name": "roq/binance_futures/protocol/json/RateLimit",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "rateLimitType",
+      "type": "roq/binance_futures/protocol/json/RateLimitType"
+    },
+    {
+      "name": "interval",
+      "type": "roq/binance_futures/protocol/json/Interval"
+    },
+    {
+      "name": "intervalNum",
+      "type": "std/int32"
+    },
+    {
+      "name": "limit",
+      "type": "std/int32"
+    }
+  ]
+}

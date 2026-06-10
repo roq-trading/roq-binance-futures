@@ -1,0 +1,27 @@
+{
+  "name": "roq/binance_futures/protocol/json/WSAPIOrderCancel",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "id",
+      "type": "std/string_view"
+    },
+    {
+      "name": "status",
+      "type": "std/int32"
+    },
+    {
+      "name": "result",
+      "type": "roq/binance_futures/protocol/json/OrderCancelAck"
+    },
+    {
+      "name": "error",
+      "type": "roq/binance_futures/protocol/json/Error"
+    },
+    {
+      "name": "rateLimits",
+      "type": "roq/binance_futures/protocol/json/WSAPIRateLimitsItem",
+      "array": "std/span"
+    }
+  ]
+}

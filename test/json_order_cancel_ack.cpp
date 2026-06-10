@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/order_cancel_ack.hpp"
+#include "roq/binance_futures/protocol/json/order_cancel_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::OrderCancelAck;
+using value_type = protocol::json::OrderCancelAck;
 
 TEST_CASE("simple", "[json_order_cancel_ack]") {
   auto message = R"({)"
@@ -43,7 +43,7 @@ TEST_CASE("simple", "[json_order_cancel_ack]") {
   auto helper = [&](value_type &obj) {
     CHECK(obj.order_id == 17759646892);
     CHECK(obj.symbol == "XRPUSDT"sv);
-    CHECK(obj.status == json::OrderStatus::CANCELED);
+    CHECK(obj.status == protocol::json::OrderStatus::CANCELED);
     CHECK(obj.client_order_id == "rwAC6QMAAQAAM0V8zdAW"sv);
     CHECK(obj.price == 1.0823_a);
     CHECK(obj.avg_price == 0.0_a);
@@ -51,16 +51,16 @@ TEST_CASE("simple", "[json_order_cancel_ack]") {
     CHECK(obj.executed_qty == 0.0_a);
     CHECK(obj.cum_qty == 0.0_a);
     CHECK(obj.cum_quote == 0.0_a);
-    CHECK(obj.time_in_force == json::TimeInForce::GTC);
-    CHECK(obj.type == json::OrderType::LIMIT);
+    CHECK(obj.time_in_force == protocol::json::TimeInForce::GTC);
+    CHECK(obj.type == protocol::json::OrderType::LIMIT);
     CHECK(obj.reduce_only == false);
     CHECK(obj.close_position == false);
-    CHECK(obj.side == json::Side::BUY);
-    CHECK(obj.position_side == json::PositionSide::BOTH);
+    CHECK(obj.side == protocol::json::Side::BUY);
+    CHECK(obj.position_side == protocol::json::PositionSide::BOTH);
     CHECK(obj.stop_price == 0.0_a);
-    CHECK(obj.working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(obj.working_type == protocol::json::WorkingType::CONTRACT_PRICE);
     CHECK(obj.price_protect == false);
-    CHECK(obj.orig_type == json::OrderType::LIMIT);
+    CHECK(obj.orig_type == protocol::json::OrderType::LIMIT);
     CHECK(obj.update_time == 1634545259912ms);
   };
   core::json::BufferStack buffers{65536, 2};

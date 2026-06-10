@@ -15,10 +15,10 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
-#include "roq/binance_futures/json/encoder.hpp"
-#include "roq/binance_futures/json/error.hpp"
-#include "roq/binance_futures/json/map.hpp"
-#include "roq/binance_futures/json/utils.hpp"
+#include "roq/binance_futures/protocol/json/encoder.hpp"
+#include "roq/binance_futures/protocol/json/error.hpp"
+#include "roq/binance_futures/protocol/json/map.hpp"
+#include "roq/binance_futures/protocol/json/utils.hpp"
 
 using namespace std::literals;
 
@@ -343,7 +343,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
+      protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
       Trace event_2{event, account_balance_ack};
       (*this)(event_2);
       // completion
@@ -355,7 +355,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
   });
 }
 
-void RestTrade::operator()(Trace<json::AccountBalanceAck> const &event) {
+void RestTrade::operator()(Trace<protocol::json::AccountBalanceAck> const &event) {
   auto &[trace_info, account_balance_ack] = event;
   log::info<2>("account_balance_ack={}"sv, account_balance_ack);
   for (auto &item : account_balance_ack.data) {
@@ -429,7 +429,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::AccountStatusAck account_status_ack{body, decode_buffer_};
+      protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
       Trace event_2{event, account_status_ack};
       (*this)(event_2);
       // completion
@@ -441,7 +441,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
   });
 }
 
-void RestTrade::operator()(Trace<json::AccountStatusAck> const &event) {
+void RestTrade::operator()(Trace<protocol::json::AccountStatusAck> const &event) {
   auto &[trace_info, account_status_ack] = event;
   log::info<2>("account_status_ack={}"sv, account_status_ack);
   for (auto &item : account_status_ack.positions) {
@@ -503,7 +503,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
+      protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
       Trace event_2{event, open_orders_ack};
       (*this)(event_2);
       // completion
@@ -515,7 +515,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   });
 }
 
-void RestTrade::operator()(Trace<json::OpenOrdersAck> const &event) {
+void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
   auto &[trace_info, open_orders_ack] = event;
   log::info<2>("open_orders_ack={}"sv, open_orders_ack);
   for (auto &item : open_orders_ack.data) {
@@ -586,7 +586,7 @@ void RestTrade::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
-      auto body = json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto body = protocol::json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_rest_signature_query(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -618,7 +618,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::TradesAck trades_ack{body, decode_buffer_};
+      protocol::json::TradesAck trades_ack{body, decode_buffer_};
       Trace event_2{event, trades_ack};
       (*this)(event_2);
       // completion
@@ -632,7 +632,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
 }
 
 // note! always external because we don't get ClOrdID
-void RestTrade::operator()(Trace<json::TradesAck> const &event) {
+void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
   auto &[trace_info, trades_ack] = event;
   log::info<2>("trades_ack={}"sv, trades_ack);
   for (auto &item : trades_ack.data) {
@@ -692,7 +692,7 @@ void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
       }
-      auto body = json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
+      auto body = protocol::json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
       auto query = account_.create_rest_signature_body(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -743,7 +743,7 @@ void RestTrade::open_orders_cancel_all_ack(Trace<web::rest::Response> const &eve
     };
     auto handle_success = [&](auto &body) {
       log::debug("{}"sv, body);
-      json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
+      protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
       Trace event_2{event, open_orders_cancel_all_ack};
       (*this)(event_2, request_id);
     };
@@ -751,7 +751,7 @@ void RestTrade::open_orders_cancel_all_ack(Trace<web::rest::Response> const &eve
   });
 }
 
-void RestTrade::operator()(Trace<json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
+void RestTrade::operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
   auto &[trace_info, open_orders_cancel_all_ack] = event;
   auto status = [&]() {
     if (open_orders_cancel_all_ack.code == 200) {
@@ -759,7 +759,7 @@ void RestTrade::operator()(Trace<json::OpenOrdersCancelAllAck> const &event, std
     }
     return RequestStatus::REJECTED;
   }();
-  auto error = json::guess_error(open_orders_cancel_all_ack.code);
+  auto error = protocol::json::guess_error(open_orders_cancel_all_ack.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -818,8 +818,8 @@ void RestTrade::process_response(web::rest::Response const &response, auto error
             assert(false);
             [[fallthrough]];
           default: {
-            json::Error error{body};
-            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(error.code), error.msg);
+            protocol::json::Error error{body};
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
           }
         }
         break;

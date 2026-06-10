@@ -1,0 +1,12 @@
+{
+  "name": "roq/binance_futures/protocol/json/MarginType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "isolated"
+    },
+    {
+      "name": "cross"
+    }
+  ]
+}

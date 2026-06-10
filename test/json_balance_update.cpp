@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::BalanceUpdate;
+using value_type = protocol::json::BalanceUpdate;
 
 TEST_CASE("simple", "[json_balance_update]") {
   auto message = R"({)"
@@ -24,7 +24,7 @@ TEST_CASE("simple", "[json_balance_update]") {
                  R"("T":1758021107347)"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::BALANCE_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::BALANCE_UPDATE);
     CHECK(obj.event_time == 1758021107347ms);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);

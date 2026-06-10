@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::StrategyUpdate;
+using value_type = protocol::json::StrategyUpdate;
 
 TEST_CASE("simple", "[json_strategy_update]") {
   auto message = R"({)"
@@ -29,7 +29,7 @@ TEST_CASE("simple", "[json_strategy_update]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::STRATEGY_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::STRATEGY_UPDATE);
     CHECK(obj.transaction_time == 1669261797627ms);
     CHECK(obj.event_time == 1669261797628ms);
     auto &data = obj.data;

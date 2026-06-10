@@ -19,10 +19,10 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
-#include "roq/binance_futures/json/encoder.hpp"
-#include "roq/binance_futures/json/map.hpp"
-#include "roq/binance_futures/json/utils.hpp"
-#include "roq/binance_futures/json/wsapi_type.hpp"
+#include "roq/binance_futures/protocol/json/encoder.hpp"
+#include "roq/binance_futures/protocol/json/map.hpp"
+#include "roq/binance_futures/protocol/json/utils.hpp"
+#include "roq/binance_futures/protocol/json/wsapi_type.hpp"
 
 using namespace std::literals;
 
@@ -263,18 +263,18 @@ uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] 
 void WebSocket::session_logon() {
   profile_.session_logon([&]() {
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::SESSION_LOGON,
+        .type = protocol::json::WSAPIType::SESSION_LOGON,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto signature = account_.create_session_logon_signature(now_utc, recv_window);
-    auto message = json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, recv_window, signature, request_id);
+    auto message = protocol::json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, recv_window, signature, request_id);
     log::warn(R"(DEBUG message="{}")"sv, message);
     (*connection_).send_text(message);
     (*this)(ConnectionStatus::LOGIN_SENT);
@@ -285,16 +285,16 @@ void WebSocket::session_logon() {
 
 void WebSocket::user_data_stream_start() {
   profile_.user_data_stream_start([&]() {
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::USER_DATA_STREAM_START,
+        .type = protocol::json::WSAPIType::USER_DATA_STREAM_START,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::user_data_stream_start_json(encode_buffer_, account_.get_key(), request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::user_data_stream_start_json(encode_buffer_, account_.get_key(), request_id);
     (*connection_).send_text(message);
   });
 }
@@ -312,16 +312,16 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
     }
     log::info<1>("Refreshing listen key..."sv);
     listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::USER_DATA_STREAM_PING,
+        .type = protocol::json::WSAPIType::USER_DATA_STREAM_PING,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::user_data_stream_ping_json(encode_buffer_, account_.get_key(), request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::user_data_stream_ping_json(encode_buffer_, account_.get_key(), request_id);
     (*connection_).send_text(message);
   });
 }
@@ -331,16 +331,16 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
 void WebSocket::account_balance() {
   profile_.account_balance([&]() {
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ACCOUNT_BALANCE,
+        .type = protocol::json::WSAPIType::ACCOUNT_BALANCE,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::account_balance_json(encode_buffer_, now_utc, request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::account_balance_json(encode_buffer_, now_utc, request_id);
     (*connection_).send_text(message);
   });
 }
@@ -350,16 +350,16 @@ void WebSocket::account_balance() {
 void WebSocket::account_status() {
   profile_.account_status([&]() {
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ACCOUNT_STATUS,
+        .type = protocol::json::WSAPIType::ACCOUNT_STATUS,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::account_status_json(encode_buffer_, now_utc, request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::account_status_json(encode_buffer_, now_utc, request_id);
     (*connection_).send_text(message);
   });
 }
@@ -369,16 +369,16 @@ void WebSocket::account_status() {
 void WebSocket::account_position() {
   profile_.account_position([&]() {
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ACCOUNT_POSITION,
+        .type = protocol::json::WSAPIType::ACCOUNT_POSITION,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::account_position_json(encode_buffer_, now_utc, request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::account_position_json(encode_buffer_, now_utc, request_id);
     (*connection_).send_text(message);
   });
 }
@@ -397,16 +397,16 @@ bool WebSocket::order_status() {
 void WebSocket::order_status(std::string_view const &symbol) {
   profile_.order_status([&]() {
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ORDERS_STATUS,
+        .type = protocol::json::WSAPIType::ORDERS_STATUS,
         .user_id = {},
         .order_id = {},
         .version = {},
         .order_id_2 = {},
     };
-    auto request_id = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_status_json(encode_buffer_, symbol, now_utc, request_id);
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::order_status_json(encode_buffer_, symbol, now_utc, request_id);
     (*connection_).send_text(message);
   });
 }
@@ -451,15 +451,15 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
         continue;
       }
       auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-      auto request = json::WSAPIRequest{
+      auto request = protocol::json::WSAPIRequest{
           .sequence = ++request_id_,
-          .type = json::WSAPIType::OPEN_ORDERS_CANCEL_ALL,
+          .type = protocol::json::WSAPIType::OPEN_ORDERS_CANCEL_ALL,
           .user_id = message_info.source,
           .order_id = {},
           .version = {},
           .order_id_2 = {},
       };
-      auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);  // XXX FIXME here we lose request_id
+      auto request_id_2 = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);  // XXX FIXME here we lose request_id
       auto message = fmt::format(
           R"({{)"
           R"("id":"{}",)"
@@ -490,16 +490,16 @@ void WebSocket::order_place(
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ORDER_PLACE,
+        .type = protocol::json::WSAPIType::ORDER_PLACE,
         .user_id = message_info.source,
         .order_id = create_order.order_id,
         .version = 1,
         .order_id_2 = {},
     };
-    auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message = json::Encoder::order_place_json(
+    auto request_id_2 = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::order_place_json(
         encode_buffer_, create_order, order, ref_data, request_id, recv_window, now_utc, request_id_2, shared_.api.self_trade_prevention);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
@@ -521,17 +521,17 @@ void WebSocket::order_modify(
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ORDER_MODIFY,
+        .type = protocol::json::WSAPIType::ORDER_MODIFY,
         .user_id = message_info.source,
         .order_id = modify_order.order_id,
         .version = modify_order.version,
         .order_id_2 = {},
     };
-    auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message =
-        json::Encoder::order_modify_json(encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
+    auto request_id_2 = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::order_modify_json(
+        encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
@@ -552,17 +552,17 @@ void WebSocket::order_cancel(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-    auto request = json::WSAPIRequest{
+    auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
-        .type = json::WSAPIType::ORDER_CANCEL,
+        .type = protocol::json::WSAPIType::ORDER_CANCEL,
         .user_id = message_info.source,
         .order_id = cancel_order.order_id,
         .version = cancel_order.version,
         .order_id_2 = {},
     };
-    auto request_id_2 = json::WSAPIRequest::encode(request_encode_buffer_, request);
-    auto message =
-        json::Encoder::order_cancel_json(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
+    auto request_id_2 = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::order_cancel_json(
+        encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });
@@ -659,7 +659,7 @@ void WebSocket::parse(std::string_view const &message) {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
       TraceInfo trace_info;
-      if (!json::WSAPIParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
+      if (!protocol::json::WSAPIParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }
     } catch (...) {
@@ -669,14 +669,14 @@ void WebSocket::parse(std::string_view const &message) {
   });
 }
 
-// json::WSAPIParser::Handler
+// protocol::json::WSAPIParser::Handler
 
-void WebSocket::operator()(Trace<json::WSAPIError> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIError> const &event) {
   auto &[trace_info, error] = event;
   log::fatal("wsapi_error={}"sv, error);
 }
 
-void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPISessionLogon> const &event) {
   auto const STATE = State::SESSION_LOGON;
   profile_.session_logon([&]() {
     auto &[trace_info, wsapi_session_logon] = event;
@@ -691,13 +691,13 @@ void WebSocket::operator()(Trace<json::WSAPISessionLogon> const &event) {
     if (wsapi_session_logon.status == 200) {
       handle_success(wsapi_session_logon.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_session_logon.error.code), wsapi_session_logon.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_session_logon.error.code), wsapi_session_logon.error.msg);
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
   auto const STATE = State::USER_DATA_STREAM_START;
   profile_.user_data_stream_start_ack([&]() {
     auto &[trace_info, wsapi_listen_key] = event;
@@ -723,13 +723,13 @@ void WebSocket::operator()(Trace<json::WSAPIListenKey> const &event) {
     if (wsapi_listen_key.status == 200) {
       handle_success(wsapi_listen_key.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_listen_key.error.code), wsapi_listen_key.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_listen_key.error.code), wsapi_listen_key.error.msg);
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &event) {
   profile_.account_balance_ack([&]() {
     auto &[trace_info, wsapi_account_balance] = event;
     log::info<2>("wsapi_account_balance={}"sv, wsapi_account_balance);
@@ -746,7 +746,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
             .balance = item.available_balance,
             .hold = NaN,
             .borrowed = NaN,
-            .unrealized_pnl = json::get_unrealized_pnl(item.um_unrealized_pnl, item.cm_unrealized_pnl),
+            .unrealized_pnl = protocol::json::get_unrealized_pnl(item.um_unrealized_pnl, item.cm_unrealized_pnl),
             .external_account = {},
             .update_type = UpdateType::SNAPSHOT,
             .exchange_time_utc = item.update_time,
@@ -758,7 +758,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
     if (wsapi_account_balance.status == 200) {
       handle_success(wsapi_account_balance.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_balance.error.code), wsapi_account_balance.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_balance.error.code), wsapi_account_balance.error.msg);
     }
     update_rate_limits(event);
     log::info<1>("Balance download has completed!"sv);
@@ -767,7 +767,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountBalance> const &event) {
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &event) {
   profile_.account_status_ack([&]() {
     auto &[trace_info, wsapi_account_status] = event;
     log::info<2>("wsapi_account_status={}"sv, wsapi_account_status);
@@ -802,7 +802,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
     if (wsapi_account_status.status == 200) {
       handle_success(wsapi_account_status.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_status.error.code), wsapi_account_status.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_status.error.code), wsapi_account_status.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -812,7 +812,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountStatus> const &event) {
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIAccountPosition> const &event) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIAccountPosition> const &event) {
   profile_.account_position_ack([&]() {
     auto &[trace_info, wsapi_account_position] = event;
     log::info<2>("wsapi_account_position={}"sv, wsapi_account_position);
@@ -825,7 +825,7 @@ void WebSocket::operator()(Trace<json::WSAPIAccountPosition> const &event) {
     if (wsapi_account_position.status == 200) {
       handle_success(wsapi_account_position.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_account_position.error.code), wsapi_account_position.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_position.error.code), wsapi_account_position.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -834,15 +834,15 @@ void WebSocket::operator()(Trace<json::WSAPIAccountPosition> const &event) {
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOpenOrders> const &) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrders> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void WebSocket::operator()(Trace<json::WSAPITrades> const &) {
+void WebSocket::operator()(Trace<protocol::json::WSAPITrades> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const &event, protocol::json::WSAPIRequest const &request) {
   profile_.open_orders_cancel_all_ack([&]() {
     auto &[trace_info, wsapi_open_orders_cancel_all] = event;
     log::info<2>("wsapi_open_orders_cancel_all={}, request={}"sv, wsapi_open_orders_cancel_all, request);
@@ -900,13 +900,16 @@ void WebSocket::operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &event, j
       handle_success(wsapi_open_orders_cancel_all.result);
     } else {
       handle_error(
-          Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_open_orders_cancel_all.error.code), wsapi_open_orders_cancel_all.error.msg);
+          Origin::EXCHANGE,
+          RequestStatus::REJECTED,
+          protocol::json::guess_error(wsapi_open_orders_cancel_all.error.code),
+          wsapi_open_orders_cancel_all.error.msg);
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, protocol::json::WSAPIRequest const &request) {
   profile_.order_place_ack([&]() {
     auto &[trace_info, wsapi_order_place] = event;
     log::info<2>("wsapi_order_place={}, request={}"sv, wsapi_order_place, request);
@@ -1006,13 +1009,13 @@ void WebSocket::operator()(Trace<json::WSAPIOrderPlace> const &event, json::WSAP
     if (wsapi_order_place.status == 200) {
       handle_success(wsapi_order_place.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_place.error.code), wsapi_order_place.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_place.error.code), wsapi_order_place.error.msg);
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event, protocol::json::WSAPIRequest const &request) {
   profile_.order_modify_ack([&]() {
     auto &[trace_info, wsapi_order_modify] = event;
     log::info<2>("wsapi_order_modify={}, request={}"sv, wsapi_order_modify, request);
@@ -1098,7 +1101,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
 #else
     auto working = [&]() {
       switch (wsapi_order_modify.status) {
-        using enum json::OrderStatus::type_t;
+        using enum protocol::json::OrderStatus::type_t;
         case UNDEFINED_INTERNAL:
           break;
         case UNKNOWN_INTERNAL:
@@ -1126,13 +1129,13 @@ void WebSocket::operator()(Trace<json::WSAPIOrderModify> const &event, json::WSA
     } else if (wsapi_order_modify.status == 200) {
       handle_success(wsapi_order_modify.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_modify.error.code), wsapi_order_modify.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_modify.error.code), wsapi_order_modify.error.msg);
     }
     update_rate_limits(event);
   });
 }
 
-void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSAPIRequest const &request) {
+void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event, protocol::json::WSAPIRequest const &request) {
   profile_.order_cancel_ack([&]() {
     auto &[trace_info, wsapi_order_cancel] = event;
     log::info<2>("wsapi_order_cancel={}, request={}"sv, wsapi_order_cancel, request);
@@ -1154,7 +1157,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
       (*this)(event_2, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
-      if (result.status == json::OrderStatus::FILLED) {
+      if (result.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
@@ -1219,7 +1222,7 @@ void WebSocket::operator()(Trace<json::WSAPIOrderCancel> const &event, json::WSA
     if (wsapi_order_cancel.status == 200) {
       handle_success(wsapi_order_cancel.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(wsapi_order_cancel.error.code), wsapi_order_cancel.error.msg);
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_cancel.error.code), wsapi_order_cancel.error.msg);
     }
     update_rate_limits(event);
   });
@@ -1233,7 +1236,7 @@ void WebSocket::update_rate_limits(auto &event) {
   for (auto &item : message.rate_limits) {
     auto type = [&]() -> RateLimitType {
       switch (item.rate_limit_type) {
-        using enum json::RateLimitType::type_t;
+        using enum protocol::json::RateLimitType::type_t;
         case UNDEFINED_INTERNAL:
         case UNKNOWN_INTERNAL:
           break;
@@ -1251,7 +1254,7 @@ void WebSocket::update_rate_limits(auto &event) {
     }
     auto period = [&]() -> std::chrono::seconds {
       switch (item.interval) {
-        using enum json::Interval::type_t;
+        using enum protocol::json::Interval::type_t;
         case UNDEFINED_INTERNAL:
         case UNKNOWN_INTERNAL:
           break;

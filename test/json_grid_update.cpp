@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::GridUpdate;
+using value_type = protocol::json::GridUpdate;
 
 TEST_CASE("simple", "[json_grid_update]") {
   auto message = R"({)"
@@ -33,7 +33,7 @@ TEST_CASE("simple", "[json_grid_update]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::GRID_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::GRID_UPDATE);
     CHECK(obj.transaction_time == 1669262908216ms);
     CHECK(obj.event_time == 1669262908218ms);
     auto &data = obj.data;

@@ -11,7 +11,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-using value_type = json::WSAPIListenKey;
+using value_type = protocol::json::WSAPIListenKey;
 
 // fapi
 

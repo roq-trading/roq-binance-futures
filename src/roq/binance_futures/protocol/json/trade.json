@@ -1,0 +1,74 @@
+{
+  "name": "roq/binance_futures/protocol/json/Trade",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "buyer",
+      "type": "std/bool"
+    },
+    {
+      "name": "commission",
+      "type": "std/double"
+    },
+    {
+      "name": "commissionAsset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "id",
+      "type": "std/int64"
+    },
+    {
+      "name": "maker",
+      "type": "std/bool"
+    },
+    {
+      "name": "orderId",
+      "type": "std/int64"
+    },
+    {
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "name": "qty",
+      "type": "std/double"
+    },
+    {
+      "name": "quoteQty",
+      "type": "std/double"
+    },
+    {
+      "name": "realizedPnl",
+      "type": "std/double"
+    },
+    {
+      "name": "side",
+      "type": "roq/binance_futures/protocol/json/Side"
+    },
+    {
+      "name": "positionSide",
+      "type": "roq/binance_futures/protocol/json/PositionSide"
+    },
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view"
+    },
+    {
+      "name": "marginAsset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "baseQty",
+      "type": "std/double"
+    }
+  ]
+}

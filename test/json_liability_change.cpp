@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::LiabilityChange;
+using value_type = protocol::json::LiabilityChange;
 
 TEST_CASE("simple", "[json_liability_change]") {
   auto message = R"({)"
@@ -26,7 +26,7 @@ TEST_CASE("simple", "[json_liability_change]") {
                  R"("l":"1.03476851")"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::LIABILITY_CHANGE);
+    CHECK(obj.event_type == protocol::json::EventType::LIABILITY_CHANGE);
     CHECK(obj.event_time == 1573200697110ms);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);

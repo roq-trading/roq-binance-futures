@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/open_orders_ack.hpp"
+#include "roq/binance_futures/protocol/json/open_orders_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::OpenOrdersAck;
+using value_type = protocol::json::OpenOrdersAck;
 
 TEST_CASE("json_open_orders_simple_empty", "[json_open_orders_ack]") {
   auto message = R"([])";
@@ -55,23 +55,23 @@ TEST_CASE("json_open_orders_simple_1", "[json_open_orders]") {
     auto &data_0 = data[0];
     CHECK(data_0.order_id == 17759938812);
     CHECK(data_0.symbol == "XRPUSDT"sv);
-    CHECK(data_0.status == json::OrderStatus::NEW);
+    CHECK(data_0.status == protocol::json::OrderStatus::NEW);
     CHECK(data_0.client_order_id == "GgAC6gMAAQAANhJPG9EW"sv);
     CHECK(data_0.price == 1.0765_a);
     CHECK(data_0.avg_price == 0.0_a);
     CHECK(data_0.orig_qty == 5.0_a);
     CHECK(data_0.executed_qty == 0.0_a);
     CHECK(data_0.cum_quote == 0.0_a);
-    CHECK(data_0.time_in_force == json::TimeInForce::GTC);
-    CHECK(data_0.type == json::OrderType::LIMIT);
+    CHECK(data_0.time_in_force == protocol::json::TimeInForce::GTC);
+    CHECK(data_0.type == protocol::json::OrderType::LIMIT);
     CHECK(data_0.reduce_only == false);
     CHECK(data_0.close_position == false);
-    CHECK(data_0.side == json::Side::BUY);
-    CHECK(data_0.position_side == json::PositionSide::BOTH);
+    CHECK(data_0.side == protocol::json::Side::BUY);
+    CHECK(data_0.position_side == protocol::json::PositionSide::BOTH);
     CHECK(data_0.stop_price == 0.0_a);
-    CHECK(data_0.working_type == json::WorkingType::CONTRACT_PRICE);
+    CHECK(data_0.working_type == protocol::json::WorkingType::CONTRACT_PRICE);
     CHECK(data_0.price_protect == false);
-    CHECK(data_0.orig_type == json::OrderType::LIMIT);
+    CHECK(data_0.orig_type == protocol::json::OrderType::LIMIT);
     CHECK(data_0.time == 1634546562277ms);
     CHECK(data_0.update_time == 1634546562277ms);
   };

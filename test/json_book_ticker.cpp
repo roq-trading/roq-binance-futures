@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::BookTicker;
+using value_type = protocol::json::BookTicker;
 
 TEST_CASE("simple", "[json_book_ticker]") {
   auto message = R"({)"
@@ -27,7 +27,7 @@ TEST_CASE("simple", "[json_book_ticker]") {
                  R"("E":1634288226716)"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::BOOK_TICKER);
+    CHECK(obj.event_type == protocol::json::EventType::BOOK_TICKER);
     CHECK(obj.order_book_update_id == 847033385825);
     CHECK(obj.symbol == "BTCUSDT"sv);
     CHECK(obj.best_bid_price == 58950.76_a);
@@ -56,7 +56,7 @@ TEST_CASE("stream_wrapped", "[json_book_ticker]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::BOOK_TICKER);
+    CHECK(obj.event_type == protocol::json::EventType::BOOK_TICKER);
     CHECK(obj.order_book_update_id == 847033385825);
   };
   MarketStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
@@ -77,7 +77,7 @@ TEST_CASE("coin_m", "[json_book_ticker]") {
                  R"(})";
   auto helper = [](value_type const &obj) {
     CHECK(obj.order_book_update_id == 300683916630);
-    CHECK(obj.event_type == json::EventType::BOOK_TICKER);
+    CHECK(obj.event_type == protocol::json::EventType::BOOK_TICKER);
     CHECK(obj.symbol == "BTCUSD_220325"sv);
     CHECK(obj.pair == "BTCUSD"sv);
     CHECK(obj.best_bid_price == 49387.1_a);

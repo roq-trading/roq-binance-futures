@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::DepthUpdate;
+using value_type = protocol::json::DepthUpdate;
 
 TEST_CASE("coin_m", "[json_depth_update]") {
   auto message = R"({)"
@@ -41,7 +41,7 @@ TEST_CASE("coin_m", "[json_depth_update]") {
                  R"(])"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::DEPTH_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::DEPTH_UPDATE);
     CHECK(obj.event_time == 1640247455980ms);
   };
   MarketStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);

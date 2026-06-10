@@ -1,0 +1,30 @@
+{
+  "name": "roq/binance_futures/protocol/json/OrderStatus",
+  "type": "enum",
+  "values": [
+    {
+      "name": "NEW"
+    },
+    {
+      "name": "PARTIALLY_FILLED"
+    },
+    {
+      "name": "FILLED"
+    },
+    {
+      "name": "CANCELED"
+    },
+    {
+      "name": "EXPIRED"
+    },
+    {
+      "name": "NEW_INSURANCE"
+    },
+    {
+      "name": "NEW_ADL"
+    },
+    {
+      "name": "EXPIRED_IN_MATCH"
+    }
+  ]
+}

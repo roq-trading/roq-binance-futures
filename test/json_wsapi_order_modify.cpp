@@ -11,7 +11,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-using value_type = json::WSAPIOrderModify;
+using value_type = protocol::json::WSAPIOrderModify;
 
 // fapi
 

@@ -1,0 +1,74 @@
+{
+  "name": "roq/binance_futures/protocol/json/EventType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "trade"
+    },
+    {
+      "name": "aggTrade"
+    },
+    {
+      "name": "24hrMiniTicker"
+    },
+    {
+      "name": "bookTicker"
+    },
+    {
+      "name": "depthUpdate"
+    },
+    {
+      "name": "markPriceUpdate"
+    },
+    {
+      "name": "kline"
+    },
+    {
+      "name": "ORDER_TRADE_UPDATE"
+    },
+    {
+      "name": "ACCOUNT_UPDATE"
+    },
+    {
+      "name": "MARGIN_CALL"
+    },
+    {
+      "name": "STRATEGY_UPDATE"
+    },
+    {
+      "name": "GRID_UPDATE"
+    },
+    {
+      "name": "ACCOUNT_CONFIG_UPDATE"
+    },
+    {
+      "name": "listenKeyExpired"
+    },
+    {
+      "name": "TRADE_LITE"
+    },
+    {
+      "name": "balanceUpdate"
+    },
+    {
+      "name": "executionReport",
+      "comment": "margin orders (papi)"
+    },
+    {
+      "name": "liabilityChange",
+      "comment": "arrives on both spot and futures at the same time?"
+    },
+    {
+      "name": "outboundAccountPosition",
+      "comment": "reported by client"
+    },
+    {
+      "name": "POSITION_HISTORY_UPDATE",
+      "comment": "reported by client"
+    },
+    {
+      "name": "ALGO_UPDATE",
+      "comment": "reported by client"
+    }
+  ]
+}

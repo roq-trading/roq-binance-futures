@@ -4,14 +4,14 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/countdown_cancel_all_ack.hpp"
+#include "roq/binance_futures/protocol/json/countdown_cancel_all_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
 
 using namespace std::literals;
 
-using value_type = json::CountdownCancelAllAck;
+using value_type = protocol::json::CountdownCancelAllAck;
 
 TEST_CASE("simple", "[json_countdown_cancel_all_ack]") {
   auto message = R"({)"

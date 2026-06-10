@@ -4,7 +4,7 @@
 
 #include "roq/logging.hpp"
 
-#include "roq/binance_futures/json/encoder.hpp"
+#include "roq/binance_futures/protocol/json/encoder.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -95,7 +95,7 @@ TEST_CASE("dapi_none_1", "[json_encoder]") {
   auto modify_order = create_modify_order(1.0, 1.0);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
+  CHECK_THROWS(protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("dapi_none_2", "[json_encoder]") {
@@ -103,7 +103,7 @@ TEST_CASE("dapi_none_2", "[json_encoder]") {
   auto modify_order = create_modify_order(NaN, NaN);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
+  CHECK_THROWS(protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("dapi_price_1", "[json_encoder]") {
@@ -111,7 +111,7 @@ TEST_CASE("dapi_price_1", "[json_encoder]") {
   auto modify_order = create_modify_order(1.0, 2.0);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
+  auto result = protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&price=2&recvWindow=5000"sv);
 }
 
@@ -120,7 +120,7 @@ TEST_CASE("dapi_price_2", "[json_encoder]") {
   auto modify_order = create_modify_order(NaN, 2.0);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
+  auto result = protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&price=2&recvWindow=5000"sv);
 }
 
@@ -129,7 +129,7 @@ TEST_CASE("dapi_quantity_1", "[json_encoder]") {
   auto modify_order = create_modify_order(2.0, 1.0);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
+  auto result = protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&quantity=2&recvWindow=5000"sv);
 }
 
@@ -138,7 +138,7 @@ TEST_CASE("dapi_quantity_2", "[json_encoder]") {
   auto modify_order = create_modify_order(2.0, NaN);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  auto result = json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
+  auto result = protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false);
   CHECK(result == "symbol=BTC&orderId=oid:1234&origClientOrderId=&side=BUY&quantity=2&recvWindow=5000"sv);
 }
 
@@ -147,7 +147,7 @@ TEST_CASE("dapi_both", "[json_encoder]") {
   auto modify_order = create_modify_order(2.0, 2.0);
   auto order = create_order(1.0, 1.0);
   auto ref_data = create_ref_data();
-  CHECK_THROWS(json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
+  CHECK_THROWS(protocol::json::Encoder::order_modify_url(buffer, modify_order, order, ref_data, {}, {}, 5s, false));
 }
 
 TEST_CASE("rounding_issue_oc45", "[json_encoder]") {
@@ -158,7 +158,7 @@ TEST_CASE("rounding_issue_oc45", "[json_encoder]") {
   auto ref_data = create_ref_data();
   ref_data.price = {0.1, Precision::_1};
   auto modify_order = create_modify_order(1.0, price);
-  auto result = json::Encoder::order_modify_json(buffer, modify_order, order, ref_data, {}, {}, 5s, {}, "SOME_ID");
+  auto result = protocol::json::Encoder::order_modify_json(buffer, modify_order, order, ref_data, {}, {}, 5s, {}, "SOME_ID");
   CHECK(
       result ==
       R"({"id":"SOME_ID","method":"order.modify","params":{"symbol":"BTC","side":"BUY","orderId":oid:1234,"quantity":"1","price":"90085.7","recvWindow":5000,"timestamp":0}})"sv);

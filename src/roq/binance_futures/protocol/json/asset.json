@@ -1,0 +1,62 @@
+{
+  "name": "roq/binance_futures/protocol/json/Asset",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "asset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "walletBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "unrealizedProfit",
+      "type": "std/double"
+    },
+    {
+      "name": "marginBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "maintMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "initialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "positionInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "openOrderInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "crossWalletBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "crossUnPnl",
+      "type": "std/double"
+    },
+    {
+      "name": "availableBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "maxWithdrawAmount",
+      "type": "std/double"
+    },
+    {
+      "name": "marginAvailable",
+      "type": "std/bool"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "roq/binance_futures/protocol/json/AccountUpdateData",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "m",
+      "name": "event_reason",
+      "type": "roq/binance_futures/protocol/json/EventReason"
+    },
+    {
+      "raw": "B",
+      "name": "balances",
+      "type": "roq/binance_futures/protocol/json/AccountUpdateDataBalance",
+      "array": "std/span"
+    },
+    {
+      "raw": "P",
+      "name": "positions",
+      "type": "roq/binance_futures/protocol/json/AccountUpdateDataPosition",
+      "array": "std/span"
+    }
+  ]
+}

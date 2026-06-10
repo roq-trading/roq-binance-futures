@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::OutboundAccountPosition;
+using value_type = protocol::json::OutboundAccountPosition;
 
 TEST_CASE("simple", "[json_outbound_account_position]") {
   auto message = R"({)"
@@ -28,7 +28,7 @@ TEST_CASE("simple", "[json_outbound_account_position]") {
                  R"(])"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::OUTBOUND_ACCOUNT_POSITION);
+    CHECK(obj.event_type == protocol::json::EventType::OUTBOUND_ACCOUNT_POSITION);
     CHECK(obj.event_time == 1758021107347ms);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);

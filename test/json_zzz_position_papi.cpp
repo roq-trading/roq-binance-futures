@@ -6,7 +6,7 @@
 #include "roq/core/json/buffer_stack.hpp"
 #include "roq/core/json/parser.hpp"
 
-#include "roq/binance_futures/json/position.hpp"
+#include "roq/binance_futures/protocol/json/position.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -31,7 +31,7 @@ TEST_CASE("json_position_papi_simple", "[json_position_papi]") {
                  R"("notional":"-2550.94166738",)"
                  R"("breakEvenPrice":"50986.8006")"
                  R"(})";
-  json::Position obj{message};
+  protocol::json::Position obj{message};
   CHECK(obj.symbol == "BTCUSDT"sv);
 }
 */

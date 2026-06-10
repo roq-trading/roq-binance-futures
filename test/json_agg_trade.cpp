@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::AggTrade;
+using value_type = protocol::json::AggTrade;
 
 TEST_CASE("coin_m", "[json_agg_trade]") {
   auto message = R"({)"
@@ -29,7 +29,7 @@ TEST_CASE("coin_m", "[json_agg_trade]") {
                  R"("m":true)"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::AGG_TRADE);
+    CHECK(obj.event_type == protocol::json::EventType::AGG_TRADE);
     CHECK(obj.event_time == 1768644497528ms);
   };
   MarketStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);

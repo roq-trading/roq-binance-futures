@@ -11,7 +11,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-using value_type = json::WSAPIError;
+using value_type = protocol::json::WSAPIError;
 
 TEST_CASE("simple", "[json_wsapi_error]") {
   auto message = R"({)"

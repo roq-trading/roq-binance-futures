@@ -1,0 +1,110 @@
+{
+  "name": "roq/binance_futures/protocol/json/OrderModifyAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "orderId",
+      "type": "std/int64"
+    },
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "status",
+      "type": "roq/binance_futures/protocol/json/OrderStatus"
+    },
+    {
+      "name": "clientOrderId",
+      "type": "std/string_view"
+    },
+    {
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "name": "avgPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "origQty",
+      "type": "std/double"
+    },
+    {
+      "name": "executedQty",
+      "type": "std/double"
+    },
+    {
+      "name": "cumQty",
+      "type": "std/double"
+    },
+    {
+      "name": "cumQuote",
+      "type": "std/double"
+    },
+    {
+      "name": "timeInForce",
+      "type": "roq/binance_futures/protocol/json/TimeInForce"
+    },
+    {
+      "name": "type",
+      "type": "roq/binance_futures/protocol/json/OrderType"
+    },
+    {
+      "name": "reduceOnly",
+      "type": "std/bool"
+    },
+    {
+      "name": "closePosition",
+      "type": "std/bool"
+    },
+    {
+      "name": "side",
+      "type": "roq/binance_futures/protocol/json/Side"
+    },
+    {
+      "name": "positionSide",
+      "type": "roq/binance_futures/protocol/json/PositionSide"
+    },
+    {
+      "name": "stopPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "workingType",
+      "type": "roq/binance_futures/protocol/json/WorkingType"
+    },
+    {
+      "name": "priceProtect",
+      "type": "std/bool"
+    },
+    {
+      "name": "origType",
+      "type": "roq/binance_futures/protocol/json/OrderType"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "priceMatch",
+      "type": "std/string_view"
+    },
+    {
+      "name": "selfTradePreventionMode",
+      "type": "std/string_view"
+    },
+    {
+      "name": "goodTillDate",
+      "type": "std/int64"
+    },
+    {
+      "name": "cumBase",
+      "type": "std/double"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view"
+    }
+  ]
+}

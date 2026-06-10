@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::AccountUpdate;
+using value_type = protocol::json::AccountUpdate;
 
 TEST_CASE("order", "[json_account_update]") {
   auto message = R"({)"
@@ -43,7 +43,7 @@ TEST_CASE("order", "[json_account_update]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE);
     CHECK(obj.transaction_time == 1634811213699ms);
     CHECK(obj.event_time == 1634811213707ms);
     auto &data = obj.data;
@@ -62,11 +62,11 @@ TEST_CASE("order", "[json_account_update]") {
     CHECK(position_0.entry_price == 1.15540_a);
     CHECK(position_0.accumulated_realized == 0.0_a);
     CHECK(position_0.unrealized_pnl == 0.001_a);
-    CHECK(position_0.margin_type == json::MarginType::CROSS);
+    CHECK(position_0.margin_type == protocol::json::MarginType::CROSS);
     CHECK(position_0.isolated_wallet == 0.0_a);
-    CHECK(position_0.position_side == json::PositionSide::BOTH);
+    CHECK(position_0.position_side == protocol::json::PositionSide::BOTH);
     CHECK(position_0.unknown_1 == "USDT"sv);
-    CHECK(data.event_reason == json::EventReason::ORDER);
+    CHECK(data.event_reason == protocol::json::EventReason::ORDER);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
@@ -87,7 +87,7 @@ TEST_CASE("withdraw", "[json_account_update]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE);
     CHECK(obj.transaction_time == 1634827654378ms);
     CHECK(obj.event_time == 1634827654387ms);
     auto &data = obj.data;
@@ -100,7 +100,7 @@ TEST_CASE("withdraw", "[json_account_update]") {
     CHECK(balance_0.balance_change == -21.14364261_a);
     auto &positions = data.positions;
     CHECK(std::size(positions) == 0);
-    CHECK(data.event_reason == json::EventReason::WITHDRAW);
+    CHECK(data.event_reason == protocol::json::EventReason::WITHDRAW);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
@@ -135,7 +135,7 @@ TEST_CASE("papi_order", "[json_account_update]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE);
     CHECK(obj.transaction_time == 1708690960633ms);
     CHECK(obj.event_time == 1708690960639ms);
     CHECK(obj.fs == "UM"sv);
@@ -155,8 +155,8 @@ TEST_CASE("papi_order", "[json_account_update]") {
     CHECK(position_0.entry_price == 51068.50000000_a);
     CHECK(position_0.accumulated_realized == 0.0_a);
     CHECK(position_0.unrealized_pnl == -0.0005_a);
-    CHECK(position_0.position_side == json::PositionSide::BOTH);
-    CHECK(data.event_reason == json::EventReason::ORDER);
+    CHECK(position_0.position_side == protocol::json::PositionSide::BOTH);
+    CHECK(data.event_reason == protocol::json::EventReason::ORDER);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }
@@ -190,7 +190,7 @@ TEST_CASE("papi_order_cm", "[json_account_update_papi]") {
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE);
     CHECK(obj.transaction_time == 1708696507923ms);
     CHECK(obj.event_time == 1708696507932ms);
     CHECK(obj.fs == "CM"sv);
@@ -210,8 +210,8 @@ TEST_CASE("papi_order_cm", "[json_account_update_papi]") {
     CHECK(position_0.entry_price == 51080.10000066_a);
     CHECK(position_0.accumulated_realized == 0.0_a);
     CHECK(position_0.unrealized_pnl == -0.00000009_a);
-    CHECK(position_0.position_side == json::PositionSide::BOTH);
-    CHECK(data.event_reason == json::EventReason::ORDER);
+    CHECK(position_0.position_side == protocol::json::PositionSide::BOTH);
+    CHECK(data.event_reason == protocol::json::EventReason::ORDER);
   };
   UserStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

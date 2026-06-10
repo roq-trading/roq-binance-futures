@@ -1,0 +1,40 @@
+{
+  "name": "roq/binance_futures/protocol/json/DepthAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "lastUpdateId",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "E",
+      "name": "message_output_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "symbol",
+      "type": "std/string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "bids",
+      "type": "roq/binance_futures/protocol/json/DepthAckBidsAsksItem",
+      "array": "std/span"
+    },
+    {
+      "name": "asks",
+      "type": "roq/binance_futures/protocol/json/DepthAckBidsAsksItem",
+      "array": "std/span"
+    }
+  ]
+}

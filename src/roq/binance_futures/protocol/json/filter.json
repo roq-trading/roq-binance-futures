@@ -1,0 +1,70 @@
+{
+  "name": "roq/binance_futures/protocol/json/Filter",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "filterType",
+      "type": "roq/binance_futures/protocol/json/FilterType"
+    },
+    {
+      "name": "notional",
+      "type": "std/double",
+      "comment": "MIN_NOTIONAL"
+    },
+    {
+      "name": "minPrice",
+      "type": "std/double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "maxPrice",
+      "type": "std/double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "tickSize",
+      "type": "std/double",
+      "comment": "PRICE_FILTER"
+    },
+    {
+      "name": "multiplierUp",
+      "type": "std/double",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "multiplierDown",
+      "type": "std/double",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "multiplierDecimal",
+      "type": "std/int32",
+      "comment": "PERCENT_PRICE"
+    },
+    {
+      "name": "minQty",
+      "type": "std/double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "maxQty",
+      "type": "std/double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "stepSize",
+      "type": "std/double",
+      "comment": "LOT_SIZE,MARKET_LOT_SIZE"
+    },
+    {
+      "name": "limit",
+      "type": "std/int32",
+      "comment": "MAX_NUM_ORDERS,MAX_NUM_ALGO_ORDERS"
+    },
+    {
+      "name": "positionControlSide",
+      "type": "std/string_view",
+      "comment": "reported by client"
+    }
+  ]
+}

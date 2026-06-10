@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/wsapi_session_logon.hpp"
+#include "roq/binance_futures/protocol/json/wsapi_session_logon.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -36,7 +36,7 @@ TEST_CASE("success", "[json_session_logon]") {
                        R"(])"
                        R"(})";
   core::json::BufferStack buffers{8192, 1};
-  json::WSAPISessionLogon obj{message, buffers};
+  protocol::json::WSAPISessionLogon obj{message, buffers};
 }
 
 TEST_CASE("failure", "[json_session_logon]") {
@@ -56,5 +56,5 @@ TEST_CASE("failure", "[json_session_logon]") {
                        R"(])"
                        R"(})";
   core::json::BufferStack buffers{8192, 1};
-  json::WSAPISessionLogon obj{message, buffers};
+  protocol::json::WSAPISessionLogon obj{message, buffers};
 }

@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/depth_ack.hpp"
+#include "roq/binance_futures/protocol/json/depth_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::DepthAck;
+using value_type = protocol::json::DepthAck;
 
 // note! truncated
 TEST_CASE("coin_m", "[json_depth_ack]") {

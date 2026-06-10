@@ -1,0 +1,104 @@
+{
+  "name": "roq/binance_futures/protocol/json/Position",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "initialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "maintMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "unrealizedProfit",
+      "type": "std/double"
+    },
+    {
+      "name": "positionInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "openOrderInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "leverage",
+      "type": "std/double"
+    },
+    {
+      "name": "isolated",
+      "type": "std/bool"
+    },
+    {
+      "name": "entryPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "maxNotional",
+      "type": "std/double"
+    },
+    {
+      "name": "positionSide",
+      "type": "std/string_view"
+    },
+    {
+      "name": "positionAmt",
+      "type": "std/double"
+    },
+    {
+      "name": "notional",
+      "type": "std/double"
+    },
+    {
+      "name": "isolatedWallet",
+      "type": "std/double"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "bidNotional",
+      "type": "std/double"
+    },
+    {
+      "name": "askNotional",
+      "type": "std/double"
+    },
+    {
+      "name": "maxQty",
+      "type": "std/double",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "notionalValue",
+      "type": "std/double",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "breakEvenPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "markPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "unRealizedProfit",
+      "type": "std/double"
+    },
+    {
+      "name": "liquidationPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "maxNotionalValue",
+      "type": "std/double"
+    }
+  ]
+}

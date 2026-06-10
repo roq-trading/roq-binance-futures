@@ -1,0 +1,122 @@
+{
+  "name": "roq/binance_futures/protocol/json/Symbol",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "pair",
+      "type": "std/string_view"
+    },
+    {
+      "name": "contractType",
+      "type": "roq/binance_futures/protocol/json/ContractType"
+    },
+    {
+      "name": "deliveryDate",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "onboardDate",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "status",
+      "type": "roq/binance_futures/protocol/json/SymbolStatus"
+    },
+    {
+      "name": "maintMarginPercent",
+      "type": "std/double"
+    },
+    {
+      "name": "requiredMarginPercent",
+      "type": "std/double"
+    },
+    {
+      "name": "baseAsset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "quoteAsset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "marginAsset",
+      "type": "std/string_view"
+    },
+    {
+      "name": "pricePrecision",
+      "type": "std/uint32"
+    },
+    {
+      "name": "quantityPrecision",
+      "type": "std/uint32"
+    },
+    {
+      "name": "baseAssetPrecision",
+      "type": "std/uint32"
+    },
+    {
+      "name": "quotePrecision",
+      "type": "std/uint32"
+    },
+    {
+      "name": "underlyingType",
+      "type": "std/string_view"
+    },
+    {
+      "name": "underlyingSubType"
+    },
+    {
+      "name": "settlePlan",
+      "type": "std/uint32"
+    },
+    {
+      "name": "triggerProtect",
+      "type": "std/double"
+    },
+    {
+      "name": "filters",
+      "type": "roq/binance_futures/protocol/json/Filter",
+      "array": "std/span"
+    },
+    {
+      "name": "orderTypes"
+    },
+    {
+      "name": "timeInForce"
+    },
+    {
+      "name": "liquidationFee",
+      "type": "std/double"
+    },
+    {
+      "name": "marketTakeBound",
+      "type": "std/double"
+    },
+    {
+      "name": "contractStatus",
+      "type": "roq/binance_futures/protocol/json/ContractStatus",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "contractSize",
+      "type": "std/double",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "equalQtyPrecision",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "maxMoveOrderLimit",
+      "comment": "COIN-M"
+    },
+    {
+      "name": "permissionSets",
+      "comment": "UNDOC reported by client"
+    }
+  ]
+}

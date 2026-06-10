@@ -1,0 +1,11 @@
+{
+  "name": "roq/binance_futures/protocol/json/AccountBalanceAck",
+  "type": "array",
+  "values": [
+    {
+      "name": "data",
+      "type": "roq/binance_futures/protocol/json/AccountBalanceAckItem",
+      "array": "std/span"
+    }
+  ]
+}

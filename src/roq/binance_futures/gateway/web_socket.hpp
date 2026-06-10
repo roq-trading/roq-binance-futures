@@ -33,13 +33,13 @@
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
 
-#include "roq/binance_futures/json/wsapi_parser.hpp"
+#include "roq/binance_futures/protocol/json/wsapi_parser.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public json::WSAPIParser::Handler {
+struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public protocol::json::WSAPIParser::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -137,20 +137,20 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   void parse(std::string_view const &message);
 
-  // json::WSAPIParser::Handler
+  // protocol::json::WSAPIParser::Handler
 
-  void operator()(Trace<json::WSAPIError> const &) override;
-  void operator()(Trace<json::WSAPISessionLogon> const &) override;
-  void operator()(Trace<json::WSAPIListenKey> const &) override;
-  void operator()(Trace<json::WSAPIAccountBalance> const &) override;
-  void operator()(Trace<json::WSAPIAccountStatus> const &) override;
-  void operator()(Trace<json::WSAPIAccountPosition> const &) override;
-  void operator()(Trace<json::WSAPIOpenOrders> const &) override;
-  void operator()(Trace<json::WSAPITrades> const &) override;
-  void operator()(Trace<json::WSAPIOpenOrdersCancelAll> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIOrderPlace> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIOrderModify> const &, json::WSAPIRequest const &) override;
-  void operator()(Trace<json::WSAPIOrderCancel> const &, json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIError> const &) override;
+  void operator()(Trace<protocol::json::WSAPISessionLogon> const &) override;
+  void operator()(Trace<protocol::json::WSAPIListenKey> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountBalance> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountStatus> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountPosition> const &) override;
+  void operator()(Trace<protocol::json::WSAPIOpenOrders> const &) override;
+  void operator()(Trace<protocol::json::WSAPITrades> const &) override;
+  void operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderPlace> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderModify> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderCancel> const &, protocol::json::WSAPIRequest const &) override;
 
   // helpers
 

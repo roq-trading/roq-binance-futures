@@ -1,0 +1,37 @@
+{
+  "name": "roq/binance_futures/protocol/json/ExchangeInfoAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "timezone",
+      "type": "std/string_view"
+    },
+    {
+      "name": "serverTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "rateLimits",
+      "type": "roq/binance_futures/protocol/json/RateLimit",
+      "array": "std/span"
+    },
+    {
+      "name": "exchangeFilters"
+    },
+    {
+      "name": "symbols",
+      "type": "roq/binance_futures/protocol/json/Symbol",
+      "array": "std/span"
+    },
+    {
+      "name": "futuresType",
+      "type": "std/string_view",
+      "comment": "undoc"
+    },
+    {
+      "name": "assets",
+      "type": "roq/binance_futures/protocol/json/ExchangeInfoAckAssetsItem",
+      "array": "std/span"
+    }
+  ]
+}

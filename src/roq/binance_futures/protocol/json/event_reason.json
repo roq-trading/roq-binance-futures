@@ -1,0 +1,24 @@
+{
+  "name": "roq/binance_futures/protocol/json/EventReason",
+  "type": "enum",
+  "values": [
+    {
+      "name": "ORDER"
+    },
+    {
+      "name": "AUTO_EXCHANGE"
+    },
+    {
+      "name": "WITHDRAW"
+    },
+    {
+      "name": "FUNDING_FEE"
+    },
+    {
+      "name": "DEPOSIT"
+    },
+    {
+      "name": "INSURANCE_CLEAR"
+    }
+  ]
+}

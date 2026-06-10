@@ -1,0 +1,39 @@
+{
+  "name": "roq/binance_futures/protocol/json/SymbolStatus",
+  "type": "enum",
+  "values": [
+    {
+      "name": "PRE_TRADING"
+    },
+    {
+      "name": "TRADING"
+    },
+    {
+      "name": "POST_TRADING"
+    },
+    {
+      "name": "END_OF_DAY"
+    },
+    {
+      "name": "HALT"
+    },
+    {
+      "name": "AUCTION_MATCH"
+    },
+    {
+      "name": "BREAK"
+    },
+    {
+      "name": "SETTLING"
+    },
+    {
+      "name": "PENDING_TRADING"
+    },
+    {
+      "name": "DELIVERING"
+    },
+    {
+      "name": "PRE_SETTLE"
+    }
+  ]
+}

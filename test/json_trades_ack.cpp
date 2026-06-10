@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/trades_ack.hpp"
+#include "roq/binance_futures/protocol/json/trades_ack.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::TradesAck;
+using value_type = protocol::json::TradesAck;
 
 TEST_CASE("empty", "[json_trades_ack]") {
   auto message = R"([])";
@@ -56,8 +56,8 @@ TEST_CASE("fapi", "[json_trades_ack]") {
     CHECK(data_0.qty == Catch::Approx{0.002});
     CHECK(data_0.quote_qty == Catch::Approx{15.63802});
     CHECK(data_0.realized_pnl == Catch::Approx{-0.91539999});
-    CHECK(data_0.side == json::Side::SELL);
-    CHECK(data_0.position_side == json::PositionSide::SHORT);
+    CHECK(data_0.side == protocol::json::Side::SELL);
+    CHECK(data_0.position_side == protocol::json::PositionSide::SHORT);
     CHECK(data_0.symbol == "BTCUSDT"sv);
     CHECK(data_0.time == 1569514978020ms);
   };
@@ -93,7 +93,7 @@ TEST_CASE("dapi", "[json_trades_ack]") {
     CHECK(data_0.id == 6);
     CHECK(data_0.order_id == 28);
     CHECK(data_0.pair == "BTCUSD"sv);
-    CHECK(data_0.side == json::Side::SELL);
+    CHECK(data_0.side == protocol::json::Side::SELL);
     CHECK(data_0.price == Catch::Approx{8800.});
     CHECK(data_0.qty == Catch::Approx{1.0});
     CHECK(data_0.realized_pnl == Catch::Approx{0.0});
@@ -102,7 +102,7 @@ TEST_CASE("dapi", "[json_trades_ack]") {
     CHECK(data_0.commission == Catch::Approx{0.00000454});
     CHECK(data_0.commission_asset == "BTC"sv);
     CHECK(data_0.time == 1590743483586ms);
-    CHECK(data_0.position_side == json::PositionSide::BOTH);
+    CHECK(data_0.position_side == protocol::json::PositionSide::BOTH);
     CHECK(data_0.buyer == false);
     CHECK(data_0.maker == false);
   };

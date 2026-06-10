@@ -15,8 +15,8 @@
 
 #include "roq/web/socket/client.hpp"
 
-#include "roq/binance_futures/json/map.hpp"
-#include "roq/binance_futures/json/utils.hpp"
+#include "roq/binance_futures/protocol/json/map.hpp"
+#include "roq/binance_futures/protocol/json/utils.hpp"
 
 using namespace std::literals;
 
@@ -262,7 +262,7 @@ void DropCopyClassic::parse(std::string_view const &message) {
   profile_.parse([&]() {
     try {
       TraceInfo trace_info;
-      if (!json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
+      if (!protocol::json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }
     } catch (...) {
@@ -272,7 +272,7 @@ void DropCopyClassic::parse(std::string_view const &message) {
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::OrderTradeUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
     auto &trace_info = event.trace_info;
     auto &order_trade_update = event.value;
@@ -329,7 +329,7 @@ void DropCopyClassic::operator()(Trace<json::OrderTradeUpdate> const &event) {
       log::warn("*** EXTERNAL ORDER ***"sv);
       log::warn("execution_report={}"sv, execution_report);
     }
-    if (execution_report.execution_type != json::ExecutionType::TRADE) {
+    if (execution_report.execution_type != protocol::json::ExecutionType::TRADE) {
       return;
     }
     if (shared_.settings.ws.trade_lite) {
@@ -378,7 +378,7 @@ void DropCopyClassic::operator()(Trace<json::OrderTradeUpdate> const &event) {
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::AccountUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &event) {
   profile_.account_update([&]() {
     auto &[trace_info, account_update] = event;
     log::info<2>("account_update={}"sv, account_update);
@@ -424,7 +424,7 @@ void DropCopyClassic::operator()(Trace<json::AccountUpdate> const &event) {
       log::info<2>("item={}"sv, item);
       auto margin_mode = [&]() {
         switch (item.margin_type) {
-          using enum json::MarginType::type_t;
+          using enum protocol::json::MarginType::type_t;
           case UNDEFINED_INTERNAL:
           case UNKNOWN_INTERNAL:
             break;
@@ -455,35 +455,35 @@ void DropCopyClassic::operator()(Trace<json::AccountUpdate> const &event) {
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::MarginCall> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::MarginCall> const &event) {
   profile_.margin_call([&]() {
     auto &[trace_info, margin_call] = event;
     log::info<2>("margin_call={}"sv, margin_call);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::StrategyUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::StrategyUpdate> const &event) {
   profile_.strategy_update([&]() {
     auto &[trace_info, strategy_update] = event;
     log::info<2>("strategy_update={}"sv, strategy_update);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::GridUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::GridUpdate> const &event) {
   profile_.grid_update([&]() {
     auto &[trace_info, grid_update] = event;
     log::info<2>("grid_update={}"sv, grid_update);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::AccountConfigUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::AccountConfigUpdate> const &event) {
   profile_.account_config_update([&]() {
     auto &[trace_info, account_config_update] = event;
     log::info<2>("account_config_update={}"sv, account_config_update);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::TradeLite> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) {
   profile_.trade_lite([&]() {
     auto &[trace_info, trade_lite] = event;
     log::info<2>("trade_lite={}"sv, trade_lite);
@@ -546,28 +546,28 @@ void DropCopyClassic::operator()(Trace<json::TradeLite> const &event) {
 }
 
 // note! this is only expected with PAPI
-void DropCopyClassic::operator()(Trace<json::ExecutionReport2> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::ExecutionReport2> const &event) {
   profile_.execution_report([&]() {
     auto &[trace_info, execution_report] = event;
     log::info<2>("execution_report={}"sv, execution_report);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::BalanceUpdate> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::BalanceUpdate> const &event) {
   profile_.balance_update([&]() {
     auto &[trace_info, balance_update] = event;
     log::info<2>("balance_update={}"sv, balance_update);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::LiabilityChange> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::LiabilityChange> const &event) {
   profile_.liability_change([&]() {
     auto &[trace_info, liability_change] = event;
     log::info<2>("liability_change={}"sv, liability_change);
   });
 }
 
-void DropCopyClassic::operator()(Trace<json::OutboundAccountPosition> const &event) {
+void DropCopyClassic::operator()(Trace<protocol::json::OutboundAccountPosition> const &event) {
   profile_.outbound_account_position([&]() {
     auto &[trace_info, outbound_account_position] = event;
     log::info<2>("outbound_account_position={}"sv, outbound_account_position);

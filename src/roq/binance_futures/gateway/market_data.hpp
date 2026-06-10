@@ -26,13 +26,13 @@
 
 #include "roq/binance_futures/gateway/shared.hpp"
 
-#include "roq/binance_futures/json/market_stream_parser.hpp"
+#include "roq/binance_futures/protocol/json/market_stream_parser.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct MarketData final : public web::socket::Client::Handler, public json::MarketStreamParser::Handler {
+struct MarketData final : public web::socket::Client::Handler, public protocol::json::MarketStreamParser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -75,17 +75,17 @@ struct MarketData final : public web::socket::Client::Handler, public json::Mark
   void parse(std::string_view const &message);
 
   // response
-  void operator()(Trace<json::Error> const &, int32_t id) override;
-  void operator()(Trace<json::Result> const &, int32_t id) override;
+  void operator()(Trace<protocol::json::Error> const &, int32_t id) override;
+  void operator()(Trace<protocol::json::Result> const &, int32_t id) override;
 
   // update
-  void operator()(Trace<json::Trade2> const &) override;
-  void operator()(Trace<json::AggTrade> const &) override;
-  void operator()(Trace<json::MarkPriceUpdate> const &) override;
-  void operator()(Trace<json::MiniTicker> const &) override;
-  void operator()(Trace<json::BookTicker> const &) override;
-  void operator()(Trace<json::DepthUpdate> const &) override;
-  void operator()(Trace<json::Kline> const &) override;
+  void operator()(Trace<protocol::json::Trade2> const &) override;
+  void operator()(Trace<protocol::json::AggTrade> const &) override;
+  void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
+  void operator()(Trace<protocol::json::MiniTicker> const &) override;
+  void operator()(Trace<protocol::json::BookTicker> const &) override;
+  void operator()(Trace<protocol::json::DepthUpdate> const &) override;
+  void operator()(Trace<protocol::json::Kline> const &) override;
 
   Handler &handler_;
   // config

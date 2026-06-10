@@ -4,7 +4,7 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/binance_futures/json/filters.hpp"
+#include "roq/binance_futures/protocol/json/filters.hpp"
 
 using namespace roq;
 using namespace roq::binance_futures;
@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::Filters;
+using value_type = protocol::json::Filters;
 
 TEST_CASE("simple", "[json_filters]") {
   auto message = R"([{)"
@@ -54,32 +54,32 @@ TEST_CASE("simple", "[json_filters]") {
     auto &data_0 = data[0];
     CHECK(data_0.min_price == 556.72_a);
     CHECK(data_0.max_price == 4529764.0_a);
-    CHECK(data_0.filter_type == json::FilterType::PRICE_FILTER);
+    CHECK(data_0.filter_type == protocol::json::FilterType::PRICE_FILTER);
     CHECK(data_0.tick_size == 0.01_a);
     auto &data_1 = data[1];
     CHECK(data_1.step_size == 0.001_a);
-    CHECK(data_1.filter_type == json::FilterType::LOT_SIZE);
+    CHECK(data_1.filter_type == protocol::json::FilterType::LOT_SIZE);
     CHECK(data_1.max_qty == 1000.0_a);
     CHECK(data_1.min_qty == 0.001_a);
     auto &data_2 = data[2];
     CHECK(data_2.step_size == 0.001_a);
-    CHECK(data_2.filter_type == json::FilterType::MARKET_LOT_SIZE);
+    CHECK(data_2.filter_type == protocol::json::FilterType::MARKET_LOT_SIZE);
     CHECK(data_2.max_qty == 300.0_a);
     CHECK(data_2.min_qty == 0.001_a);
     auto &data_3 = data[3];
     CHECK(data_3.limit == 200);
-    CHECK(data_3.filter_type == json::FilterType::MAX_NUM_ORDERS);
+    CHECK(data_3.filter_type == protocol::json::FilterType::MAX_NUM_ORDERS);
     auto &data_4 = data[4];
     CHECK(data_4.limit == 10);
-    CHECK(data_4.filter_type == json::FilterType::MAX_NUM_ALGO_ORDERS);
+    CHECK(data_4.filter_type == protocol::json::FilterType::MAX_NUM_ALGO_ORDERS);
     auto &data_5 = data[5];
     CHECK(data_5.notional == 5.0_a);
-    CHECK(data_5.filter_type == json::FilterType::MIN_NOTIONAL);
+    CHECK(data_5.filter_type == protocol::json::FilterType::MIN_NOTIONAL);
     auto &data_6 = data[6];
     CHECK(data_6.multiplier_down == 0.95_a);
     CHECK(data_6.multiplier_up == 1.05_a);
     CHECK(data_6.multiplier_decimal == 4);
-    CHECK(data_6.filter_type == json::FilterType::PERCENT_PRICE);
+    CHECK(data_6.filter_type == protocol::json::FilterType::PERCENT_PRICE);
   };
   core::json::BufferStack buffers{8192, 1};
   value_type obj{message, buffers};

@@ -15,13 +15,13 @@ namespace gateway {
 // === HELPERS ===
 
 namespace {
-auto parse_self_trade_prevention(auto &value) -> json::SelfTradePrevention {
+auto parse_self_trade_prevention(auto &value) -> protocol::json::SelfTradePrevention {
   if (std::empty(value)) {
     return {};
   }
   std::string tmp{value};
   std::ranges::transform(tmp, std::begin(tmp), [](auto item) { return std::toupper(item); });  // note! convert to uppercase
-  json::SelfTradePrevention result{std::string_view{tmp}};
+  protocol::json::SelfTradePrevention result{std::string_view{tmp}};
   log::warn("Using self_trade_prevention_mode={}"sv, result);
   return result;
 }

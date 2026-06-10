@@ -1,0 +1,24 @@
+{
+  "name": "roq/binance_futures/protocol/json/ExecutionType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "NEW"
+    },
+    {
+      "name": "CALCULATED"
+    },
+    {
+      "name": "CANCELED"
+    },
+    {
+      "name": "EXPIRED"
+    },
+    {
+      "name": "TRADE"
+    },
+    {
+      "name": "AMENDMENT"
+    }
+  ]
+}

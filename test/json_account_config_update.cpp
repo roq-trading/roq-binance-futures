@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::AccountConfigUpdate;
+using value_type = protocol::json::AccountConfigUpdate;
 
 TEST_CASE("simple_1", "[json_account_config_update]") {
   auto message = R"({)"
@@ -25,7 +25,7 @@ TEST_CASE("simple_1", "[json_account_config_update]") {
                  R"(})"
                  R"(})"sv;
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_CONFIG_UPDATE);
     CHECK(obj.event_time == 1611646737479ms);
     CHECK(obj.transaction_time == 1611646737476ms);
     auto &data = obj.data1;
@@ -45,7 +45,7 @@ TEST_CASE("simple_2", "[json_account_config_update]") {
                  R"(})"
                  R"(})"sv;
   auto helper = [](value_type const &obj) {
-    CHECK(obj.event_type == json::EventType::ACCOUNT_CONFIG_UPDATE);
+    CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_CONFIG_UPDATE);
     CHECK(obj.event_time == 1611646737479ms);
     CHECK(obj.transaction_time == 1611646737476ms);
     auto &data = obj.data2;

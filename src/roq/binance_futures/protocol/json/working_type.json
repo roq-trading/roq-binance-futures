@@ -1,0 +1,12 @@
+{
+  "name": "roq/binance_futures/protocol/json/WorkingType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "CONTRACT_PRICE"
+    },
+    {
+      "name": "MARK_PRICE"
+    }
+  ]
+}

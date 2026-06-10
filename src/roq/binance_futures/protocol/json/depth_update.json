@@ -1,0 +1,58 @@
+{
+  "name": "roq/binance_futures/protocol/json/DepthUpdate",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "ps",
+      "name": "pair",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "U",
+      "name": "first_update_id",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "u",
+      "name": "final_update_id",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "pu",
+      "name": "final_update_id_in_last_stream",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "b",
+      "name": "bids",
+      "type": "roq/binance_futures/protocol/json/DepthUpdateBidsAsksItem",
+      "array": "std/span"
+    },
+    {
+      "raw": "a",
+      "name": "asks",
+      "type": "roq/binance_futures/protocol/json/DepthUpdateBidsAsksItem",
+      "array": "std/span"
+    }
+  ]
+}

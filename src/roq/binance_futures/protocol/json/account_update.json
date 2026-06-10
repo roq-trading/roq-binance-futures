@@ -1,0 +1,38 @@
+{
+  "name": "roq/binance_futures/protocol/json/AccountUpdate",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "i",
+      "name": "i",
+      "type": "std/string_view",
+      "comment": "papi ???"
+    },
+    {
+      "raw": "fs",
+      "name": "fs",
+      "type": "std/string_view",
+      "comment": "papi"
+    },
+    {
+      "raw": "a",
+      "name": "data",
+      "type": "roq/binance_futures/protocol/json/AccountUpdateData"
+    }
+  ]
+}

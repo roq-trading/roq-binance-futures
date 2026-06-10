@@ -17,10 +17,10 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
-#include "roq/binance_futures/json/encoder.hpp"
-#include "roq/binance_futures/json/error.hpp"
-#include "roq/binance_futures/json/map.hpp"
-#include "roq/binance_futures/json/utils.hpp"
+#include "roq/binance_futures/protocol/json/encoder.hpp"
+#include "roq/binance_futures/protocol/json/error.hpp"
+#include "roq/binance_futures/protocol/json/map.hpp"
+#include "roq/binance_futures/protocol/json/utils.hpp"
 
 using namespace std::literals;
 
@@ -424,7 +424,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
       }
     };
     auto handle_success = [&](auto &body) {
-      json::ListenKeyAck listen_key_ack{body};
+      protocol::json::ListenKeyAck listen_key_ack{body};
       Trace event_2{event, listen_key_ack};
       (*this)(event_2);
       log::info<1>("Download listen-key has COMPLETED!"sv);
@@ -434,7 +434,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::ListenKeyAck> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
   auto &[trace_info, listen_key_ack] = event;
   log::info<2>("listen_key_ack={}"sv, listen_key_ack);
   bool initial = std::empty(listen_key_);
@@ -489,7 +489,7 @@ void OrderEntryPortfolio::get_account_balance_ack(Trace<web::rest::Response> con
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
+      protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
       Trace event_2{event, account_balance_ack};
       (*this)(event_2);
       if (!polling) {
@@ -503,7 +503,7 @@ void OrderEntryPortfolio::get_account_balance_ack(Trace<web::rest::Response> con
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::AccountBalanceAck> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::AccountBalanceAck> const &event) {
   auto &[trace_info, account_balance_ack] = event;
   log::info<2>("account_balance_ack={}"sv, account_balance_ack);
   for (auto &item : account_balance_ack.data) {
@@ -517,7 +517,7 @@ void OrderEntryPortfolio::operator()(Trace<json::AccountBalanceAck> const &event
         .balance = item.total_wallet_balance,
         .hold = hold,
         .borrowed = NaN,
-        .unrealized_pnl = json::get_unrealized_pnl(item.um_unrealized_pnl, item.cm_unrealized_pnl),
+        .unrealized_pnl = protocol::json::get_unrealized_pnl(item.um_unrealized_pnl, item.cm_unrealized_pnl),
         .external_account = {},
         .update_type = UpdateType::SNAPSHOT,
         .exchange_time_utc = item.update_time,
@@ -579,7 +579,7 @@ void OrderEntryPortfolio::get_account_status_ack(Trace<web::rest::Response> cons
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::AccountStatusAck account_status_ack{body, decode_buffer_};
+      protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
       Trace event_2{event, account_status_ack};
       (*this)(event_2);
       // completion
@@ -591,7 +591,7 @@ void OrderEntryPortfolio::get_account_status_ack(Trace<web::rest::Response> cons
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::AccountStatusAck> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::AccountStatusAck> const &event) {
   auto &[trace_info, account_status_ack] = event;
   log::info<2>("account_status_ack={}"sv, account_status_ack);
   for (auto &item : account_status_ack.positions) {
@@ -652,7 +652,7 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
       download_position_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::PositionList position{body, decode_buffer_};
+      protocol::json::PositionList position{body, decode_buffer_};
       Trace event_2{event, position};
       (*this)(event_2);
       // completion
@@ -664,7 +664,7 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::PositionList> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::PositionList> const &event) {
   auto &[trace_info, position] = event;
   log::info<2>("position={}"sv, position);
   for (auto &item : position.data) {
@@ -724,7 +724,7 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
+      protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
       Trace event_2{event, open_orders_ack};
       (*this)(event_2);
       // completion
@@ -736,7 +736,7 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::OpenOrdersAck> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
   auto &[trace_info, open_orders_ack] = event;
   log::info<2>("open_orders_ack={}"sv, open_orders_ack);
   for (auto &item : open_orders_ack.data) {
@@ -802,7 +802,7 @@ void OrderEntryPortfolio::get_trades() {
       auto end_time = clock::get_realtime<std::chrono::milliseconds>();
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
-      auto body = json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
+      auto body = protocol::json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
       auto query = account_.create_rest_signature_query(body);  // XXX
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -833,7 +833,7 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
-      json::TradesAck trades_ack{body, decode_buffer_};
+      protocol::json::TradesAck trades_ack{body, decode_buffer_};
       Trace event_2{event, trades_ack};
       (*this)(event_2);
       // completion
@@ -847,7 +847,7 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
 }
 
 // note! always external because we don't get ClOrdID
-void OrderEntryPortfolio::operator()(Trace<json::TradesAck> const &event) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::TradesAck> const &event) {
   auto &[trace_info, trades_ack] = event;
   for (auto &trade : trades_ack.data) {
     log::info<2>("trade={}"sv, trade);
@@ -936,7 +936,8 @@ void OrderEntryPortfolio::order_place(
     auto &[message_info, create_order] = event;
     open_orders_symbols_.emplace(create_order.symbol);
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window, shared_.api.self_trade_prevention);
+    auto body =
+        protocol::json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window, shared_.api.self_trade_prevention);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -978,7 +979,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
       (*this)(event_2, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      json::OrderPlaceAck order_place_ack{body};
+      protocol::json::OrderPlaceAck order_place_ack{body};
       Trace event_2{event, order_place_ack};
       (*this)(event_2, user_id, order_id, version);
     };
@@ -986,7 +987,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::OrderPlaceAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_place_ack] = event;
   log::info<2>("order_place_ack={}, user_id={}, order_id={}, version={}"sv, order_place_ack, user_id, order_id, version);
   auto external_order_id = fmt::format("{}"sv, order_place_ack.order_id);  // alloc
@@ -1061,7 +1062,7 @@ void OrderEntryPortfolio::order_modify(
     }
     auto &[message_info, modify_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_modify_url(encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, true);
+    auto body = protocol::json::Encoder::order_modify_url(encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, true);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -1106,7 +1107,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
       (*this)(event_2, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      json::OrderModifyAck order_modify_ack{body};
+      protocol::json::OrderModifyAck order_modify_ack{body};
       Trace event_2{event, order_modify_ack};
       (*this)(event_2, user_id, order_id, version);
     };
@@ -1114,7 +1115,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::OrderModifyAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_modify_ack] = event;
   log::info<2>("order_modify_ack={}, user_id={}, order_id={}, version={}"sv, order_modify_ack, user_id, order_id, version);
   auto external_order_id = fmt::format("{}"sv, order_modify_ack.order_id);  // alloc
@@ -1189,7 +1190,7 @@ void OrderEntryPortfolio::order_cancel(
     }
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-    auto body = json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window);
+    auto body = protocol::json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window);
     auto query = account_.create_rest_signature_body(body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -1231,8 +1232,8 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
       (*this)(event_2, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      json::OrderCancelAck order_cancel_ack{body};
-      if (order_cancel_ack.status == json::OrderStatus::FILLED) {
+      protocol::json::OrderCancelAck order_cancel_ack{body};
+      if (order_cancel_ack.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, ""sv);
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
@@ -1244,7 +1245,7 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::OrderCancelAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_cancel_ack] = event;
   log::info<2>("order_cancel_ack={}, user_id={}, order_id={}, version={}"sv, order_cancel_ack, user_id, order_id, version);
   auto external_order_id = fmt::format("{}"sv, order_cancel_ack.order_id);  // alloc
@@ -1315,7 +1316,7 @@ void OrderEntryPortfolio::open_orders_cancel_all(Event<CancelAllOrders> const &e
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
       }
-      auto body = json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
+      auto body = protocol::json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
       auto query = account_.create_rest_signature_body(body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
@@ -1365,7 +1366,7 @@ void OrderEntryPortfolio::open_orders_cancel_all_ack(Trace<web::rest::Response> 
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
-      json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
+      protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
       Trace event_2{event, open_orders_cancel_all_ack};
       (*this)(event_2, request_id);
     };
@@ -1373,7 +1374,7 @@ void OrderEntryPortfolio::open_orders_cancel_all_ack(Trace<web::rest::Response> 
   });
 }
 
-void OrderEntryPortfolio::operator()(Trace<json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
+void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
   auto &[trace_info, open_orders_cancel_all_ack] = event;
   auto status = [&]() {
     if (open_orders_cancel_all_ack.code == 200) {
@@ -1381,7 +1382,7 @@ void OrderEntryPortfolio::operator()(Trace<json::OpenOrdersCancelAllAck> const &
     }
     return RequestStatus::REJECTED;
   }();
-  auto error = json::guess_error(open_orders_cancel_all_ack.code);
+  auto error = protocol::json::guess_error(open_orders_cancel_all_ack.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -1440,8 +1441,8 @@ void OrderEntryPortfolio::process_response(web::rest::Response const &response, 
             assert(false);
             [[fallthrough]];
           default: {
-            json::Error error{body};
-            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(error.code), error.msg);
+            protocol::json::Error error{body};
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
           }
         }
         break;

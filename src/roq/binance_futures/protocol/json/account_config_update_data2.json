@@ -1,0 +1,11 @@
+{
+  "name": "roq/binance_futures/protocol/json/AccountConfigUpdateData2",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "j",
+      "name": "multi_asset_mode",
+      "type": "std/bool"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "roq/binance_futures/protocol/json/MarginCall",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "cw",
+      "name": "cross_wallet_balance",
+      "type": "std/double"
+    },
+    {
+      "raw": "p",
+      "name": "positions",
+      "type": "roq/binance_futures/protocol/json/MarginCallItem",
+      "array": "std/span"
+    },
+    {
+      "raw": "i",
+      "name": "undoc_1",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "mr",
+      "name": "undoc_2",
+      "type": "std/double"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "roq/binance_futures/protocol/json/BookTicker",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "u",
+      "name": "order_book_update_id",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "ps",
+      "name": "pair",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "b",
+      "name": "best_bid_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "B",
+      "name": "best_bid_qty",
+      "type": "std/double"
+    },
+    {
+      "raw": "a",
+      "name": "best_ask_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "A",
+      "name": "best_ask_qty",
+      "type": "std/double"
+    }
+  ]
+}

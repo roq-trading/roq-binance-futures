@@ -25,9 +25,9 @@
 
 #include "roq/binance_futures/gateway/shared.hpp"
 
-#include "roq/binance_futures/json/depth_ack.hpp"
-#include "roq/binance_futures/json/exchange_info_ack.hpp"
-#include "roq/binance_futures/json/kline_ack.hpp"
+#include "roq/binance_futures/protocol/json/depth_ack.hpp"
+#include "roq/binance_futures/protocol/json/exchange_info_ack.hpp"
+#include "roq/binance_futures/protocol/json/kline_ack.hpp"
 
 namespace roq {
 namespace binance_futures {
@@ -85,19 +85,19 @@ struct Rest final : public web::rest::Client::Handler {
 
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::ExchangeInfoAck> const &);
+  void operator()(Trace<protocol::json::ExchangeInfoAck> const &);
 
   // depth
 
   void get_depth(std::string_view const &symbol);
   void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
-  void operator()(Trace<json::DepthAck> const &, std::string_view const &symbol);
+  void operator()(Trace<protocol::json::DepthAck> const &, std::string_view const &symbol);
 
   // kline
 
   void get_kline(std::string_view const &symbol);
   void get_kline_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
-  void operator()(Trace<json::KlineAck> const &, std::string_view const &symbol);
+  void operator()(Trace<protocol::json::KlineAck> const &, std::string_view const &symbol);
 
   // helpers
 

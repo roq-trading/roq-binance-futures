@@ -1,0 +1,26 @@
+{
+  "name": "roq/binance_futures/protocol/json/ContractType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "PERPETUAL"
+    },
+    {
+      "name": "CURRENT_QUARTER"
+    },
+    {
+      "name": "NEXT_QUARTER"
+    },
+    {
+      "raw": "CURRENT_QUARTER DELIVERING",
+      "name": "CURRENT_QUARTER_DELIVERING"
+    },
+    {
+      "raw": "PERPETUAL DELIVERING",
+      "name": "PERPETUAL_DELIVERING"
+    },
+    {
+      "name": "TRADIFI_PERPETUAL"
+    }
+  ]
+}

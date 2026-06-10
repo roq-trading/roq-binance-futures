@@ -12,6 +12,6 @@ using namespace std::chrono_literals;
 
 using namespace Catch::literals;
 
-using value_type = json::ExecutionReport;
+using value_type = protocol::json::ExecutionReport;
 
 // note! have only seen this from OrderTradeUpdate.execution_report

@@ -11,7 +11,7 @@ using namespace std::literals;
 
 using namespace Catch::literals;
 
-using value_type = json::WSAPIAccountStatus;
+using value_type = protocol::json::WSAPIAccountStatus;
 
 TEST_CASE("fapi", "[json_wsapi_account_status]") {
   auto message = R"({)"

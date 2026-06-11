@@ -14,7 +14,7 @@ Settings::Settings(args::Parser const &args) : Settings{args, flags::Flags::crea
 }
 
 Settings::Settings(args::Parser const &args, flags::Flags const &flags)
-    : server::flags::Settings{args, ROQ_PACKAGE_NAME, ROQ_BUILD_NUMBER, flags.api}, flags::Flags{flags}, misc{flags::Misc::create()},
+    : server::flags::Settings{args, ROQ_PACKAGE_NAME, ROQ_BUILD_NUMBER, ROQ_GIT_DESCRIBE_HASH, flags.api}, flags::Flags{flags}, misc{flags::Misc::create()},
       rest{flags::REST::create()}, ws{flags::WS::create()}, mbp{flags::MBP::create()}, request{flags::Request::create()}, ws_api_2{flags::WS_API::create()} {
   log::info("settings={}"sv, *this);
 }

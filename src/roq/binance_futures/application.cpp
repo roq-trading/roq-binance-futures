@@ -12,36 +12,13 @@ using namespace std::literals;
 namespace roq {
 namespace binance_futures {
 
-// === CONSTANTS ===
-
-namespace {
-uint8_t const FAPI = 0x0;
-uint8_t const DAPI = 0x1;
-}  // namespace
-
-// === HELPERS ===
-
-namespace {
-
-auto parse_api(auto &settings) {
-  if (settings.api == "fapi"sv) {
-    return FAPI;
-  }
-  if (settings.api == "dapi"sv) {
-    return DAPI;
-  }
-  log::fatal(R"(Unexpected: api="{}")"sv, settings.api);
-}
-}  // namespace
-
 // === IMPLEMENTATION ===
 
 int Application::main(args::Parser const &args) {
   flags::Settings settings{args};
-  auto api = parse_api(settings);
   gateway::Config config{settings};
   auto context = server::create_io_context(settings);
-  server::Trading2<gateway::Controller>{settings, config, *context, api}.dispatch();
+  server::Trading<gateway::Controller>{settings, config, *context}.dispatch();
   return EXIT_SUCCESS;
 }
 

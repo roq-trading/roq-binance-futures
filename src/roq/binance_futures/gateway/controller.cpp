@@ -20,6 +20,13 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
+// === CONSTANTS ===
+
+namespace {
+uint8_t const FAPI = 0x0;
+uint8_t const DAPI = 0x1;
+}  // namespace
+
 // === HELPERS ===
 
 namespace {
@@ -116,6 +123,16 @@ R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts,
 
 std::unique_ptr<server::Handler> Controller::create(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context) {
   return std::make_unique<Controller>(dispatcher, settings, config, context);
+}
+
+uint8_t Controller::parse_api(Settings const &settings) {
+  if (settings.api == "fapi"sv) {
+    return FAPI;
+  }
+  if (settings.api == "dapi"sv) {
+    return DAPI;
+  }
+  log::fatal(R"(Unexpected: api="{}")"sv, settings.api);
 }
 
 Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)

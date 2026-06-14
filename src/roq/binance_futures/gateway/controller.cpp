@@ -23,8 +23,8 @@ namespace gateway {
 // === CONSTANTS ===
 
 namespace {
-uint8_t const FAPI = 0x0;
-uint8_t const DAPI = 0x1;
+uint8_t const FAPI = 0x1;
+uint8_t const DAPI = 0x2;
 }  // namespace
 
 // === HELPERS ===

@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Changed
 
+* BREAKING CHANGE: ClOrdID now using 3 bits for API and 3 bits for instance number (#607)
 * Option to disable fast OrderAck (#604)
 
 ### Fixed

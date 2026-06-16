@@ -17,6 +17,8 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
+#include "roq/binance_futures/gateway/utils.hpp"
+
 #include "roq/binance_futures/protocol/json/encoder.hpp"
 #include "roq/binance_futures/protocol/json/error.hpp"
 #include "roq/binance_futures/protocol/json/map.hpp"
@@ -745,7 +747,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersAck> const 
       continue;
     }
     open_orders_symbols_.emplace(item.symbol);
-    auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
+    auto external_order_id = Utils::create_external_order_id(external_order_id_, item.symbol, item.order_id);
     auto remaining_quantity = item.orig_qty - item.executed_qty;
     auto average_traded_price = utils::compare(item.executed_qty, 0.0) == 0 ? NaN : item.avg_price;
     auto order_update = server::oms::OrderUpdate{
@@ -868,7 +870,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::TradesAck> const &eve
         .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade.id);
-    auto external_order_id = fmt::format("{}"sv, trade.order_id);
+    auto external_order_id = Utils::create_external_order_id(external_order_id_, trade.symbol, trade.order_id);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
         .account = account_.name,
@@ -990,7 +992,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_place_ack] = event;
   log::info<2>("order_place_ack={}, user_id={}, order_id={}, version={}"sv, order_place_ack, user_id, order_id, version);
-  auto external_order_id = fmt::format("{}"sv, order_place_ack.order_id);  // alloc
+  auto external_order_id = Utils::create_external_order_id(external_order_id_, order_place_ack.symbol, order_place_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::CREATE_ORDER,
       .origin = Origin::EXCHANGE,
@@ -999,7 +1001,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const 
       .text = {},
       .version = version,
       .request_id = {},
-      .external_order_id = {},
+      .external_order_id = external_order_id,
       .quantity = order_place_ack.orig_qty,
       .price = order_place_ack.price,
   };
@@ -1118,7 +1120,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_modify_ack] = event;
   log::info<2>("order_modify_ack={}, user_id={}, order_id={}, version={}"sv, order_modify_ack, user_id, order_id, version);
-  auto external_order_id = fmt::format("{}"sv, order_modify_ack.order_id);  // alloc
+  auto external_order_id = Utils::create_external_order_id(external_order_id_, order_modify_ack.symbol, order_modify_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
       .origin = Origin::EXCHANGE,
@@ -1127,7 +1129,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const
       .text = {},
       .version = version,
       .request_id = {},
-      .external_order_id = {},
+      .external_order_id = external_order_id,
       .quantity = order_modify_ack.orig_qty,
       .price = order_modify_ack.price,
   };
@@ -1249,7 +1251,7 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_cancel_ack] = event;
   log::info<2>("order_cancel_ack={}, user_id={}, order_id={}, version={}"sv, order_cancel_ack, user_id, order_id, version);
-  auto external_order_id = fmt::format("{}"sv, order_cancel_ack.order_id);  // alloc
+  auto external_order_id = Utils::create_external_order_id(external_order_id_, order_cancel_ack.symbol, order_cancel_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::CANCEL_ORDER,
       .origin = Origin::EXCHANGE,
@@ -1258,7 +1260,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const
       .text = {},
       .version = version,
       .request_id = {},
-      .external_order_id = {},
+      .external_order_id = external_order_id,
       .quantity = order_cancel_ack.orig_qty,
       .price = order_cancel_ack.price,
   };

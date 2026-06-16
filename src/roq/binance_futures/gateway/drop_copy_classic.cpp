@@ -15,6 +15,8 @@
 
 #include "roq/web/socket/client.hpp"
 
+#include "roq/binance_futures/gateway/utils.hpp"
+
 #include "roq/binance_futures/protocol/json/map.hpp"
 #include "roq/binance_futures/protocol/json/utils.hpp"
 
@@ -278,7 +280,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
     auto &order_trade_update = event.value;
     log::info<2>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
-    auto external_order_id = fmt::format("{}"sv, execution_report.order_id);  // alloc
+    auto external_order_id = Utils::create_external_order_id(external_order_id_, execution_report.symbol, execution_report.order_id);
     auto liquidity = execution_report.is_trade_maker ? Liquidity::MAKER : Liquidity::TAKER;
     // XXX HANS execution_report.execution_type ==> OrderAck ???
     auto order_update = server::oms::OrderUpdate{
@@ -513,7 +515,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) 
           .profit_loss_amount = profit_loss_amount,
       };
       fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade_lite.trade_id);
-      auto external_order_id = fmt::format("{}"sv, trade_lite.order_id);
+      auto external_order_id = Utils::create_external_order_id(external_order_id_, trade_lite.symbol, trade_lite.order_id);
       auto trade_update = TradeUpdate{
           .stream_id = stream_id_,
           .account = account_.name,

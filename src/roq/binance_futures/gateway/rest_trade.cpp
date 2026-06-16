@@ -15,6 +15,8 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
+#include "roq/binance_futures/gateway/utils.hpp"
+
 #include "roq/binance_futures/protocol/json/encoder.hpp"
 #include "roq/binance_futures/protocol/json/error.hpp"
 #include "roq/binance_futures/protocol/json/map.hpp"
@@ -524,7 +526,7 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
       continue;
     }
     open_orders_symbols_.emplace(item.symbol);
-    auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
+    auto external_order_id = Utils::create_external_order_id(external_order_id_, item.symbol, item.order_id);
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
         .exchange = shared_.settings.exchange,
@@ -654,7 +656,7 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
         .profit_loss_amount = profit_loss_amount,
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, item.id);
-    auto external_order_id = fmt::format("{}"sv, item.order_id);
+    auto external_order_id = Utils::create_external_order_id(external_order_id_, item.symbol, item.order_id);
     auto trade_update = TradeUpdate{
         .stream_id = stream_id_,
         .account = account_.name,

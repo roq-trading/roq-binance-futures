@@ -41,6 +41,8 @@ extern roq::Error guess_error(int32_t code);
 
 extern TradingStatus trading_status_helper(SymbolStatus, ContractStatus);
 
+extern std::string_view get_order_id(std::string_view const &external_order_id);
+
 inline double get_unrealized_pnl(double um_unrealized_pnl, double cm_unrealized_pnl) {
   auto has_um = !std::isnan(um_unrealized_pnl);
   auto has_cm = !std::isnan(cm_unrealized_pnl);

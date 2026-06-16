@@ -19,6 +19,8 @@
 
 #include "roq/server/oms/exceptions.hpp"
 
+#include "roq/binance_futures/gateway/utils.hpp"
+
 #include "roq/binance_futures/protocol/json/encoder.hpp"
 #include "roq/binance_futures/protocol/json/map.hpp"
 #include "roq/binance_futures/protocol/json/utils.hpp"
@@ -856,7 +858,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
         if (std::empty(item.client_order_id)) {
           continue;
         }
-        auto external_order_id = fmt::format("{}"sv, item.order_id);  // alloc
+        auto external_order_id = Utils::create_external_order_id(external_order_id_, item.symbol, item.order_id);
         auto order_update = server::oms::OrderUpdate{
             .account = account_.name,
             .exchange = shared_.settings.exchange,
@@ -931,7 +933,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
       (*this)(event_2, request.user_id, request.order_id);
     };
     auto handle_success = [&]([[maybe_unused]] auto &result) {
-      auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc
+      auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
       auto order_status = map(result.status).template get<OrderStatus>();
       // LIMIT_MAKER orders do not return any order state + we only end up here if we receive HTTP status OK
       if (order_status == OrderStatus{}) {
@@ -963,7 +965,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .text = {},
           .version = request.version,
           .request_id = {},
-          .external_order_id = {},
+          .external_order_id = external_order_id,
           .quantity = NaN,
           .price = NaN,
       };
@@ -1037,7 +1039,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
       (*this)(event_2, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
-      auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc
+      auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
       auto request_status = map(result.status).template get<RequestStatus>();
       if (request_status != RequestStatus::ACCEPTED) {
         handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
@@ -1051,7 +1053,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
           .text = {},
           .version = request.version,
           .request_id = {},
-          .external_order_id = {},
+          .external_order_id = external_order_id,
           .quantity = NaN,
           .price = NaN,
       };
@@ -1168,7 +1170,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
-      auto external_order_id = fmt::format("{}"sv, result.order_id);  // alloc
+      auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
           .origin = Origin::EXCHANGE,
@@ -1177,7 +1179,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
           .text = {},
           .version = request.version,
           .request_id = {},
-          .external_order_id = {},  // ???
+          .external_order_id = external_order_id,
           .quantity = NaN,
           .price = NaN,
       };

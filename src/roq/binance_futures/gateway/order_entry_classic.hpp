@@ -249,6 +249,8 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   bool download_trades_ = false;
   std::string encode_buffer_;
   bool download_trades_is_first_ = true;
+  //
+  std::string external_order_id_;
 };
 
 }  // namespace gateway

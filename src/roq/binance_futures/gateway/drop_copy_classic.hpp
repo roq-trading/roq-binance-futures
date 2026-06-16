@@ -136,6 +136,8 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   core::Download<State> download_;
   // ...
   std::chrono::nanoseconds balance_refresh_ = {};
+  //
+  std::string external_order_id_;
 };
 
 }  // namespace gateway

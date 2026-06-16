@@ -133,6 +133,8 @@ struct DropCopyPortfolio final : public DropCopy, public web::socket::Client::Ha
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
   core::Download<State> download_;
+  //
+  std::string external_order_id_;
 };
 
 }  // namespace gateway

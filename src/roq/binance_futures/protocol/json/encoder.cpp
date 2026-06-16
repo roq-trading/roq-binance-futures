@@ -9,6 +9,7 @@
 #include "roq/server/oms/exceptions.hpp"
 
 #include "roq/binance_futures/protocol/json/map.hpp"
+#include "roq/binance_futures/protocol/json/utils.hpp"
 
 using namespace std::literals;
 
@@ -123,7 +124,8 @@ std::string_view Encoder::order_modify_url(
     auto price = std::isnan(modify_order.price) ? order.price : modify_order.price;
     fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
     if (!std::empty(order.external_order_id)) {
-      fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+      auto order_id = get_order_id(order.external_order_id);
+      fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order_id);
     }
     fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
     fmt::format_to(
@@ -148,7 +150,8 @@ std::string_view Encoder::order_modify_url(
     if (!std::isnan(quantity) && std::isnan(price)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
       if (!std::empty(order.external_order_id)) {
-        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+        auto order_id = get_order_id(order.external_order_id);
+        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order_id);
       }
       fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
       fmt::format_to(
@@ -162,7 +165,8 @@ std::string_view Encoder::order_modify_url(
     } else if (std::isnan(quantity) && !std::isnan(price)) {
       fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
       if (!std::empty(order.external_order_id)) {
-        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+        auto order_id = get_order_id(order.external_order_id);
+        fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order_id);
       }
       fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
       fmt::format_to(
@@ -193,7 +197,8 @@ std::string_view Encoder::order_cancel_url(
   buffer.clear();
   fmt::format_to(std::back_inserter(buffer), R"(symbol={}&)"sv, order.symbol);
   if (!std::empty(order.external_order_id)) {
-    fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order.external_order_id);
+    auto order_id = get_order_id(order.external_order_id);
+    fmt::format_to(std::back_inserter(buffer), R"(orderId={}&)"sv, order_id);
   }
   fmt::format_to(std::back_inserter(buffer), R"(origClientOrderId={}&)"sv, order.client_order_id);
   fmt::format_to(std::back_inserter(buffer), R"(recvWindow={})"sv, recv_window.count());
@@ -462,7 +467,8 @@ std::string_view Encoder::order_modify_json(
   if (std::empty(order.external_order_id)) {
     fmt::format_to(std::back_inserter(buffer), R"(,"origClientOrderId":"{}")"sv, order.client_order_id);
   } else {
-    fmt::format_to(std::back_inserter(buffer), R"(,"orderId":{})"sv, order.external_order_id);  // note! integer
+    auto order_id = get_order_id(order.external_order_id);
+    fmt::format_to(std::back_inserter(buffer), R"(,"orderId":{})"sv, order_id);  // note! integer
   }
   fmt::format_to(
       std::back_inserter(buffer),
@@ -504,7 +510,8 @@ std::string_view Encoder::order_cancel_json(
   if (std::empty(order.external_order_id)) {
     fmt::format_to(std::back_inserter(buffer), R"(,"origClientOrderId":"{}")"sv, order.client_order_id);
   } else {
-    fmt::format_to(std::back_inserter(buffer), R"(,"orderId":{})"sv, order.external_order_id);  // note! integer
+    auto order_id = get_order_id(order.external_order_id);
+    fmt::format_to(std::back_inserter(buffer), R"(,"orderId":{})"sv, order_id);  // note! integer
   }
   fmt::format_to(
       std::back_inserter(buffer),

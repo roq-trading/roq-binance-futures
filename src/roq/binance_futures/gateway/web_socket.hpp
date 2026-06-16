@@ -216,6 +216,8 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   ConnectionStatus connection_status_ = {};
   core::Download<State> download_;
   [[maybe_unused]] bool download_trades_is_first_ = true;
+  //
+  std::string external_order_id_;
 };
 
 }  // namespace gateway

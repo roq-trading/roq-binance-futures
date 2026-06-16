@@ -869,6 +869,7 @@ void OrderEntryClassic::order_place_ack(Trace<web::rest::Response> const &event,
           .version = version,
           .request_id = {},
           .external_order_id = {},
+          .client_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -897,6 +898,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderPlaceAck> const &e
       .version = version,
       .request_id = {},
       .external_order_id = external_order_id,
+      .client_order_id = {},
       .quantity = order_place_ack.orig_qty,
       .price = order_place_ack.price,
   };
@@ -995,6 +997,7 @@ void OrderEntryClassic::order_modify_ack(Trace<web::rest::Response> const &event
           .version = version,
           .request_id = {},
           .external_order_id = {},
+          .client_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1023,6 +1026,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderModifyAck> const &
       .version = version,
       .request_id = {},
       .external_order_id = external_order_id,
+      .client_order_id = {},
       .quantity = order_modify_ack.orig_qty,
       .price = order_modify_ack.price,
   };
@@ -1120,6 +1124,7 @@ void OrderEntryClassic::order_cancel_ack(Trace<web::rest::Response> const &event
           .version = version,
           .request_id = {},
           .external_order_id = {},
+          .client_order_id = {},
           .quantity = NaN,
           .price = NaN,
       };
@@ -1154,6 +1159,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderCancelAck> const &
       .version = version,
       .request_id = {},
       .external_order_id = external_order_id,
+      .client_order_id = {},
       .quantity = order_cancel_ack.orig_qty,
       .price = order_cancel_ack.price,
   };

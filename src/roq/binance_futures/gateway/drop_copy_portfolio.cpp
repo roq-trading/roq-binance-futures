@@ -528,7 +528,12 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::TradeLite> const &event
       };
       create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id, trade_lite.client_order_id);
     };
-    if (shared_.find_order(trade_lite.client_order_id, callback)) {
+    auto lookup = server::oms::Lookup{
+        .request_id = {},
+        .external_order_id = {},
+        .client_order_id = trade_lite.client_order_id,
+    };
+    if (shared_.find_order(lookup, callback)) {
     } else {
       log::warn("*** EXTERNAL ORDER ***"sv);
     }

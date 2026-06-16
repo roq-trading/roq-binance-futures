@@ -1047,6 +1047,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
       if (request_status != RequestStatus::ACCEPTED) {
         handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
+      } else if (shared_.settings.experimental.disable_fast_order_ack) {
+        return;  // note!
       }
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,

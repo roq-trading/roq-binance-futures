@@ -1006,6 +1006,25 @@ void OrderEntryClassic::order_modify_ack(Trace<web::rest::Response> const &event
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderModifyAck order_modify_ack{body};
+      switch (order_modify_ack.status) {
+        using enum protocol::json::OrderStatus::type_t;
+        case UNDEFINED_INTERNAL:
+        case UNKNOWN_INTERNAL:
+        case NEW:
+        case PARTIALLY_FILLED:
+          break;
+        case FILLED:
+        case CANCELED:
+        case EXPIRED:
+        case NEW_INSURANCE:
+        case NEW_ADL:
+        case EXPIRED_IN_MATCH:
+          handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
+          return;  // note!
+      }
+      if (shared_.settings.experimental.disable_fast_order_ack) {
+        return;  // note!
+      }
       Trace event_2{event, order_modify_ack};
       (*this)(event_2, user_id, order_id, version);
     };

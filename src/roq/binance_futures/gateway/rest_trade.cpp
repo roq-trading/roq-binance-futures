@@ -564,7 +564,7 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
         .sending_time_utc = {},
     };
     Trace event_2{trace_info, order_update};
-    (*this)(event_2, item.client_order_id);
+    (*this)(event_2);
   }
 }
 
@@ -671,7 +671,7 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
         .update_time_utc = item.time,
         .external_account = {},
         .external_order_id = external_order_id,
-        .client_order_id = {},
+        .client_order_id = {},  // note! unavailable
         .fills = {&fill, 1},
         .routing_id = {},
         .update_type = UpdateType::SNAPSHOT,
@@ -679,8 +679,7 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
         .user = {},
         .strategy_id = {},
     };
-    std::string_view client_order_id;  // note! unavailable
-    create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_order_id);
+    create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
   }
 }
 
@@ -840,18 +839,9 @@ void RestTrade::process_response(web::rest::Response const &response, auto error
   }
 }
 
-template <typename... Args>
-void RestTrade::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
-  auto &[trace_info, response] = event;
-  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
-  }
-}
-
-void RestTrade::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void RestTrade::operator()(Trace<server::oms::OrderUpdate> const &event) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }

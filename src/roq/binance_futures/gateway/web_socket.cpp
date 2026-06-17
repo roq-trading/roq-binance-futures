@@ -874,7 +874,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
             .update_time_utc = item.update_time,
             .external_account = {},
             .external_order_id = external_order_id,
-            .client_order_id = {},
+            .client_order_id = item.client_order_id,
             .order_status = map(item.status),
             .error = {},
             .text = {},
@@ -895,7 +895,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
             .update_type = UpdateType::INCREMENTAL,
             .sending_time_utc = {},
         };
-        shared_.update_order(item.client_order_id, stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
+        shared_.update_order(stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
       }
     };
     if (wsapi_open_orders_cancel_all.status == 200) {
@@ -1339,9 +1339,9 @@ void WebSocket::operator()(Trace<server::oms::Response> const &event, uint8_t us
   }
 }
 
-void WebSocket::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void WebSocket::operator()(Trace<server::oms::OrderUpdate> const &event) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }

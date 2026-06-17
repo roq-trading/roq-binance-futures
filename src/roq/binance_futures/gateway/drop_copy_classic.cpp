@@ -322,7 +322,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
     auto user_id = SOURCE_NONE;
     auto order_id = ORDER_ID_NONE;
     auto strategy_id = STRATEGY_ID_NONE;
-    if (shared_.update_order(execution_report.client_order_id, stream_id_, trace_info, order_update, [&](auto &order) {
+    if (shared_.update_order(stream_id_, trace_info, order_update, [&](auto &order) {
           user_id = order.user_id;
           order_id = order.order_id;
           strategy_id = order.strategy_id;
@@ -368,7 +368,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
         .update_time_utc = execution_report.order_trade_time,
         .external_account = {},
         .external_order_id = external_order_id,
-        .client_order_id = {},
+        .client_order_id = execution_report.client_order_id,
         .fills = {&fill, 1},
         .routing_id = {},
         .update_type = UpdateType::INCREMENTAL,
@@ -376,7 +376,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
         .user = {},
         .strategy_id = strategy_id,
     };
-    create_trace_and_dispatch(handler_, trace_info, trade_update, true, user_id, execution_report.client_order_id);
+    create_trace_and_dispatch(handler_, trace_info, trade_update, true, user_id);
   });
 }
 
@@ -530,7 +530,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) 
           .update_time_utc = trade_lite.transaction_time,
           .external_account = {},
           .external_order_id = external_order_id,
-          .client_order_id = {},
+          .client_order_id = trade_lite.client_order_id,
           .fills = {&fill, 1},
           .routing_id = {},
           .update_type = UpdateType::INCREMENTAL,
@@ -538,7 +538,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) 
           .user = {},
           .strategy_id = order.strategy_id,
       };
-      create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id, trade_lite.client_order_id);
+      create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
     };
     auto lookup = server::oms::Lookup{
         .request_id = {},

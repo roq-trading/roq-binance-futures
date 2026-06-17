@@ -55,7 +55,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
     virtual void operator()(Trace<RateLimitsUpdate> const &) = 0;
-    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
+    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id) = 0;
     virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
     virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
     // cross-communication
@@ -193,7 +193,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   template <typename... Args>
   void operator()(Trace<server::oms::Response> const &, uint8_t user_id, uint64_t order_id, Args &&...);
 
-  void operator()(Trace<server::oms::OrderUpdate> const &, std::string_view const &client_order_id);
+  void operator()(Trace<server::oms::OrderUpdate> const &);
 
   void waf_limit_violation();
 

@@ -786,8 +786,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersAck> const 
         .update_type = UpdateType::SNAPSHOT,
         .sending_time_utc = {},
     };
-    Trace event_2{trace_info, order_update};
-    (*this)(event_2);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
   }
 }
 
@@ -963,6 +962,7 @@ void OrderEntryPortfolio::order_place(
 
 void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.order_place_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
@@ -977,8 +977,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderPlaceAck order_place_ack{body};
@@ -1007,8 +1006,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const 
       .price = order_place_ack.price,
   };
   if (shared_.settings.rest.drop_order_update) {
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1046,8 +1044,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const 
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id, order_update);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, user_id, order_id);
   }
 }
 
@@ -1093,6 +1090,7 @@ void OrderEntryPortfolio::order_modify(
 // optional override map in .toml
 void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.order_modify_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
@@ -1107,8 +1105,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderModifyAck order_modify_ack{body};
@@ -1156,8 +1153,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const
       .price = order_modify_ack.price,
   };
   if (response.request_status != RequestStatus::ACCEPTED || shared_.settings.rest.drop_order_update) {
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1195,8 +1191,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id, order_update);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, user_id, order_id);
   }
 }
 
@@ -1239,6 +1234,7 @@ void OrderEntryPortfolio::order_cancel(
 
 void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.order_cancel_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
@@ -1253,8 +1249,7 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderCancelAck order_cancel_ack{body};
@@ -1289,8 +1284,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const
       .price = order_cancel_ack.price,
   };
   if (shared_.settings.rest.drop_order_update) {
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1328,8 +1322,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    Trace event_2{trace_info, response};
-    (*this)(event_2, user_id, order_id, order_update);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, user_id, order_id);
   }
 }
 
@@ -1488,23 +1481,6 @@ void OrderEntryPortfolio::process_response(web::rest::Response const &response, 
   } catch (std::exception &e) {
     log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     error_handler(Origin::EXCHANGE, RequestStatus::ERROR, Error::UNKNOWN, e.what());
-  }
-}
-
-template <typename... Args>
-void OrderEntryPortfolio::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
-  auto &[trace_info, response] = event;
-  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
-  }
-}
-
-void OrderEntryPortfolio::operator()(Trace<server::oms::OrderUpdate> const &event) {
-  auto &[trace_info, order_update] = event;
-  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("*** EXTERNAL ORDER ***"sv);
   }
 }
 

@@ -895,7 +895,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
             .update_type = UpdateType::INCREMENTAL,
             .sending_time_utc = {},
         };
-        shared_.update_order(stream_id_, trace_info, order_update, []([[maybe_unused]] auto &order) {});
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
       }
     };
     if (wsapi_open_orders_cancel_all.status == 200) {
@@ -930,8 +930,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
     };
     auto handle_success = [&]([[maybe_unused]] auto &result) {
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
@@ -1007,8 +1006,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .update_type = UpdateType::INCREMENTAL,
           .sending_time_utc = {},
       };
-      Trace event_2{trace_info, response};
-      (*this)(event_2, request.user_id, request.order_id, order_update);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
     };
     if (wsapi_order_place.status == 200) {
       handle_success(wsapi_order_place.result);
@@ -1038,8 +1036,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
@@ -1064,8 +1061,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
           .price = NaN,
       };
       if (!shared_.settings.ws_api_2.allow_order_update) {
-        Trace event_2{trace_info, response};
-        (*this)(event_2, request.user_id, request.order_id);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
       } else {
         auto order_update = server::oms::OrderUpdate{
             .account = account_.name,
@@ -1103,8 +1099,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
             .update_type = UpdateType::INCREMENTAL,
             .sending_time_utc = {},
         };
-        Trace event_2{trace_info, response};
-        (*this)(event_2, request.user_id, request.order_id, order_update);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
       }
     };
 #if (0)  // wait confirmation from other changes
@@ -1167,8 +1162,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      Trace event_2{event, response};
-      (*this)(event_2, request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
       if (result.status == protocol::json::OrderStatus::FILLED) {
@@ -1192,8 +1186,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
           .price = NaN,
       };
       if (!shared_.settings.ws_api_2.allow_order_update) {
-        Trace event_2{trace_info, response};
-        (*this)(event_2, request.user_id, request.order_id);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
       } else {
         auto order_update = server::oms::OrderUpdate{
             .account = account_.name,
@@ -1231,8 +1224,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
             .update_type = UpdateType::INCREMENTAL,
             .sending_time_utc = {},
         };
-        Trace event_2{trace_info, response};
-        (*this)(event_2, request.user_id, request.order_id, order_update);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
       }
     };
     if (wsapi_order_cancel.status == 200) {
@@ -1328,23 +1320,6 @@ void WebSocket::update_rate_limits(auto &event) {
     handler_(event_2);
   }
   shared_.rate_limits.clear();
-}
-
-template <typename... Args>
-void WebSocket::operator()(Trace<server::oms::Response> const &event, uint8_t user_id, uint64_t order_id, Args &&...args) {
-  auto &[trace_info, response] = event;
-  if (shared_.update_order(user_id, order_id, stream_id_, trace_info, response, std::forward<Args>(args)..., []([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("Did not find order: user_id={}, order_id={}"sv, user_id, order_id);
-  }
-}
-
-void WebSocket::operator()(Trace<server::oms::OrderUpdate> const &event) {
-  auto &[trace_info, order_update] = event;
-  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("*** EXTERNAL ORDER ***"sv);
-  }
 }
 
 }  // namespace gateway

@@ -563,8 +563,7 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
         .update_type = UpdateType::SNAPSHOT,
         .sending_time_utc = {},
     };
-    Trace event_2{trace_info, order_update};
-    (*this)(event_2);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
   }
 }
 
@@ -836,14 +835,6 @@ void RestTrade::process_response(web::rest::Response const &response, auto error
   } catch (std::exception &e) {
     log::warn(R"(Exception type={}, what="{}")"sv, typeid(e).name(), e.what());
     error_handler(Origin::EXCHANGE, RequestStatus::ERROR, Error::UNKNOWN, e.what());
-  }
-}
-
-void RestTrade::operator()(Trace<server::oms::OrderUpdate> const &event) {
-  auto &[trace_info, order_update] = event;
-  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
-  } else {
-    log::warn("*** EXTERNAL ORDER ***"sv);
   }
 }
 

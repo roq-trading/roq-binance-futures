@@ -167,7 +167,7 @@ void MarketData2::operator()(web::socket::Client::Latency const &latency) {
       .account = {},
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -199,7 +199,7 @@ void MarketData2::operator()(ConnectionStatus connection_status, std::string_vie
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
@@ -300,7 +300,7 @@ void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = agg_trade.event_time,
     };
-    create_trace_and_dispatch(handler_, event.trace_info, trade_summary, true);
+    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, trade_summary, true);
   });
 }
 
@@ -351,7 +351,7 @@ void MarketData2::operator()(Trace<protocol::json::MiniTicker> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = mini_ticker.event_time,
     };
-    create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
   });
 }
 
@@ -405,7 +405,7 @@ void MarketData2::operator()(Trace<protocol::json::MarkPriceUpdate> const &event
         .exchange_sequence = {},
         .sending_time_utc = mark_price.event_time,
     };
-    create_trace_and_dispatch(handler_, event.trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
   });
 }
 
@@ -441,7 +441,7 @@ void MarketData2::operator()(Trace<protocol::json::Kline> const &event) {
         .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = kline.event_time,
     };
-    create_trace_and_dispatch(handler_, trace_info, time_series_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, time_series_update, true);
   });
 }
 

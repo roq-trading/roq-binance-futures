@@ -21,7 +21,7 @@ auto create_sequencer(auto &settings) {
 // === IMPLEMENTATION ===
 
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
-    : settings{settings}, api{API::create(settings)}, dispatcher{dispatcher}, rate_limiter{settings.request.limit, settings.request.limit_interval},
+    : dispatcher{dispatcher}, settings{settings}, api{API::create(settings)}, rate_limiter{settings.request.limit, settings.request.limit_interval},
       symbols{settings.ws.max_subscriptions_per_stream}, depth_request_queue{settings.ws.mbp_request_delay},
       allow_unknown_event_types{settings.experimental.allow_unknown_event_types || settings.misc.continue_with_unknown_event_type} {
 }

@@ -256,60 +256,7 @@ void Controller::operator()(metrics::Writer &writer) const {
   dispatch_helper(*this, writer);
 }
 
-// streams
-
-void Controller::operator()(Trace<StreamStatus> const &event) {
-  dispatcher_(event);
-}
-
-void Controller::operator()(Trace<ExternalLatency> const &event) {
-  dispatcher_(event);
-}
-
-void Controller::operator()(Trace<RateLimitsUpdate> const &event) {
-  dispatcher_(event);
-}
-
-void Controller::operator()(Trace<ReferenceData> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<MarketStatus> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<TopOfBook> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<MarketByPriceUpdate> const &event, bool is_last) {
-  auto callback = []([[maybe_unused]] auto &market_by_price) {};
-  dispatcher_(event, is_last, bids_, asks_, callback);
-}
-
-void Controller::operator()(Trace<TradeSummary> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<StatisticsUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<TimeSeriesUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<TradeUpdate> const &event, bool is_last, uint8_t user_id) {
-  dispatcher_(event, is_last, user_id);
-}
-
-void Controller::operator()(Trace<FundsUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
-
-void Controller::operator()(Trace<PositionUpdate> const &event, bool is_last) {
-  dispatcher_(event, is_last);
-}
+// Rest::Handler
 
 void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
@@ -325,13 +272,19 @@ void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
   }
 }
 
+// WebSocket::Handler
+
 void Controller::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {
   create_drop_copy_helper<DropCopyClassic>(listen_key_update);
 }
 
+// OrderEntryClassic::Handler
+
 void Controller::operator()(OrderEntryClassic::ListenKeyUpdate const &listen_key_update) {
   create_drop_copy_helper<DropCopyClassic>(listen_key_update);
 }
+
+// OrderEntryPortfolio::Handler
 
 void Controller::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
   create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);

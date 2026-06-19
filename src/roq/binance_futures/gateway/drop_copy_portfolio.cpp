@@ -189,7 +189,7 @@ void DropCopyPortfolio::operator()(web::socket::Client::Latency const &latency) 
       .account = account_.name,
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -220,7 +220,7 @@ void DropCopyPortfolio::operator()(ConnectionStatus connection_status, std::stri
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 uint32_t DropCopyPortfolio::download(State state) {
@@ -335,7 +335,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::OrderTradeUpdate> const
       return;
     }
     auto side = map(execution_report.side).template get<Side>();
-    auto ref_data = shared_.get_ref_data(shared_.settings.exchange, execution_report.symbol);
+    auto ref_data = shared_.dispatcher.get_ref_data(shared_.settings.exchange, execution_report.symbol);
     auto profit_loss_amount =
         utils::compute_profit_loss_amount(side, execution_report.last_filled_quantity, execution_report.last_filled_price, ref_data.multiplier);
     auto fill = Fill{
@@ -373,7 +373,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::OrderTradeUpdate> const
         .user = {},
         .strategy_id = strategy_id,
     };
-    create_trace_and_dispatch(handler_, trace_info, trade_update, true, user_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, user_id);
   });
 }
 
@@ -398,7 +398,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::AccountUpdate> const &e
             .exchange_time_utc = account_update.transaction_time,
             .sending_time_utc = account_update.event_time,
         };
-        create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
         if (!std::isnan(item.cross_wallet_balance)) {
           auto funds_update = FundsUpdate{
               .stream_id = stream_id_,
@@ -414,12 +414,12 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::AccountUpdate> const &e
               .exchange_time_utc = account_update.transaction_time,
               .sending_time_utc = account_update.event_time,
           };
-          create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
         }
       }
     }
     for (auto &item : account_update.data.positions) {
-      if (shared_.discard_symbol(item.symbol)) {
+      if (shared_.dispatcher.discard_symbol(item.symbol)) {
         continue;
       }
       log::info<2>("item={}"sv, item);
@@ -438,7 +438,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::AccountUpdate> const &e
           .exchange_time_utc = account_update.transaction_time,
           .sending_time_utc = account_update.event_time,
       };
-      create_trace_and_dispatch(handler_, trace_info, position_update, true);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
     }
   });
 }
@@ -486,7 +486,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::TradeLite> const &event
         return Liquidity::TAKER;
       }();
       auto side = map(trade_lite.side).template get<Side>();
-      auto ref_data = shared_.get_ref_data(shared_.settings.exchange, trade_lite.symbol);
+      auto ref_data = shared_.dispatcher.get_ref_data(shared_.settings.exchange, trade_lite.symbol);
       auto profit_loss_amount = utils::compute_profit_loss_amount(side, trade_lite.last_filled_quantity, trade_lite.last_filled_price, ref_data.multiplier);
       auto fill = Fill{
           .exchange_time_utc = trade_lite.transaction_time,
@@ -524,14 +524,14 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::TradeLite> const &event
           .user = {},
           .strategy_id = order.strategy_id,
       };
-      create_trace_and_dispatch(handler_, trace_info, trade_update, true, order.user_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, order.user_id);
     };
     auto lookup = server::oms::Lookup{
         .request_id = {},
         .external_order_id = {},
         .client_order_id = trade_lite.client_order_id,
     };
-    if (shared_.find_order(lookup, callback)) {
+    if (shared_.dispatcher.find_order(lookup, callback)) {
     } else {
       log::warn("*** EXTERNAL ORDER ***"sv);
     }
@@ -597,7 +597,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::ExecutionReport2> const
       return;
     }
     auto side = map(execution_report.side).template get<Side>();
-    auto ref_data = shared_.get_ref_data(shared_.settings.exchange, execution_report.symbol);
+    auto ref_data = shared_.dispatcher.get_ref_data(shared_.settings.exchange, execution_report.symbol);
     auto profit_loss_amount =
         utils::compute_profit_loss_amount(side, execution_report.last_filled_quantity, execution_report.last_filled_price, ref_data.multiplier);
     auto fill = Fill{
@@ -635,7 +635,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::ExecutionReport2> const
         .user = {},
         .strategy_id = strategy_id,
     };
-    create_trace_and_dispatch(handler_, trace_info, trade_update, true, user_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, user_id);
   });
 }
 
@@ -674,7 +674,7 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::OutboundAccountPosition
             .exchange_time_utc = outbound_account_position.last_account_update,  // ???
             .sending_time_utc = outbound_account_position.event_time,
         };
-        create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
       }
     }
   });

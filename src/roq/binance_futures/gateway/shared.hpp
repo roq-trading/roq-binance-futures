@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <chrono>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "roq/api.hpp"
+
 #include "roq/server.hpp"
 
 #include "roq/utils/container.hpp"
@@ -31,24 +30,8 @@ struct Shared final {
 
   Shared(Shared const &) = delete;
 
-  auto discard_symbol(std::string_view const &name) const { return dispatcher.discard_symbol(name); }
+  server::Dispatcher &dispatcher;
 
-  template <typename... Args>
-  auto operator()(Args &&...args) {
-    return dispatcher(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  auto get_ref_data(Args &&...args) {
-    return dispatcher.get_ref_data(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  auto find_order(Args &&...args) {
-    return dispatcher.find_order(std::forward<Args>(args)...);
-  }
-
- public:
   Settings const &settings;
   API const api;
 
@@ -96,14 +79,14 @@ struct Shared final {
   utils::unordered_map<std::string, Instrument> instruments_;
 
  public:
-  server::Dispatcher &dispatcher;
-
- public:
   core::limit::RateLimiter rate_limiter;
+
   core::Symbols symbols;
   utils::unordered_set<std::string> all_symbols;
+
   core::TimerQueue<std::string> depth_request_queue;
   core::TimerQueue<std::string> time_series_request_queue;
+
   std::vector<RateLimit> rate_limits;
 
   struct {
@@ -115,6 +98,8 @@ struct Shared final {
   std::vector<Bar> bars;
 
   bool const allow_unknown_event_types;
+
+  std::vector<MBPUpdate> final_bids, final_asks;
 };
 
 }  // namespace gateway

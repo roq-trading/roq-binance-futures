@@ -85,26 +85,20 @@ struct Controller final : public server::Handler,
 
   void operator()(metrics::Writer &) const override;
 
-  // streams
-
-  void operator()(Trace<StreamStatus> const &) override;
-  void operator()(Trace<ExternalLatency> const &) override;
-  void operator()(Trace<RateLimitsUpdate> const &) override;
-  void operator()(Trace<ReferenceData> const &, bool is_last) override;
-  void operator()(Trace<MarketStatus> const &, bool is_last) override;
-  void operator()(Trace<TopOfBook> const &, bool is_last) override;
-  void operator()(Trace<MarketByPriceUpdate> const &, bool is_last) override;
-  void operator()(Trace<TradeSummary> const &, bool is_last) override;
-  void operator()(Trace<StatisticsUpdate> const &, bool is_last) override;
-  void operator()(Trace<TimeSeriesUpdate> const &, bool is_last) override;
-  void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id) override;
-  void operator()(Trace<FundsUpdate> const &, bool is_last) override;
-  void operator()(Trace<PositionUpdate> const &, bool is_last) override;
+  // Rest::Handler
 
   void operator()(Rest::SymbolsUpdate &) override;
 
+  // WebSocket::Handler
+
   void operator()(WebSocket::ListenKeyUpdate const &) override;
+
+  // OrderEntryClassic::Handler
+
   void operator()(OrderEntryClassic::ListenKeyUpdate const &) override;
+
+  // OrderEntryPortfolio::Handler
+
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
   // utilities
@@ -143,8 +137,6 @@ struct Controller final : public server::Handler,
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;
-  // cache
-  std::vector<MBPUpdate> bids_, asks_;
 };
 
 }  // namespace gateway

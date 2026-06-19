@@ -445,8 +445,7 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
           .strategy_id = cancel_all_orders.strategy_id,
       };
       TraceInfo trace_info{event};
-      Trace event_2{trace_info, cancel_all_orders_ack};
-      shared_(event_2);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, cancel_all_orders_ack);
     };
     for (auto &symbol : open_orders_symbols_) {
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
@@ -595,7 +594,7 @@ void WebSocket::operator()(web::socket::Client::Latency const &latency) {
       .account = account_.name,
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -626,7 +625,7 @@ void WebSocket::operator()(ConnectionStatus connection_status, std::string_view 
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 uint32_t WebSocket::download(State state) {
@@ -754,7 +753,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &eve
             .exchange_time_utc = item.update_time,
             .sending_time_utc = item.update_time,
         };
-        create_trace_and_dispatch(handler_, trace_info, funds_update, true);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
       }
     };
     if (wsapi_account_balance.status == 200) {
@@ -778,7 +777,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
     };
     auto handle_success = [&](auto &result) {
       for (auto &item : result.positions) {
-        if (shared_.discard_symbol(item.symbol)) {
+        if (shared_.dispatcher.discard_symbol(item.symbol)) {
           continue;
         }
         log::info<2>("item={}"sv, item);
@@ -798,7 +797,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
             .exchange_time_utc = result.update_time,
             .sending_time_utc = {},
         };
-        create_trace_and_dispatch(handler_, trace_info, position_update, true);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
       }
     };
     if (wsapi_account_status.status == 200) {
@@ -1316,8 +1315,7 @@ void WebSocket::update_rate_limits(auto &event) {
         .origin = Origin::EXCHANGE,
         .rate_limits = shared_.rate_limits,
     };
-    Trace event_2{trace_info, rate_limits_update};
-    handler_(event_2);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, rate_limits_update);
   }
   shared_.rate_limits.clear();
 }

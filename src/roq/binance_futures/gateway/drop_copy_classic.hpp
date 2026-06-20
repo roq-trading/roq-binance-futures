@@ -3,7 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
@@ -38,7 +37,7 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   DropCopyClassic(DropCopyClassic &&) = delete;
   DropCopyClassic(DropCopyClassic const &) = delete;
 
-  bool ready() const;
+  // DropCopy
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
@@ -47,6 +46,8 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   void operator()(metrics::Writer &) const override;
 
  protected:
+  // web::socket::Client::Handler
+
   void operator()(web::socket::Client::Connected const &) override;
   void operator()(web::socket::Client::Disconnected const &) override;
   void operator()(web::socket::Client::Ready const &) override;
@@ -57,7 +58,10 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   //
   std::string_view get_query() const override { return query_; }
 
- private:
+  // helpers
+
+  bool ready() const;
+
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   enum class State {
@@ -72,6 +76,8 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   uint32_t download(State);
 
   void parse(std::string_view const &message);
+
+  // protocol::json::UserStreamParser::Handler
 
   void operator()(Trace<protocol::json::OrderTradeUpdate> const &) override;
   void operator()(Trace<protocol::json::AccountUpdate> const &) override;
@@ -99,6 +105,7 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   void check_response_orders();
   void check_response_trades();
 
+ private:
   Handler &handler_;
   // config
   uint16_t const stream_id_;

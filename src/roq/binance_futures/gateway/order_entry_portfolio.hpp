@@ -3,7 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 
 #include "roq/utils/container.hpp"
 
@@ -59,8 +58,8 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   OrderEntryPortfolio(OrderEntryPortfolio &&) = delete;
   OrderEntryPortfolio(OrderEntryPortfolio const &) = delete;
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
-  bool downloading() const { return download_balance_ || download_account_ || download_position_ || download_orders_ || download_trades_; }
+ protected:
+  // OrderEntry
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
@@ -84,7 +83,6 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
- protected:
   // web::rest::Client::Handler
 
   void operator()(Trace<web::rest::Client::Connected> const &) override;
@@ -93,6 +91,12 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
   void operator()(Trace<web::rest::Client::MessageBegin> const &) override;
   void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
+
+  // helpers
+
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+
+  bool downloading() const { return download_balance_ || download_account_ || download_position_ || download_orders_ || download_trades_; }
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 

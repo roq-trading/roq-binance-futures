@@ -3,10 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
-#include <vector>
-
-#include "roq/utils/container.hpp"
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/gauge.hpp"
@@ -20,8 +16,6 @@
 #include "roq/core/download.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/server.hpp"
 
 #include "roq/binance_futures/gateway/shared.hpp"
 
@@ -46,8 +40,6 @@ struct Rest final : public web::rest::Client::Handler {
 
   Rest(Rest const &) = delete;
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
-
   void operator()(Event<Start> const &);
   void operator()(Event<Stop> const &);
   void operator()(Event<Timer> const &);
@@ -63,6 +55,10 @@ struct Rest final : public web::rest::Client::Handler {
   void operator()(Trace<web::rest::Client::MessageBegin> const &) override;
   void operator()(Trace<web::rest::Client::Header> const &) override;
   void operator()(Trace<web::rest::Client::MessageEnd> const &) override;
+
+  // helpers
+
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 

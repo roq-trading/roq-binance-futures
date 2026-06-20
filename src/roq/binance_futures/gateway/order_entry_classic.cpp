@@ -2,16 +2,10 @@
 
 #include "roq/binance_futures/gateway/order_entry_classic.hpp"
 
-#include <algorithm>
-#include <utility>
-
 #include "roq/mask.hpp"
 
 #include "roq/utils/common.hpp"
-#include "roq/utils/compare.hpp"
 #include "roq/utils/update.hpp"
-
-#include "roq/utils/charconv/from_chars.hpp"
 
 #include "roq/utils/metrics/factory.hpp"
 

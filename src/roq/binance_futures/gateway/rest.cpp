@@ -2,16 +2,9 @@
 
 #include "roq/binance_futures/gateway/rest.hpp"
 
-#include <algorithm>
-#include <utility>
-
 #include "roq/mask.hpp"
 
-#include "roq/utils/compare.hpp"
 #include "roq/utils/safe_cast.hpp"
-#include "roq/utils/update.hpp"
-
-#include "roq/utils/charconv/from_chars.hpp"
 
 #include "roq/utils/metrics/factory.hpp"
 

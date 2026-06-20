@@ -3,10 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
-#include <vector>
-
-#include "roq/core/download.hpp"
 
 #include "roq/utils/container.hpp"
 
@@ -25,7 +21,7 @@
 
 #include "roq/server.hpp"
 
-#include "roq/server/cache/cancel_order_request.hpp"
+// #include "roq/server/cache/cancel_order_request.hpp"
 
 #include "roq/binance_futures/gateway/order_entry.hpp"
 
@@ -53,6 +49,9 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   bool ready() const { return connection_status_ == ConnectionStatus::READY; }
 
+ protected:
+  // OrderEntry
+
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
   void operator()(Event<Timer> const &) override;
@@ -74,10 +73,15 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
- protected:
+  // helpers
+
   bool downloading() const { return download_balance_ || download_account_ | download_orders_; }
 
+  // session-logon
+
   void session_logon();
+
+  // user-data-streams
 
   void user_data_stream_start();
   void user_data_stream_ping(std::chrono::nanoseconds now);
@@ -86,18 +90,30 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void account_status();
   void account_position();
 
+  // order-status
+
   bool order_status();
   void order_status(std::string_view const &symbol);
 
+  // open-orders-cancel-all
+
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
+  // order-place
+
   void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
+
+  // order-modify
+
   void order_modify(
       Event<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
+
+  // order-cancel
+
   void order_cancel(
       Event<CancelOrder> const &,
       server::oms::Order const &,
@@ -115,7 +131,6 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   void operator()(web::socket::Client::Text const &) override;
   void operator()(web::socket::Client::Binary const &) override;
 
- private:
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   enum class State {

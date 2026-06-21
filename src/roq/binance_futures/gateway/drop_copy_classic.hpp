@@ -106,7 +106,7 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   void check_response_trades();
 
  private:
-  Handler &handler_;
+  [[maybe_unused]] Handler &handler_;
   // config
   uint16_t const stream_id_;
   std::string const name_;

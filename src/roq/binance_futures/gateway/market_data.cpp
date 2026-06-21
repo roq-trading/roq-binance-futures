@@ -299,8 +299,7 @@ void MarketData::operator()(Trace<protocol::json::BookTicker> const &event) {
 
 void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
   profile_.depth_update([&]() {
-    auto &trace_info = event.trace_info;
-    auto &depth_update = event.value;
+    auto &[trace_info, depth_update] = event;
     log::info<3>(R"(depth_update={})"sv, depth_update);
     (*connection_).touch(trace_info.source_receive_time);
     auto symbol = depth_update.symbol;

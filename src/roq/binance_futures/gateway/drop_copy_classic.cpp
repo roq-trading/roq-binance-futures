@@ -272,8 +272,7 @@ void DropCopyClassic::parse(std::string_view const &message) {
 
 void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
-    auto &trace_info = event.trace_info;
-    auto &order_trade_update = event.value;
+    auto &[trace_info, order_trade_update] = event;
     log::info<2>("order_trade_update={}"sv, order_trade_update);
     auto &execution_report = order_trade_update.execution_report;
     auto external_order_id = Utils::create_external_order_id(external_order_id_, execution_report.symbol, execution_report.order_id);

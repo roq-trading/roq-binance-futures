@@ -1,0 +1,14 @@
+!!! THIS FILE HAS BEEN AUTO-GENERATED !!!
+roq-binance-futures-bridge-flags
+fix.rstinc
+messaging.rstinc
+oms.rstinc
+test.rstinc
+fix.hpp
+messaging.hpp
+oms.hpp
+test.hpp
+fix.cpp
+messaging.cpp
+oms.cpp
+test.cpp

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+if [ "$1" == "debug" ]; then
+  PREFIX="gdb --args"
+else
+  PREFIX=
+fi
+
+NAME="binance-futures"
+
+CONFIG="${CONFIG:-$NAME}"
+
+CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
+
+DOWNLOAD_SYMBOLS="BTCUSD_PERP"
+
+WS_API=true
+
+FLAGFILE="../../../../share/flags/prod/flags-dapi.cfg"
+
+$PREFIX ./roq-binance-futures-bridge \
+  --name "$NAME" \
+  --config_file "$CONFIG_FILE" \
+  --flagfile "$FLAGFILE" \
+  --cache_dir "$HOME/var/lib/roq/cache" \
+  --client_listen_address "$HOME/run/$NAME.sock" \
+  --service_listen_address "$HOME/run/metrics/${NAME}.sock" \
+  --ws_api=$WS_API \
+  --download_symbols="$DOWNLOAD_SYMBOLS" \
+  $@

@@ -26,6 +26,26 @@ auto create_external_latency(auto &settings, auto const &function) {
   auto labels = fmt::format(R"(source="{}", function="{}")"sv, settings.app.name, function);
   return utils::metrics::external_latency_t{labels};
 }
+
+template <typename R>
+auto create_username_to_user() {
+  using result_type = std::remove_cvref_t<R>;
+  result_type result;
+  // XXX FIXME TODO parse from config
+  auto username = "trader"s;
+  auto user = User{
+      .user_id = 1,
+      .component = "fix-client"s,
+      .username = username,
+      .password = "secret"s,
+      .strategy_id = {},
+      .account = "A1"s,
+      .accounts_regex = {},
+      .symbols_regex = {},
+  };
+  result.emplace(username, std::move(user));
+  return result;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
@@ -64,7 +84,8 @@ Shared::Shared(server::Strategy &dispatcher, Settings const &settings, fix::brid
           .round_trip_gateway = create_external_latency(settings, "gateway"sv),
           .round_trip_broker = create_external_latency(settings, "broker"sv),
           .round_trip_exchange = create_external_latency(settings, "exchange"sv),
-      } {
+      },
+      username_to_user_{create_username_to_user<decltype(username_to_user_)>()} {
 }
 
 // session

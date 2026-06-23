@@ -21,14 +21,13 @@ namespace binance_futures {
 namespace bridge {
 
 struct SessionManager final : public io::sys::Timer::Handler, public io::net::tcp::Listener::Handler, public Session::Handler {
-  explicit SessionManager(Shared &);
+  explicit SessionManager(Shared &, io::Context &context);
 
   SessionManager(SessionManager &&) = delete;
   SessionManager(SessionManager const &) = delete;
 
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
+  void start();
+  void stop();
 
   // tools
 
@@ -76,7 +75,6 @@ struct SessionManager final : public io::sys::Timer::Handler, public io::net::tc
 
  private:
   // io
-  std::unique_ptr<io::Context> const context_;
   std::unique_ptr<io::sys::Timer> const timer_;
   std::unique_ptr<io::net::tcp::Listener> const listener_;
   // shared

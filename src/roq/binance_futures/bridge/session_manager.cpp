@@ -62,20 +62,15 @@ auto create_network_address(auto &settings) {
 
 // === IMPLEMENTATION ===
 
-SessionManager::SessionManager(Shared &shared)
-    : context_{create_context()}, timer_{(*context_).create_timer(*this, 100ms)},
-      listener_{(*context_).create_tcp_listener(*this, create_network_address(shared.settings))}, shared_{shared} {
+SessionManager::SessionManager(Shared &shared, io::Context &context)
+    : timer_{context.create_timer(*this, 100ms)}, listener_{context.create_tcp_listener(*this, create_network_address(shared.settings))}, shared_{shared} {
 }
 
-void SessionManager::operator()(Event<Start> const &) {
+void SessionManager::start() {
   (*timer_).resume();
 }
 
-void SessionManager::operator()(Event<Stop> const &) {
-}
-
-void SessionManager::operator()(Event<Timer> const &) {
-  (*context_).drain();
+void SessionManager::stop() {
 }
 
 void SessionManager::run() {

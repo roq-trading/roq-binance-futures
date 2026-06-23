@@ -114,8 +114,6 @@ struct Controller final : public io::sys::Signal::Handler, public client::Handle
   SessionManager session_manager_;
   std::chrono::nanoseconds next_update_ = {};
   uint64_t max_order_id_ = {};
-  //
-  utils::unordered_map<std::string, User> username_to_user_;
 };
 
 }  // namespace bridge

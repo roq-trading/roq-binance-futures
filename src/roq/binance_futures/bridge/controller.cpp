@@ -94,10 +94,11 @@ auto create_bridge(auto &handler, auto &settings) {
 Controller::Controller(Settings const &settings, Config const &config, io::Context &context)
     : settings_{settings}, terminate_{context.create_signal(*this, io::sys::Signal::Type::TERMINATE)},
       interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)}, dispatcher_{create_dispatcher(*this, settings, config, context)},
-      bridge_{create_bridge(*this, settings)}, shared_{*dispatcher_, settings, *bridge_}, session_manager_{shared_} {
+      bridge_{create_bridge(*this, settings)}, shared_{*dispatcher_, settings, *bridge_}, session_manager_{shared_, context} {
 }
 
 void Controller::dispatch() {
+  session_manager_.start();
   (*dispatcher_).start();
   std::chrono::nanoseconds next_yield_ = {};
   auto ok = true;
@@ -135,12 +136,8 @@ void Controller::operator()(Event<DownloadBegin> const &event) {
 
 void Controller::operator()(Event<DownloadEnd> const &event) {
   auto &[message_info, download_end] = event;
+  log::warn("message_info={}"sv, message_info);
   log::warn("download_end={}"sv, download_end);
-  auto max_order_id = download_end.max_order_id;
-  if (max_order_id_ < max_order_id) {
-    max_order_id_ = max_order_id;
-    log::info("max_order_id={}"sv, max_order_id_);
-  }
   //
   shared_.bridge(event);
 }
@@ -208,8 +205,24 @@ void Controller::operator()(Event<PositionUpdate> const &event) {
 // fix::bridge::Manager::Handler
 
 std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manager::Credentials const &credentials) {
-  auto iter = username_to_user_.find(credentials.username);
-  if (iter == std::end(username_to_user_)) {
+  fix::codec::Error error = {};
+  uint32_t strategy_id = {};
+  auto helper = [&](auto success, auto &account, auto user_id, auto &reason) {
+    if (!success) {
+      error = fix::codec::Error::VALIDATION;
+    }
+  };
+  shared_.session_logon(
+      {},  // XXX FIXME TODO session_id
+      credentials.component,
+      credentials.username,
+      credentials.password,
+      credentials.raw_data,
+      helper);
+  return {error, strategy_id};
+  /*
+  auto iter = shared_.username_to_user.find(credentials.username);
+  if (iter == std::end(shared_.username_to_user)) {
     log::error(R"(Unknown username "{}")"sv, credentials.username);
     return {fix::codec::Error::INVALID_USERNAME, {}};
   }
@@ -223,17 +236,27 @@ std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manag
     return {fix::codec::Error::INVALID_PASSWORD, {}};
   }
   return {{}, user.strategy_id};
+  */
 }
 
 void Controller::operator()(CreateOrder const &create_order, uint8_t source) {
+  log::warn("DEBUG create_order={}"sv, create_order);
+  log::warn("DEBUG source={}"sv, source);
+  //
   (*dispatcher_).send(create_order, source);
 }
 
 void Controller::operator()(ModifyOrder const &modify_order, uint8_t source) {
+  log::warn("DEBUG modify_order={}"sv, modify_order);
+  log::warn("DEBUG source={}"sv, source);
+  //
   (*dispatcher_).send(modify_order, source);
 }
 
 void Controller::operator()(CancelOrder const &cancel_order, uint8_t source) {
+  log::warn("DEBUG cancel_order={}"sv, cancel_order);
+  log::warn("DEBUG source={}"sv, source);
+  //
   (*dispatcher_).send(cancel_order, source);
 }
 
@@ -242,11 +265,11 @@ void Controller::operator()(CancelAllOrders const &cancel_all_orders) {
 }
 
 void Controller::operator()(roq::MassQuote const &, [[maybe_unused]] uint8_t source) {
-  // (*dispatcher_).send(mass_quote, source);
+  log::fatal("not implemented"sv);
 }
 
 void Controller::operator()(CancelQuotes const &, [[maybe_unused]] uint8_t source) {
-  // (*dispatcher_).send(cancel_quotes, source);
+  log::fatal("not implemented"sv);
 }
 
 void Controller::operator()(Trace<fix::bridge::Manager::Disconnect> const &event, uint64_t session_id) {

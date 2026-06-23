@@ -63,23 +63,10 @@ auto create_network_address(auto &settings) {
 // === IMPLEMENTATION ===
 
 SessionManager::SessionManager(Shared &shared, io::Context &context)
-    : timer_{context.create_timer(*this, 100ms)}, listener_{context.create_tcp_listener(*this, create_network_address(shared.settings))}, shared_{shared} {
+    : shared_{shared}, listener_{context.create_tcp_listener(*this, create_network_address(shared.settings))} {
 }
 
-void SessionManager::start() {
-  (*timer_).resume();
-}
-
-void SessionManager::stop() {
-}
-
-void SessionManager::run() {
-}
-
-// io::sys::Timer
-
-void SessionManager::operator()(io::sys::Timer::Event const &event) {
-  auto now = event.now;
+void SessionManager::refresh(std::chrono::nanoseconds now) {
   if (next_cleanup_ < now) {
     next_cleanup_ = now + CLEANUP_FREQUENCY;
     remove_zombies();
@@ -116,7 +103,7 @@ void SessionManager::operator()(Session::Disconnect const &disconnect) {
   zombies_.emplace(disconnect.session_id);
 }
 
-// tools
+// helpers
 
 void SessionManager::add_session(std::unique_ptr<Session> &&session) {
   auto session_id = (*session).get_session_id();

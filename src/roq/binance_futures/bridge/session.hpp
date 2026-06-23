@@ -201,7 +201,11 @@ struct Session final : public io::net::tcp::Connection::Handler {
   // shared
   Shared &shared_;
   // state
-  enum class State { WAITING_LOGON, READY, ZOMBIE } state_ = {};
+  enum class State {
+    WAITING_LOGON,
+    READY,
+    ZOMBIE,
+  } state_ = {};
   std::string account_;
   uint16_t user_id_ = {};
   bool waiting_for_heartbeat_ = false;
@@ -209,7 +213,6 @@ struct Session final : public io::net::tcp::Connection::Handler {
   // buffer
   std::vector<std::byte> decode_buffer_;
   std::vector<std::byte> decode_buffer_2_;
-  std::vector<std::byte> encode_buffer_;
   // state
   struct {
     uint64_t msg_seq_num = {};

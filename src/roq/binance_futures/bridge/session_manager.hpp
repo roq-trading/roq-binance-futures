@@ -10,8 +10,8 @@
 #include "roq/utils/container.hpp"
 
 #include "roq/io/context.hpp"
+
 #include "roq/io/net/tcp/listener.hpp"
-#include "roq/io/sys/timer.hpp"
 
 #include "roq/binance_futures/bridge/session.hpp"
 #include "roq/binance_futures/bridge/shared.hpp"
@@ -20,16 +20,15 @@ namespace roq {
 namespace binance_futures {
 namespace bridge {
 
-struct SessionManager final : public io::sys::Timer::Handler, public io::net::tcp::Listener::Handler, public Session::Handler {
+struct SessionManager final : public io::net::tcp::Listener::Handler, public Session::Handler {
   explicit SessionManager(Shared &, io::Context &context);
 
   SessionManager(SessionManager &&) = delete;
   SessionManager(SessionManager const &) = delete;
 
-  void start();
-  void stop();
+  void refresh(std::chrono::nanoseconds now);
 
-  // tools
+  // helpers
 
   template <typename Callback>
   bool get_session(uint64_t session_id, Callback callback) const {
@@ -49,12 +48,6 @@ struct SessionManager final : public io::sys::Timer::Handler, public io::net::tc
   }
 
  protected:
-  void run();
-
-  // io::sys::Timer
-
-  void operator()(io::sys::Timer::Event const &) override;
-
   // io::net::tcp::Listener::Handler
 
   void operator()(io::net::tcp::Connection::Factory &) override;
@@ -66,7 +59,7 @@ struct SessionManager final : public io::sys::Timer::Handler, public io::net::tc
 
   void operator()(Session::Disconnect const &) override;
 
-  // tools
+  // helpers
 
   void add_session(std::unique_ptr<Session> &&);
   void remove_session(uint64_t session_id);
@@ -74,12 +67,8 @@ struct SessionManager final : public io::sys::Timer::Handler, public io::net::tc
   void remove_zombies();
 
  private:
-  // io
-  std::unique_ptr<io::sys::Timer> const timer_;
-  std::unique_ptr<io::net::tcp::Listener> const listener_;
-  // shared
   Shared &shared_;
-  // sessions
+  std::unique_ptr<io::net::tcp::Listener> const listener_;
   uint64_t next_session_id_ = {};
   utils::unordered_map<uint64_t, std::unique_ptr<Session>> sessions_;
   std::chrono::nanoseconds next_cleanup_ = {};

@@ -42,19 +42,25 @@ struct Controller final : public io::sys::Signal::Handler, public client::Handle
 
   void operator()(Event<DownloadBegin> const &) override;
   void operator()(Event<DownloadEnd> const &) override;
+
   void operator()(Event<Ready> const &) override;
+
   void operator()(Event<GatewaySettings> const &) override;
   void operator()(Event<StreamStatus> const &) override;
   void operator()(Event<GatewayStatus> const &) override;
+
   void operator()(Event<ReferenceData> const &) override;
   void operator()(Event<MarketStatus> const &) override;
   void operator()(Event<TopOfBook> const &) override;
   void operator()(Event<MarketByPriceUpdate> const &) override;
   void operator()(Event<TradeSummary> const &) override;
   void operator()(Event<StatisticsUpdate> const &) override;
+
   void operator()(Event<OrderAck> const &) override;
   void operator()(Event<OrderUpdate> const &) override;
+
   void operator()(Event<TradeUpdate> const &) override;
+
   void operator()(Event<FundsUpdate> const &) override;
   void operator()(Event<PositionUpdate> const &) override;
 
@@ -113,7 +119,6 @@ struct Controller final : public io::sys::Signal::Handler, public client::Handle
   Shared shared_;
   SessionManager session_manager_;
   std::chrono::nanoseconds next_update_ = {};
-  uint64_t max_order_id_ = {};
 };
 
 }  // namespace bridge

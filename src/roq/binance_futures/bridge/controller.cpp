@@ -98,7 +98,6 @@ Controller::Controller(Settings const &settings, Config const &config, io::Conte
 }
 
 void Controller::dispatch() {
-  session_manager_.start();
   (*dispatcher_).start();
   std::chrono::nanoseconds next_yield_ = {};
   auto ok = true;
@@ -116,9 +115,7 @@ void Controller::dispatch() {
 }
 
 void Controller::refresh(std::chrono::nanoseconds now) {
-  if (now < next_update_) {
-    return;
-  }
+  session_manager_.refresh(now);
 }
 
 // io::sys::Signal::Handler
@@ -135,10 +132,6 @@ void Controller::operator()(Event<DownloadBegin> const &event) {
 }
 
 void Controller::operator()(Event<DownloadEnd> const &event) {
-  auto &[message_info, download_end] = event;
-  log::warn("message_info={}"sv, message_info);
-  log::warn("download_end={}"sv, download_end);
-  //
   shared_.bridge(event);
 }
 
@@ -240,23 +233,14 @@ std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manag
 }
 
 void Controller::operator()(CreateOrder const &create_order, uint8_t source) {
-  log::warn("DEBUG create_order={}"sv, create_order);
-  log::warn("DEBUG source={}"sv, source);
-  //
   (*dispatcher_).send(create_order, source);
 }
 
 void Controller::operator()(ModifyOrder const &modify_order, uint8_t source) {
-  log::warn("DEBUG modify_order={}"sv, modify_order);
-  log::warn("DEBUG source={}"sv, source);
-  //
   (*dispatcher_).send(modify_order, source);
 }
 
 void Controller::operator()(CancelOrder const &cancel_order, uint8_t source) {
-  log::warn("DEBUG cancel_order={}"sv, cancel_order);
-  log::warn("DEBUG source={}"sv, source);
-  //
   (*dispatcher_).send(cancel_order, source);
 }
 
@@ -377,7 +361,7 @@ void Controller::operator()(Trace<fix::codec::ExecutionReport> const &event) {
   session_manager_.get_all_sessions([&](auto &session) { session(event); });
 }
 
-// tools
+// helpers
 
 template <typename T>
 void Controller::dispatch(Trace<T> const &event, uint64_t session_id) {

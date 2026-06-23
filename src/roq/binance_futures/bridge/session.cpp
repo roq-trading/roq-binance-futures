@@ -59,14 +59,23 @@ auto get_text(fix::codec::Error error) -> std::string_view {
 auto get_strategy_id_helper(auto &value) {
   return utils::charconv::from_chars<uint32_t>(value);
 }
+
+template <typename T>
+constexpr bool is_logout() {
+  return false;
+}
+
+template <>
+constexpr bool is_logout<fix::codec::Logout>() {
+  return true;
+}
 }  // namespace
 
 // === IMPLEMENTATION ===
 
 Session::Session(Handler &handler, uint64_t session_id, io::net::tcp::Connection::Factory &factory, Shared &shared)
     : handler_{handler}, session_id_{session_id}, name_{create_name(session_id)}, prefix_{create_prefix(session_id)}, connection_{factory.create(*this)},
-      shared_{shared}, decode_buffer_(shared.settings.fix.fix_decode_buffer_size), decode_buffer_2_(shared.settings.fix.fix_decode_buffer_size),
-      encode_buffer_(shared.settings.fix.fix_encode_buffer_size) {
+      shared_{shared}, decode_buffer_(shared.settings.fix.fix_decode_buffer_size), decode_buffer_2_(shared.settings.fix.fix_decode_buffer_size) {
 }
 
 void Session::logout(fix::codec::Error error) {
@@ -562,17 +571,6 @@ void Session::operator()(Trace<fix::codec::MassQuoteAck> const &event) {
 void Session::operator()(Trace<fix::codec::QuoteStatusReport> const &event) {
   send<2>(event.value);
 }
-
-namespace {
-template <typename T>
-constexpr bool is_logout() {
-  return false;
-}
-template <>
-constexpr bool is_logout<fix::codec::Logout>() {
-  return true;
-}
-}  // namespace
 
 template <std::size_t level, typename T>
 void Session::send_and_close(T const &value) {

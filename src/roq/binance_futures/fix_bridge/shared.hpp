@@ -35,10 +35,10 @@ struct Shared final {
       std::string_view const &password,
       std::string_view const &raw_data,
       Callback callback) {
-    auto [user, reason] = session_logon_helper(session_id, component, username, password, raw_data);
+    auto [user, error, reason] = session_logon_helper(session_id, component, username, password, raw_data);
     auto success = std::empty(reason);
     auto user_id = user ? (*user).user_id : 0;
-    callback(success, user_id, reason);
+    callback(success, user_id, error, reason);
   }
 
   void session_logout(uint64_t session_id);
@@ -79,7 +79,7 @@ struct Shared final {
   } latency;
 
  protected:
-  std::tuple<User const *, std::string> session_logon_helper(
+  std::tuple<User const *, fix::codec::Error, std::string> session_logon_helper(
       uint64_t session_id,
       std::string_view const &component,
       std::string_view const &username,

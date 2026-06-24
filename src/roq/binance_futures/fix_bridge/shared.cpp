@@ -105,7 +105,7 @@ Shared::Shared(server::Strategy &dispatcher, Settings const &settings, Config co
 
 // session
 
-std::tuple<User const *, std::string> Shared::session_logon_helper(
+std::tuple<User const *, fix::codec::Error, std::string> Shared::session_logon_helper(
     uint64_t session_id,
     std::string_view const &component,
     std::string_view const &username,
@@ -114,17 +114,16 @@ std::tuple<User const *, std::string> Shared::session_logon_helper(
   log::info(R"(Session: ADD session_id={} (component="{}", username="{}"))"sv, session_id, component, username);
   auto iter = users_.find(username);
   if (iter == std::end(users_)) {
-    return {{}, fmt::format(R"(Unknown username="{}")"sv, username)};
+    return {nullptr, fix::codec::Error::INVALID_USERNAME, fmt::format(R"(Unknown username="{}")"sv, username)};
   }
   auto &user = (*iter).second;
   if (!std::empty(user.component) && component != user.component) {
-    return {{}, "Invalid component"s};
+    return {nullptr, fix::codec::Error::INVALID_COMPONENT, "Invalid component"s};
   }
   if (!crypto.validate(password, user.password, raw_data)) {
-    return {{}, "Invalid password"s};
+    return {nullptr, fix::codec::Error::INVALID_PASSWORD, "Invalid password"s};
   }
-  // return {user.account, &user, {}};
-  return {&user, ""s};
+  return {&user, {}, ""s};
 }
 
 void Shared::session_logout(uint64_t session_id) {

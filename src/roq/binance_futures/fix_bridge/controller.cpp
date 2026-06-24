@@ -21,10 +21,9 @@ namespace fix_bridge {
 // === CONSTANTS ===
 
 namespace {
-auto const YIELD_FREQUENCY = 100ms;
-size_t const DISPATCH_THIS_MANY_BEFORE_CHECKING_CLOCK = 1000;
-// XXX FIXME
-auto const USER = "trader"sv;
+auto const YIELD_FREQUENCY = 100ms;                            // XXX FIXME TODO use flags
+size_t const DISPATCH_THIS_MANY_BEFORE_CHECKING_CLOCK = 1000;  // XXX FIXME TODO use flags
+auto const USER = "trader"sv;                                  // XXX FIXME TODO use flags
 }  // namespace
 
 // === HELPERS ===
@@ -184,7 +183,7 @@ void Controller::operator()(Event<PositionUpdate> const &event) {
 std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manager::Credentials const &credentials) {
   fix::codec::Error error = {};
   uint32_t strategy_id = {};
-  auto helper = [&](auto success, [[maybe_unused]] auto user_id, [[maybe_unused]] auto &reason) {
+  auto helper = [&](auto success, [[maybe_unused]] auto user_id, [[maybe_unused]] auto error, [[maybe_unused]] auto &reason) {
     if (!success) {
       error = fix::codec::Error::VALIDATION;
     }

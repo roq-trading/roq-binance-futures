@@ -7,7 +7,6 @@ set(SOURCES
     application.cpp
     config.cpp
     controller.cpp
-    fix_log.cpp
     session.cpp
     session_manager.cpp
     shared.cpp

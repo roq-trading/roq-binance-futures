@@ -1,6 +1,6 @@
 set(TARGET_NAME ${PROJECT_NAME}-bridge-tools)
 
-set(SOURCES crypto.cpp mapping.cpp)
+set(SOURCES crypto.cpp fix_log.cpp mapping.cpp)
 
 add_library(${TARGET_NAME} OBJECT ${SOURCES})
 

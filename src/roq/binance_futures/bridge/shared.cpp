@@ -28,29 +28,44 @@ auto create_external_latency(auto &settings, auto const &function) {
 }
 
 template <typename R>
-auto create_username_to_user() {
+auto create_users(auto &config) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
-  // XXX FIXME TODO parse from config
-  auto username = "trader"s;
-  auto user = User{
-      .user_id = 1,
-      .component = "fix-client"s,
-      .username = username,
-      .password = "secret"s,
-      .strategy_id = {},
-      .account = "A1"s,
-      .accounts_regex = {},
-      .symbols_regex = {},
+  struct Extractor final : public server::config::Handler {
+    static result_type parse(server::config::Dispatcher const &dispatcher) {
+      Extractor obj;
+      dispatcher.dispatch(obj);
+      return obj.result_;
+    }
+
+   protected:
+    void operator()([[maybe_unused]] std::string_view const &exchange) override {}
+    void operator()(server::config::Symbols const &) override {}
+    void operator()(server::config::Account const &) override {}
+    void operator()(server::config::User const &user) override {
+      std::string username{user.name};
+      auto user_2 = User{
+          .user_id = user.id,
+          .component = {},
+          .username = username,
+          .password = user.password,
+      };
+      log::warn("DEBUG user={}"sv, user_2);
+      result_.emplace(username, std::move(user_2));
+    }
+    void operator()(server::config::RateLimit const &) override {}
+    void operator()(GatewaySettings const &) override {}
+
+   private:
+    result_type result_;
   };
-  result.emplace(username, std::move(user));
-  return result;
+  return Extractor::parse(config);
 }
 }  // namespace
 
 // === IMPLEMENTATION ===
 
-Shared::Shared(server::Strategy &dispatcher, Settings const &settings, fix::bridge::Manager &bridge)
+Shared::Shared(server::Strategy &dispatcher, Settings const &settings, Config const &config, fix::bridge::Manager &bridge)
     : dispatcher{dispatcher}, settings{settings}, bridge{bridge}, crypto{settings.fix.fix_auth_method, settings.fix.fix_auth_timestamp_tolerance},
       fix_log{settings},
       profile{
@@ -85,88 +100,35 @@ Shared::Shared(server::Strategy &dispatcher, Settings const &settings, fix::brid
           .round_trip_broker = create_external_latency(settings, "broker"sv),
           .round_trip_exchange = create_external_latency(settings, "exchange"sv),
       },
-      username_to_user_{create_username_to_user<decltype(username_to_user_)>()} {
+      users_{create_users<decltype(users_)>(config)} {
 }
 
 // session
 
-std::tuple<std::string_view, User const *, std::string> Shared::session_logon_helper(
+std::tuple<User const *, std::string> Shared::session_logon_helper(
     uint64_t session_id,
     std::string_view const &component,
     std::string_view const &username,
     std::string_view const &password,
     std::string_view const &raw_data) {
   log::info(R"(Session: ADD session_id={} (component="{}", username="{}"))"sv, session_id, component, username);
-  auto iter = username_to_user_.find(username);
-  if (iter == std::end(username_to_user_)) {
-    return {{}, {}, fmt::format(R"(Unknown username="{}")"sv, username)};
+  auto iter = users_.find(username);
+  if (iter == std::end(users_)) {
+    return {{}, fmt::format(R"(Unknown username="{}")"sv, username)};
   }
   auto &user = (*iter).second;
-  if (std::empty(user.account)) {
-    return {};
-  }
-  /*
-  if (settings.test.block_client_on_not_ready) {
-    auto ready = true;
-    for (auto &item : oms_status_) {
-      auto iter = item.find(user.account);
-      if (iter != item.end() && (*iter).second == ConnectionStatus::READY) {
-      } else {
-        ready = false;
-      }
-    }
-    if (!ready) {
-      return {{}, {}, fmt::format(R"(Not ready: account="{}")"sv, user.account)};
-    }
-  }
-  */
-  if (component != user.component) {
-    return {{}, {}, "Invalid component"s};
+  if (!std::empty(user.component) && component != user.component) {
+    return {{}, "Invalid component"s};
   }
   if (!crypto.validate(password, user.password, raw_data)) {
-    return {{}, {}, "Invalid password"s};
+    return {{}, "Invalid password"s};
   }
-  return {user.account, &user, {}};
+  // return {user.account, &user, {}};
+  return {&user, ""s};
 }
 
 void Shared::session_logout(uint64_t session_id) {
   log::info("Session: REMOVE session_id={}"sv, session_id);
-}
-
-// routing v2
-
-bool Shared::add_route(uint64_t session_id, uint32_t strategy_id) {
-  auto iter = strategy_id_to_session_id_.find(strategy_id);
-  if (iter == std::end(strategy_id_to_session_id_)) {
-    strategy_id_to_session_id_.try_emplace(strategy_id, session_id);
-    session_id_to_strategy_id_[session_id].emplace(strategy_id);
-    log::info(R"(DEBUG: ROUTE ADD strategy_id={} <==> session_id={})"sv, strategy_id, session_id);
-    return true;
-  }
-  return false;
-}
-
-bool Shared::remove_route(uint64_t session_id, uint32_t strategy_id) {
-  auto iter = strategy_id_to_session_id_.find(strategy_id);
-  if (iter == std::end(strategy_id_to_session_id_) || (*iter).second != session_id) {
-    return false;
-  }
-  log::info(R"(DEBUG ROUTE REMOVE strategy_id={} <==> session_id={})"sv, strategy_id, session_id);
-  session_id_to_strategy_id_[session_id].erase(strategy_id);
-  strategy_id_to_session_id_.erase(iter);
-  return true;
-}
-
-void Shared::remove_all_routes(uint64_t session_id) {
-  auto iter = session_id_to_strategy_id_.find(session_id);
-  if (iter == std::end(session_id_to_strategy_id_)) {
-    return;
-  }
-  for (auto strategy_id : (*iter).second) {
-    log::info(R"(DEBUG: ROUTE REMOVE strategy_id={} <==> session_id={})"sv, strategy_id, session_id);
-    strategy_id_to_session_id_.erase(strategy_id);
-  }
-  session_id_to_strategy_id_.erase(iter);
 }
 
 // metrics

@@ -2,8 +2,6 @@
 
 #include "roq/binance_futures/bridge/controller.hpp"
 
-#include <cassert>
-
 #include "roq/logging.hpp"
 
 #include "roq/clock.hpp"
@@ -94,7 +92,7 @@ auto create_bridge(auto &handler, auto &settings) {
 Controller::Controller(Settings const &settings, Config const &config, io::Context &context)
     : settings_{settings}, terminate_{context.create_signal(*this, io::sys::Signal::Type::TERMINATE)},
       interrupt_{context.create_signal(*this, io::sys::Signal::Type::INTERRUPT)}, dispatcher_{create_dispatcher(*this, settings, config, context)},
-      bridge_{create_bridge(*this, settings)}, shared_{*dispatcher_, settings, *bridge_}, session_manager_{shared_, context} {
+      bridge_{create_bridge(*this, settings)}, shared_{*dispatcher_, settings, config, *bridge_}, session_manager_{shared_, context} {
 }
 
 void Controller::dispatch() {
@@ -200,7 +198,7 @@ void Controller::operator()(Event<PositionUpdate> const &event) {
 std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manager::Credentials const &credentials) {
   fix::codec::Error error = {};
   uint32_t strategy_id = {};
-  auto helper = [&](auto success, auto &account, auto user_id, auto &reason) {
+  auto helper = [&](auto success, [[maybe_unused]] auto user_id, [[maybe_unused]] auto &reason) {
     if (!success) {
       error = fix::codec::Error::VALIDATION;
     }

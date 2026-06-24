@@ -2,24 +2,14 @@
 
 #include "roq/binance_futures/bridge/session_manager.hpp"
 
-#include <algorithm>
-#include <memory>
-#include <utility>
-
 #include <cassert>
-#include <chrono>
 #include <filesystem>
-#include <string>
 
 #include "roq/logging.hpp"
-
-#include "roq/clock.hpp"
 
 #include "roq/utils/charconv/from_chars.hpp"
 
 #include "roq/io/network_address.hpp"
-
-#include "roq/io/engine/context_factory.hpp"
 
 using namespace std::literals;
 using namespace std::chrono_literals;
@@ -37,10 +27,6 @@ auto const CLEANUP_FREQUENCY = 1s;
 // === HELPERS ===
 
 namespace {
-auto create_context() {
-  return io::engine::ContextFactory::create();
-}
-
 auto create_network_address(auto &settings) {
   auto address = settings.client.listen_address;
   uint16_t port = {};

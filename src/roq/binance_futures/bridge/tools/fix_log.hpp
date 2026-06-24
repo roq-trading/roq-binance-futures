@@ -15,6 +15,7 @@
 namespace roq {
 namespace binance_futures {
 namespace bridge {
+namespace tools {
 
 struct FIXLog final {
   explicit FIXLog(Settings const &);
@@ -53,6 +54,7 @@ struct FIXLog final {
   FILE *file_ = nullptr;
 };
 
+}  // namespace tools
 }  // namespace bridge
 }  // namespace binance_futures
 }  // namespace roq

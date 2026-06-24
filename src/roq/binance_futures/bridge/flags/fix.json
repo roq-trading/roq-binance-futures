@@ -11,7 +11,7 @@
     {
       "name": "fix_comp_id",
       "type": "std/string",
-      "default": "roq-fix-bridge",
+      "default": "binance-futures",
       "description": "Component identifier"
     },
     {

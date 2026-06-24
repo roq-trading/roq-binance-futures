@@ -8,18 +8,19 @@
 
 #include "roq/server.hpp"
 
-#include "roq/binance_futures/bridge/fix_log.hpp"
+#include "roq/binance_futures/bridge/config.hpp"
 #include "roq/binance_futures/bridge/settings.hpp"
 #include "roq/binance_futures/bridge/user.hpp"
 
 #include "roq/binance_futures/bridge/tools/crypto.hpp"
+#include "roq/binance_futures/bridge/tools/fix_log.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace bridge {
 
 struct Shared final {
-  Shared(server::Strategy &, Settings const &, fix::bridge::Manager &);
+  Shared(server::Strategy &, Settings const &, Config const &, fix::bridge::Manager &);
 
   Shared(Shared &&) = delete;
   Shared(Shared const &) = delete;
@@ -34,19 +35,13 @@ struct Shared final {
       std::string_view const &password,
       std::string_view const &raw_data,
       Callback callback) {
-    auto [account, user, reason] = session_logon_helper(session_id, component, username, password, raw_data);
+    auto [user, reason] = session_logon_helper(session_id, component, username, password, raw_data);
     auto success = std::empty(reason);
     auto user_id = user ? (*user).user_id : 0;
-    callback(success, account, user_id, reason);
+    callback(success, user_id, reason);
   }
 
   void session_logout(uint64_t session_id);
-
-  // routing v2
-
-  bool add_route(uint64_t session_id, uint32_t strategy_id);
-  bool remove_route(uint64_t session_id, uint32_t strategy_id);
-  void remove_all_routes(uint64_t session_id);
 
   // metrics
 
@@ -62,7 +57,7 @@ struct Shared final {
 
   tools::Crypto crypto;
 
-  FIXLog fix_log;
+  tools::FIXLog fix_log;
 
   struct {
     utils::metrics::Profile parse,                                                  //
@@ -84,7 +79,7 @@ struct Shared final {
   } latency;
 
  protected:
-  std::tuple<std::string_view, User const *, std::string> session_logon_helper(
+  std::tuple<User const *, std::string> session_logon_helper(
       uint64_t session_id,
       std::string_view const &component,
       std::string_view const &username,
@@ -92,14 +87,7 @@ struct Shared final {
       std::string_view const &raw_data);
 
  private:
-  // sessions
-  // - config
-  utils::unordered_map<std::string, User> const username_to_user_;
-  // ...
-  std::vector<Mask<Filter>> oms_cancel_all_orders_;
-  // route v2
-  utils::unordered_map<uint32_t, uint64_t> strategy_id_to_session_id_;
-  utils::unordered_map<uint64_t, utils::unordered_set<uint32_t>> session_id_to_strategy_id_;
+  utils::unordered_map<std::string, User> const users_;
 };
 
 }  // namespace bridge

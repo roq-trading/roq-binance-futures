@@ -3,10 +3,9 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <fmt/ranges.h>
 
+#include <cstdint>
 #include <string>
-#include <vector>
 
 namespace roq {
 namespace binance_futures {
@@ -17,10 +16,6 @@ struct User final {
   std::string component;
   std::string username;
   std::string password;
-  uint32_t strategy_id = {};
-  std::string account;
-  std::vector<std::string> accounts_regex;
-  std::vector<std::string> symbols_regex;
 };
 
 }  // namespace bridge
@@ -40,17 +35,10 @@ struct fmt::formatter<roq::binance_futures::bridge::User> {
         R"(user_id={}, )"
         R"(component="{}", )"
         R"(username="{}", )"
-        R"(password=***, )"
-        R"(strategy_id={}, )"
-        R"(account="{}", )"
-        R"(symbols_regex=[{}])"
+        R"(password=***)"
         R"(}})"sv,
         value.user_id,
         value.component,
-        value.username,
-        value.strategy_id,
-        value.account,
-        fmt::join(value.accounts_regex, ", "sv),
-        fmt::join(value.symbols_regex, ", "sv));
+        value.username);
   }
 };

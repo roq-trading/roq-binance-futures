@@ -1,10 +1,11 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/binance_futures/bridge/fix_log.hpp"
+#include "roq/binance_futures/bridge/tools/fix_log.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace bridge {
+namespace tools {
 
 // === CONSTANTS ===
 
@@ -51,6 +52,7 @@ FIXLog::~FIXLog() {
   }
 }
 
+}  // namespace tools
 }  // namespace bridge
 }  // namespace binance_futures
 }  // namespace roq

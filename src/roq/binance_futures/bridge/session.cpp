@@ -6,8 +6,6 @@
 
 #include "roq/utils/update.hpp"
 
-#include "roq/utils/charconv/from_chars.hpp"
-
 #include "roq/utils/exceptions/unhandled.hpp"
 
 #include "roq/fix/reader.hpp"
@@ -54,10 +52,6 @@ auto get_text(fix::codec::Error error) -> std::string_view {
       break;
   }
   return magic_enum::enum_name(error);
-}
-
-auto get_strategy_id_helper(auto &value) {
-  return utils::charconv::from_chars<uint32_t>(value);
 }
 
 template <typename T>
@@ -376,60 +370,8 @@ void Session::operator()(Trace<fix::codec::MarketDataRequest> const &event, fix:
   dispatch(event, header);
 }
 
-// XXX HANS this is *NOT* migrated to roq-fix
-void Session::operator()(Trace<fix::codec::UserRequest> const &event, fix::Header const &header) {
-  dispatch(event, header);
-  //
-  auto &[trace_info, user_request] = event;
-  log::debug("user_request={}"sv, user_request);
-  log::info<1>("{} user_request={}"sv, prefix_, user_request);
-  if (!shared_.settings.oms.oms_route_by_strategy) {
-    // FIXME reject
-  }
-  auto strategy_id = get_strategy_id_helper(user_request.username);
-  if (strategy_id == 0) {
-    // FIXME reject
-  }
-  switch (user_request.user_request_type) {
-    using enum fix::UserRequestType;
-    case UNDEFINED:
-    case UNKNOWN:
-    case LOG_ON_USER: {
-      // XXX TODO validation
-      auto success = shared_.add_route(session_id_, strategy_id);
-      auto user_response = fix::codec::UserResponse{
-          .user_request_id = user_request.user_request_id,
-          .username = user_request.username,
-          .user_status = success ? fix::UserStatus::LOGGED_IN : fix::UserStatus::OTHER,
-          .user_status_text = {},
-      };
-      send<2>(user_response);
-      return;  // note
-    }
-    case LOG_OFF_USER: {
-      // XXX TODO validation
-      auto success = shared_.remove_route(session_id_, strategy_id);
-      auto user_response = fix::codec::UserResponse{
-          .user_request_id = user_request.user_request_id,
-          .username = user_request.username,
-          .user_status = success ? fix::UserStatus::NOT_LOGGED_IN : fix::UserStatus::OTHER,
-          .user_status_text = {},
-      };
-      send<2>(user_response);
-      return;  // note
-    }
-    case CHANGE_PASSWORD_FOR_USER:
-    case REQUEST_INDIVIDUAL_USER_STATUS:
-      break;
-  }
-  auto const error = fix::codec::Error::UNSUPPORTED_USER_REQUEST_TYPE;
-  auto user_response = fix::codec::UserResponse{
-      .user_request_id = user_request.user_request_id,
-      .username = user_request.username,
-      .user_status = fix::UserStatus::OTHER,
-      .user_status_text = get_text(error),
-  };
-  send<2>(user_response);
+void Session::operator()(Trace<fix::codec::UserRequest> const &, fix::Header const &) {
+  close();  // note!
 }
 
 void Session::operator()(Trace<fix::codec::OrderStatusRequest> const &event, fix::Header const &header) {
@@ -656,7 +598,6 @@ void Session::make_zombie() {
     if (shared_.settings.oms.cancel_on_disconnect) {
       cancel_all_orders();
     }
-    shared_.remove_all_routes(session_id_);
   }
   if (utils::update(state_, State::ZOMBIE)) {
     auto disconnect = Disconnect{

@@ -51,6 +51,11 @@
       "raw": "A",
       "name": "best_ask_qty",
       "type": "std/double"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

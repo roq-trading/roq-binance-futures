@@ -53,6 +53,11 @@
       "name": "asks",
       "type": "roq/binance_futures/protocol/json/DepthUpdateBidsAsksItem",
       "array": "std/span"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

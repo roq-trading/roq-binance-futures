@@ -51,6 +51,11 @@
       "raw": "q",
       "name": "total_traded_quote_asset_volume",
       "type": "std/double"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

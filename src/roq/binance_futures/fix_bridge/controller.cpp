@@ -23,6 +23,7 @@ namespace fix_bridge {
 namespace {
 auto const YIELD_FREQUENCY = 100ms;                            // XXX FIXME TODO use flags
 size_t const DISPATCH_THIS_MANY_BEFORE_CHECKING_CLOCK = 1000;  // XXX FIXME TODO use flags
+auto const BRIDGE = "fix"sv;                                   // XXX FIXME TODO use flags
 auto const USER = "trader"sv;                                  // XXX FIXME TODO use flags
 }  // namespace
 
@@ -33,7 +34,7 @@ auto create_dispatcher(auto &handler, auto &settings, auto &config, auto &contex
   auto helper = [](auto &dispatcher, auto &settings, auto &config, auto &context) {
     return gateway::Controller::create(dispatcher, settings, config, context);
   };
-  return std::make_unique<server::Strategy>(handler, settings, config, context, USER, helper);
+  return std::make_unique<server::Strategy>(handler, settings, config, context, BRIDGE, USER, helper);
 }
 
 auto create_bridge(auto &handler, auto &settings) {

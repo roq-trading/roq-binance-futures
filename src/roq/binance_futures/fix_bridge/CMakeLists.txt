@@ -1,6 +1,5 @@
 set(TARGET_NAME ${PROJECT_NAME}-fix-bridge)
 
-add_subdirectory(flags)
 add_subdirectory(tools)
 
 set(SOURCES
@@ -9,6 +8,7 @@ set(SOURCES
     controller.cpp
     session.cpp
     session_manager.cpp
+    settings.cpp
     shared.cpp
     main.cpp)
 
@@ -20,8 +20,7 @@ add_executable(${TARGET_NAME} ${SOURCES})
 
 target_link_libraries(
   ${TARGET_NAME}
-  PRIVATE ${PROJECT_NAME}-fix_bridge-flags
-          ${PROJECT_NAME}-fix_bridge-tools
+  PRIVATE ${PROJECT_NAME}-fix_bridge-tools
           ${PROJECT_NAME}-flags
           ${PROJECT_NAME}-gateway
           roq-api::roq-api
@@ -31,6 +30,7 @@ target_link_libraries(
           roq-logging::roq-logging
           roq-logging::roq-logging-flags
           roq-server::roq-server
+          roq-server::roq-server-fix-bridge-flags
           fmt::fmt)
 
 if(ROQ_BUILD_TYPE STREQUAL "Release")

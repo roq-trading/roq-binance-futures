@@ -12,13 +12,13 @@ CONFIG="${CONFIG:-$NAME}"
 
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
-FLAGFILE="../../../share/flags/prod/flags-fapi.cfg"
+FLAGFILE="../../../../share/flags/prod/flags-fapi.cfg"
 
 WS_API=true
 
 DOWNLOAD_SYMBOLS="BTCUSDT"
 
-$PREFIX ./roq-binance-futures \
+$PREFIX ./roq-binance-futures-fix-bridge \
   --name "$NAME" \
   --config_file "$CONFIG_FILE" \
   --flagfile "$FLAGFILE" \

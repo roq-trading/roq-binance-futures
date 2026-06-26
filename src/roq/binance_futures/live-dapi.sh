@@ -12,11 +12,11 @@ CONFIG="${CONFIG:-$NAME}"
 
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
-DOWNLOAD_SYMBOLS="BTCUSD_PERP"
+FLAGFILE="../../../share/flags/prod/flags-dapi.cfg"
 
 WS_API=true
 
-FLAGFILE="../../../share/flags/prod/flags-dapi.cfg"
+DOWNLOAD_SYMBOLS="BTCUSD_PERP"
 
 $PREFIX ./roq-binance-futures \
   --name "$NAME" \

@@ -12,17 +12,18 @@ CONFIG="${CONFIG:-$NAME}"
 
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
-DOWNLOAD_SYMBOLS="BTCUSD_PERP"
+FLAGFILE="../../../../share/flags/prod/flags-dapi.cfg"
 
 WS_API=true
 
-FLAGFILE="../../../../share/flags/prod/flags-dapi.cfg"
+DOWNLOAD_SYMBOLS="BTCUSD_PERP"
 
 $PREFIX ./roq-binance-futures-fix-bridge \
   --name "$NAME" \
   --config_file "$CONFIG_FILE" \
   --flagfile "$FLAGFILE" \
   --cache_dir "$HOME/var/lib/roq/cache" \
+  --event_log_dir "$HOME/var/lib/roq/data" \
   --client_listen_address "$HOME/run/$NAME.sock" \
   --service_listen_address "$HOME/run/metrics/${NAME}.sock" \
   --ws_api=$WS_API \

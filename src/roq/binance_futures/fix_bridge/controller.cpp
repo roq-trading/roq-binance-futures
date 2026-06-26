@@ -197,23 +197,6 @@ std::pair<fix::codec::Error, uint32_t> Controller::operator()(fix::bridge::Manag
       credentials.raw_data,
       helper);
   return {error, strategy_id};
-  /*
-  auto iter = shared_.username_to_user.find(credentials.username);
-  if (iter == std::end(shared_.username_to_user)) {
-    log::error(R"(Unknown username "{}")"sv, credentials.username);
-    return {fix::codec::Error::INVALID_USERNAME, {}};
-  }
-  auto &user = (*iter).second;
-  if (credentials.component != user.component) {
-    log::error(R"(Unexpected component "{}", expected "{}")"sv, credentials.component, user.component);
-    return {fix::codec::Error::INVALID_COMPONENT, {}};
-  }
-  if (!shared_.crypto.validate(credentials.password, user.password, credentials.raw_data)) {
-    log::error("Unexpected password");
-    return {fix::codec::Error::INVALID_PASSWORD, {}};
-  }
-  return {{}, user.strategy_id};
-  */
 }
 
 void Controller::operator()(CreateOrder const &create_order, uint8_t source) {

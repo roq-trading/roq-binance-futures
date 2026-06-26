@@ -47,6 +47,8 @@ constexpr Helper<binance_futures::protocol::json::ContractStatus>::operator std:
       return roq::TradingStatus::PRE_OPEN;   // XXX REVIEW
     case DELIVERING:
       return roq::TradingStatus::UNDEFINED;
+    case PRE_DELIVERING:
+      return roq::TradingStatus::UNDEFINED;
   }
   return {};
 }
@@ -330,6 +332,8 @@ constexpr Helper<binance_futures::protocol::json::SymbolStatus>::operator std::o
       return roq::TradingStatus::HALT;
     case TRADING_CANCEL_ONLY:
       return roq::TradingStatus::HALT;
+    case PRE_DELIVERING:
+      return roq::TradingStatus::UNDEFINED;
   }
   return {};
 }

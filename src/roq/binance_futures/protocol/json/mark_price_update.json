@@ -46,6 +46,11 @@
       "raw": "T",
       "name": "next_funding_time",
       "type": "std/milliseconds"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

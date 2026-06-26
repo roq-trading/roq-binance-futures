@@ -40,6 +40,9 @@
     },
     {
       "name": "TRADING_CANCEL_ONLY"
+    },
+    {
+      "name": "PRE_DELIVERING"
     }
   ]
 }

@@ -19,6 +19,12 @@
     },
     {
       "name": "INSURANCE_CLEAR"
+    },
+    {
+      "name": "COIN_SWAP_DEPOSIT"
+    },
+    {
+      "name": "COIN_SWAP_WITHDRAW"
     }
   ]
 }

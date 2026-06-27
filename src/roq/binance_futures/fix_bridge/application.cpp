@@ -4,8 +4,11 @@
 
 #include "roq/logging.hpp"
 
+#include "roq/server/fix_bridge/controller.hpp"
+
+#include "roq/binance_futures/gateway/controller.hpp"
+
 #include "roq/binance_futures/fix_bridge/config.hpp"
-#include "roq/binance_futures/fix_bridge/controller.hpp"
 #include "roq/binance_futures/fix_bridge/settings.hpp"
 
 using namespace std::literals;
@@ -21,7 +24,15 @@ int Application::main(args::Parser const &args) {
   Config config{settings};
   log::warn("config={}"sv, config);
   auto context = server::create_io_context(settings);
-  Controller{settings, config, *context}.dispatch();
+  //
+  auto helper = [&](client::Handler &handler) {
+    auto helper_2 = [](auto &dispatcher, auto &settings, auto &config, auto &context) {
+      return gateway::Controller::create(dispatcher, settings, config, context);
+    };
+    return std::make_unique<server::Strategy>(handler, settings, config, *context, "fix"sv, "trader"sv, helper_2);
+  };
+  auto controller = server::fix_bridge::Controller::create(settings.fix_bridge, config, *context, helper);
+  (*controller).dispatch();
   return EXIT_SUCCESS;
 }
 

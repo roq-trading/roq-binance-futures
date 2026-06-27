@@ -1,16 +1,6 @@
 set(TARGET_NAME ${PROJECT_NAME}-fix-bridge)
 
-add_subdirectory(tools)
-
-set(SOURCES
-    application.cpp
-    config.cpp
-    controller.cpp
-    session.cpp
-    session_manager.cpp
-    settings.cpp
-    shared.cpp
-    main.cpp)
+set(SOURCES application.cpp config.cpp settings.cpp main.cpp)
 
 include(RoqAutogen)
 
@@ -20,11 +10,9 @@ add_executable(${TARGET_NAME} ${SOURCES})
 
 target_link_libraries(
   ${TARGET_NAME}
-  PRIVATE ${PROJECT_NAME}-fix_bridge-tools
-          ${PROJECT_NAME}-flags
+  PRIVATE ${PROJECT_NAME}-flags
           ${PROJECT_NAME}-gateway
           roq-api::roq-api
-          roq-core::roq-core
           roq-fix::roq-fix
           roq-flags::roq-flags
           roq-logging::roq-logging

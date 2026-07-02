@@ -49,6 +49,10 @@ constexpr Helper<binance_futures::protocol::json::ContractStatus>::operator std:
       return roq::TradingStatus::UNDEFINED;
     case PRE_DELIVERING:
       return roq::TradingStatus::UNDEFINED;
+    case CLOSE:
+      return roq::TradingStatus::CLOSE;
+    case TRADING_CANCEL_ONLY:
+      return roq::TradingStatus::PRE_OPEN;  // XXX REVIEW
   }
   return {};
 }
@@ -73,6 +77,10 @@ static_assert(
     Helper{binance_futures::protocol::json::ContractStatus{binance_futures::protocol::json::ContractStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
 static_assert(
     Helper{binance_futures::protocol::json::ContractStatus{binance_futures::protocol::json::ContractStatus::DELIVERING}} == roq::TradingStatus::UNDEFINED);
+static_assert(Helper{binance_futures::protocol::json::ContractStatus{binance_futures::protocol::json::ContractStatus::CLOSE}} == roq::TradingStatus::CLOSE);
+static_assert(
+    Helper{binance_futures::protocol::json::ContractStatus{binance_futures::protocol::json::ContractStatus::TRADING_CANCEL_ONLY}} ==
+    roq::TradingStatus::PRE_OPEN);
 
 template <>
 template <>

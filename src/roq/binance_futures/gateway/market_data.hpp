@@ -79,6 +79,7 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
   void operator()(Trace<protocol::json::BookTicker> const &) override;
   void operator()(Trace<protocol::json::DepthUpdate> const &) override;
   void operator()(Trace<protocol::json::Kline> const &) override;
+  void operator()(Trace<protocol::json::AssetIndexUpdate> const &) override;
 
   Handler &handler_;
   // config

@@ -1,0 +1,66 @@
+{
+  "name": "roq/binance_futures/protocol/json/AssetIndexUpdate",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "i",
+      "name": "index_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "b",
+      "name": "bid_buffer",
+      "type": "std/double"
+    },
+    {
+      "raw": "a",
+      "name": "ask_buffer",
+      "type": "std/double"
+    },
+    {
+      "raw": "B",
+      "name": "bid_rate",
+      "type": "std/double"
+    },
+    {
+      "raw": "A",
+      "name": "ask_rate",
+      "type": "std/double"
+    },
+    {
+      "raw": "q",
+      "name": "auto_exchange_bid_buffer",
+      "type": "std/double"
+    },
+    {
+      "raw": "g",
+      "name": "auto_exchange_ask_buffer",
+      "type": "std/double"
+    },
+    {
+      "raw": "Q",
+      "name": "auto_exchange_bid_rate",
+      "type": "std/double"
+    },
+    {
+      "raw": "G",
+      "name": "auto_exchange_ask_rate",
+      "type": "std/double"
+    }
+  ]
+}

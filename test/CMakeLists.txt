@@ -8,6 +8,7 @@ set(SOURCES
     json_account_status_ack.cpp
     json_account_update.cpp
     json_agg_trade.cpp
+    json_asset_index_update.cpp
     json_balance_update.cpp
     json_book_ticker.cpp
     json_countdown_cancel_all_ack.cpp

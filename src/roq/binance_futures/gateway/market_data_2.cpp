@@ -90,6 +90,7 @@ MarketData2::MarketData2(Handler &handler, io::Context &context, uint16_t stream
           .mark_price_update = create_metrics(shared.settings, name_, "mark_price_update"sv),
           .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
           .kline = create_metrics(shared.settings, name_, "kline"sv),
+          .asset_index_update = create_metrics(shared.settings, name_, "asset_index_update"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -127,6 +128,7 @@ void MarketData2::operator()(metrics::Writer &writer) const {
       .write(profile_.mark_price_update, metrics::Type::PROFILE)
       .write(profile_.mini_ticker, metrics::Type::PROFILE)
       .write(profile_.kline, metrics::Type::PROFILE)
+      .write(profile_.asset_index_update, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -150,6 +152,11 @@ void MarketData2::operator()(web::socket::Client::Disconnected const &) {
 void MarketData2::operator()(web::socket::Client::Ready const &) {
   (*this)(ConnectionStatus::READY);
   subscribe();
+  if (index_ == 0) {
+    for (auto& item : shared_.settings.misc.assets) {
+      subscribe(item, "assetIndex"sv);
+    }
+  }
 }
 
 void MarketData2::operator()(web::socket::Client::Close const &) {
@@ -231,6 +238,20 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_
       fmt::join(symbols, separator),
       channel,
       postfix,
+      id);
+  subscribe_queue_.emplace_back(message);
+}
+
+void MarketData2::subscribe(std::string_view const& asset, std::string_view const &channel) {
+  auto id = ++request_id_;
+  auto message = fmt::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}@{}"],)"
+      R"("id":{})"
+      R"(}})"sv,
+      asset,
+      channel,
       id);
   subscribe_queue_.emplace_back(message);
 }
@@ -437,6 +458,39 @@ void MarketData2::operator()(Trace<protocol::json::Kline> const &event) {
         .exchange_time_utc = kline.event_time,
     };
     create_trace_and_dispatch(shared_.dispatcher, trace_info, time_series_update, true);
+  });
+}
+
+void MarketData2::operator()(Trace<protocol::json::AssetIndexUpdate> const &event) {
+  profile_.asset_index_update([&]() {
+    auto &[trace_info, asset_index_update] = event;
+    log::info<3>(R"(asset_index_update={})"sv, asset_index_update);
+    (*connection_).touch(trace_info.source_receive_time);
+    std::array<Statistics, 2> statistics{{
+        {
+            .type = StatisticsType::HIGHEST_TRADED_PRICE,
+            .value = asset_index_update.ask_rate,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+        {
+            .type = StatisticsType::LOWEST_TRADED_PRICE,
+            .value = asset_index_update.bid_rate,
+            .begin_time_utc = {},
+            .end_time_utc = {},
+        },
+    }};
+    auto statistics_update = StatisticsUpdate{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = asset_index_update.symbol,
+        .statistics = statistics,
+        .update_type = UpdateType::INCREMENTAL,
+        .exchange_time_utc = {},
+        .exchange_sequence = {},
+        .sending_time_utc = asset_index_update.event_time,
+    };
+    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
   });
 }
 

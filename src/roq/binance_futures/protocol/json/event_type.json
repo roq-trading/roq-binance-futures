@@ -24,6 +24,9 @@
       "name": "kline"
     },
     {
+      "name": "assetIndexUpdate"
+    },
+    {
       "name": "ORDER_TRADE_UPDATE"
     },
     {

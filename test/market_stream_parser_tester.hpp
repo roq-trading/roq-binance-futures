@@ -39,6 +39,7 @@ struct MarketStreamParserTester final : public protocol::json::MarketStreamParse
   void operator()(Trace<protocol::json::DepthUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::MarkPriceUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::Kline> const &event) override { dispatch_helper(event); }
+  void operator()(Trace<protocol::json::AssetIndexUpdate> const &event) override { dispatch_helper(event); }
 
   template <typename U>
   void dispatch_helper(Trace<U> const &event) {

@@ -24,6 +24,7 @@ set(AUTOGEN_SCHEMAS
     account_update.json
     agg_trade.json
     asset.json
+    asset_index_update.json
     balances_item.json
     balance_update.json
     book_ticker.json

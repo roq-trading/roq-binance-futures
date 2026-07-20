@@ -105,6 +105,9 @@ bool MarketStreamParser::dispatch(
             case KLINE:
               dispatch_helper<Kline>(handler, message, buffer_stack, trace_info);
               return true;
+            case ASSET_INDEX_UPDATE:
+              dispatch_helper<AssetIndexUpdate>(handler, message, buffer_stack, trace_info);
+              return true;
             case ORDER_TRADE_UPDATE:
             case ACCOUNT_UPDATE:
             case MARGIN_CALL:

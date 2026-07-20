@@ -386,6 +386,10 @@ void MarketData::operator()(Trace<protocol::json::Kline> const &) {
   log::fatal("Unexpected"sv);
 }
 
+void MarketData::operator()(Trace<protocol::json::AssetIndexUpdate> const &) {
+  log::fatal("Unexpected"sv);
+}
+
 // request
 
 void MarketData::check_subscribe_queue(std::chrono::nanoseconds now) {

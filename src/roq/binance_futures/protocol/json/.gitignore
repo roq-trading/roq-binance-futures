@@ -12,6 +12,7 @@ account_update_data_position.hpp
 account_update.hpp
 agg_trade.hpp
 asset.hpp
+asset_index_update.hpp
 balances_item.hpp
 balance_update.hpp
 book_ticker.hpp
@@ -108,6 +109,7 @@ account_update_data_position.cpp
 account_update.cpp
 agg_trade.cpp
 asset.cpp
+asset_index_update.cpp
 balances_item.cpp
 balance_update.cpp
 book_ticker.cpp

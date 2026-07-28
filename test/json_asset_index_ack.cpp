@@ -58,7 +58,7 @@ TEST_CASE("simple", "[json_asset_index_ack]") {
                  R"(])";
   auto helper = [&](value_type &obj) {
     REQUIRE(std::size(obj.data) == 3);
-    auto& obj_0 = obj.data[0];
+    auto &obj_0 = obj.data[0];
     CHECK(obj_0.symbol == "SOLUSD"sv);
     CHECK(obj_0.time == 1784571967000ms);
     CHECK(obj_0.index == 78.00217964_a);

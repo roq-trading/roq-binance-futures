@@ -251,7 +251,7 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_
   subscribe_queue_.emplace_back(message);
 }
 
-void MarketData2::subscribe_2(std::span<std::string> const& assets, std::string_view const &channel) {
+void MarketData2::subscribe_2(std::span<std::string> const &assets, std::string_view const &channel) {
   auto id = ++request_id_;
   auto separator = fmt::format(R"(@{}",")"sv, channel);
   auto message = fmt::format(

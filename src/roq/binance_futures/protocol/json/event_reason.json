@@ -25,6 +25,9 @@
     },
     {
       "name": "COIN_SWAP_WITHDRAW"
+    },
+    {
+      "name": "ADMIN_DEPOSIT"
     }
   ]
 }

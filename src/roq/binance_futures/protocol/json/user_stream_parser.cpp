@@ -46,6 +46,7 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
     case DEPTH_UPDATE:
     case MARK_PRICE_UPDATE:
     case KLINE:
+    case ASSET_INDEX_UPDATE:
       log::fatal("Unexpected"sv);
       break;
     case ORDER_TRADE_UPDATE:

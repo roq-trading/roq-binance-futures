@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include "roq/utils/container.hpp"
+
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/gauge.hpp"
 #include "roq/utils/metrics/latency.hpp"
@@ -19,6 +21,7 @@
 
 #include "roq/binance_futures/gateway/shared.hpp"
 
+#include "roq/binance_futures/protocol/json/asset_index_ack.hpp"
 #include "roq/binance_futures/protocol/json/depth_ack.hpp"
 #include "roq/binance_futures/protocol/json/exchange_info_ack.hpp"
 #include "roq/binance_futures/protocol/json/kline_ack.hpp"
@@ -32,8 +35,13 @@ struct Rest final : public web::rest::Client::Handler {
     std::span<Symbol const> symbols;
   };
 
+  struct AssetsUpdate final {
+    std::span<std::string_view> assets;
+  };
+
   struct Handler {
     virtual void operator()(SymbolsUpdate &) = 0;
+    virtual void operator()(AssetsUpdate &) = 0;
   };
 
   Rest(Handler &, io::Context &, uint16_t stream_id, Shared &);
@@ -65,6 +73,7 @@ struct Rest final : public web::rest::Client::Handler {
   enum class State {
     UNDEFINED = 0,
     EXCHANGE_INFO,
+    ASSET_INDEX,
     DONE,
   };
 
@@ -75,6 +84,12 @@ struct Rest final : public web::rest::Client::Handler {
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::ExchangeInfoAck> const &);
+
+  // asset-index
+
+  void get_asset_index();
+  void get_asset_index_ack(Trace<web::rest::Response> const &, uint32_t sequence);
+  void operator()(Trace<protocol::json::AssetIndexAck> const &);
 
   // depth
 
@@ -110,7 +125,7 @@ struct Rest final : public web::rest::Client::Handler {
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile exchange_info, exchange_info_ack, depth, depth_ack, kline, kline_ack;
+    utils::metrics::Profile exchange_info, exchange_info_ack, asset_index, asset_index_ack, depth, depth_ack, kline, kline_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
@@ -123,6 +138,8 @@ struct Rest final : public web::rest::Client::Handler {
   // state
   ConnectionStatus connection_status_ = {};
   core::Download<State> download_;
+  // EXPERIMENTAL
+  utils::unordered_set<std::string> assets_;
 };
 
 }  // namespace gateway

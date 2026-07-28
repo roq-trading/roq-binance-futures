@@ -23,10 +23,12 @@ set(AUTOGEN_SCHEMAS
     account_update_data_position.json
     account_update.json
     agg_trade.json
-    asset.json
+    asset_index_ack_data_item.json
+    asset_index_ack.json
     asset_index_update.json
-    balances_item.json
+    asset.json
     balance_update.json
+    balances_item.json
     book_ticker.json
     contract_status.json
     contract_type.json

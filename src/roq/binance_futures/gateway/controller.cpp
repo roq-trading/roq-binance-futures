@@ -266,6 +266,12 @@ void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
   }
 }
 
+void Controller::operator()(Rest::AssetsUpdate &assets_update) {
+  if (!std::empty(market_data_2_)) {
+    (*market_data_2_[0])(assets_update.assets);
+  }
+}
+
 // WebSocket::Handler
 
 void Controller::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {

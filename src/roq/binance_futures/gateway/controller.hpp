@@ -87,6 +87,7 @@ struct Controller final : public server::Handler,
   // Rest::Handler
 
   void operator()(Rest::SymbolsUpdate &) override;
+  void operator()(Rest::AssetsUpdate &) override;
 
   // WebSocket::Handler
 

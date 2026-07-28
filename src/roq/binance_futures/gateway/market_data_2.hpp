@@ -3,7 +3,9 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
+#include <vector>
 
 #include "roq/core/timer_queue.hpp"
 
@@ -40,6 +42,8 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
 
   void subscribe(size_t start_from = 0);
 
+  void operator()(std::span<std::string_view const> const &assets);
+
  protected:
   // helpers
   void check_subscribe_queue(std::chrono::nanoseconds now);
@@ -62,7 +66,7 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
 
   void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel, std::chrono::nanoseconds const freq = {});
 
-  void subscribe(std::string_view const &asset, std::string_view const &channel);
+  void subscribe_2(std::span<std::string> const &assets, std::string_view const &channel);
 
   void parse(std::string_view const &message);
 
@@ -110,6 +114,8 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
   ConnectionStatus connection_status_ = {};
   // queue
   core::TimerQueue<std::string> subscribe_queue_;
+  // EXPERIMENTAL
+  std::vector<std::string> assets_;
 };
 
 }  // namespace gateway

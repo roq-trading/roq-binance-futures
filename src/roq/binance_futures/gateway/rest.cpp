@@ -103,6 +103,8 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
       profile_{
           .exchange_info = create_metrics(shared.settings, name_, "exchange_info"sv),
           .exchange_info_ack = create_metrics(shared.settings, name_, "exchange_info_ack"sv),
+          .asset_index = create_metrics(shared.settings, name_, "asset_index"sv),
+          .asset_index_ack = create_metrics(shared.settings, name_, "asset_index_ack"sv),
           .depth = create_metrics(shared.settings, name_, "depth"sv),
           .depth_ack = create_metrics(shared.settings, name_, "depth_ack"sv),
           .kline = create_metrics(shared.settings, name_, "kline"sv),
@@ -140,6 +142,8 @@ void Rest::operator()(metrics::Writer &writer) const {
       // profile
       .write(profile_.exchange_info, metrics::Type::PROFILE)
       .write(profile_.exchange_info_ack, metrics::Type::PROFILE)
+      .write(profile_.asset_index, metrics::Type::PROFILE)
+      .write(profile_.asset_index_ack, metrics::Type::PROFILE)
       .write(profile_.depth, metrics::Type::PROFILE)
       .write(profile_.depth_ack, metrics::Type::PROFILE)
       .write(profile_.kline, metrics::Type::PROFILE)
@@ -248,6 +252,14 @@ uint32_t Rest::download(State state) {
       (*this)(ConnectionStatus::DOWNLOADING, "exchange-info"sv);
       get_exchange_info();
       return 1;
+    case ASSET_INDEX:
+      (*this)(ConnectionStatus::DOWNLOADING, "asset-index"sv);
+      if (std::empty(shared_.api.market_data.asset_index) || !shared_.settings.misc.subscribe_asset_index) {
+        return 0;
+      } else {
+        get_asset_index();
+        return 1;
+      }
     case DONE:
       (*this)(ConnectionStatus::READY);
       return 0;
@@ -445,6 +457,71 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
         .symbols = symbols,
     };
     handler_(symbols_update);
+  }
+}
+
+// asset-index
+
+void Rest::get_asset_index() {
+  profile_.asset_index([&]() {
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.market_data.asset_index,
+        .query = {},
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
+      TraceInfo trace_info;
+      Trace event{trace_info, response};
+      get_asset_index_ack(event, sequence);
+    };
+    (*connection_)("asset-index"sv, request, callback);
+  });
+}
+
+void Rest::get_asset_index_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
+  auto const STATE = State::ASSET_INDEX;
+  profile_.asset_index_ack([&]() {
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      if (download_.downloading()) {
+        download_.retry(STATE);
+      }
+    };
+    auto handle_success = [&](auto &body) {
+      if (download_.skip(sequence, STATE)) {
+        log::info("Download state={} has already been processed"sv, STATE);
+      } else {
+        protocol::json::AssetIndexAck asset_index_ack{body, decode_buffer_};
+        Trace event_2{event, asset_index_ack};
+        (*this)(event_2);
+        download_.check(STATE);
+      }
+    };
+    process_response(event, handle_error, handle_success);
+  });
+}
+
+void Rest::operator()(Trace<protocol::json::AssetIndexAck> const &event) {
+  auto &[trace_info, asset_index_ack] = event;
+  log::info<2>("asset_index_ack={}"sv, asset_index_ack);
+  std::vector<std::string_view> assets;
+  for (auto const &item : asset_index_ack.data) {
+    log::info<2>("item={}"sv, item);
+    auto [iter, res] = assets_.insert(item.symbol);
+    if (res) {
+      assets.emplace_back(item.symbol);
+    }
+  }
+  if (!std::empty(assets)) {
+    auto assets_update = AssetsUpdate{
+        .assets = assets,
+    };
+    handler_(assets_update);
   }
 }
 

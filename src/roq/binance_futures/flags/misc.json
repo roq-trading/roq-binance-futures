@@ -41,10 +41,10 @@
       "description": "Self-trade prevention (STP) mode, one of NONE, EXPIRE_MAKER, EXPIRE_TAKER, EXPIRE_BOTH"
     },
     {
-      "name": "assets",
-      "type": "std/string",
-      "array": "std/vector",
-      "description": "Assets (indices)"
+      "name": "subscribe_asset_index",
+      "type": "std/bool",
+      "default": false,
+      "description": "Subscribe asset-index?"
     }
   ]
 }

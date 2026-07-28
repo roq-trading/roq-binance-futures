@@ -39,6 +39,7 @@ API API::create(Settings const &settings) {
             .exchange_info = "/fapi/v1/exchangeInfo"sv,
             .depth = "/fapi/v1/depth"sv,
             .kline = "/fapi/v1/klines"sv,
+            .asset_index = "/fapi/v1/assetIndex"sv,
         },
         .simple{
             .listen_key = "/fapi/v1/listenKey"sv,
@@ -71,6 +72,7 @@ API API::create(Settings const &settings) {
             .exchange_info = "/dapi/v1/exchangeInfo"sv,
             .depth = "/dapi/v1/depth"sv,
             .kline = "/dapi/v1/klines"sv,
+            .asset_index = {},
         },
         .simple{
             .listen_key = "/dapi/v1/listenKey"sv,

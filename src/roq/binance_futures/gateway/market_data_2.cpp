@@ -140,6 +140,17 @@ void MarketData2::subscribe(size_t start_from) {
   }
 }
 
+void MarketData2::operator()(std::span<std::string_view const> const &assets) {
+  auto begin = std::size(assets_);
+  for (auto &item : assets) {
+    std::string tmp{item};
+    std::ranges::transform(tmp, std::begin(tmp), [](auto item) { return std::tolower(item); });
+    assets_.emplace_back(tmp);
+  }
+  std::span assets_2{&assets_[begin], std::size(assets_) - begin};
+  subscribe_2(assets_2, "assetIndex"sv);
+}
+
 void MarketData2::operator()(web::socket::Client::Connected const &) {
 }
 
@@ -152,10 +163,8 @@ void MarketData2::operator()(web::socket::Client::Disconnected const &) {
 void MarketData2::operator()(web::socket::Client::Ready const &) {
   (*this)(ConnectionStatus::READY);
   subscribe();
-  if (index_ == 0) {
-    for (auto& item : shared_.settings.misc.assets) {
-      subscribe(item, "assetIndex"sv);
-    }
+  if (!std::empty(assets_)) {
+    subscribe_2(assets_, "assetIndex"sv);
   }
 }
 
@@ -242,17 +251,19 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_
   subscribe_queue_.emplace_back(message);
 }
 
-void MarketData2::subscribe(std::string_view const& asset, std::string_view const &channel) {
+void MarketData2::subscribe_2(std::span<std::string> const& assets, std::string_view const &channel) {
   auto id = ++request_id_;
+  auto separator = fmt::format(R"(@{}",")"sv, channel);
   auto message = fmt::format(
       R"({{)"
       R"("method":"SUBSCRIBE",)"
       R"("params":["{}@{}"],)"
       R"("id":{})"
       R"(}})"sv,
-      asset,
+      fmt::join(assets, separator),
       channel,
       id);
+  log::warn("DEBUG {}"sv, message);
   subscribe_queue_.emplace_back(message);
 }
 

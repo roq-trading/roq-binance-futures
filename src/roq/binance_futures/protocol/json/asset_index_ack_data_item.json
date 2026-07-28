@@ -1,0 +1,50 @@
+{
+  "name": "roq/binance_futures/protocol/json/AssetIndexAckDataItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "index",
+      "type": "std/double"
+    },
+    {
+      "name": "bidBuffer",
+      "type": "std/double"
+    },
+    {
+      "name": "askBuffer",
+      "type": "std/double"
+    },
+    {
+      "name": "bidRate",
+      "type": "std/double"
+    },
+    {
+      "name": "askRate",
+      "type": "std/double"
+    },
+    {
+      "name": "autoExchangeBidBuffer",
+      "type": "std/double"
+    },
+    {
+      "name": "autoExchangeAskBuffer",
+      "type": "std/double"
+    },
+    {
+      "name": "autoExchangeBidRate",
+      "type": "std/double"
+    },
+    {
+      "name": "autoExchangeAskRate",
+      "type": "std/double"
+    }
+  ]
+}

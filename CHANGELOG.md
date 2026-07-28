@@ -8,6 +8,7 @@ All notable changes will be documented in this file.
 
 ### Added
 
+* Subscribe asset-indices (fapi, only) (#616)
 * Merge FIX-Bridge into gateways (#612)
 
 ### Removed

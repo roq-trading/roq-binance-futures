@@ -18,6 +18,11 @@
       "name": "positions",
       "type": "roq/binance_futures/protocol/json/AccountUpdateDataPosition",
       "array": "std/span"
+    },
+    {
+      "raw": "S",
+      "name": "funding_fee_symbol",
+      "type": "std/string_view"
     }
   ]
 }

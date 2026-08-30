@@ -35,6 +35,7 @@ requirements:
     - roq-io
     - roq-logging
     - roq-market
+    - libopenssl-static
     - roq-oss-tomlplusplus
     - roq-server
     - roq-utils

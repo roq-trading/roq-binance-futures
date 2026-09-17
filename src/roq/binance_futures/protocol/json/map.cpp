@@ -395,6 +395,8 @@ constexpr Helper<binance_futures::protocol::json::TimeInForce>::operator std::op
       return roq::TimeInForce::GTX;
     case OTC:
       return roq::TimeInForce::UNDEFINED;
+    case RPI:
+      return roq::TimeInForce::GTC;
   }
   return {};
 }
@@ -406,6 +408,7 @@ static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_future
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::FOK}} == roq::TimeInForce::FOK);
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::GTX}} == roq::TimeInForce::GTX);
 static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::OTC}} == roq::TimeInForce::UNDEFINED);
+static_assert(Helper{binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::RPI}} == roq::TimeInForce::GTC);
 
 template <>
 template <>
@@ -527,8 +530,11 @@ std::optional<binance_futures::protocol::json::Side> Map<roq::Side>::helper() co
 
 template <>
 template <>
-constexpr Helper<roq::TimeInForce, Mask<ExecutionInstruction>>::operator std::optional<binance_futures::protocol::json::TimeInForce>() const {
-  auto [time_in_force, execution_instructions] = args_;
+constexpr Helper<roq::TimeInForce, Mask<ExecutionInstruction>, std::string_view>::operator std::optional<binance_futures::protocol::json::TimeInForce>() const {
+  auto [time_in_force, execution_instructions, execution_destination] = args_;
+  if (execution_destination == "RPI"sv) {
+    return binance_futures::protocol::json::TimeInForce::RPI;
+  }
   switch (time_in_force) {
     using enum roq::TimeInForce;
     case UNDEFINED:
@@ -567,57 +573,60 @@ constexpr Helper<roq::TimeInForce, Mask<ExecutionInstruction>>::operator std::op
 }
 
 static_assert(
-    Helper{roq::TimeInForce::UNDEFINED, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::UNDEFINED, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GFD, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GFD, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GTC, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GTC, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::GTC});
 static_assert(
-    Helper{roq::TimeInForce::OPG, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::OPG, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::IOC, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::IOC, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::IOC});
 static_assert(
-    Helper{roq::TimeInForce::FOK, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::FOK, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::FOK});
 static_assert(
-    Helper{roq::TimeInForce::GTX, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GTX, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::GTX});
 static_assert(
-    Helper{roq::TimeInForce::GTD, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GTD, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::AT_THE_CLOSE, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::AT_THE_CLOSE, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GOOD_THROUGH_CROSSING, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::AT_CROSSING, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::AT_CROSSING, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GOOD_FOR_TIME, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GOOD_FOR_TIME, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GFA, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GFA, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 static_assert(
-    Helper{roq::TimeInForce::GFM, Mask<ExecutionInstruction>{}} ==
+    Helper{roq::TimeInForce::GFM, Mask<ExecutionInstruction>{}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::UNDEFINED_INTERNAL});
 
 // special
 
 static_assert(
-    Helper{roq::TimeInForce::GTC, Mask{ExecutionInstruction::PARTICIPATE_DO_NOT_INITIATE}} ==
+    Helper{roq::TimeInForce::GTC, Mask{ExecutionInstruction::PARTICIPATE_DO_NOT_INITIATE}, ""sv} ==
     binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::GTX});
+static_assert(
+    Helper{roq::TimeInForce::GTC, Mask<ExecutionInstruction>{}, "RPI"sv} ==
+    binance_futures::protocol::json::TimeInForce{binance_futures::protocol::json::TimeInForce::RPI});
 
 template <>
 template <>
-std::optional<binance_futures::protocol::json::TimeInForce> Map<roq::TimeInForce, Mask<ExecutionInstruction>>::helper() const {
+std::optional<binance_futures::protocol::json::TimeInForce> Map<roq::TimeInForce, Mask<ExecutionInstruction>, std::string_view>::helper() const {
   return Helper{args_};
 }
 

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Added
+
+* Support RPI orders (#638)
+
 ## 1.1.8 &ndash; 2026-09-04
 
 ## 1.1.7 &ndash; 2026-08-08

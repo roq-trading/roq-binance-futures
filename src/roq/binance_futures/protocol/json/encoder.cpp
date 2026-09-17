@@ -18,6 +18,12 @@ namespace binance_futures {
 namespace protocol {
 namespace json {
 
+// === HELPERS ===
+
+namespace {}
+
+// === IMPLEMENTATION ===
+
 // URL
 
 // user-trades
@@ -81,7 +87,7 @@ std::string_view Encoder::order_place_url(
       break;
     case LIMIT: {
       assert(!std::isnan(create_order.price));
-      auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions).template get<TimeInForce>();
+      auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions, create_order.execution_destination).template get<TimeInForce>();
       fmt::format_to(
           std::back_inserter(buffer),
           R"(timeInForce={}&)"
@@ -392,7 +398,7 @@ std::string_view Encoder::order_place_json(
   auto side = map(create_order.side).template get<Side>();
   auto type = map(create_order.order_type).template get<OrderType>();
   auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
-  auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions).template get<TimeInForce>();
+  auto time_in_force = map(create_order.time_in_force, create_order.execution_instructions, create_order.execution_destination).template get<TimeInForce>();
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),

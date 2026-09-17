@@ -538,6 +538,7 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
         .order_type = map(item.type),
         .time_in_force = map(item.time_in_force),
         .execution_instructions = {},
+        .execution_destination = {},
         .create_time_utc = item.time,
         .update_time_utc = item.update_time,
         .external_account = {},

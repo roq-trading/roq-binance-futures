@@ -47,6 +47,7 @@ auto create_order(double quantity, double price) {
       .order_type = {},
       .time_in_force = {},
       .execution_instructions = {},
+      .execution_destination = {},
       .create_time_utc = {},
       .update_time_utc = {},
       .external_account = {},

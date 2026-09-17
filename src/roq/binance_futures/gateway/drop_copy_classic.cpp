@@ -289,6 +289,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
         .order_type = map(execution_report.order_type),
         .time_in_force = map(execution_report.time_in_force),
         .execution_instructions = {},
+        .execution_destination = {},
         .create_time_utc = {},
         .update_time_utc = order_trade_update.transaction_time,
         .external_account = {},

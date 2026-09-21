@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Re-instate subscription to @trade (the --ws_subscribe_trade_details flag) (#641)
+
 ### Added
 
 * Support RPI orders (#638)

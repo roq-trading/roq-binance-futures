@@ -217,7 +217,9 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
   if (std::empty(symbols)) {
     return;
   }
-  subscribe(symbols, "aggTrade"sv);
+  if (!shared_.settings.ws.subscribe_trade_details) {
+    subscribe(symbols, "aggTrade"sv);
+  }
   subscribe(symbols, "markPrice"sv, shared_.settings.ws.mark_price_freq);
   subscribe(symbols, "miniTicker"sv);
   if (shared_.settings.download.time_series_lookback.count()) {
@@ -297,7 +299,7 @@ void MarketData2::operator()(Trace<protocol::json::Result> const &event, int32_t
 }
 
 void MarketData2::operator()(Trace<protocol::json::Trade2> const &) {
-  log::fatal("Unexpected"sv);  // DEPRECATED
+  log::fatal("Unexpected"sv);
 }
 
 void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {

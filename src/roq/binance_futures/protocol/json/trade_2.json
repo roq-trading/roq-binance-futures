@@ -46,6 +46,11 @@
       "raw": "m",
       "name": "buyer_is_maker",
       "type": "std/bool"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

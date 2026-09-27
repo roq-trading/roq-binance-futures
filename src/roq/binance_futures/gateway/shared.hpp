@@ -21,6 +21,8 @@
 #include "roq/binance_futures/gateway/api.hpp"
 #include "roq/binance_futures/gateway/settings.hpp"
 
+#include "roq/binance_futures/tools/rate_limit.hpp"
+
 namespace roq {
 namespace binance_futures {
 namespace gateway {
@@ -34,6 +36,8 @@ struct Shared final {
 
   Settings const &settings;
   API const api;
+
+  tools::RateLimit rate_limit;
 
  private:
   struct {

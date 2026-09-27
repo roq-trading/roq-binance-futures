@@ -48,7 +48,7 @@ auto create_name(auto stream_id, auto &account) {
   return fmt::format("{}:{}:{}"sv, stream_id, NAME, account);
 }
 
-auto create_connection(auto &handler, auto &settings, auto &context, auto &interface) {
+auto create_connection(auto &handler, auto &settings, auto &context, auto &shared, auto &interface) {
   auto uri = settings.ws_api_2.uri;
   auto config = web::socket::Client::Config{
       // connection
@@ -70,7 +70,7 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &inter
       .decode_buffer_size = settings.misc.decode_buffer_size,
       .encode_buffer_size = settings.misc.encode_buffer_size,
   };
-  return web::socket::Client::create(handler, context, config, []() -> std::string { return {}; });
+  return web::socket::Client::create(handler, context, config, shared.rate_limit, []() -> std::string { return {}; });
 }
 
 struct create_metrics final : public utils::metrics::Factory {
@@ -91,7 +91,7 @@ WebSocket::WebSocket(
     bool master,
     std::string_view const &interface)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account.name)}, master_{master},
-      connection_{create_connection(*this, shared.settings, context, interface)},
+      connection_{create_connection(*this, shared.settings, context, shared, interface)},
       decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),

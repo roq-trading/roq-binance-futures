@@ -80,7 +80,7 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &share
       .decode_buffer_size = settings.misc.decode_buffer_size,
       .encode_buffer_size = settings.misc.encode_buffer_size,
   };
-  return web::socket::Client::create(handler, context, config, shared.rate_limit, []() { return std::string(); });
+  return web::socket::Client::create(handler, context, config, shared.throttle, []() { return std::string(); });
 }
 
 struct create_metrics final : public utils::metrics::Factory {
@@ -161,25 +161,25 @@ void DropCopyPortfolio::operator()(metrics::Writer &writer) const {
       .write(latency_.heartbeat, metrics::Type::LATENCY);
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Connected const &) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Connected> const &) {
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Disconnected const &) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Disconnected> const &) {
   ++counter_.disconnect;
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   download_.reset();
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Ready const &) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Ready> const &) {
   download_.begin();
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Close const &) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Close> const &) {
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Latency const &latency) {
-  TraceInfo trace_info;
+void DropCopyPortfolio::operator()(Trace<web::socket::Latency> const &event) {
+  auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -189,11 +189,12 @@ void DropCopyPortfolio::operator()(web::socket::Client::Latency const &latency) 
   latency_.ping.update(latency.sample);
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Text const &text) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Text> const &event) {
+  auto &[trace_info, text] = event;
   parse(text.payload);
 }
 
-void DropCopyPortfolio::operator()(web::socket::Client::Binary const &) {
+void DropCopyPortfolio::operator()(Trace<web::socket::Binary> const &) {
   log::fatal("Unexpected"sv);
 }
 

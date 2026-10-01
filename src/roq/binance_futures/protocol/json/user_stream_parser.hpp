@@ -14,6 +14,7 @@
 #include "roq/binance_futures/protocol/json/execution_report_2.hpp"
 #include "roq/binance_futures/protocol/json/grid_update.hpp"
 #include "roq/binance_futures/protocol/json/liability_change.hpp"
+#include "roq/binance_futures/protocol/json/listen_key_expired.hpp"
 #include "roq/binance_futures/protocol/json/margin_call.hpp"
 #include "roq/binance_futures/protocol/json/order_trade_update.hpp"
 #include "roq/binance_futures/protocol/json/outbound_account_position.hpp"
@@ -27,6 +28,7 @@ namespace json {
 
 struct UserStreamParser final {
   struct Handler {
+    virtual void operator()(Trace<ListenKeyExpired> const &) = 0;
     virtual void operator()(Trace<OrderTradeUpdate> const &) = 0;
     virtual void operator()(Trace<AccountUpdate> const &) = 0;
     virtual void operator()(Trace<MarginCall> const &) = 0;

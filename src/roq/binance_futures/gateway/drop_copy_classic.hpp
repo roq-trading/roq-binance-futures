@@ -30,7 +30,13 @@ namespace binance_futures {
 namespace gateway {
 
 struct DropCopyClassic final : public DropCopy, public web::socket::Client::Handler, public protocol::json::UserStreamParser::Handler {
-  struct Handler {};
+  struct Remove final {
+    std::string_view account;
+  };
+
+  struct Handler {
+    virtual void operator()(Remove const &) = 0;
+  };
 
   DropCopyClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
@@ -79,6 +85,7 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
 
   // protocol::json::UserStreamParser::Handler
 
+  void operator()(Trace<protocol::json::ListenKeyExpired> const &) override;
   void operator()(Trace<protocol::json::OrderTradeUpdate> const &) override;
   void operator()(Trace<protocol::json::AccountUpdate> const &) override;
   void operator()(Trace<protocol::json::MarginCall> const &) override;
@@ -139,6 +146,8 @@ struct DropCopyClassic final : public DropCopy, public web::socket::Client::Hand
   std::chrono::nanoseconds balance_refresh_ = {};
   //
   std::string external_order_id_;
+  //
+  bool stop_ = {};
 };
 
 }  // namespace gateway

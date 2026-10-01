@@ -68,7 +68,8 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
       dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
       return true;
     case LISTEN_KEY_EXPIRED:
-      // XXX FIXME TODO need parsing
+      log::warn("DEBUG message={}"sv, message);
+      dispatch_helper<ListenKeyExpired>(handler, message, buffer_stack, trace_info);
       return true;
     case TRADE_LITE:
       dispatch_helper<TradeLite>(handler, message, buffer_stack, trace_info);

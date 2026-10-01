@@ -169,6 +169,12 @@ void DropCopyPortfolio::operator()(Trace<web::socket::Disconnected> const &) {
   ready_ = false;
   (*this)(ConnectionStatus::DISCONNECTED);
   download_.reset();
+  if (stop_) {
+    auto remove = Remove{
+        .account = account_.name,
+    };
+    handler_(remove);
+  }
 }
 
 void DropCopyPortfolio::operator()(Trace<web::socket::Ready> const &) {
@@ -273,6 +279,14 @@ void DropCopyPortfolio::parse(std::string_view const &message) {
       utils::exceptions::Unhandled::terminate();
     }
   });
+}
+
+void DropCopyPortfolio::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
+  auto &[trace_info, listen_key_expired] = event;
+  log::info<4>("listen_key_expired={}"sv, listen_key_expired);
+  stop_ = true;  // note!
+  log::warn("Closing connection... (reason: listen-key-expired)"sv);
+  (*connection_).close();
 }
 
 void DropCopyPortfolio::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {

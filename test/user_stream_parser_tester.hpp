@@ -29,6 +29,7 @@ struct UserStreamParserTester final : public protocol::json::UserStreamParser::H
  protected:
   explicit UserStreamParserTester(callback_type const &callback) : callback_{callback} {}
 
+  void operator()(Trace<protocol::json::ListenKeyExpired> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::OrderTradeUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::AccountUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::MarginCall> const &event) override { dispatch_helper(event); }

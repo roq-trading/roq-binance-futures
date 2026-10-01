@@ -101,6 +101,14 @@ struct Controller final : public server::Handler,
 
   void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
 
+  // DropCopyClassic::Handler
+
+  void operator()(DropCopyClassic::Remove const &) override;
+
+  // DropCopyPortfolio::Handler
+
+  void operator()(DropCopyPortfolio::Remove const &) override;
+
   // helpers
 
   template <typename T>
@@ -137,6 +145,8 @@ struct Controller final : public server::Handler,
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;
+  //
+  utils::unordered_set<std::string> drop_copy_zombies_;
 };
 
 }  // namespace gateway

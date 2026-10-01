@@ -39,6 +39,8 @@ auto const SUPPORTS = Mask{
 uint32_t const REQUEST_ID = 1'000'000;
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 1;
+
+auto const DEFAULT_LISTEN_KEY_REFRESH_DELAY = 1min;
 }  // namespace
 
 // === HELPERS ===
@@ -240,6 +242,16 @@ uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] 
   log::fatal("Unexpected"sv);
   // open_orders_cancel_all(event, request_id);
   // return stream_id_;
+}
+
+void WebSocket::refresh_listen_key() {
+  if (listen_key_refresh_.count()) {
+    log::warn("DEBUG Requesting listen-key refresh..."sv);
+    auto now = clock::get_system();
+    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! to avoid spamming
+  } else {
+    log::warn("DEBUG Unexpected: no listen_key_refresh"sv);
+  }
 }
 
 // session-logon
@@ -693,8 +705,13 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
       }
     };
     auto handle_success = [&](auto &result) {
-      listen_key_ = result.listen_key;
-      log::info<1>(R"(Listen key has been acquired (value="{}"))"sv, listen_key_);
+      if (std::empty(listen_key_)) {
+        listen_key_ = result.listen_key;
+        log::info<1>(R"(Listen key has been ACQUIRED (value="{}"))"sv, listen_key_);
+      } else if (listen_key_ != result.listen_key) {
+        listen_key_ = result.listen_key;
+        log::info<1>(R"(Listen key has been REPLACED (value="{}"))"sv, listen_key_);
+      }
       auto listen_key_update = ListenKeyUpdate{
           .account = account_.name,
           .listen_key = listen_key_,

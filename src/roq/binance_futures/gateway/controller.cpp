@@ -156,6 +156,25 @@ void Controller::operator()(Event<Stop> const &event) {
 }
 
 void Controller::operator()(Event<Timer> const &event) {
+  // note! remove drop_copy *BEFORE* dispatching timer (because of possible auto-retry connection)
+  if (!std::empty(drop_copy_zombies_)) [[unlikely]] {
+    for (auto &account : drop_copy_zombies_) {
+      log::warn(R"(DEBUG removing account="{}"...)"sv, account);
+      auto iter = drop_copy_.find(account);
+      if (iter == std::end(drop_copy_)) [[unlikely]] {
+        log::fatal("Unexpected"sv);
+      }
+      (*iter).second.reset();
+      log::warn(R"(DEBUG account="{}" was removed)"sv, account);
+      auto iter_2 = order_entry_.find(account);
+      if (iter_2 == std::end(order_entry_)) {
+        log::fatal("Unexpected"sv);
+      }
+      (*(*iter_2).second).refresh_listen_key();
+    }
+    drop_copy_zombies_.clear();
+  }
+  //
   dispatch(event);
 }
 
@@ -290,6 +309,20 @@ void Controller::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_k
   create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);
 }
 
+// DropCopyClassic::Handler
+
+void Controller::operator()(DropCopyClassic::Remove const &remove) {
+  log::warn(R"(DEBUG requesting account="{}" to be removed)"sv, remove.account);
+  drop_copy_zombies_.insert(remove.account);
+}
+
+// DropCopyPortfolio::Handler
+
+void Controller::operator()(DropCopyPortfolio::Remove const &remove) {
+  log::warn(R"(DEBUG requesting account="{}" to be removed)"sv, remove.account);
+  drop_copy_zombies_.insert(remove.account);
+}
+
 // utilities
 
 template <typename T>
@@ -300,7 +333,7 @@ void Controller::create_drop_copy_helper(auto &listen_key_update) {
   if (iter == std::end(drop_copy_)) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
-    log::info(R"(Create DropCopy (user-stream) for account="{}")"sv, account);
+    log::info(R"(Create DropCopy (user-stream) for account="{}" using listen_key="{}")"sv, account, listen_key_update.listen_key);
     auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
     MessageInfo message_info;
     Start start;

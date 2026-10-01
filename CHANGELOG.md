@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* Handle `ListenKeyExpired` event (#647)
+
 ### Changed
 
 * Re-instate subscription to @trade (the --ws_subscribe_trade_details flag) (#641)

@@ -40,6 +40,9 @@ struct OrderEntry {
       std::string_view const &previous_request_id) = 0;
 
   virtual uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) = 0;
+
+  // note! a bit dirty -- only valid for WSAPI
+  virtual void refresh_listen_key() {}
 };
 
 }  // namespace gateway

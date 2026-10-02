@@ -15,6 +15,7 @@
 #include "roq/binance_futures/protocol/json/asset_index_update.hpp"
 #include "roq/binance_futures/protocol/json/book_ticker.hpp"
 #include "roq/binance_futures/protocol/json/depth_update.hpp"
+#include "roq/binance_futures/protocol/json/force_order.hpp"
 #include "roq/binance_futures/protocol/json/kline.hpp"
 #include "roq/binance_futures/protocol/json/mark_price_update.hpp"
 #include "roq/binance_futures/protocol/json/mini_ticker.hpp"
@@ -39,6 +40,7 @@ struct MarketStreamParser final {
     virtual void operator()(Trace<MarkPriceUpdate> const &) = 0;
     virtual void operator()(Trace<Kline> const &) = 0;
     virtual void operator()(Trace<AssetIndexUpdate> const &) = 0;
+    virtual void operator()(Trace<ForceOrder> const &) = 0;
   };
 
   static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool allow_unknown_event_types);

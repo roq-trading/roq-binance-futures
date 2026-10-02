@@ -128,6 +128,9 @@ bool MarketStreamParser::dispatch(
             case ALGO_UPDATE: {
               log::fatal("Unexpected"sv);
               break;
+              case FORCE_ORDER:
+                dispatch_helper<ForceOrder>(handler, message, buffer_stack, trace_info);
+                return true;
             }
           }
           break;

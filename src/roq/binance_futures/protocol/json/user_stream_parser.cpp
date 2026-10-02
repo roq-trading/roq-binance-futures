@@ -92,6 +92,9 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
     case ALGO_UPDATE:
       // XXX FIXME TODO need parsing
       return true;
+    case FORCE_ORDER:
+      log::fatal("Unexpected"sv);
+      break;
   }
   log::fatal(R"(Unexpected: message="{}")"sv, message);
 }

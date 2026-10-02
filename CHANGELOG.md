@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Added
+
+* Subscribe forced liquidations (#648)
+
 ### Fixed
 
 * Handle `ListenKeyExpired` event (#647)

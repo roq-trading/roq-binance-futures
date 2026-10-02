@@ -1,6 +1,7 @@
 !!! THIS FILE HAS BEEN AUTO-GENERATED !!!
 roq-binance-futures-protocol-json
 account_balance_ack.hpp
+account_balance_ack.hpp
 account_balance_ack_item.hpp
 account_config_update.hpp
 account_config_update_data1.hpp
@@ -38,6 +39,8 @@ fill.hpp
 filter.hpp
 filter_type.hpp
 filters.hpp
+force_order.hpp
+force_order_order.hpp
 grid_update.hpp
 grid_update_data.hpp
 interval.hpp
@@ -101,6 +104,7 @@ wsapi_session_logon_result.hpp
 wsapi_trades.hpp
 wsapi_type.hpp
 account_balance_ack.cpp
+account_balance_ack.cpp
 account_balance_ack_item.cpp
 account_config_update.cpp
 account_config_update_data1.cpp
@@ -138,6 +142,8 @@ fill.cpp
 filter.cpp
 filter_type.cpp
 filters.cpp
+force_order.cpp
+force_order_order.cpp
 grid_update.cpp
 grid_update_data.cpp
 interval.cpp

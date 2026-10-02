@@ -65,6 +65,8 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
 
   void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel);
 
+  void subscribe(std::string_view const &channel);
+
   void parse(std::string_view const &message);
 
   // response
@@ -80,6 +82,7 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
   void operator()(Trace<protocol::json::DepthUpdate> const &) override;
   void operator()(Trace<protocol::json::Kline> const &) override;
   void operator()(Trace<protocol::json::AssetIndexUpdate> const &) override;
+  void operator()(Trace<protocol::json::ForceOrder> const &) override;
 
   Handler &handler_;
   // config
@@ -98,7 +101,7 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, trade, book_ticker, depth_update;
+    utils::metrics::Profile parse, error, result, trade, book_ticker, depth_update, force_order;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

@@ -13,6 +13,7 @@ include(RoqAutogen)
 
 set(AUTOGEN_SCHEMAS
     account_balance_ack.json
+    account_balance_ack.json
     account_balance_ack_item.json
     account_config_update.json
     account_config_update_data1.json
@@ -50,6 +51,8 @@ set(AUTOGEN_SCHEMAS
     filter.json
     filter_type.json
     filters.json
+    force_order.json
+    force_order_order.json
     grid_update.json
     grid_update_data.json
     interval.json

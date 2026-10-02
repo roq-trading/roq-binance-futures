@@ -72,6 +72,9 @@
     {
       "name": "ALGO_UPDATE",
       "comment": "reported by client"
+    },
+    {
+      "name": "forceOrder"
     }
   ]
 }

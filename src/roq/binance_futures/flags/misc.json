@@ -45,6 +45,12 @@
       "type": "std/bool",
       "default": false,
       "description": "Subscribe asset-index?"
+    },
+    {
+      "name": "subscribe_force_order",
+      "type": "std/bool",
+      "default": false,
+      "description": "Subscribe force-order?"
     }
   ]
 }

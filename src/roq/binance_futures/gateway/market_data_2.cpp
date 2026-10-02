@@ -508,6 +508,9 @@ void MarketData2::operator()(Trace<protocol::json::AssetIndexUpdate> const &even
   });
 }
 
+void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &) {
+}
+
 // request
 
 void MarketData2::check_subscribe_queue(std::chrono::nanoseconds now) {

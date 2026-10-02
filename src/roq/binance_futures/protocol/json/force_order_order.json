@@ -1,0 +1,61 @@
+{
+  "name": "roq/binance_futures/protocol/json/ForceOrderOrder",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "S",
+      "name": "side",
+      "type": "roq/binance_futures/protocol/json/Side"
+    },
+    {
+      "raw": "o",
+      "name": "order_type",
+      "type": "roq/binance_futures/protocol/json/OrderType"
+    },
+    {
+      "raw": "f",
+      "name": "time_in_force",
+      "type": "roq/binance_futures/protocol/json/TimeInForce"
+    },
+    {
+      "raw": "q",
+      "name": "quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "p",
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "raw": "ap",
+      "name": "average_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "X",
+      "name": "order_status",
+      "type": "roq/binance_futures/protocol/json/OrderStatus"
+    },
+    {
+      "raw": "l",
+      "name": "last_filled_quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "z",
+      "name": "accumulated_quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "T",
+      "name": "order_trade_time",
+      "type": "std/milliseconds"
+    }
+  ]
+}

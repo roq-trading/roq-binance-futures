@@ -535,13 +535,14 @@ void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &event) {
   profile_.force_order([&]() {
     auto &[trace_info, force_order] = event;
     log::info<3>("force_order={}"sv, force_order);
+    log::warn("force_order={}"sv, force_order);
     (*connection_).touch(trace_info.source_receive_time);
     auto trade = Trade{
         .trade_conditions = {TradeCondition::FORCED_LIQUIDATION},
         .trade_type = {},
         .side = map(force_order.order.side),  // XXX FIXME TODO normally we use the taker side... what to use here?
         .price = force_order.order.price,
-        .quantity = force_order.order.quantity,
+        .quantity = force_order.order.last_filled_quantity,
         .trade_id = {},
         .taker_order_id = {},
         .maker_order_id = {},

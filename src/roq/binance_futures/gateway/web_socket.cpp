@@ -40,7 +40,7 @@ uint32_t const REQUEST_ID = 1'000'000;
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 1;
 
-auto const DEFAULT_LISTEN_KEY_REFRESH_DELAY = 1min;
+auto const DEFAULT_LISTEN_KEY_REFRESH_DELAY = 10s;  // note! this is arbitrary and only to avoid spamming
 }  // namespace
 
 // === HELPERS ===
@@ -246,11 +246,11 @@ uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] 
 
 void WebSocket::refresh_listen_key() {
   if (listen_key_refresh_.count()) {
-    log::warn("DEBUG Requesting listen-key refresh..."sv);
+    log::info("Requesting listen-key refresh..."sv);
     auto now = clock::get_system();
-    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! to avoid spamming
+    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
   } else {
-    log::warn("DEBUG Unexpected: no listen_key_refresh"sv);
+    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
   }
 }
 
@@ -271,7 +271,6 @@ void WebSocket::session_logon() {
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto signature = account_.create_session_logon_signature(now_utc, recv_window);
     auto message = protocol::json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, recv_window, signature, request_id);
-    log::warn(R"(DEBUG message="{}")"sv, message);
     (*connection_).send_text(message);
     (*this)(ConnectionStatus::LOGIN_SENT);
   });

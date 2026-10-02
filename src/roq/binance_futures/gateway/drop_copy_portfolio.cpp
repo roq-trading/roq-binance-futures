@@ -283,9 +283,9 @@ void DropCopyPortfolio::parse(std::string_view const &message) {
 
 void DropCopyPortfolio::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
   auto &[trace_info, listen_key_expired] = event;
-  log::info<4>("listen_key_expired={}"sv, listen_key_expired);
+  log::info("listen_key_expired={}"sv, listen_key_expired);
   stop_ = true;  // note!
-  log::warn("Closing connection... (reason: listen-key-expired)"sv);
+  log::warn("Closing connection..."sv);
   (*connection_).close();
 }
 

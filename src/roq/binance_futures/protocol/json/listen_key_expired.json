@@ -6,6 +6,15 @@
       "raw": "e",
       "name": "event_type",
       "type": "roq/binance_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "timestamp",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "listenKey",
+      "type": "std/string_view"
     }
   ]
 }

@@ -159,13 +159,13 @@ void Controller::operator()(Event<Timer> const &event) {
   // note! remove drop_copy *BEFORE* dispatching timer (because of possible auto-retry connection)
   if (!std::empty(drop_copy_zombies_)) [[unlikely]] {
     for (auto &account : drop_copy_zombies_) {
-      log::warn(R"(DEBUG removing account="{}"...)"sv, account);
+      log::info(R"(Removing DropCopy (user-stream) for account="{}"...)"sv, account);
       auto iter = drop_copy_.find(account);
       if (iter == std::end(drop_copy_)) [[unlikely]] {
         log::fatal("Unexpected"sv);
       }
       (*iter).second.reset();
-      log::warn(R"(DEBUG account="{}" was removed)"sv, account);
+      log::info(R"(DropCopy (user-stream) was removed for account="{}")"sv, account);
       auto iter_2 = order_entry_.find(account);
       if (iter_2 == std::end(order_entry_)) {
         log::fatal("Unexpected"sv);
@@ -312,14 +312,14 @@ void Controller::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_k
 // DropCopyClassic::Handler
 
 void Controller::operator()(DropCopyClassic::Remove const &remove) {
-  log::warn(R"(DEBUG requesting account="{}" to be removed)"sv, remove.account);
+  log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
   drop_copy_zombies_.insert(remove.account);
 }
 
 // DropCopyPortfolio::Handler
 
 void Controller::operator()(DropCopyPortfolio::Remove const &remove) {
-  log::warn(R"(DEBUG requesting account="{}" to be removed)"sv, remove.account);
+  log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
   drop_copy_zombies_.insert(remove.account);
 }
 

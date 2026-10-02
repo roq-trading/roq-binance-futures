@@ -96,7 +96,6 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
           .trade = create_metrics(shared.settings, name_, "trade"sv),
           .book_ticker = create_metrics(shared.settings, name_, "book_ticker"sv),
           .depth_update = create_metrics(shared.settings, name_, "depth_update"sv),
-          .force_order = create_metrics(shared.settings, name_, "force_order"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -133,7 +132,6 @@ void MarketData::operator()(metrics::Writer &writer) const {
       .write(profile_.trade, metrics::Type::PROFILE)
       .write(profile_.book_ticker, metrics::Type::PROFILE)
       .write(profile_.depth_update, metrics::Type::PROFILE)
-      .write(profile_.force_order, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -142,9 +140,6 @@ void MarketData::operator()(metrics::Writer &writer) const {
 void MarketData::subscribe(size_t start_from) {
   if (ready()) {
     subscribe(shared_.symbols.get_slice(index_, start_from));
-    if (index_ == 0 && shared_.settings.misc.subscribe_force_order) {
-      subscribe("!forceOrder@arr"sv);
-    }
   }
 }
 
@@ -236,20 +231,6 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols, std::string_v
       fmt::join(symbols, separator),
       channel,
       id);
-  subscribe_queue_.emplace_back(message);
-}
-
-void MarketData::subscribe(std::string_view const &channel) {
-  auto id = ++request_id_;
-  auto message = fmt::format(
-      R"({{)"
-      R"("method":"SUBSCRIBE",)"
-      R"("params":["{}"],)"
-      R"("id":{})"
-      R"(}})"sv,
-      channel,
-      id);
-  log::warn("DEBUG {}"sv, message);
   subscribe_queue_.emplace_back(message);
 }
 
@@ -443,14 +424,8 @@ void MarketData::operator()(Trace<protocol::json::AssetIndexUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void MarketData::operator()(Trace<protocol::json::ForceOrder> const &event) {
-  profile_.force_order([&]() {
-    auto &[trace_info, force_order] = event;
-    log::info<3>("force_order={}"sv, force_order);
-    log::warn("DEBUG force_order={}"sv, force_order);
-    (*connection_).touch(trace_info.source_receive_time);
-    // XXX FIXME TODO implement
-  });
+void MarketData::operator()(Trace<protocol::json::ForceOrder> const &) {
+  log::fatal("Unexpected"sv);
 }
 
 // request

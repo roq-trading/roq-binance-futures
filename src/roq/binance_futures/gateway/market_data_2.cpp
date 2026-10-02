@@ -14,6 +14,8 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
+#include "roq/binance_futures/protocol/json/map.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -91,6 +93,7 @@ MarketData2::MarketData2(Handler &handler, io::Context &context, uint16_t stream
           .mini_ticker = create_metrics(shared.settings, name_, "mini_ticker"sv),
           .kline = create_metrics(shared.settings, name_, "kline"sv),
           .asset_index_update = create_metrics(shared.settings, name_, "asset_index_update"sv),
+          .force_order = create_metrics(shared.settings, name_, "force_order"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -129,6 +132,7 @@ void MarketData2::operator()(metrics::Writer &writer) const {
       .write(profile_.mini_ticker, metrics::Type::PROFILE)
       .write(profile_.kline, metrics::Type::PROFILE)
       .write(profile_.asset_index_update, metrics::Type::PROFILE)
+      .write(profile_.force_order, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
@@ -229,6 +233,9 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols) {
       shared_.time_series_request_queue.emplace_back(symbol);
     }
   }
+  if (index_ == 0 && shared_.settings.misc.subscribe_force_order) {
+    subscribe("!forceOrder@arr"sv);
+  }
 }
 
 void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel, std::chrono::nanoseconds const freq) {
@@ -251,6 +258,20 @@ void MarketData2::subscribe(std::span<Symbol const> const &symbols, std::string_
       channel,
       postfix,
       id);
+  subscribe_queue_.emplace_back(message);
+}
+
+void MarketData2::subscribe(std::string_view const &channel) {
+  auto id = ++request_id_;
+  auto message = fmt::format(
+      R"({{)"
+      R"("method":"SUBSCRIBE",)"
+      R"("params":["{}"],)"
+      R"("id":{})"
+      R"(}})"sv,
+      channel,
+      id);
+  log::warn("DEBUG {}"sv, message);
   subscribe_queue_.emplace_back(message);
 }
 
@@ -313,6 +334,8 @@ void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {
     }
     auto side = agg_trade.buyer_is_maker ? Side::SELL : Side::BUY;
     auto trade = Trade{
+        .trade_conditions = {},
+        .trade_type = {},
         .side = side,
         .price = agg_trade.price,
         .quantity = agg_trade.quantity,
@@ -508,7 +531,32 @@ void MarketData2::operator()(Trace<protocol::json::AssetIndexUpdate> const &even
   });
 }
 
-void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &) {
+void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &event) {
+  profile_.force_order([&]() {
+    auto &[trace_info, force_order] = event;
+    log::info<3>("force_order={}"sv, force_order);
+    (*connection_).touch(trace_info.source_receive_time);
+    auto trade = Trade{
+        .trade_conditions = {TradeCondition::FORCED_LIQUIDATION},
+        .trade_type = {},
+        .side = map(force_order.order.side),  // XXX FIXME TODO normally we use the taker side... what to use here?
+        .price = force_order.order.price,
+        .quantity = force_order.order.quantity,
+        .trade_id = {},
+        .taker_order_id = {},
+        .maker_order_id = {},
+    };
+    auto trade_summary = TradeSummary{
+        .stream_id = stream_id_,
+        .exchange = shared_.settings.exchange,
+        .symbol = force_order.order.symbol,
+        .trades = {&trade, 1},
+        .exchange_time_utc = force_order.order.order_trade_time,
+        .exchange_sequence = {},
+        .sending_time_utc = force_order.event_time,
+    };
+    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, trade_summary, true);
+  });
 }
 
 // request

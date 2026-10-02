@@ -56,6 +56,16 @@
       "raw": "T",
       "name": "order_trade_time",
       "type": "std/milliseconds"
+    },
+    {
+      "raw": "ps",
+      "name": "pair_symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "st",
+      "name": "symbol_type",
+      "type": "std/int32"
     }
   ]
 }

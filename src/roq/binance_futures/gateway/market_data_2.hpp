@@ -66,6 +66,8 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
 
   void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel, std::chrono::nanoseconds const freq = {});
 
+  void subscribe(std::string_view const &channel);
+
   void subscribe_2(std::span<std::string> const &assets, std::string_view const &channel);
 
   void parse(std::string_view const &message);
@@ -104,7 +106,7 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, kline, asset_index_update;
+    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, kline, asset_index_update, force_order;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;

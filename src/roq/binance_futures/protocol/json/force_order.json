@@ -16,11 +16,6 @@
       "raw": "o",
       "name": "order",
       "type": "roq/binance_futures/protocol/json/ForceOrderOrder"
-    },
-    {
-      "raw": "st",
-      "name": "symbol_type",
-      "type": "std/int32"
     }
   ]
 }

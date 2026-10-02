@@ -20,6 +20,7 @@ set(SOURCES
     json_exchange_info_ack.cpp
     json_execution_report.cpp
     json_filters.cpp
+    json_force_order.cpp
     json_grid_update.cpp
     json_liability_change.cpp
     json_listen_key_ack.cpp

@@ -170,7 +170,7 @@ void Controller::operator()(Event<Timer> const &event) {
       if (iter_2 == std::end(order_entry_)) {
         log::fatal("Unexpected"sv);
       }
-      (*(*iter_2).second).refresh_listen_key();
+      (*(*iter_2).second).force_listen_key_refresh();
     }
     drop_copy_zombies_.clear();
   }

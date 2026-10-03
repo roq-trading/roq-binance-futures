@@ -244,7 +244,7 @@ uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] 
   // return stream_id_;
 }
 
-void WebSocket::refresh_listen_key() {
+void WebSocket::force_listen_key_refresh() {
   if (listen_key_refresh_.count()) {
     log::info("Requesting listen-key refresh..."sv);
     auto now = clock::get_system();

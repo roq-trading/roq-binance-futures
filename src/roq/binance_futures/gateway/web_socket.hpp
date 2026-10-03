@@ -73,7 +73,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
-  void refresh_listen_key() override;
+  void force_listen_key_refresh() override;
 
   // helpers
 

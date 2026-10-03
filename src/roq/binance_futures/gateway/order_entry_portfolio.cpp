@@ -44,6 +44,8 @@ auto const X_MBX_ORDER_COUNT_1M = "x-mbx-order-count-1m"sv;
 size_t const MAX_DECODE_BUFFER_DEPTH = 1;
 
 size_t const DOWNLOAD_TRADES_LIMIT = 1000;
+
+auto const DEFAULT_LISTEN_KEY_REFRESH_DELAY = 10s;  // note! this is arbitrary and only to avoid spamming
 }  // namespace
 
 // === HELPERS ===
@@ -256,6 +258,16 @@ uint16_t OrderEntryPortfolio::operator()(
 uint16_t OrderEntryPortfolio::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
   return stream_id_;
+}
+
+void OrderEntryPortfolio::force_listen_key_refresh() {
+  if (listen_key_refresh_.count()) {
+    log::info("Requesting listen-key refresh..."sv);
+    auto now = clock::get_system();
+    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
+  } else {
+    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
+  }
 }
 
 void OrderEntryPortfolio::operator()(Trace<web::rest::Connected> const &) {

@@ -83,6 +83,8 @@ struct OrderEntryPortfolio final : public OrderEntry, public web::rest::Client::
 
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
+  void force_listen_key_refresh() override;
+
   // web::rest::Client::Handler
 
   void operator()(Trace<web::rest::Connected> const &) override;

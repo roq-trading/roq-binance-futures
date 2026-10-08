@@ -15,6 +15,8 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
+#include "roq/server/oms/exceptions.hpp"
+
 #include "roq/binance_futures/gateway/utils.hpp"
 
 #include "roq/binance_futures/protocol/json/encoder.hpp"
@@ -143,6 +145,8 @@ RestTrade::RestTrade(Handler &handler, io::Context &context, uint16_t stream_id,
       account_{account}, shared_{shared}, request_{request} {
 }
 
+// server::Stream
+
 void RestTrade::operator()(Event<Start> const &) {
   (*connection_).start();
 }
@@ -152,8 +156,8 @@ void RestTrade::operator()(Event<Stop> const &) {
 }
 
 void RestTrade::operator()(Event<Timer> const &event) {
-  auto now = event.value.now;
-  (*connection_).refresh(now);
+  auto &[trace_info, timer] = event;
+  (*connection_).refresh(timer.now);
   if (ready() && !downloading()) {
     /* XXX FIXME TODO DEPRECATED
     if (!downloading() && request_.respond_balance < request_.request_balance) {
@@ -180,7 +184,7 @@ void RestTrade::operator()(Event<Timer> const &event) {
   }
 }
 
-void RestTrade::operator()(metrics::Writer &writer) {
+void RestTrade::operator()(metrics::Writer &writer) const {
   writer
       // counter
       .write(counter_.disconnect, metrics::Type::COUNTER)
@@ -202,6 +206,53 @@ void RestTrade::operator()(metrics::Writer &writer) {
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
+void RestTrade::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
+  auto &[trace_info, connection_status] = event;
+  connection_status_ = connection_status;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::HTTP,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+}
+
+// server::OrderActionStream
+
+uint16_t RestTrade::operator()(
+    Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, [[maybe_unused]] std::string_view const &request_id) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
+uint16_t RestTrade::operator()(
+    Event<ModifyOrder> const &,
+    server::oms::Order const &,
+    server::oms::RefData const &,
+    [[maybe_unused]] std::string_view const &request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
+uint16_t RestTrade::operator()(
+    Event<CancelOrder> const &,
+    server::oms::Order const &,
+    server::oms::RefData const &,
+    [[maybe_unused]] std::string_view const &request_id,
+    [[maybe_unused]] std::string_view const &previous_request_id) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
 uint16_t RestTrade::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
   return stream_id_;
@@ -209,13 +260,15 @@ uint16_t RestTrade::operator()(Event<CancelAllOrders> const &event, std::string_
 
 // web::rest::Client::Handler
 
-void RestTrade::operator()(Trace<web::rest::Connected> const &) {
-  (*this)(ConnectionStatus::READY);
+void RestTrade::operator()(Trace<web::rest::Connected> const &event) {
+  auto &[trace_info, connected] = event;
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
 }
 
-void RestTrade::operator()(Trace<web::rest::Disconnected> const &) {
+void RestTrade::operator()(Trace<web::rest::Disconnected> const &event) {
+  auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  (*this)(ConnectionStatus::DISCONNECTED);
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   download_balance_ = false;
   download_account_ = false;
   download_orders_ = false;
@@ -288,28 +341,6 @@ void RestTrade::operator()(Trace<web::rest::MessageEnd> const &event) {
   shared_.rate_limits.clear();
 }
 
-void RestTrade::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
-  connection_status_ = connection_status;
-  TraceInfo trace_info;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-      .proxy = (*connection_).get_proxy(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
-}
-
 // account-balance
 
 void RestTrade::get_account_balance() {
@@ -339,6 +370,7 @@ void RestTrade::get_account_balance() {
 
 void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event) {
   profile_.account_balance_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download balance has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       request_.respond_balance = clock::get_system();
@@ -346,8 +378,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
-      Trace event_2{event, account_balance_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_balance_ack);
       // completion
       log::info<1>("Download balance has COMPLETED!"sv);
       request_.respond_balance = clock::get_system();
@@ -425,6 +456,7 @@ void RestTrade::get_account_status() {
 
 void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) {
   profile_.account_status_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download account has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       request_.respond_account = clock::get_system();
@@ -432,8 +464,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
-      Trace event_2{event, account_status_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_status_ack);
       // completion
       log::info<1>("Download account has COMPLETED!"sv);
       request_.respond_account = clock::get_system();
@@ -499,6 +530,7 @@ void RestTrade::get_open_orders() {
 
 void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download open-orders has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       request_.respond_orders = clock::get_system();
@@ -506,8 +538,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
-      Trace event_2{event, open_orders_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, open_orders_ack);
       // completion
       log::info<1>("Download open-orders has COMPLETED!"sv);
       request_.respond_orders = clock::get_system();
@@ -614,6 +645,7 @@ void RestTrade::get_trades() {
 
 void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download user-trades has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       request_.respond_trades = clock::get_system();
@@ -621,8 +653,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
     };
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
-      Trace event_2{event, trades_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, trades_ack);
       // completion
       log::info<1>("Download user-trades has COMPLETED!"sv);
       request_.respond_trades = clock::get_system();
@@ -738,14 +769,14 @@ void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
 
 void RestTrade::open_orders_cancel_all_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
       log::debug("{}"sv, body);
       protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
-      Trace event_2{event, open_orders_cancel_all_ack};
-      (*this)(event_2, request_id);
+      create_trace_and_dispatch_2(trace_info, open_orders_cancel_all_ack, request_id);
     };
     process_response(event, handle_error, handle_success);
   });

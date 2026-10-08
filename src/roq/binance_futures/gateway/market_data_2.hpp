@@ -19,6 +19,10 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
+#include "roq/server.hpp"
+
+#include "roq/server/stream.hpp"
+
 #include "roq/binance_futures/gateway/shared.hpp"
 
 #include "roq/binance_futures/protocol/json/market_stream_parser.hpp"
@@ -27,27 +31,38 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct MarketData2 final : public web::socket::Client::Handler, public protocol::json::MarketStreamParser::Handler {
+struct MarketData2 final : public Base<MarketData2>,
+                           public server::MarketDataStream,
+                           public web::socket::Client::Handler,
+                           public protocol::json::MarketStreamParser::Handler {
   struct Handler {};
 
   MarketData2(Handler &, io::Context &, uint16_t stream_id, Shared &, size_t index);
 
-  MarketData2(MarketData2 const &) = delete;
-
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
-
-  void operator()(metrics::Writer &) const;
-
-  void subscribe(size_t start_from = 0);
-
   void operator()(std::span<std::string_view const> const &assets);
 
- protected:
-  // helpers
-  void check_subscribe_queue(std::chrono::nanoseconds now);
+  // protected:
+  friend base_type;
 
+  // server::Stream
+
+  uint16_t stream_id() const override { return stream_id_; }
+
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
+
+  void operator()(Event<Start> const &) override;
+  void operator()(Event<Stop> const &) override;
+  void operator()(Event<Timer> const &) override;
+
+  void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
+
+  // server::MarketDataStream
+
+  void subscribe(size_t start_from = 0) override;
+
+ protected:
   // web::socket::Client::Handler
 
   void operator()(Trace<web::socket::Connected> const &) override;
@@ -58,9 +73,24 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
   void operator()(Trace<web::socket::Text> const &) override;
   void operator()(Trace<web::socket::Binary> const &) override;
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+  // protocol::json::MarketStreamParser::Handler
 
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
+  void operator()(Trace<protocol::json::Error> const &, int32_t id) override;
+  void operator()(Trace<protocol::json::Result> const &, int32_t id) override;
+  //
+  void operator()(Trace<protocol::json::Trade2> const &) override;
+  void operator()(Trace<protocol::json::AggTrade> const &) override;
+  void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
+  void operator()(Trace<protocol::json::MiniTicker> const &) override;
+  void operator()(Trace<protocol::json::BookTicker> const &) override;
+  void operator()(Trace<protocol::json::DepthUpdate> const &) override;
+  void operator()(Trace<protocol::json::Kline> const &) override;
+  void operator()(Trace<protocol::json::AssetIndexUpdate> const &) override;
+  void operator()(Trace<protocol::json::ForceOrder> const &) override;
+
+  // helpers
+
+  void check_subscribe_queue(std::chrono::nanoseconds now);
 
   void subscribe(std::span<Symbol const> const &symbols);
 
@@ -71,23 +101,6 @@ struct MarketData2 final : public web::socket::Client::Handler, public protocol:
   void subscribe_2(std::span<std::string> const &assets, std::string_view const &channel);
 
   void parse(std::string_view const &message);
-
-  // protocol::json::MarketStreamParser::Handler
-
-  // response
-  void operator()(Trace<protocol::json::Error> const &, int32_t id) override;
-  void operator()(Trace<protocol::json::Result> const &, int32_t id) override;
-
-  // update
-  void operator()(Trace<protocol::json::Trade2> const &) override;
-  void operator()(Trace<protocol::json::AggTrade> const &) override;
-  void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
-  void operator()(Trace<protocol::json::MiniTicker> const &) override;
-  void operator()(Trace<protocol::json::BookTicker> const &) override;
-  void operator()(Trace<protocol::json::DepthUpdate> const &) override;
-  void operator()(Trace<protocol::json::Kline> const &) override;
-  void operator()(Trace<protocol::json::AssetIndexUpdate> const &) override;
-  void operator()(Trace<protocol::json::ForceOrder> const &) override;
 
  private:
   [[maybe_unused]] Handler &handler_;

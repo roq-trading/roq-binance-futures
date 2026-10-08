@@ -15,11 +15,13 @@
 
 #include "roq/web/rest/client.hpp"
 
-#include "roq/core/download.hpp"
+#include "roq/core/download_2.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
 
 #include "roq/server.hpp"
+
+#include "roq/server/stream.hpp"
 
 #include "roq/binance_futures/gateway/account.hpp"
 #include "roq/binance_futures/gateway/order_entry.hpp"
@@ -44,7 +46,7 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Handler {
+struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEntry, public web::rest::Client::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -56,17 +58,26 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
 
   OrderEntryClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
 
-  OrderEntryClassic(OrderEntryClassic &&) = delete;
-  OrderEntryClassic(OrderEntryClassic const &) = delete;
+  void force_listen_key_refresh() override;
 
- protected:
-  // OrderEntry
+  // protected:
+  friend base_type;
+
+  // server::Stream
+
+  uint16_t stream_id() const override { return stream_id_; }
+
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
   void operator()(Event<Timer> const &) override;
 
   void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
+
+  // server::OrderActionStream
 
   uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
   uint16_t operator()(
@@ -84,8 +95,6 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
 
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
-  void force_listen_key_refresh() override;
-
   // web::rest::Client::Handler
 
   void operator()(Trace<web::rest::Connected> const &) override;
@@ -95,12 +104,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   void operator()(Trace<web::rest::MessageHeader> const &) override;
   void operator()(Trace<web::rest::MessageEnd> const &) override;
 
-  // helpers
-
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
-  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
-
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
+  // core::Download
 
   enum class State {
     UNDEFINED = 0,
@@ -108,7 +112,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
     DONE,
   };
 
-  uint32_t download(State state);
+  int32_t download(Trace<State> const &);
 
   // listen-key
 
@@ -190,6 +194,8 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
 
   void waf_limit_violation();
 
+  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
+
  private:
   Handler &handler_;
   // config
@@ -232,7 +238,7 @@ struct OrderEntryClassic final : public OrderEntry, public web::rest::Client::Ha
   // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
   ConnectionStatus connection_status_ = {};
-  core::Download<State> download_;
+  core::Download2<State> download_;
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};

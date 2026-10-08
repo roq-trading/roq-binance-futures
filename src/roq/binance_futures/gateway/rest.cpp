@@ -116,8 +116,10 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
       rate_limiter_{
           .request_weight_1m = create_metrics(shared.settings, name_, "requests"sv, "1m"sv),
       },
-      shared_{shared}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+      shared_{shared}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
 }
+
+// server::Stream
 
 void Rest::operator()(Event<Start> const &) {
   (*connection_).start();
@@ -128,10 +130,10 @@ void Rest::operator()(Event<Stop> const &) {
 }
 
 void Rest::operator()(Event<Timer> const &event) {
-  auto now = event.value.now;
-  (*connection_).refresh(now);
+  auto &[trace_info, timer] = event;
+  (*connection_).refresh(timer.now);
   if (ready()) {
-    check_request_queue(now);
+    check_request_queue(timer.now);
   }
 }
 
@@ -154,17 +156,43 @@ void Rest::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER);
 }
 
-void Rest::operator()(Trace<web::rest::Connected> const &) {
+void Rest::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
+  auto &[trace_info, connection_status] = event;
+  connection_status_ = connection_status;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = {},
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::HTTP,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+}
+
+// web::rest::Client::Handler
+
+void Rest::operator()(Trace<web::rest::Connected> const &event) {
+  auto &[trace_info, connected] = event;
   if (download_.downloading()) {
-    download_.bump();
+    download_.bump(trace_info);
   } else {
-    download_.begin();
+    download_.begin(trace_info);
   }
 }
 
-void Rest::operator()(Trace<web::rest::Disconnected> const &) {
+void Rest::operator()(Trace<web::rest::Disconnected> const &event) {
+  auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  (*this)(ConnectionStatus::DISCONNECTED);
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   if (!download_.downloading()) {
     download_.reset();
   }
@@ -220,40 +248,21 @@ void Rest::operator()(Trace<web::rest::MessageEnd> const &event) {
   shared_.rate_limits.clear();
 }
 
-void Rest::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
-  connection_status_ = connection_status;
-  TraceInfo trace_info;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = {},
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-      .proxy = (*connection_).get_proxy(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
-}
+// core::Download
 
-uint32_t Rest::download(State state) {
+int32_t Rest::download(Trace<State> const &event) {
+  auto &[trace_info, state] = event;
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case EXCHANGE_INFO:
-      (*this)(ConnectionStatus::DOWNLOADING, "exchange-info"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "exchange-info"sv);
       get_exchange_info();
       return 1;
     case ASSET_INDEX:
-      (*this)(ConnectionStatus::DOWNLOADING, "asset-index"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "asset-index"sv);
       if (std::empty(shared_.api.market_data.asset_index) || !shared_.settings.misc.subscribe_asset_index) {
         return 0;
       } else {
@@ -261,7 +270,7 @@ uint32_t Rest::download(State state) {
         return 1;
       }
     case DONE:
-      (*this)(ConnectionStatus::READY);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
       return 0;
   }
   assert(false);
@@ -294,6 +303,7 @@ void Rest::get_exchange_info() {
 void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
   auto const STATE = State::EXCHANGE_INFO;
   profile_.exchange_info_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       if (download_.downloading()) {
@@ -305,9 +315,8 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
         log::info("Download state={} has already been processed"sv, STATE);
       } else {
         protocol::json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
-        Trace event_2{event, exchange_info_ack};
-        (*this)(event_2);
-        download_.check(STATE);
+        create_trace_and_dispatch_2(trace_info, exchange_info_ack);
+        download_.check(trace_info, STATE);
       }
     };
     process_response(event, handle_error, handle_success);
@@ -487,6 +496,7 @@ void Rest::get_asset_index() {
 void Rest::get_asset_index_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
   auto const STATE = State::ASSET_INDEX;
   profile_.asset_index_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       if (download_.downloading()) {
@@ -498,9 +508,8 @@ void Rest::get_asset_index_ack(Trace<web::rest::Response> const &event, uint32_t
         log::info("Download state={} has already been processed"sv, STATE);
       } else {
         protocol::json::AssetIndexAck asset_index_ack{body, decode_buffer_};
-        Trace event_2{event, asset_index_ack};
-        (*this)(event_2);
-        download_.check(STATE);
+        create_trace_and_dispatch_2(trace_info, asset_index_ack);
+        download_.check(trace_info, STATE);
       }
     };
     process_response(event, handle_error, handle_success);
@@ -552,14 +561,14 @@ void Rest::get_depth(std::string_view const &symbol) {
 
 void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
   profile_.depth_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       // XXX WHAT ???
     };
     auto handle_success = [&](auto &body) {
       protocol::json::DepthAck depth_ack{body, decode_buffer_};
-      Trace event_2{event, depth_ack};
-      (*this)(event_2, symbol);
+      create_trace_and_dispatch_2(trace_info, depth_ack, symbol);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -656,6 +665,7 @@ void Rest::get_kline(std::string_view const &symbol) {
 
 void Rest::get_kline_ack(Trace<web::rest::Response> const &event, std::string_view const &symbol) {
   profile_.kline_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       // XXX WHAT ???
@@ -663,8 +673,7 @@ void Rest::get_kline_ack(Trace<web::rest::Response> const &event, std::string_vi
     auto handle_success = [&](auto &body) {
       log::debug("{}"sv, body);
       protocol::json::KlineAck kline_ack{body, decode_buffer_};
-      Trace event_2{event, kline_ack};
-      (*this)(event_2, symbol);
+      create_trace_and_dispatch_2(trace_info, kline_ack, symbol);
     };
     process_response(event, handle_error, handle_success);
   });

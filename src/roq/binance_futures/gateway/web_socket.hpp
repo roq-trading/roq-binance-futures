@@ -15,17 +15,16 @@
 
 #include "roq/web/socket/client.hpp"
 
-#include "roq/core/download.hpp"
+#include "roq/core/download_2.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
 
 #include "roq/server.hpp"
 
-// #include "roq/server/cache/cancel_order_request.hpp"
-
-#include "roq/binance_futures/gateway/order_entry.hpp"
+#include "roq/server/stream.hpp"
 
 #include "roq/binance_futures/gateway/account.hpp"
+#include "roq/binance_futures/gateway/order_entry.hpp"
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
 
@@ -35,7 +34,7 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct WebSocket final : public OrderEntry, public web::socket::Client::Handler, public protocol::json::WSAPIParser::Handler {
+struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::socket::Client::Handler, public protocol::json::WSAPIParser::Handler {
   struct ListenKeyUpdate final {
     std::string_view account;
     std::string_view listen_key;
@@ -47,16 +46,26 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
 
   WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+  void force_listen_key_refresh() override;
 
- protected:
-  // OrderEntry
+  // protected:
+  friend base_type;
+
+  // server::Stream
+
+  uint16_t stream_id() const override { return stream_id_; }
+
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
   void operator()(Event<Timer> const &) override;
 
   void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
+
+  // server::OrderActionStream
 
   uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
   uint16_t operator()(
@@ -73,24 +82,45 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
 
-  void force_listen_key_refresh() override;
+ protected:
+  // web::socket::Client::Handler
+
+  void operator()(Trace<web::socket::Connected> const &) override;
+  void operator()(Trace<web::socket::Disconnected> const &) override;
+  void operator()(Trace<web::socket::Ready> const &) override;
+  void operator()(Trace<web::socket::Close> const &) override;
+  void operator()(Trace<web::socket::Latency> const &) override;
+  void operator()(Trace<web::socket::Text> const &) override;
+  void operator()(Trace<web::socket::Binary> const &) override;
+
+  // core::Download
+
+  enum class State {
+    UNDEFINED = 0,
+    SESSION_LOGON,
+    USER_DATA_STREAM_START,
+    ACCOUNT_POSITION,
+    DONE,
+  };
+
+  int32_t download(Trace<State> const &);
+
+  // protocol::json::WSAPIParser::Handler
+
+  void operator()(Trace<protocol::json::WSAPIError> const &) override;
+  void operator()(Trace<protocol::json::WSAPISessionLogon> const &) override;
+  void operator()(Trace<protocol::json::WSAPIListenKey> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountBalance> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountStatus> const &) override;
+  void operator()(Trace<protocol::json::WSAPIAccountPosition> const &) override;
+  void operator()(Trace<protocol::json::WSAPIOpenOrders> const &) override;
+  void operator()(Trace<protocol::json::WSAPITrades> const &) override;
+  void operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderPlace> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderModify> const &, protocol::json::WSAPIRequest const &) override;
+  void operator()(Trace<protocol::json::WSAPIOrderCancel> const &, protocol::json::WSAPIRequest const &) override;
 
   // helpers
-
-  bool downloading() const { return download_balance_ || download_account_ | download_orders_; }
-
-  // session-logon
-
-  void session_logon();
-
-  // user-data-streams
-
-  void user_data_stream_start();
-  void user_data_stream_ping(std::chrono::nanoseconds now);
-
-  void account_balance();
-  void account_status();
-  void account_position();
 
   // order-status
 
@@ -123,48 +153,24 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
 
-  // web::socket::Client::Handler
-
-  void operator()(Trace<web::socket::Connected> const &) override;
-  void operator()(Trace<web::socket::Disconnected> const &) override;
-  void operator()(Trace<web::socket::Ready> const &) override;
-  void operator()(Trace<web::socket::Close> const &) override;
-  void operator()(Trace<web::socket::Latency> const &) override;
-  void operator()(Trace<web::socket::Text> const &) override;
-  void operator()(Trace<web::socket::Binary> const &) override;
-
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
-
-  enum class State {
-    UNDEFINED = 0,
-    SESSION_LOGON,
-    USER_DATA_STREAM_START,
-    ACCOUNT_POSITION,
-    DONE,
-  };
-
-  uint32_t download(State state);
-
   void parse(std::string_view const &message);
 
-  // protocol::json::WSAPIParser::Handler
-
-  void operator()(Trace<protocol::json::WSAPIError> const &) override;
-  void operator()(Trace<protocol::json::WSAPISessionLogon> const &) override;
-  void operator()(Trace<protocol::json::WSAPIListenKey> const &) override;
-  void operator()(Trace<protocol::json::WSAPIAccountBalance> const &) override;
-  void operator()(Trace<protocol::json::WSAPIAccountStatus> const &) override;
-  void operator()(Trace<protocol::json::WSAPIAccountPosition> const &) override;
-  void operator()(Trace<protocol::json::WSAPIOpenOrders> const &) override;
-  void operator()(Trace<protocol::json::WSAPITrades> const &) override;
-  void operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const &, protocol::json::WSAPIRequest const &) override;
-  void operator()(Trace<protocol::json::WSAPIOrderPlace> const &, protocol::json::WSAPIRequest const &) override;
-  void operator()(Trace<protocol::json::WSAPIOrderModify> const &, protocol::json::WSAPIRequest const &) override;
-  void operator()(Trace<protocol::json::WSAPIOrderCancel> const &, protocol::json::WSAPIRequest const &) override;
-
-  // helpers
-
   void update_rate_limits(auto &event);
+
+  bool downloading() const { return download_balance_ || download_account_ | download_orders_; }
+
+  // session-logon
+
+  void session_logon(TraceInfo const &);
+
+  // user-data-streams
+
+  void user_data_stream_start();
+  void user_data_stream_ping(std::chrono::nanoseconds now);
+
+  void account_balance();
+  void account_status();
+  void account_position();
 
  private:
   Handler &handler_;
@@ -219,7 +225,7 @@ struct WebSocket final : public OrderEntry, public web::socket::Client::Handler,
   // state
   bool ready_ = false;
   ConnectionStatus connection_status_ = {};
-  core::Download<State> download_;
+  core::Download2<State> download_;
   [[maybe_unused]] bool download_trades_is_first_ = true;
   //
   std::string external_order_id_;

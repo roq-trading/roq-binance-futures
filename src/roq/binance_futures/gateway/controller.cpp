@@ -423,7 +423,7 @@ Request &Controller::get_request(std::string_view const &account) {
   log::fatal(R"(Unknown account="{}")"sv, account);
 }
 
-OrderEntry &Controller::get_order_entry(std::string_view const &account) {
+server::OrderActionStream &Controller::get_order_entry(std::string_view const &account) {
   auto iter = order_entry_.find(account);
   if (iter != std::end(order_entry_)) {
     return *(*iter).second;

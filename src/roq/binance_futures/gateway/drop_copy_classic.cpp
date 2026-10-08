@@ -5,7 +5,6 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/common.hpp"
-// #include "roq/utils/update.hpp"
 
 #include "roq/utils/exceptions/unhandled.hpp"
 
@@ -114,8 +113,18 @@ DropCopyClassic::DropCopyClassic(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, download_{{}, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{{}, [this](auto &event) { return download(event); }} {
 }
+
+void DropCopyClassic::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
+  auto &[trace_info, listen_key_expired] = event;
+  log::info("listen_key_expired={}"sv, listen_key_expired);
+  stop_ = true;  // note!
+  log::warn("Closing connection..."sv);
+  (*connection_).close();
+}
+
+// server::Stream
 
 bool DropCopyClassic::ready() const {
   return (*connection_).ready();
@@ -130,13 +139,13 @@ void DropCopyClassic::operator()(Event<Stop> const &) {
 }
 
 void DropCopyClassic::operator()(Event<Timer> const &event) {
-  auto now = event.value.now;
-  (*connection_).refresh(now);
-  check_response_balance();
-  check_response_account();
-  check_response_orders();
-  check_response_trades();
-  refresh_balance(now);
+  auto &[trace_info, timer] = event;
+  (*connection_).refresh(timer.now);
+  check_response_balance(trace_info);
+  check_response_account(trace_info);
+  check_response_orders(trace_info);
+  check_response_trades(trace_info);
+  refresh_balance(timer.now);
 }
 
 void DropCopyClassic::operator()(metrics::Writer &writer) const {
@@ -161,13 +170,38 @@ void DropCopyClassic::operator()(metrics::Writer &writer) const {
       .write(latency_.heartbeat, metrics::Type::LATENCY);
 }
 
+void DropCopyClassic::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
+  auto &[trace_info, connection_status] = event;
+  connection_status_ = connection_status;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::WS,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+}
+
+// web::socket::Client::Handler
+
 void DropCopyClassic::operator()(Trace<web::socket::Connected> const &) {
 }
 
-void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &) {
+void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &event) {
+  auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
   ready_ = false;
-  (*this)(ConnectionStatus::DISCONNECTED);
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   download_.reset();
   if (stop_) {
     auto remove = Remove{
@@ -177,11 +211,14 @@ void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &) {
   }
 }
 
-void DropCopyClassic::operator()(Trace<web::socket::Ready> const &) {
-  download_.begin();
+void DropCopyClassic::operator()(Trace<web::socket::Ready> const &event) {
+  auto &[trace_info, ready] = event;
+  download_.begin(trace_info);
 }
 
-void DropCopyClassic::operator()(Trace<web::socket::Close> const &) {
+void DropCopyClassic::operator()(Trace<web::socket::Close> const &event) {
+  auto &[trace_info, close] = event;
+  log::warn("close={}"sv, close);
 }
 
 void DropCopyClassic::operator()(Trace<web::socket::Latency> const &event) {
@@ -204,56 +241,37 @@ void DropCopyClassic::operator()(Trace<web::socket::Binary> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopyClassic::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
-  connection_status_ = connection_status;
-  TraceInfo trace_info;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::WS,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-      .proxy = (*connection_).get_proxy(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
-}
+// core::Download
 
-uint32_t DropCopyClassic::download(State state) {
+int32_t DropCopyClassic::download(Trace<State> const &event) {
+  auto &[trace_info, state] = event;
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case BALANCE:
-      (*this)(ConnectionStatus::DOWNLOADING, "balance"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "balance"sv);
       request_balance();
       return 1;
     case ACCOUNT:
-      (*this)(ConnectionStatus::DOWNLOADING, "account"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account"sv);
       request_account();
       return 1;
     case ORDERS:
-      (*this)(ConnectionStatus::DOWNLOADING, "orders"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "orders"sv);
       request_orders();
       return 1;
     case TRADES:
       if (shared_.settings.download.trades_lookback.count() != 0 && !std::empty(shared_.settings.download.symbols)) {
-        (*this)(ConnectionStatus::DOWNLOADING, "trades"sv);
+        create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "trades"sv);
         request_trades();
         return 1;
       } else {
         return 0;
       }
     case DONE:
-      (*this)(ConnectionStatus::READY);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
       assert(!ready_);
       ready_ = true;
       return 0;
@@ -262,28 +280,7 @@ uint32_t DropCopyClassic::download(State state) {
   return 0;
 }
 
-void DropCopyClassic::parse(std::string_view const &message) {
-  auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
-  profile_.parse([&]() {
-    try {
-      TraceInfo trace_info;
-      if (!protocol::json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
-        log_message();
-      }
-    } catch (...) {
-      log_message();
-      utils::exceptions::Unhandled::terminate();
-    }
-  });
-}
-
-void DropCopyClassic::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
-  auto &[trace_info, listen_key_expired] = event;
-  log::info("listen_key_expired={}"sv, listen_key_expired);
-  stop_ = true;  // note!
-  log::warn("Closing connection..."sv);
-  (*connection_).close();
-}
+// protocol::json::UserStreamParser::Handler
 
 void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {
@@ -632,44 +629,59 @@ void DropCopyClassic::request_trades() {
 
 // response
 
-void DropCopyClassic::check_response_balance() {
+void DropCopyClassic::check_response_balance(TraceInfo const &trace_info) {
   if (download_.state() != State::BALANCE) {
     return;
   }
   if (request_.request_balance < request_.respond_balance) {
     log::info("Balance download has completed!"sv);
-    download_.check(State::BALANCE);
+    download_.check(trace_info, State::BALANCE);
   }
 }
 
-void DropCopyClassic::check_response_account() {
+void DropCopyClassic::check_response_account(TraceInfo const &trace_info) {
   if (download_.state() != State::ACCOUNT) {
     return;
   }
   if (request_.request_account < request_.respond_account) {
     log::info("Account download has completed!"sv);
-    download_.check(State::ACCOUNT);
+    download_.check(trace_info, State::ACCOUNT);
   }
 }
 
-void DropCopyClassic::check_response_orders() {
+void DropCopyClassic::check_response_orders(TraceInfo const &trace_info) {
   if (download_.state() != State::ORDERS) {
     return;
   }
   if (request_.request_orders < request_.respond_orders) {
     log::info("Order download has completed!"sv);
-    download_.check(State::ORDERS);
+    download_.check(trace_info, State::ORDERS);
   }
 }
 
-void DropCopyClassic::check_response_trades() {
+void DropCopyClassic::check_response_trades(TraceInfo const &trace_info) {
   if (download_.state() != State::TRADES) {
     return;
   }
   if (request_.request_trades < request_.respond_trades) {
     log::info("Trades download has completed!"sv);
-    download_.check(State::TRADES);
+    download_.check(trace_info, State::TRADES);
   }
+}
+
+void DropCopyClassic::parse(std::string_view const &message) {
+  auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
+  profile_.parse([&]() {
+    try {
+      TraceInfo trace_info;
+      if (!protocol::json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
+        log_message();
+      }
+    } catch (...) {
+      log_message();
+      utils::exceptions::Unhandled::terminate();
+    }
+  });
 }
 
 }  // namespace gateway

@@ -152,8 +152,20 @@ OrderEntryPortfolio::OrderEntryPortfolio(Handler &handler, io::Context &context,
           .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
           .create_order_1m = create_metrics(shared.settings, name_, "create_order"sv, "1m"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
 }
+
+void OrderEntryPortfolio::force_listen_key_refresh() {
+  if (listen_key_refresh_.count()) {
+    log::info("Requesting listen-key refresh..."sv);
+    auto now = clock::get_system();
+    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
+  } else {
+    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
+  }
+}
+
+// server::Stream
 
 void OrderEntryPortfolio::operator()(Event<Start> const &) {
   (*connection_).start();
@@ -164,10 +176,10 @@ void OrderEntryPortfolio::operator()(Event<Stop> const &) {
 }
 
 void OrderEntryPortfolio::operator()(Event<Timer> const &event) {
-  auto now = event.value.now;
-  (*connection_).refresh(now);
-  refresh_listen_key(now);
-  refresh_balance(now);
+  auto &[trace_info, timer] = event;
+  (*connection_).refresh(timer.now);
+  refresh_listen_key(timer.now);
+  refresh_balance(timer.now);
   if (ready() && !downloading()) {
     if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
@@ -229,6 +241,30 @@ void OrderEntryPortfolio::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
+void OrderEntryPortfolio::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
+  auto &[trace_info, connection_status] = event;
+  connection_status_ = connection_status;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::HTTP,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+}
+
+// server::OrderActionStream
+
 uint16_t OrderEntryPortfolio::operator()(
     Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   order_place(event, order, ref_data, request_id);
@@ -260,27 +296,21 @@ uint16_t OrderEntryPortfolio::operator()(Event<CancelAllOrders> const &event, st
   return stream_id_;
 }
 
-void OrderEntryPortfolio::force_listen_key_refresh() {
-  if (listen_key_refresh_.count()) {
-    log::info("Requesting listen-key refresh..."sv);
-    auto now = clock::get_system();
-    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
-  } else {
-    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
-  }
-}
+// web::rest::Client::Handler
 
-void OrderEntryPortfolio::operator()(Trace<web::rest::Connected> const &) {
+void OrderEntryPortfolio::operator()(Trace<web::rest::Connected> const &event) {
+  auto &[trace_info, connected] = event;
   if (download_.downloading()) {
-    download_.bump();
+    download_.bump(trace_info);
   } else {
-    download_.begin();
+    download_.begin(trace_info);
   }
 }
 
-void OrderEntryPortfolio::operator()(Trace<web::rest::Disconnected> const &) {
+void OrderEntryPortfolio::operator()(Trace<web::rest::Disconnected> const &event) {
+  auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  (*this)(ConnectionStatus::DISCONNECTED);
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   if (!download_.downloading()) {
     download_.reset();
   }
@@ -357,40 +387,21 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::MessageEnd> const &event) 
   shared_.rate_limits.clear();
 }
 
-void OrderEntryPortfolio::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
-  connection_status_ = connection_status;
-  TraceInfo trace_info;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-      .proxy = (*connection_).get_proxy(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
-}
+// core::Download
 
-uint32_t OrderEntryPortfolio::download(State state) {
+int32_t OrderEntryPortfolio::download(Trace<State> const &event) {
+  auto &[trace_info, state] = event;
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case LISTEN_KEY:
-      (*this)(ConnectionStatus::DOWNLOADING, "listen-key"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "listen-key"sv);
       get_listen_key();
       return 1;
     case DONE:
-      (*this)(ConnectionStatus::READY);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
       return 0;
   }
   assert(false);
@@ -425,6 +436,7 @@ void OrderEntryPortfolio::get_listen_key() {
 void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &event, [[maybe_unused]] uint32_t sequence) {
   auto const STATE = State::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download listen-key has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       if (download_.downloading()) {
@@ -433,10 +445,9 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
     };
     auto handle_success = [&](auto &body) {
       protocol::json::ListenKeyAck listen_key_ack{body};
-      Trace event_2{event, listen_key_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, listen_key_ack);
       log::info<1>("Download listen-key has COMPLETED!"sv);
-      download_.check_relaxed(STATE);
+      download_.check_relaxed(trace_info, STATE);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -492,14 +503,14 @@ void OrderEntryPortfolio::get_account_balance(bool polling) {
 
 void OrderEntryPortfolio::get_account_balance_ack(Trace<web::rest::Response> const &event, bool polling) {
   profile_.account_balance_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download balance has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
-      Trace event_2{event, account_balance_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_balance_ack);
       if (!polling) {
         // completion
         request_.respond_balance = clock::get_system();
@@ -582,14 +593,14 @@ void OrderEntryPortfolio::get_account_status() {
 
 void OrderEntryPortfolio::get_account_status_ack(Trace<web::rest::Response> const &event) {
   profile_.account_status_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download account has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
-      Trace event_2{event, account_status_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_status_ack);
       // completion
       request_.respond_account = clock::get_system();
       download_account_ = false;
@@ -655,14 +666,14 @@ void OrderEntryPortfolio::get_position() {
 
 void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &event) {
   profile_.position_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download position has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_position_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::PositionList position{body, decode_buffer_};
-      Trace event_2{event, position};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, position);
       // completion
       request_.respond_position = clock::get_system();
       download_position_ = false;
@@ -727,14 +738,14 @@ void OrderEntryPortfolio::get_open_orders() {
 
 void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download open-orders has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
-      Trace event_2{event, open_orders_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, open_orders_ack);
       // completion
       request_.respond_orders = clock::get_system();
       download_orders_ = false;
@@ -836,14 +847,14 @@ void OrderEntryPortfolio::get_trades() {
 
 void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download trades has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
-      Trace event_2{event, trades_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, trades_ack);
       // completion
       request_.respond_trades = clock::get_system();
       download_trades_ = false;
@@ -903,35 +914,6 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::TradesAck> const &eve
   }
 }
 
-// ...
-
-void OrderEntryPortfolio::refresh_listen_key(std::chrono::nanoseconds now) {
-  if (!ready()) {
-    return;
-  }
-  if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
-    return;
-  }
-  log::info("Refreshing listen key..."sv);
-  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
-  get_listen_key();
-}
-
-void OrderEntryPortfolio::refresh_balance(std::chrono::nanoseconds now) {
-  if (!ready()) {
-    return;
-  }
-  if (shared_.settings.misc.poll_balance_freq.count() == 0) {
-    return;
-  }
-  if (now < balance_refresh_) {
-    return;
-  }
-  log::info("Refreshing balance..."sv);
-  balance_refresh_ = now + shared_.settings.misc.poll_balance_freq;
-  get_account_balance(true);
-}
-
 // order-place
 
 void OrderEntryPortfolio::order_place(
@@ -988,8 +970,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderPlaceAck order_place_ack{body};
-      Trace event_2{event, order_place_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_place_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1136,8 +1117,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
       if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
-      Trace event_2{event, order_modify_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_modify_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1268,8 +1248,7 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
-      Trace event_2{event, order_cancel_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_cancel_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1391,13 +1370,13 @@ void OrderEntryPortfolio::open_orders_cancel_all(Event<CancelAllOrders> const &e
 
 void OrderEntryPortfolio::open_orders_cancel_all_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
-      Trace event_2{event, open_orders_cancel_all_ack};
-      (*this)(event_2, request_id);
+      create_trace_and_dispatch_2(trace_info, open_orders_cancel_all_ack, request_id);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1500,6 +1479,35 @@ void OrderEntryPortfolio::waf_limit_violation() {
     log::warn("WAF limit violation"sv);
     (*connection_).suspend_for(shared_.settings.rest.back_off_delay);
   }
+}
+
+// refresh-listen-key
+
+void OrderEntryPortfolio::refresh_listen_key(std::chrono::nanoseconds now) {
+  if (!ready()) {
+    return;
+  }
+  if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
+    return;
+  }
+  log::info("Refreshing listen key..."sv);
+  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
+  get_listen_key();
+}
+
+void OrderEntryPortfolio::refresh_balance(std::chrono::nanoseconds now) {
+  if (!ready()) {
+    return;
+  }
+  if (shared_.settings.misc.poll_balance_freq.count() == 0) {
+    return;
+  }
+  if (now < balance_refresh_) {
+    return;
+  }
+  log::info("Refreshing balance..."sv);
+  balance_refresh_ = now + shared_.settings.misc.poll_balance_freq;
+  get_account_balance(true);
 }
 
 }  // namespace gateway

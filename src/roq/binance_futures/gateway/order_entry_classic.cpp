@@ -152,8 +152,20 @@ OrderEntryClassic::OrderEntryClassic(Handler &handler, io::Context &context, uin
           .request_weight_1m = create_metrics(shared.settings, name_, "request_weight"sv, "1m"sv),
           .create_order_1m = create_metrics(shared.settings, name_, "create_order"sv, "1m"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto state) { return download(state); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
 }
+
+void OrderEntryClassic::force_listen_key_refresh() {
+  if (listen_key_refresh_.count()) {
+    log::info("Requesting listen-key refresh..."sv);
+    auto now = clock::get_system();
+    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
+  } else {
+    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
+  }
+}
+
+// server::Stream
 
 void OrderEntryClassic::operator()(Event<Start> const &) {
   (*connection_).start();
@@ -164,11 +176,11 @@ void OrderEntryClassic::operator()(Event<Stop> const &) {
 }
 
 void OrderEntryClassic::operator()(Event<Timer> const &event) {
-  auto now = event.value.now;
-  (*connection_).refresh(now);
+  auto &[trace_info, timer] = event;
+  (*connection_).refresh(timer.now);
   refresh_listen_key();
-  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < now) {
-    next_auto_cancel_ = now + shared_.settings.rest.order_countdown / 4;
+  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
+    next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
     countdown_cancel_all();
   }
   if (ready() && !downloading()) {
@@ -227,6 +239,30 @@ void OrderEntryClassic::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
 }
 
+void OrderEntryClassic::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
+  auto &[trace_info, connection_status] = event;
+  connection_status_ = connection_status;
+  auto stream_status = StreamStatus{
+      .stream_id = stream_id_,
+      .account = account_.name,
+      .supports = SUPPORTS,
+      .transport = Transport::TCP,
+      .protocol = Protocol::HTTP,
+      .encoding = {Encoding::JSON},
+      .priority = Priority::PRIMARY,
+      .connection_status = connection_status_,
+      .reason = reason,
+      .interface = (*connection_).get_interface(),
+      .authority = (*connection_).get_current_authority(),
+      .path = (*connection_).get_current_path(),
+      .proxy = (*connection_).get_proxy(),
+  };
+  log::info("stream_status={}"sv, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+}
+
+// server::OrderActionStream
+
 uint16_t OrderEntryClassic::operator()(
     Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   order_place(event, order, ref_data, request_id);
@@ -258,27 +294,21 @@ uint16_t OrderEntryClassic::operator()(Event<CancelAllOrders> const &event, std:
   return stream_id_;
 }
 
-void OrderEntryClassic::force_listen_key_refresh() {
-  if (listen_key_refresh_.count()) {
-    log::info("Requesting listen-key refresh..."sv);
-    auto now = clock::get_system();
-    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
-  } else {
-    log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
-  }
-}
+// web::rest::Client::Handler
 
-void OrderEntryClassic::operator()(Trace<web::rest::Connected> const &) {
+void OrderEntryClassic::operator()(Trace<web::rest::Connected> const &event) {
+  auto &[trace_info, connected] = event;
   if (download_.downloading()) {
-    download_.bump();
+    download_.bump(trace_info);
   } else {
-    download_.begin();
+    download_.begin(trace_info);
   }
 }
 
-void OrderEntryClassic::operator()(Trace<web::rest::Disconnected> const &) {
+void OrderEntryClassic::operator()(Trace<web::rest::Disconnected> const &event) {
+  auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  (*this)(ConnectionStatus::DISCONNECTED);
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   if (!download_.downloading()) {
     download_.reset();
   }
@@ -354,40 +384,21 @@ void OrderEntryClassic::operator()(Trace<web::rest::MessageEnd> const &event) {
   shared_.rate_limits.clear();
 }
 
-void OrderEntryClassic::operator()(ConnectionStatus connection_status, std::string_view const &reason) {
-  connection_status_ = connection_status;
-  TraceInfo trace_info;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-      .proxy = (*connection_).get_proxy(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
-}
+// core::Download
 
-uint32_t OrderEntryClassic::download(State state) {
+int32_t OrderEntryClassic::download(Trace<State> const &event) {
+  auto &[trace_info, state] = event;
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case LISTEN_KEY:
-      (*this)(ConnectionStatus::DOWNLOADING, "listen-key"sv);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "listen-key"sv);
       get_listen_key();
       return 1;
     case DONE:
-      (*this)(ConnectionStatus::READY);
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
       return 0;
   }
   assert(false);
@@ -421,6 +432,7 @@ void OrderEntryClassic::get_listen_key() {
 void OrderEntryClassic::get_listen_key_ack(Trace<web::rest::Response> const &event, [[maybe_unused]] uint32_t sequence) {
   auto const STATE = State::LISTEN_KEY;
   profile_.listen_key_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       if (download_.downloading()) {
@@ -429,9 +441,8 @@ void OrderEntryClassic::get_listen_key_ack(Trace<web::rest::Response> const &eve
     };
     auto handle_success = [&](auto &body) {
       protocol::json::ListenKeyAck listen_key_ack{body};
-      Trace event_2{event, listen_key_ack};
-      (*this)(event_2);
-      download_.check_relaxed(STATE);
+      create_trace_and_dispatch_2(trace_info, listen_key_ack);
+      download_.check_relaxed(trace_info, STATE);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -486,14 +497,14 @@ void OrderEntryClassic::get_account_balance() {
 
 void OrderEntryClassic::get_account_balance_ack(Trace<web::rest::Response> const &event) {
   profile_.account_balance_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
-      Trace event_2{event, account_balance_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_balance_ack);
       // completion
       request_.respond_balance = clock::get_system();
       download_balance_ = false;
@@ -570,14 +581,14 @@ void OrderEntryClassic::get_account_status() {
 
 void OrderEntryClassic::get_account_status_ack(Trace<web::rest::Response> const &event) {
   profile_.account_status_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
-      Trace event_2{event, account_status_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, account_status_ack);
       // completion
       request_.respond_account = clock::get_system();
       download_account_ = false;
@@ -641,14 +652,14 @@ void OrderEntryClassic::get_open_orders() {
 
 void OrderEntryClassic::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
-      Trace event_2{event, open_orders_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, open_orders_ack);
       // completion
       request_.respond_orders = clock::get_system();
       download_orders_ = false;
@@ -746,14 +757,14 @@ void OrderEntryClassic::get_trades() {
 
 void OrderEntryClassic::get_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.trades_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
-      Trace event_2{event, trades_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, trades_ack);
       request_.respond_trades = clock::get_system();  // completion
       download_trades_ = false;
       download_trades_is_first_ = false;
@@ -883,8 +894,7 @@ void OrderEntryClassic::order_place_ack(Trace<web::rest::Response> const &event,
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderPlaceAck order_place_ack{body};
-      Trace event_2{event, order_place_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_place_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1029,8 +1039,7 @@ void OrderEntryClassic::order_modify_ack(Trace<web::rest::Response> const &event
       if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
-      Trace event_2{event, order_modify_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_modify_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1161,8 +1170,7 @@ void OrderEntryClassic::order_cancel_ack(Trace<web::rest::Response> const &event
       } else if (shared_.settings.experimental.disable_fast_order_ack) {
         return;  // note!
       }
-      Trace event_2{event, order_cancel_ack};
-      (*this)(event_2, user_id, order_id, version);
+      create_trace_and_dispatch_2(trace_info, order_cancel_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1284,13 +1292,13 @@ void OrderEntryClassic::open_orders_cancel_all(Event<CancelAllOrders> const &eve
 
 void OrderEntryClassic::open_orders_cancel_all_ack(Trace<web::rest::Response> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
-      Trace event_2{event, open_orders_cancel_all_ack};
-      (*this)(event_2, request_id);
+      create_trace_and_dispatch_2(trace_info, open_orders_cancel_all_ack, request_id);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1358,13 +1366,13 @@ void OrderEntryClassic::countdown_cancel_all() {
 
 void OrderEntryClassic::countdown_cancel_all_ack(Trace<web::rest::Response> const &event) {
   profile_.countdown_cancel_all_ack([&]() {
+    auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::CountdownCancelAllAck countdown_cancel_all_ack{body};
-      Trace event_2{event, countdown_cancel_all_ack};
-      (*this)(event_2);
+      create_trace_and_dispatch_2(trace_info, countdown_cancel_all_ack);
     };
     process_response(event, handle_error, handle_success);
   });

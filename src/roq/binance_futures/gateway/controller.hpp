@@ -124,7 +124,7 @@ struct Controller final : public server::Handler,
 
   Account &get_account(std::string_view const &account) const;
   Request &get_request(std::string_view const &account);
-  OrderEntry &get_order_entry(std::string_view const &account);
+  server::OrderActionStream &get_order_entry(std::string_view const &account);
   RestTrade &get_rest_trade(std::string_view const &account);
 
  private:
@@ -143,7 +143,7 @@ struct Controller final : public server::Handler,
   std::vector<std::unique_ptr<MarketData>> market_data_a_, market_data_b_;
   std::vector<std::unique_ptr<MarketData2>> market_data_2_;
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
-  utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
+  utils::unordered_map<std::string, std::unique_ptr<server::Stream>> drop_copy_;
   utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;
   //
   utils::unordered_set<std::string> drop_copy_zombies_;

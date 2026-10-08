@@ -22,6 +22,8 @@
 
 #include "roq/server.hpp"
 
+#include "roq/server/stream.hpp"
+
 #include "roq/binance_futures/gateway/account.hpp"
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
@@ -37,23 +39,43 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct RestTrade final : public web::rest::Client::Handler {
+struct RestTrade final : public Base<RestTrade>, public server::OrderActionStream, public web::rest::Client::Handler {
   struct Handler {};
 
   RestTrade(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
 
-  RestTrade(RestTrade &&) = delete;
-  RestTrade(RestTrade const &) = delete;
+  // protected:
+  friend base_type;
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
-  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
+  // server::Stream
 
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
+  uint16_t stream_id() const override { return stream_id_; }
 
-  void operator()(metrics::Writer &);
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
+  void operator()(Event<Start> const &) override;
+  void operator()(Event<Stop> const &) override;
+  void operator()(Event<Timer> const &) override;
+
+  void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
+
+  // server::OrderActionStream
+
+  uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
+  uint16_t operator()(
+      Event<ModifyOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id) override;
+  uint16_t operator()(
+      Event<CancelOrder> const &,
+      server::oms::Order const &,
+      server::oms::RefData const &,
+      std::string_view const &request_id,
+      std::string_view const &previous_request_id) override;
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
  protected:
@@ -65,8 +87,6 @@ struct RestTrade final : public web::rest::Client::Handler {
   void operator()(Trace<web::rest::MessageBegin> const &) override;
   void operator()(Trace<web::rest::MessageHeader> const &) override;
   void operator()(Trace<web::rest::MessageEnd> const &) override;
-
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   // account-balance
 
@@ -105,6 +125,8 @@ struct RestTrade final : public web::rest::Client::Handler {
   void operator()(Trace<server::oms::OrderUpdate> const &);
 
   void waf_limit_violation();
+
+  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
 
  private:
   Handler &handler_;

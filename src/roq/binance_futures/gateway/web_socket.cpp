@@ -1231,7 +1231,16 @@ void WebSocket::order_cancel(
     };
     auto request_id_2 = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
     auto message = protocol::json::Encoder::order_cancel_json(
-        encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window, now_utc, request_id_2);
+        encode_buffer_,
+        cancel_order,
+        order,
+        ref_data,
+        request_id,
+        previous_request_id,
+        recv_window,
+        now_utc,
+        request_id_2,
+        shared_.settings.misc.test_force_client_order_id);
     log::info<5>(R"(message="{}")"sv, message);
     (*connection_).send_text(message);
   });

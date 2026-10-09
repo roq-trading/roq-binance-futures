@@ -502,7 +502,8 @@ std::string_view Encoder::order_cancel_json(
     [[maybe_unused]] std::string_view const &previous_request_id,
     std::chrono::milliseconds recv_window,
     std::chrono::milliseconds now_utc,
-    std::string_view const &id) {
+    std::string_view const &id,
+    bool force_client_order_id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
@@ -513,7 +514,7 @@ std::string_view Encoder::order_cancel_json(
       R"("symbol":"{}")"sv,
       id,
       order.symbol);
-  if (std::empty(order.external_order_id)) {
+  if (std::empty(order.external_order_id) || force_client_order_id) {
     fmt::format_to(std::back_inserter(buffer), R"(,"origClientOrderId":"{}")"sv, order.client_order_id);
   } else {
     auto order_id = get_order_id(order.external_order_id);

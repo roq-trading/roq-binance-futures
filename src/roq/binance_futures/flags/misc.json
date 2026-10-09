@@ -51,6 +51,12 @@
       "type": "std/bool",
       "default": false,
       "description": "Subscribe force-order?"
+    },
+    {
+      "name": "test_force_client_order_id",
+      "type": "std/bool",
+      "default": false,
+      "description": "Test cancel by ClOrdID?"
     }
   ]
 }

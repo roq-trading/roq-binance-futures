@@ -150,7 +150,8 @@ struct Encoder final {
       std::string_view const &previous_request_id,
       std::chrono::milliseconds recv_window,
       std::chrono::milliseconds now_utc,
-      std::string_view const &id);
+      std::string_view const &id,
+      bool force_client_order_id);
 };
 
 }  // namespace json

@@ -6,6 +6,7 @@ All notable changes will be documented in this file.
 
 ### Added
 
+* EXPERIMENT: new `--test_force_client_order_id` flag
 * Subscribe forced liquidations (#648)
 
 ### Fixed

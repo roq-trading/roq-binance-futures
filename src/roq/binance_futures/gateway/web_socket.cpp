@@ -670,8 +670,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .time_in_force = map(result.time_in_force),
           .execution_instructions = {},
           .execution_destination = {},
-          .create_time_utc = {},
-          .update_time_utc = {},  // result.transact_time,
+          .create_time_utc = clock::get_realtime(),  // note! we need this to check the -2011 cancel error
+          .update_time_utc = {},                     // result.transact_time,
           .external_account = {},
           .external_order_id = external_order_id,
           .client_order_id = {},
@@ -921,7 +921,30 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
     if (wsapi_order_cancel.status == 200) {
       handle_success(wsapi_order_cancel.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_cancel.error.code), wsapi_order_cancel.error.msg);
+      // note! there is an exchange bug where the exchange claims to not know the order if the cancel request was sent a few msec after the order was confirmed
+      auto error = [&]() -> Error {
+        if (wsapi_order_cancel.error.code == -2011) {
+          auto error = Error{};
+          auto callback = [&](auto &order) {
+            auto now_utc = clock::get_realtime();
+            if (order.create_time_utc.count() && order.create_time_utc < now_utc) {
+              if ((now_utc - order.create_time_utc) < shared_.settings.misc.test_cancel_bug_timeout) {
+                log::warn("*** FIXING THE -2011 CANCEL BUG ***"sv);
+                error = Error::UNKNOWN_EXTERNAL_ORDER_ID;
+              }
+            }
+          };
+          if (shared_.dispatcher.find_order(request.user_id, request.order_id, callback)) {
+          } else {
+            log::warn("DEBUG didn't find order from request={}"sv, request);
+          }
+          if (error != Error{}) {
+            return error;
+          }
+        }
+        return protocol::json::guess_error(wsapi_order_cancel.error.code);
+      }();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_cancel.error.msg);
     }
     update_rate_limits(event);
   });

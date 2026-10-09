@@ -66,7 +66,7 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
 
   uint16_t stream_id() const override { return stream_id_; }
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Event<Start> const &) override;
   void operator()(Event<Stop> const &) override;
@@ -74,7 +74,7 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
 
   void operator()(metrics::Writer &) const override;
 
-  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {});
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
 
   // server::OrderActionStream
 

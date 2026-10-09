@@ -358,13 +358,9 @@ void RestTrade::get_account_balance() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_balance_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_account_balance_ack(event); };
     log::info<1>("Download balance..."sv);
-    (*connection_)("account-balance"sv, request, callback);
+    (*connection_)(request, callback, "account-balance"sv);
   });
 }
 
@@ -444,13 +440,9 @@ void RestTrade::get_account_status() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_status_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_account_status_ack(event); };
     log::info<1>("Download account..."sv);
-    (*connection_)("account-status"sv, request, callback);
+    (*connection_)(request, callback, "account-status"sv);
   });
 }
 
@@ -518,13 +510,9 @@ void RestTrade::get_open_orders() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_open_orders_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_open_orders_ack(event); };
     log::info<1>("Download open-orders..."sv);
-    (*connection_)("open-orders"sv, request, callback);
+    (*connection_)(request, callback, "open-orders"sv);
   });
 }
 
@@ -632,13 +620,9 @@ void RestTrade::get_trades() {
           .body = {},  // body,
           .quality_of_service = {},
       };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        get_trades_ack(event);
-      };
+      auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_trades_ack(event); };
       log::info<1>("Download user-trades..."sv);
-      (*connection_)("user-trades"sv, request, callback);
+      (*connection_)(request, callback, "user-trades"sv);
     }
   });
 }
@@ -737,12 +721,8 @@ void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
           .body = body,
           .quality_of_service = io::QualityOfService::IMMEDIATE,
       };
-      auto callback = [this](auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        open_orders_cancel_all_ack(event, request_id);
-      };
-      (*connection_)(request_id, request, callback);
+      auto callback = [this](auto &event, auto &request_id) { open_orders_cancel_all_ack(event, request_id); };
+      (*connection_)(request, callback, request_id);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
           .account = account_.name,

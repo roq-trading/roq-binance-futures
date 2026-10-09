@@ -423,13 +423,9 @@ void OrderEntryPortfolio::get_listen_key() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_listen_key_ack(event, sequence);
-    };
+    auto callback = [this, sequence = download_.sequence()](auto &event, [[maybe_unused]] auto &request_id) { get_listen_key_ack(event, sequence); };
     log::info<1>("Download listen-key..."sv);
-    (*connection_)("listen-key"sv, request, callback);
+    (*connection_)(request, callback, "listen-key"sv);
   });
 }
 
@@ -491,13 +487,9 @@ void OrderEntryPortfolio::get_account_balance(bool polling) {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, polling = polling]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_balance_ack(event, polling);
-    };
+    auto callback = [this, polling = polling](auto &event, [[maybe_unused]] auto &request_id) { get_account_balance_ack(event, polling); };
     log::info<1>("Download balance... (polling={})"sv, polling);
-    (*connection_)("account-balance"sv, request, callback);
+    (*connection_)(request, callback, "account-balance"sv);
   });
 }
 
@@ -581,13 +573,9 @@ void OrderEntryPortfolio::get_account_status() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_status_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_account_status_ack(event); };
     log::info<1>("Download account..."sv);
-    (*connection_)("account"sv, request, callback);
+    (*connection_)(request, callback, "account"sv);
   });
 }
 
@@ -654,13 +642,9 @@ void OrderEntryPortfolio::get_position() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_position_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_position_ack(event); };
     log::info<1>("Download position..."sv);
-    (*connection_)("position"sv, request, callback);
+    (*connection_)(request, callback, "position"sv);
   });
 }
 
@@ -726,13 +710,9 @@ void OrderEntryPortfolio::get_open_orders() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_open_orders_ack(event);
-    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_open_orders_ack(event); };
     log::info<1>("Download open-orders..."sv);
-    (*connection_)("open-orders"sv, request, callback);
+    (*connection_)(request, callback, "open-orders"sv);
   });
 }
 
@@ -834,13 +814,9 @@ void OrderEntryPortfolio::get_trades() {
           .body = {},  // note! can't use body with GET
           .quality_of_service = {},
       };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        get_trades_ack(event);
-      };
+      auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_trades_ack(event); };
       log::info<1>("Download trades..."sv);
-      (*connection_)("trades"sv, request, callback);
+      (*connection_)(request, callback, "trades"sv);
     }
   });
 }
@@ -939,13 +915,11 @@ void OrderEntryPortfolio::order_place(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id]([[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id](auto &event, [[maybe_unused]] auto &request_id) {
       uint32_t version = 1;
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
       order_place_ack(event, user_id, order_id, version);
     };
-    (*connection_)(request_id, request, callback);
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1065,12 +1039,8 @@ void OrderEntryPortfolio::order_modify(
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
     auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      order_modify_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { order_modify_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1212,12 +1182,8 @@ void OrderEntryPortfolio::order_cancel(
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
     auto callback = [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      order_cancel_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { order_cancel_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1338,12 +1304,8 @@ void OrderEntryPortfolio::open_orders_cancel_all(Event<CancelAllOrders> const &e
           .body = body,
           .quality_of_service = io::QualityOfService::IMMEDIATE,
       };
-      auto callback = [this](auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        open_orders_cancel_all_ack(event, request_id);
-      };
-      (*connection_)(request_id, request, callback);
+      auto callback = [this](auto &event, auto &request_id) { open_orders_cancel_all_ack(event, request_id); };
+      (*connection_)(request, callback, request_id);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
           .account = account_.name,

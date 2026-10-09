@@ -420,12 +420,8 @@ void OrderEntryClassic::get_listen_key() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_listen_key_ack(event, sequence);
-    };
-    (*connection_)("listen-key"sv, request, callback);
+    auto callback = [this, sequence = download_.sequence()](auto &event, [[maybe_unused]] auto &request_id) { get_listen_key_ack(event, sequence); };
+    (*connection_)(request, callback, "listen-key"sv);
   });
 }
 
@@ -486,12 +482,8 @@ void OrderEntryClassic::get_account_balance() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_balance_ack(event);
-    };
-    (*connection_)("account-balance"sv, request, callback);
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_account_balance_ack(event); };
+    (*connection_)(request, callback, "account-balance"sv);
   });
 }
 
@@ -570,12 +562,8 @@ void OrderEntryClassic::get_account_status() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_status_ack(event);
-    };
-    (*connection_)("account-status"sv, request, callback);
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_account_status_ack(event); };
+    (*connection_)(request, callback, "account-status"sv);
   });
 }
 
@@ -641,12 +629,8 @@ void OrderEntryClassic::get_open_orders() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_open_orders_ack(event);
-    };
-    (*connection_)("open-orders"sv, request, callback);
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_open_orders_ack(event); };
+    (*connection_)(request, callback, "open-orders"sv);
   });
 }
 
@@ -745,12 +729,8 @@ void OrderEntryClassic::get_trades() {
           .body = {},  // body,
           .quality_of_service = {},
       };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        get_trades_ack(event);
-      };
-      (*connection_)("user-trades"sv, request, callback);
+      auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_trades_ack(event); };
+      (*connection_)(request, callback, "user-trades"sv);
     }
   });
 }
@@ -863,13 +843,11 @@ void OrderEntryClassic::order_place(
         .body = body,
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
-    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id]([[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id](auto &event, [[maybe_unused]] auto &request_id) {
       uint32_t version = 1;
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
       order_place_ack(event, user_id, order_id, version);
     };
-    (*connection_)(request_id, request, callback);
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -990,12 +968,8 @@ void OrderEntryClassic::order_modify(
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
     auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      order_modify_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { order_modify_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1134,12 +1108,8 @@ void OrderEntryClassic::order_cancel(
         .quality_of_service = io::QualityOfService::IMMEDIATE,
     };
     auto callback = [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      order_cancel_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { order_cancel_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1260,12 +1230,8 @@ void OrderEntryClassic::open_orders_cancel_all(Event<CancelAllOrders> const &eve
           .body = body,
           .quality_of_service = io::QualityOfService::IMMEDIATE,
       };
-      auto callback = [this](auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        open_orders_cancel_all_ack(event, request_id);
-      };
-      (*connection_)(request_id, request, callback);
+      auto callback = [this](auto &event, auto &request_id) { open_orders_cancel_all_ack(event, request_id); };
+      (*connection_)(request, callback, request_id);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
           .account = account_.name,
@@ -1354,12 +1320,8 @@ void OrderEntryClassic::countdown_cancel_all() {
           .body = body,
           .quality_of_service = io::QualityOfService::IMMEDIATE,
       };
-      auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-        TraceInfo trace_info;
-        Trace event{trace_info, response};
-        countdown_cancel_all_ack(event);
-      };
-      (*connection_)("auto-cancel"sv, request, callback);
+      auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { countdown_cancel_all_ack(event); };
+      (*connection_)(request, callback, "auto-cancel"sv);
     }
   });
 }

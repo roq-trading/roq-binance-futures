@@ -291,12 +291,8 @@ void Rest::get_exchange_info() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_exchange_info_ack(event, sequence);
-    };
-    (*connection_)("exchange-info"sv, request, callback);
+    auto callback = [this, sequence = download_.sequence()](auto &event, [[maybe_unused]] auto &request_id) { get_exchange_info_ack(event, sequence); };
+    (*connection_)(request, callback, "exchange-info"sv);
   });
 }
 
@@ -484,12 +480,8 @@ void Rest::get_asset_index() {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, sequence = download_.sequence()]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_asset_index_ack(event, sequence);
-    };
-    (*connection_)("asset-index"sv, request, callback);
+    auto callback = [this, sequence = download_.sequence()](auto &event, [[maybe_unused]] auto &request_id) { get_asset_index_ack(event, sequence); };
+    (*connection_)(request, callback, "asset-index"sv);
   });
 }
 
@@ -550,12 +542,8 @@ void Rest::get_depth(std::string_view const &symbol) {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_depth_ack(event, symbol);
-    };
-    (*connection_)("depth"sv, request, callback);
+    auto callback = [this, symbol = std::string{symbol}](auto &event, [[maybe_unused]] auto &request_id) { get_depth_ack(event, symbol); };
+    (*connection_)(request, callback, "depth"sv);
   });
 }
 
@@ -654,12 +642,8 @@ void Rest::get_kline(std::string_view const &symbol) {
         .body = {},
         .quality_of_service = {},
     };
-    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_kline_ack(event, symbol);
-    };
-    (*connection_)("kline"sv, request, callback);
+    auto callback = [this, symbol = std::string{symbol}](auto &event, [[maybe_unused]] auto &request_id) { get_kline_ack(event, symbol); };
+    (*connection_)(request, callback, "kline"sv);
   });
 }
 

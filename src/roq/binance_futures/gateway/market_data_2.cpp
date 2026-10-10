@@ -115,15 +115,15 @@ void MarketData2::operator()(std::span<std::string_view const> const &assets) {
 
 // server::Stream
 
-void MarketData2::operator()(Event<Start> const &) {
+void MarketData2::operator()(Trace<Start> const &) {
   (*connection_).start();
 }
 
-void MarketData2::operator()(Event<Stop> const &) {
+void MarketData2::operator()(Trace<Stop> const &) {
   (*connection_).stop();
 }
 
-void MarketData2::operator()(Event<Timer> const &event) {
+void MarketData2::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
   if ((*connection_).ready()) {

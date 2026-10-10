@@ -150,15 +150,15 @@ void WebSocket::force_listen_key_refresh() {
 
 // server::Stream
 
-void WebSocket::operator()(Event<Start> const &) {
+void WebSocket::operator()(Trace<Start> const &) {
   (*connection_).start();
 }
 
-void WebSocket::operator()(Event<Stop> const &) {
+void WebSocket::operator()(Trace<Stop> const &) {
   (*connection_).stop();
 }
 
-void WebSocket::operator()(Event<Timer> const &event) {
+void WebSocket::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
   user_data_stream_ping(timer.now);

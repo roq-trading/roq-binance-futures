@@ -130,15 +130,15 @@ bool DropCopyClassic::ready() const {
   return (*connection_).ready();
 }
 
-void DropCopyClassic::operator()(Event<Start> const &) {
+void DropCopyClassic::operator()(Trace<Start> const &) {
   (*connection_).start();
 }
 
-void DropCopyClassic::operator()(Event<Stop> const &) {
+void DropCopyClassic::operator()(Trace<Stop> const &) {
   (*connection_).stop();
 }
 
-void DropCopyClassic::operator()(Event<Timer> const &event) {
+void DropCopyClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
   check_response_balance(trace_info);

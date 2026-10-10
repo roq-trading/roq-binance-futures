@@ -167,15 +167,15 @@ void OrderEntryClassic::force_listen_key_refresh() {
 
 // server::Stream
 
-void OrderEntryClassic::operator()(Event<Start> const &) {
+void OrderEntryClassic::operator()(Trace<Start> const &) {
   (*connection_).start();
 }
 
-void OrderEntryClassic::operator()(Event<Stop> const &) {
+void OrderEntryClassic::operator()(Trace<Stop> const &) {
   (*connection_).stop();
 }
 
-void OrderEntryClassic::operator()(Event<Timer> const &event) {
+void OrderEntryClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
   refresh_listen_key();

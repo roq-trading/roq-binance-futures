@@ -69,9 +69,9 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
-  void operator()(Event<Start> const &) override;
-  void operator()(Event<Stop> const &) override;
-  void operator()(Event<Timer> const &) override;
+  void operator()(Trace<Start> const &) override;
+  void operator()(Trace<Stop> const &) override;
+  void operator()(Trace<Timer> const &) override;
 
   void operator()(metrics::Writer &) const override;
 

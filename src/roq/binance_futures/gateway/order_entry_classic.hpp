@@ -53,7 +53,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
   };
 
   struct Handler {
-    virtual void operator()(ListenKeyUpdate const &) = 0;
+    virtual void operator()(Trace<ListenKeyUpdate> const &) = 0;
   };
 
   OrderEntryClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);

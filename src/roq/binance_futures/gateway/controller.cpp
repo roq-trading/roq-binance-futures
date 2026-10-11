@@ -194,10 +194,10 @@ void Controller::operator()(Event<Subscribe> const &event) {
       log::warn(R"(*** DUPLICATE SUBSCRIPTION *** (symbol="{}")"sv, item);
     }
   }
-  auto symbols_update = Rest::SymbolsUpdate{
+  auto symbols_update = SymbolsUpdate{
       .symbols = symbols,
   };
-  (*this)(symbols_update);
+  create_trace_and_dispatch_2(message_info, symbols_update);
 }
 
 void Controller::operator()(Event<Control> const &event) {
@@ -218,7 +218,7 @@ void Controller::operator()(Event<Control> const &event) {
 
 uint16_t Controller::operator()(
     Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
-  auto &create_order = event.value;
+  auto &[message_info, create_order] = event;
   assert(!std::empty(create_order.account));
   return get_order_entry(create_order.account)(event, order, ref_data, request_id);
 }
@@ -229,7 +229,7 @@ uint16_t Controller::operator()(
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  auto &modify_order = event.value;
+  auto &[message_info, modify_order] = event;
   assert(!std::empty(modify_order.account));
   assert(modify_order.account == order.account);
   return get_order_entry(modify_order.account)(event, order, ref_data, request_id, previous_request_id);
@@ -241,14 +241,14 @@ uint16_t Controller::operator()(
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  auto &cancel_order = event.value;
+  auto &[message_info, cancel_order] = event;
   assert(!std::empty(cancel_order.account));
   assert(cancel_order.account == order.account);
   return get_order_entry(cancel_order.account)(event, order, ref_data, request_id, previous_request_id);
 }
 
 uint16_t Controller::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
-  auto &cancel_all_orders = event.value;
+  auto &[message_info, cancel_all_orders] = event;
   assert(!std::empty(cancel_all_orders.account));
   if (shared_.settings.ws_api) {
     return get_rest_trade(cancel_all_orders.account)(event, request_id);
@@ -271,9 +271,10 @@ void Controller::operator()(metrics::Writer &writer) const {
 
 // Rest::Handler
 
-void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
+void Controller::operator()(Trace<SymbolsUpdate> const &event) {
+  auto &[trace_info, symbols_update] = event;
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
-  ensure_symbol_slices(size);
+  ensure_symbol_slices(trace_info, size);
   for (auto &item : market_data_a_) {
     (*item).subscribe(start_from);
   }
@@ -285,7 +286,8 @@ void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
   }
 }
 
-void Controller::operator()(Rest::AssetsUpdate &assets_update) {
+void Controller::operator()(Trace<AssetsUpdate> const &event) {
+  auto &[trace_info, assets_update] = event;
   if (!std::empty(market_data_2_)) {
     (*market_data_2_[0])(assets_update.assets);
   }
@@ -293,32 +295,34 @@ void Controller::operator()(Rest::AssetsUpdate &assets_update) {
 
 // WebSocket::Handler
 
-void Controller::operator()(WebSocket::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
+void Controller::operator()(Trace<WebSocket::ListenKeyUpdate> const &event) {
+  create_drop_copy_helper<DropCopyClassic>(event);
 }
 
 // OrderEntryClassic::Handler
 
-void Controller::operator()(OrderEntryClassic::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyClassic>(listen_key_update);
+void Controller::operator()(Trace<OrderEntryClassic::ListenKeyUpdate> const &event) {
+  create_drop_copy_helper<DropCopyClassic>(event);
 }
 
 // OrderEntryPortfolio::Handler
 
-void Controller::operator()(OrderEntryPortfolio::ListenKeyUpdate const &listen_key_update) {
-  create_drop_copy_helper<DropCopyPortfolio>(listen_key_update);
+void Controller::operator()(Trace<OrderEntryPortfolio::ListenKeyUpdate> const &event) {
+  create_drop_copy_helper<DropCopyPortfolio>(event);
 }
 
 // DropCopyClassic::Handler
 
-void Controller::operator()(DropCopyClassic::Remove const &remove) {
+void Controller::operator()(Trace<DropCopyClassic::Remove> const &event) {
+  auto &[trace_info, remove] = event;
   log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
   drop_copy_zombies_.insert(remove.account);
 }
 
 // DropCopyPortfolio::Handler
 
-void Controller::operator()(DropCopyPortfolio::Remove const &remove) {
+void Controller::operator()(Trace<DropCopyPortfolio::Remove> const &event) {
+  auto &[trace_info, remove] = event;
   log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
   drop_copy_zombies_.insert(remove.account);
 }
@@ -326,7 +330,8 @@ void Controller::operator()(DropCopyPortfolio::Remove const &remove) {
 // utilities
 
 template <typename T>
-void Controller::create_drop_copy_helper(auto &listen_key_update) {
+void Controller::create_drop_copy_helper(auto &event) {
+  auto &[trace_info, listen_key_update] = event;
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
   auto iter = drop_copy_.find(account);
@@ -335,20 +340,18 @@ void Controller::create_drop_copy_helper(auto &listen_key_update) {
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create DropCopy (user-stream) for account="{}" using listen_key="{}")"sv, account, listen_key_update.listen_key);
     auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
-    TraceInfo trace_info;  // XXX FIXME TODO
     Start start;
     create_trace_and_dispatch(*drop_copy, trace_info, start);
     (*iter).second = std::move(drop_copy);
   }
 }
 
-void Controller::ensure_symbol_slices(size_t size) {
+void Controller::ensure_symbol_slices(TraceInfo const &trace_info, size_t size) {
   auto helper = [&](auto &container, auto priority) {
     auto stream_id = ++stream_id_;
     auto index = std::size(container);
     log::info("Create MarketData (stream_id={}, priority={}, index={})"sv, stream_id, priority, index);
     auto market_data = std::make_unique<MarketData>(*this, context_, stream_id_, priority, shared_, index);
-    TraceInfo trace_info;  // XXX FIXME TODO
     Start start;
     create_trace_and_dispatch(*market_data, trace_info, start);
     container.emplace_back(std::move(market_data));
@@ -366,7 +369,6 @@ void Controller::ensure_symbol_slices(size_t size) {
     auto index = std::size(container);
     log::info("Create MarketData2 (stream_id={}, index={})"sv, stream_id, index);
     auto market_data = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
-    TraceInfo trace_info;  // XXX FIXME TODO
     Start start;
     create_trace_and_dispatch(*market_data, trace_info, start);
     container.emplace_back(std::move(market_data));

@@ -100,7 +100,7 @@ struct MarketData2 final : public Base<MarketData2>,
 
   void subscribe_2(std::span<std::string> const &assets, std::string_view const &channel);
 
-  void parse(std::string_view const &message);
+  void parse(TraceInfo const &, std::string_view const &message);
 
  private:
   [[maybe_unused]] Handler &handler_;

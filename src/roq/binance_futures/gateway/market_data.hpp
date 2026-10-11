@@ -90,7 +90,7 @@ struct MarketData final : public Base<MarketData>,
 
   void subscribe(std::span<Symbol const> const &symbols, std::string_view const &channel);
 
-  void parse(std::string_view const &message);
+  void parse(TraceInfo const &, std::string_view const &message);
 
   void check_subscribe_queue(std::chrono::nanoseconds now);
 

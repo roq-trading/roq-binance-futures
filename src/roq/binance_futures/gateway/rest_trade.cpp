@@ -291,7 +291,7 @@ void RestTrade::operator()(Trace<web::rest::MessageBegin> const &) {
 }
 
 void RestTrade::operator()(Trace<web::rest::MessageHeader> const &event) {
-  auto &header = event.value;
+  auto &[trace_info, header] = event;
   if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
     try {
       auto value = utils::charconv::from_string_relaxed<uint32_t>(header.value);
@@ -702,7 +702,7 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
 
 void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
-    auto &cancel_all_orders = event.value;
+    auto &[message_info, cancel_all_orders] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
@@ -741,8 +741,7 @@ void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
           .user = {},
           .strategy_id = {},
       };
-      TraceInfo trace_info;
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, cancel_all_orders_ack);
+      create_trace_and_dispatch(shared_.dispatcher, message_info, cancel_all_orders_ack);
     }
   });
 }

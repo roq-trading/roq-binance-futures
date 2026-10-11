@@ -23,7 +23,9 @@
 
 #include "roq/server/stream.hpp"
 
+#include "roq/binance_futures/gateway/assets_update.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
+#include "roq/binance_futures/gateway/symbols_update.hpp"
 
 #include "roq/binance_futures/protocol/json/asset_index_ack.hpp"
 #include "roq/binance_futures/protocol/json/depth_ack.hpp"
@@ -35,17 +37,9 @@ namespace binance_futures {
 namespace gateway {
 
 struct Rest final : public Base<Rest>, public server::Stream, public web::rest::Client::Handler {
-  struct SymbolsUpdate final {
-    std::span<Symbol const> symbols;
-  };
-
-  struct AssetsUpdate final {
-    std::span<std::string_view> assets;
-  };
-
   struct Handler {
-    virtual void operator()(SymbolsUpdate &) = 0;
-    virtual void operator()(AssetsUpdate &) = 0;
+    virtual void operator()(Trace<SymbolsUpdate> const &) = 0;
+    virtual void operator()(Trace<AssetsUpdate> const &) = 0;
   };
 
   Rest(Handler &, io::Context &, uint16_t stream_id, Shared &);

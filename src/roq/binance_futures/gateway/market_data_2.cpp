@@ -220,7 +220,7 @@ void MarketData2::operator()(Trace<web::socket::Latency> const &event) {
 
 void MarketData2::operator()(Trace<web::socket::Text> const &event) {
   auto &[trace_info, text] = event;
-  parse(text.payload);
+  parse(trace_info, text.payload);
   counter_.total_bytes_received.update((*connection_).total_bytes_received());
 }
 
@@ -275,7 +275,7 @@ void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = agg_trade.event_time,
     };
-    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, trade_summary, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_summary, true);
   });
 }
 
@@ -326,7 +326,7 @@ void MarketData2::operator()(Trace<protocol::json::MiniTicker> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = mini_ticker.event_time,
     };
-    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, statistics_update, true);
   });
 }
 
@@ -343,44 +343,43 @@ void MarketData2::operator()(Trace<protocol::json::MarkPriceUpdate> const &event
     auto &[trace_info, mark_price_update] = event;
     log::info<3>(R"(mark_price_update={})"sv, mark_price_update);
     (*connection_).touch(trace_info.source_receive_time);
-    auto &mark_price = event.value;
     std::array<Statistics, 4> statistics{{
         {
             .type = StatisticsType::SETTLEMENT_PRICE,
-            .value = mark_price.mark_price,
+            .value = mark_price_update.mark_price,
             .begin_time_utc = {},
             .end_time_utc = {},
         },
         {
             .type = StatisticsType::PRE_SETTLEMENT_PRICE,
-            .value = mark_price.est_settle_price,
+            .value = mark_price_update.est_settle_price,
             .begin_time_utc = {},
             .end_time_utc = {},
         },
         {
             .type = StatisticsType::INDEX_VALUE,
-            .value = mark_price.index_price,
+            .value = mark_price_update.index_price,
             .begin_time_utc = {},
             .end_time_utc = {},
         },
         {
             .type = StatisticsType::FUNDING_RATE,
-            .value = mark_price.funding_rate,
-            .begin_time_utc = utils::safe_cast(mark_price.event_time),
-            .end_time_utc = utils::safe_cast(mark_price.next_funding_time),
+            .value = mark_price_update.funding_rate,
+            .begin_time_utc = utils::safe_cast(mark_price_update.event_time),
+            .end_time_utc = utils::safe_cast(mark_price_update.next_funding_time),
         },
     }};
     auto statistics_update = StatisticsUpdate{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
-        .symbol = mark_price.symbol,
+        .symbol = mark_price_update.symbol,
         .statistics = statistics,
         .update_type = UpdateType::INCREMENTAL,
         .exchange_time_utc = {},
         .exchange_sequence = {},
-        .sending_time_utc = mark_price.event_time,
+        .sending_time_utc = mark_price_update.event_time,
     };
-    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, statistics_update, true);
   });
 }
 
@@ -449,7 +448,7 @@ void MarketData2::operator()(Trace<protocol::json::AssetIndexUpdate> const &even
         .exchange_sequence = {},
         .sending_time_utc = asset_index_update.event_time,
     };
-    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, statistics_update, true);
   });
 }
 
@@ -478,7 +477,7 @@ void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = force_order.event_time,
     };
-    create_trace_and_dispatch(shared_.dispatcher, event.trace_info, trade_summary, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_summary, true);
   });
 }
 
@@ -561,11 +560,10 @@ void MarketData2::subscribe_2(std::span<std::string> const &assets, std::string_
   subscribe_queue_.emplace_back(message);
 }
 
-void MarketData2::parse(std::string_view const &message) {
+void MarketData2::parse(TraceInfo const &trace_info, std::string_view const &message) {
   profile_.parse([&]() {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
-      TraceInfo trace_info;
       if (!protocol::json::MarketStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }

@@ -214,7 +214,7 @@ void Rest::operator()(Trace<web::rest::MessageBegin> const &) {
 }
 
 void Rest::operator()(Trace<web::rest::MessageHeader> const &event) {
-  auto &header = event.value;
+  auto &[trace_info, header] = event;
   if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
     try {
       auto value = utils::charconv::from_string_relaxed<uint32_t>(header.value);
@@ -462,7 +462,8 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
     auto symbols_update = SymbolsUpdate{
         .symbols = symbols,
     };
-    handler_(symbols_update);
+    create_trace_and_dispatch(handler_, trace_info, symbols_update);
+    // handler_(symbols_update);
   }
 }
 
@@ -523,7 +524,8 @@ void Rest::operator()(Trace<protocol::json::AssetIndexAck> const &event) {
     auto assets_update = AssetsUpdate{
         .assets = assets,
     };
-    handler_(assets_update);
+    create_trace_and_dispatch(handler_, trace_info, assets_update);
+    // handler_(assets_update);
   }
 }
 

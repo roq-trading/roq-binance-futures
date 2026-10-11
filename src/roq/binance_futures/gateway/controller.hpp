@@ -32,7 +32,8 @@ namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct Controller final : public server::Handler,
+struct Controller final : public Base<Controller>,
+                          public server::Handler,
                           public Rest::Handler,
                           public MarketData::Handler,
                           public MarketData2::Handler,
@@ -51,6 +52,8 @@ struct Controller final : public server::Handler,
   Controller(Controller const &) = delete;
 
  protected:
+  friend base_type;
+
   // server::Handler
 
   void operator()(Trace<Start> const &) override;
@@ -87,35 +90,35 @@ struct Controller final : public server::Handler,
 
   // Rest::Handler
 
-  void operator()(Rest::SymbolsUpdate &) override;
-  void operator()(Rest::AssetsUpdate &) override;
+  void operator()(Trace<SymbolsUpdate> const &) override;
+  void operator()(Trace<AssetsUpdate> const &) override;
 
   // WebSocket::Handler
 
-  void operator()(WebSocket::ListenKeyUpdate const &) override;
+  void operator()(Trace<WebSocket::ListenKeyUpdate> const &) override;
 
   // OrderEntryClassic::Handler
 
-  void operator()(OrderEntryClassic::ListenKeyUpdate const &) override;
+  void operator()(Trace<OrderEntryClassic::ListenKeyUpdate> const &) override;
 
   // OrderEntryPortfolio::Handler
 
-  void operator()(OrderEntryPortfolio::ListenKeyUpdate const &) override;
+  void operator()(Trace<OrderEntryPortfolio::ListenKeyUpdate> const &) override;
 
   // DropCopyClassic::Handler
 
-  void operator()(DropCopyClassic::Remove const &) override;
+  void operator()(Trace<DropCopyClassic::Remove> const &) override;
 
   // DropCopyPortfolio::Handler
 
-  void operator()(DropCopyPortfolio::Remove const &) override;
+  void operator()(Trace<DropCopyPortfolio::Remove> const &) override;
 
   // helpers
 
   template <typename T>
-  void create_drop_copy_helper(auto &listen_key_update);
+  void create_drop_copy_helper(auto &event);
 
-  void ensure_symbol_slices(size_t size);
+  void ensure_symbol_slices(TraceInfo const &, size_t size);
 
   template <typename... Args>
   void dispatch(Args &&...);

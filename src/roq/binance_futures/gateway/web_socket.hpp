@@ -41,7 +41,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   };
 
   struct Handler {
-    virtual void operator()(ListenKeyUpdate const &) = 0;
+    virtual void operator()(Trace<ListenKeyUpdate> const &) = 0;
   };
 
   WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
@@ -153,7 +153,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
 
-  void parse(std::string_view const &message);
+  void parse(TraceInfo const &, std::string_view const &message);
 
   void update_rate_limits(auto &event);
 

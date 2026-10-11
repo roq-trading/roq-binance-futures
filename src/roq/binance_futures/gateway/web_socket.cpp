@@ -317,7 +317,7 @@ void WebSocket::operator()(Trace<web::socket::Latency> const &event) {
 
 void WebSocket::operator()(Trace<web::socket::Text> const &event) {
   auto &[trace_info, text] = event;
-  parse(text.payload);
+  parse(trace_info, text.payload);
 }
 
 void WebSocket::operator()(Trace<web::socket::Binary> const &) {
@@ -1114,8 +1114,7 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
     if (!ready()) [[unlikely]] {
       throw server::oms::NotReady{"not ready"sv};
     }
-    auto &message_info = event.message_info;
-    auto &cancel_all_orders = event.value;
+    auto &[message_info, cancel_all_orders] = event;
     auto send_ack = [&](auto &symbol) {
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
@@ -1135,8 +1134,7 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
           .user = {},
           .strategy_id = cancel_all_orders.strategy_id,
       };
-      TraceInfo trace_info{event};
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, cancel_all_orders_ack);
+      create_trace_and_dispatch(shared_.dispatcher, message_info, cancel_all_orders_ack);
     };
     for (auto &symbol : open_orders_symbols_) {
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
@@ -1269,12 +1267,11 @@ void WebSocket::order_cancel(
   });
 }
 
-void WebSocket::parse(std::string_view const &message) {
+void WebSocket::parse(TraceInfo const &trace_info, std::string_view const &message) {
   profile_.parse([&]() {
     log::info<3>("message={}"sv, message);
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
-      TraceInfo trace_info;
       if (!protocol::json::WSAPIParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }

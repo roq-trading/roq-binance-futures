@@ -52,7 +52,7 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
   };
 
   struct Handler {
-    virtual void operator()(ListenKeyUpdate const &) = 0;
+    virtual void operator()(Trace<ListenKeyUpdate> const &) = 0;
   };
 
   OrderEntryPortfolio(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);

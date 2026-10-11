@@ -39,7 +39,7 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
   };
 
   struct Handler {
-    virtual void operator()(Remove const &) = 0;
+    virtual void operator()(Trace<Remove> const &) = 0;
   };
 
   DropCopyClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
@@ -116,7 +116,7 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
   void check_response_orders(TraceInfo const &);
   void check_response_trades(TraceInfo const &);
 
-  void parse(std::string_view const &message);
+  void parse(TraceInfo const &, std::string_view const &message);
 
  private:
   [[maybe_unused]] Handler &handler_;

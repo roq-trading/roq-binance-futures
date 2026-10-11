@@ -207,7 +207,7 @@ void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &event) 
     auto remove = Remove{
         .account = account_.name,
     };
-    handler_(remove);
+    create_trace_and_dispatch(handler_, trace_info, remove);
   }
 }
 
@@ -234,7 +234,7 @@ void DropCopyClassic::operator()(Trace<web::socket::Latency> const &event) {
 
 void DropCopyClassic::operator()(Trace<web::socket::Text> const &event) {
   auto &[trace_info, text] = event;
-  parse(text.payload);
+  parse(trace_info, text.payload);
 }
 
 void DropCopyClassic::operator()(Trace<web::socket::Binary> const &) {
@@ -669,11 +669,10 @@ void DropCopyClassic::check_response_trades(TraceInfo const &trace_info) {
   }
 }
 
-void DropCopyClassic::parse(std::string_view const &message) {
+void DropCopyClassic::parse(TraceInfo const &trace_info, std::string_view const &message) {
   auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
   profile_.parse([&]() {
     try {
-      TraceInfo trace_info;
       if (!protocol::json::UserStreamParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
         log_message();
       }

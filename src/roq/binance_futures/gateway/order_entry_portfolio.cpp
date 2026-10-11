@@ -337,7 +337,7 @@ void OrderEntryPortfolio::operator()(Trace<web::rest::MessageBegin> const &) {
 }
 
 void OrderEntryPortfolio::operator()(Trace<web::rest::MessageHeader> const &event) {
-  auto &header = event.value;
+  auto &[trace_info, header] = event;
   if (utils::case_insensitive_compare(header.name, X_MBX_USED_WEIGHT_1M) == 0) {
     try {
       auto value = utils::charconv::from_string_relaxed<uint32_t>(header.value);
@@ -1285,7 +1285,7 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const
 
 void OrderEntryPortfolio::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
-    auto &[trace_info, cancel_all_orders] = event;
+    auto &[message_info, cancel_all_orders] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
@@ -1324,8 +1324,7 @@ void OrderEntryPortfolio::open_orders_cancel_all(Event<CancelAllOrders> const &e
           .user = {},
           .strategy_id = {},
       };
-      TraceInfo trace_info;
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, cancel_all_orders_ack);
+      create_trace_and_dispatch(shared_.dispatcher, message_info, cancel_all_orders_ack);
     }
   });
 }

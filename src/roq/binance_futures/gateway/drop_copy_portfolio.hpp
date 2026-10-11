@@ -39,7 +39,7 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   };
 
   struct Handler {
-    virtual void operator()(Remove const &) = 0;
+    virtual void operator()(Trace<Remove> const &) = 0;
   };
 
   DropCopyPortfolio(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
@@ -111,7 +111,7 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   void request_orders();
   void request_trades();
 
-  void parse(std::string_view const &message);
+  void parse(TraceInfo const &, std::string_view const &message);
 
   void check_response_balance(TraceInfo const &);
   void check_response_account(TraceInfo const &);

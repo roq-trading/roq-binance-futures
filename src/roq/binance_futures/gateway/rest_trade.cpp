@@ -173,12 +173,12 @@ void RestTrade::operator()(Trace<Timer> const &event) {
     */
     if (!downloading() && request_.respond_orders < request_.request_orders) {
       log::info<1>("Download orders..."sv);
-      get_open_orders();
+      get_open_orders(trace_info);
       download_orders_ = true;
     }
     if (!downloading() && request_.respond_trades < request_.request_trades) {
       log::info<1>("Download trades..."sv);
-      get_trades();
+      get_trades(trace_info);
       download_trades_ = true;
     }
   }
@@ -343,10 +343,10 @@ void RestTrade::operator()(Trace<web::rest::MessageEnd> const &event) {
 
 // account-balance
 
-void RestTrade::get_account_balance() {
+void RestTrade::get_account_balance(TraceInfo const &trace_info) {
   return;  // note!
   profile_.account_balance([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -369,7 +369,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download balance has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
-      request_.respond_balance = clock::get_system();
+      request_.respond_balance = trace_info.origin_create_time;
       download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -377,7 +377,7 @@ void RestTrade::get_account_balance_ack(Trace<web::rest::Response> const &event)
       create_trace_and_dispatch_2(trace_info, account_balance_ack);
       // completion
       log::info<1>("Download balance has COMPLETED!"sv);
-      request_.respond_balance = clock::get_system();
+      request_.respond_balance = trace_info.origin_create_time;
       download_balance_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -425,10 +425,10 @@ void RestTrade::operator()(Trace<protocol::json::AccountBalanceAck> const &event
 
 // account-status
 
-void RestTrade::get_account_status() {
+void RestTrade::get_account_status(TraceInfo const &trace_info) {
   return;  // note!
   profile_.account_status([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -451,7 +451,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download account has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
-      request_.respond_account = clock::get_system();
+      request_.respond_account = trace_info.origin_create_time;
       download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -459,7 +459,7 @@ void RestTrade::get_account_status_ack(Trace<web::rest::Response> const &event) 
       create_trace_and_dispatch_2(trace_info, account_status_ack);
       // completion
       log::info<1>("Download account has COMPLETED!"sv);
-      request_.respond_account = clock::get_system();
+      request_.respond_account = trace_info.origin_create_time;
       download_account_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -496,9 +496,9 @@ void RestTrade::operator()(Trace<protocol::json::AccountStatusAck> const &event)
 
 // open-orders
 
-void RestTrade::get_open_orders() {
+void RestTrade::get_open_orders(TraceInfo const &trace_info) {
   profile_.open_orders([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -521,7 +521,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download open-orders has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
-      request_.respond_orders = clock::get_system();
+      request_.respond_orders = trace_info.origin_create_time;
       download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -529,7 +529,7 @@ void RestTrade::get_open_orders_ack(Trace<web::rest::Response> const &event) {
       create_trace_and_dispatch_2(trace_info, open_orders_ack);
       // completion
       log::info<1>("Download open-orders has COMPLETED!"sv);
-      request_.respond_orders = clock::get_system();
+      request_.respond_orders = trace_info.origin_create_time;
       download_orders_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -590,10 +590,10 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
 // trades
 
 // XXX FIXME download_trades_count
-void RestTrade::get_trades() {
+void RestTrade::get_trades(TraceInfo const &trace_info) {
   // XXX disable for now
   log::warn("!!! TRADES DOWNLOAD HAS BEEN **DISABLED** !!!"sv);
-  request_.respond_trades = clock::get_system();  // completion
+  request_.respond_trades = trace_info.origin_create_time;
   download_trades_ = false;
   download_trades_is_first_ = false;
   return;
@@ -604,11 +604,11 @@ void RestTrade::get_trades() {
       auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
       log::info<1>("Download trades: lookback={}"sv, lookback);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-      auto end_time = clock::get_realtime<std::chrono::milliseconds>();
+      auto end_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc);
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
       auto body = protocol::json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
-      auto query = account_.create_rest_signature_query(body);
+      auto query = account_.create_rest_signature_query(trace_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
@@ -632,7 +632,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(Download user-trades has FAILED: origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
-      request_.respond_trades = clock::get_system();
+      request_.respond_trades = trace_info.origin_create_time;
       download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
@@ -640,7 +640,7 @@ void RestTrade::get_trades_ack(Trace<web::rest::Response> const &event) {
       create_trace_and_dispatch_2(trace_info, trades_ack);
       // completion
       log::info<1>("Download user-trades has COMPLETED!"sv);
-      request_.respond_trades = clock::get_system();
+      request_.respond_trades = trace_info.origin_create_time;
       download_trades_ = false;
       download_trades_is_first_ = false;
     };
@@ -709,7 +709,7 @@ void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
         continue;
       }
       auto body = protocol::json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
-      auto query = account_.create_rest_signature_body(body);
+      auto query = account_.create_rest_signature_body(message_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,

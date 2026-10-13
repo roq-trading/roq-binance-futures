@@ -7,8 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "roq/core/timer_queue.hpp"
-
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
@@ -18,6 +16,8 @@
 #include "roq/web/socket/client.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
+
+#include "roq/core/limit/queue.hpp"
 
 #include "roq/server.hpp"
 
@@ -90,7 +90,7 @@ struct MarketData2 final : public Base<MarketData2>,
 
   // helpers
 
-  void check_subscribe_queue(std::chrono::nanoseconds now);
+  void check_subscribe_queue(TraceInfo const &);
 
   void subscribe(std::span<Symbol const> const &symbols);
 
@@ -129,7 +129,7 @@ struct MarketData2 final : public Base<MarketData2>,
   // state
   ConnectionStatus connection_status_ = {};
   // queue
-  core::TimerQueue<std::string> subscribe_queue_;
+  core::limit::Queue<std::string> subscribe_queue_;
   // EXPERIMENTAL
   std::vector<std::string> assets_;
 };

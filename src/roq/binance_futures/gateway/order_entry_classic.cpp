@@ -155,11 +155,10 @@ OrderEntryClassic::OrderEntryClassic(Handler &handler, io::Context &context, uin
       account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
 }
 
-void OrderEntryClassic::force_listen_key_refresh() {
+void OrderEntryClassic::force_listen_key_refresh(TraceInfo const &trace_info) {
   if (listen_key_refresh_.count()) {
     log::info("Requesting listen-key refresh..."sv);
-    auto now = clock::get_system();
-    listen_key_refresh_ = now + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
+    listen_key_refresh_ = trace_info.origin_create_time + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
   } else {
     log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
   }
@@ -178,30 +177,30 @@ void OrderEntryClassic::operator()(Trace<Stop> const &) {
 void OrderEntryClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
-  refresh_listen_key();
+  refresh_listen_key(trace_info);
   if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
     next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
-    countdown_cancel_all();
+    countdown_cancel_all(trace_info);
   }
   if (ready() && !downloading()) {
     if (!downloading() && request_.respond_balance < request_.request_balance) {
       log::info<1>("Download balance..."sv);
-      get_account_balance();
+      get_account_balance(trace_info);
       download_balance_ = true;
     }
     if (!downloading() && request_.respond_account < request_.request_account) {
       log::info<1>("Download account..."sv);
-      get_account_status();
+      get_account_status(trace_info);
       download_account_ = true;
     }
     if (!downloading() && request_.respond_orders < request_.request_orders) {
       log::info<1>("Download orders..."sv);
-      get_open_orders();
+      get_open_orders(trace_info);
       download_orders_ = true;
     }
     if (!downloading() && request_.respond_trades < request_.request_trades) {
       log::info<1>("Download trades..."sv);
-      get_trades();
+      get_trades(trace_info);
       download_trades_ = true;
     }
   }
@@ -395,7 +394,7 @@ int32_t OrderEntryClassic::download(Trace<State> const &event) {
       break;
     case LISTEN_KEY:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "listen-key"sv);
-      get_listen_key();
+      get_listen_key(trace_info);
       return 1;
     case DONE:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
@@ -407,7 +406,7 @@ int32_t OrderEntryClassic::download(Trace<State> const &event) {
 
 // listen-key
 
-void OrderEntryClassic::get_listen_key() {
+void OrderEntryClassic::get_listen_key(TraceInfo const &) {
   profile_.listen_key([&]() {
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
@@ -462,15 +461,14 @@ void OrderEntryClassic::operator()(Trace<protocol::json::ListenKeyAck> const &ev
       }
     }
   }
-  auto now = clock::get_system();
-  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
+  listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
 }
 
 // account-balance
 
-void OrderEntryClassic::get_account_balance() {
+void OrderEntryClassic::get_account_balance(TraceInfo const &trace_info) {
   profile_.account_balance([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -498,7 +496,7 @@ void OrderEntryClassic::get_account_balance_ack(Trace<web::rest::Response> const
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, account_balance_ack);
       // completion
-      request_.respond_balance = clock::get_system();
+      request_.respond_balance = trace_info.origin_create_time;
       download_balance_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -548,9 +546,9 @@ void OrderEntryClassic::operator()(Trace<protocol::json::AccountBalanceAck> cons
 
 // account-status
 
-void OrderEntryClassic::get_account_status() {
+void OrderEntryClassic::get_account_status(TraceInfo const &trace_info) {
   profile_.account_status([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -578,7 +576,7 @@ void OrderEntryClassic::get_account_status_ack(Trace<web::rest::Response> const 
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, account_status_ack);
       // completion
-      request_.respond_account = clock::get_system();
+      request_.respond_account = trace_info.origin_create_time;
       download_account_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -615,9 +613,9 @@ void OrderEntryClassic::operator()(Trace<protocol::json::AccountStatusAck> const
 
 // open-orders
 
-void OrderEntryClassic::get_open_orders() {
+void OrderEntryClassic::get_open_orders(TraceInfo const &trace_info) {
   profile_.open_orders([&]() {
-    auto query = account_.create_rest_signature();
+    auto query = account_.create_rest_signature(trace_info);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -645,7 +643,7 @@ void OrderEntryClassic::get_open_orders_ack(Trace<web::rest::Response> const &ev
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, open_orders_ack);
       // completion
-      request_.respond_orders = clock::get_system();
+      request_.respond_orders = trace_info.origin_create_time;
       download_orders_ = false;
     };
     process_response(event, handle_error, handle_success);
@@ -706,18 +704,18 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersAck> const &e
 // trades
 
 // XXX FIXME download_trades_count
-void OrderEntryClassic::get_trades() {
+void OrderEntryClassic::get_trades(TraceInfo const &trace_info) {
   profile_.trades([&]() {
     auto &symbols = shared_.settings.download.symbols;
     for (auto &symbol : symbols) {
       auto lookback = get_download_trades_lookback(shared_.settings, download_trades_is_first_);
       log::info<1>("Download trades: lookback={}"sv, lookback);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
-      auto end_time = clock::get_realtime<std::chrono::milliseconds>();
+      auto end_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc);
       auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - lookback);
       auto limit = shared_.settings.download.trades_limit ? shared_.settings.download.trades_limit : DOWNLOAD_TRADES_LIMIT;
       auto body = protocol::json::Encoder::user_trades_url(encode_buffer_, symbol, start_time, end_time, limit, recv_window);
-      auto query = account_.create_rest_signature_query(body);
+      auto query = account_.create_rest_signature_query(trace_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
@@ -745,7 +743,7 @@ void OrderEntryClassic::get_trades_ack(Trace<web::rest::Response> const &event) 
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, trades_ack);
-      request_.respond_trades = clock::get_system();  // completion
+      request_.respond_trades = trace_info.origin_create_time;
       download_trades_ = false;
       download_trades_is_first_ = false;
     };
@@ -805,17 +803,16 @@ void OrderEntryClassic::operator()(Trace<protocol::json::TradesAck> const &event
 
 // ...
 
-void OrderEntryClassic::refresh_listen_key() {
+void OrderEntryClassic::refresh_listen_key(TraceInfo const &trace_info) {
   if (!ready()) {
     return;
   }
-  auto now = clock::get_system();
-  if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
+  if (listen_key_refresh_.count() == 0 || trace_info.origin_create_time < listen_key_refresh_) {
     return;
   }
   log::info("Refreshing listen key..."sv);
-  listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
-  get_listen_key();
+  listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
+  get_listen_key(trace_info);
 }
 
 // order-place
@@ -831,7 +828,7 @@ void OrderEntryClassic::order_place(
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body =
         protocol::json::Encoder::order_place_url(encode_buffer_, create_order, order, ref_data, request_id, recv_window, shared_.api.self_trade_prevention);
-    auto query = account_.create_rest_signature_body(body);
+    auto query = account_.create_rest_signature_body(message_info, body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
@@ -955,7 +952,7 @@ void OrderEntryClassic::order_modify(
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = protocol::json::Encoder::order_modify_url(
         encode_buffer_, modify_order, order, ref_data, request_id, previous_request_id, recv_window, shared_.api.modify_order_full);
-    auto query = account_.create_rest_signature_body(body);
+    auto query = account_.create_rest_signature_body(message_info, body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::PUT,
@@ -1095,7 +1092,7 @@ void OrderEntryClassic::order_cancel(
     auto &[message_info, cancel_order] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     auto body = protocol::json::Encoder::order_cancel_url(encode_buffer_, cancel_order, order, ref_data, request_id, previous_request_id, recv_window);
-    auto query = account_.create_rest_signature_body(body);
+    auto query = account_.create_rest_signature_body(message_info, body);
     auto headers = account_.get_rest_headers();
     auto request = web::rest::Request{
         .method = web::http::Method::DELETE,
@@ -1218,7 +1215,7 @@ void OrderEntryClassic::open_orders_cancel_all(Event<CancelAllOrders> const &eve
         continue;
       }
       auto body = protocol::json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
-      auto query = account_.create_rest_signature_body(body);
+      auto query = account_.create_rest_signature_body(message_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
@@ -1301,13 +1298,13 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersCancelAllAck>
 
 // countdown-cancel-all
 
-void OrderEntryClassic::countdown_cancel_all() {
+void OrderEntryClassic::countdown_cancel_all(TraceInfo const &trace_info) {
   profile_.countdown_cancel_all([&]() {
     for (auto &symbol : open_orders_symbols_) {
       auto countdown_time = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_countdown);
       auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
       auto body = protocol::json::Encoder::countdown_cancel_open_orders_url(encode_buffer_, symbol, countdown_time, recv_window);
-      auto query = account_.create_rest_signature_body(body);
+      auto query = account_.create_rest_signature_body(trace_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::POST,

@@ -99,7 +99,7 @@ MarketData2::MarketData2(Handler &handler, io::Context &context, uint16_t stream
           .ping = create_metrics(shared.settings, name_, "ping"sv),
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
-      shared_{shared} {
+      shared_{shared}, subscribe_queue_{shared_.rate_limiter} {
 }
 
 void MarketData2::operator()(std::span<std::string_view const> const &assets) {
@@ -127,7 +127,7 @@ void MarketData2::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   (*connection_).refresh(timer.now);
   if ((*connection_).ready()) {
-    check_subscribe_queue(timer.now);
+    check_subscribe_queue(trace_info);
   }
 }
 
@@ -483,8 +483,9 @@ void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &event) {
 
 // helpers
 
-void MarketData2::check_subscribe_queue(std::chrono::nanoseconds now) {
-  subscribe_queue_.dispatch([&](auto now) { return shared_.rate_limiter.can_request(now); }, [&](auto &message) { (*connection_).send_text(message); }, now);
+void MarketData2::check_subscribe_queue(TraceInfo const &trace_info) {
+  auto callback = [&]([[maybe_unused]] auto &trace_info, auto &message) { (*connection_).send_text(message); };
+  subscribe_queue_.dispatch(trace_info, callback);
 }
 
 void MarketData2::subscribe(std::span<Symbol const> const &symbols) {

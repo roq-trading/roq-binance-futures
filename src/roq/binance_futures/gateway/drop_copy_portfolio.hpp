@@ -105,11 +105,11 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
 
   // helpers
 
-  void request_balance();
-  void request_account();
-  void request_position();
-  void request_orders();
-  void request_trades();
+  void request_balance(TraceInfo const &);
+  void request_account(TraceInfo const &);
+  void request_position(TraceInfo const &);
+  void request_orders(TraceInfo const &);
+  void request_trades(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
 

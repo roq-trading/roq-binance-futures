@@ -4,6 +4,8 @@
 
 #include "roq/logging.hpp"
 
+#include "roq/utils/safe_cast.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -43,19 +45,16 @@ Account::Account(Config const &config, std::string_view const &name, MarginMode 
       query_encode_buffer_(tools::Crypto::QUERY_BUFFER_LENGTH) {
 }
 
-std::string Account::create_rest_signature() {
-  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-  return crypto_.create_rest_signature(now_utc);
+std::string Account::create_rest_signature(TraceInfo const &trace_info) {
+  return crypto_.create_rest_signature(utils::safe_cast(trace_info.origin_create_time_utc));
 }
 
-std::string Account::create_rest_signature_body(std::string_view const &body) {
-  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-  return crypto_.create_rest_signature_body(now_utc, body);
+std::string Account::create_rest_signature_body(TraceInfo const &trace_info, std::string_view const &body) {
+  return crypto_.create_rest_signature_body(utils::safe_cast(trace_info.origin_create_time_utc), body);
 }
 
-std::string Account::create_rest_signature_query(std::string_view const &query) {
-  auto now_utc = clock::get_realtime<std::chrono::milliseconds>();
-  return crypto_.create_rest_signature_query(now_utc, query);
+std::string Account::create_rest_signature_query(TraceInfo const &trace_info, std::string_view const &query) {
+  return crypto_.create_rest_signature_query(utils::safe_cast(trace_info.origin_create_time_utc), query);
 }
 
 }  // namespace gateway

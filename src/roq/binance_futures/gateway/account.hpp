@@ -26,9 +26,9 @@ struct Account final {
 
   // classic
 
-  std::string create_rest_signature();
-  std::string create_rest_signature_body(std::string_view const &body);
-  std::string create_rest_signature_query(std::string_view const &query);
+  std::string create_rest_signature(TraceInfo const &);
+  std::string create_rest_signature_body(TraceInfo const &, std::string_view const &body);
+  std::string create_rest_signature_query(TraceInfo const &, std::string_view const &query);
 
   // ed25519
 

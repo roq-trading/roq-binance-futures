@@ -10,7 +10,7 @@ namespace gateway {
 
 struct OrderEntry : public server::OrderActionStream {
   // note! a bit dirty -- only valid for WSAPI
-  virtual void force_listen_key_refresh() {}
+  virtual void force_listen_key_refresh(TraceInfo const &) {}
 };
 
 }  // namespace gateway

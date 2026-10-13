@@ -12,8 +12,8 @@
 #include "roq/utils/container.hpp"
 
 #include "roq/core/symbols.hpp"
-#include "roq/core/timer_queue.hpp"
 
+#include "roq/core/limit/queue.hpp"
 #include "roq/core/limit/rate_limiter.hpp"
 
 #include "roq/market/mbp/sequencer.hpp"
@@ -85,11 +85,11 @@ struct Shared final {
  public:
   core::limit::RateLimiter rate_limiter;
 
+  core::limit::Queue<std::string> depth_request_queue;
+  core::limit::Queue<std::string> time_series_request_queue;
+
   core::Symbols symbols;
   utils::unordered_set<std::string> all_symbols;
-
-  core::TimerQueue<std::string> depth_request_queue;
-  core::TimerQueue<std::string> time_series_request_queue;
 
   std::vector<RateLimit> rate_limits;
 

@@ -58,7 +58,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   OrderEntryClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
 
-  void force_listen_key_refresh() override;
+  void force_listen_key_refresh(TraceInfo const &) override;
 
   // protected:
   friend base_type;
@@ -116,37 +116,37 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // listen-key
 
-  void get_listen_key();
+  void get_listen_key(TraceInfo const &);
   void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::ListenKeyAck> const &);
 
   // account-balance
 
-  void get_account_balance();
+  void get_account_balance(TraceInfo const &);
   void get_account_balance_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::AccountBalanceAck> const &);
 
   // account-status
 
-  void get_account_status();
+  void get_account_status(TraceInfo const &);
   void get_account_status_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::AccountStatusAck> const &);
 
   // open-orders
 
-  void get_open_orders();
+  void get_open_orders(TraceInfo const &);
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
   // trades
 
-  void get_trades();
+  void get_trades(TraceInfo const &);
   void get_trades_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::TradesAck> const &);
 
   // refresh-listen-key
 
-  void refresh_listen_key();
+  void refresh_listen_key(TraceInfo const &);
 
   // order-place
 
@@ -184,7 +184,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // countdown-cancel-all
 
-  void countdown_cancel_all();
+  void countdown_cancel_all(TraceInfo const &);
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::CountdownCancelAllAck> const &);
 

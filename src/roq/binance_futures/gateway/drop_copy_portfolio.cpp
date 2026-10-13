@@ -5,7 +5,6 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/common.hpp"
-// #include "roq/utils/update.hpp"
 
 #include "roq/utils/exceptions/unhandled.hpp"
 
@@ -246,24 +245,24 @@ int32_t DropCopyPortfolio::download(Trace<State> const &event) {
       break;
     case BALANCE:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "balance"sv);
-      request_balance();
+      request_balance(trace_info);
       return 1;
     case ACCOUNT:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account"sv);
-      request_account();
+      request_account(trace_info);
       return 1;
     case POSITION:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "position"sv);
-      request_position();
+      request_position(trace_info);
       return 1;
     case ORDERS:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "orderes"sv);
-      request_orders();
+      request_orders(trace_info);
       return 1;
     case TRADES:
       if (shared_.settings.download.trades_lookback.count() != 0 && !std::empty(shared_.settings.download.symbols)) {
         create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "trades"sv);
-        request_trades();
+        request_trades(trace_info);
         return 1;
       } else {
         return 0;
@@ -696,29 +695,29 @@ void DropCopyPortfolio::operator()(Trace<protocol::json::OutboundAccountPosition
 
 // request
 
-void DropCopyPortfolio::request_balance() {
+void DropCopyPortfolio::request_balance(TraceInfo const &trace_info) {
   log::info("Requesting balance download..."sv);
-  request_.request_balance = clock::get_system();
+  request_.request_balance = trace_info.origin_create_time;
 }
 
-void DropCopyPortfolio::request_account() {
+void DropCopyPortfolio::request_account(TraceInfo const &trace_info) {
   log::info("Requesting account download..."sv);
-  request_.request_account = clock::get_system();
+  request_.request_account = trace_info.origin_create_time;
 }
 
-void DropCopyPortfolio::request_position() {
+void DropCopyPortfolio::request_position(TraceInfo const &trace_info) {
   log::info("Requesting position download..."sv);
-  request_.request_position = clock::get_system();
+  request_.request_position = trace_info.origin_create_time;
 }
 
-void DropCopyPortfolio::request_orders() {
+void DropCopyPortfolio::request_orders(TraceInfo const &trace_info) {
   log::info("Requesting order download..."sv);
-  request_.request_orders = clock::get_system();
+  request_.request_orders = trace_info.origin_create_time;
 }
 
-void DropCopyPortfolio::request_trades() {
+void DropCopyPortfolio::request_trades(TraceInfo const &trace_info) {
   log::info("Requesting trades download..."sv);
-  request_.request_trades = clock::get_system();
+  request_.request_trades = trace_info.origin_create_time;
 }
 
 // response

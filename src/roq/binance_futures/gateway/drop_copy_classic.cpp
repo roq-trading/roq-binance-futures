@@ -145,7 +145,7 @@ void DropCopyClassic::operator()(Trace<Timer> const &event) {
   check_response_account(trace_info);
   check_response_orders(trace_info);
   check_response_trades(trace_info);
-  refresh_balance(timer.now);
+  refresh_balance(trace_info);
 }
 
 void DropCopyClassic::operator()(metrics::Writer &writer) const {
@@ -252,20 +252,20 @@ int32_t DropCopyClassic::download(Trace<State> const &event) {
       break;
     case BALANCE:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "balance"sv);
-      request_balance();
+      request_balance(trace_info);
       return 1;
     case ACCOUNT:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account"sv);
-      request_account();
+      request_account(trace_info);
       return 1;
     case ORDERS:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "orders"sv);
-      request_orders();
+      request_orders(trace_info);
       return 1;
     case TRADES:
       if (shared_.settings.download.trades_lookback.count() != 0 && !std::empty(shared_.settings.download.symbols)) {
         create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "trades"sv);
-        request_trades();
+        request_trades(trace_info);
         return 1;
       } else {
         return 0;
@@ -588,43 +588,43 @@ void DropCopyClassic::operator()(Trace<protocol::json::OutboundAccountPosition> 
 
 // helpers
 
-void DropCopyClassic::refresh_balance(std::chrono::nanoseconds now) {
+void DropCopyClassic::refresh_balance(TraceInfo const &trace_info) {
   if (!ready()) {
     return;
   }
   if (shared_.settings.misc.poll_balance_freq.count() == 0) {
     return;
   }
-  if (now < balance_refresh_) {
+  if (trace_info.origin_create_time < balance_refresh_) {
     return;
   }
   log::info("Refreshing balance..."sv);
-  balance_refresh_ = now + shared_.settings.misc.poll_balance_freq;
-  if (request_.request_balance < now) {
-    request_balance();
+  balance_refresh_ = trace_info.origin_create_time + shared_.settings.misc.poll_balance_freq;
+  if (request_.request_balance < trace_info.origin_create_time) {
+    request_balance(trace_info);
   }
 }
 
 // request
 
-void DropCopyClassic::request_balance() {
+void DropCopyClassic::request_balance(TraceInfo const &trace_info) {
   log::info("Requesting balance download..."sv);
-  request_.request_balance = clock::get_system();
+  request_.request_balance = trace_info.origin_create_time;
 }
 
-void DropCopyClassic::request_account() {
+void DropCopyClassic::request_account(TraceInfo const &trace_info) {
   log::info("Requesting account download..."sv);
-  request_.request_account = clock::get_system();
+  request_.request_account = trace_info.origin_create_time;
 }
 
-void DropCopyClassic::request_orders() {
+void DropCopyClassic::request_orders(TraceInfo const &trace_info) {
   log::info("Requesting order download..."sv);
-  request_.request_orders = clock::get_system();
+  request_.request_orders = trace_info.origin_create_time;
 }
 
-void DropCopyClassic::request_trades() {
+void DropCopyClassic::request_trades(TraceInfo const &trace_info) {
   log::info("Requesting trades download..."sv);
-  request_.request_trades = clock::get_system();
+  request_.request_trades = trace_info.origin_create_time;
 }
 
 // response

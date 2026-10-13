@@ -16,8 +16,6 @@
 
 #include "roq/web/rest/client.hpp"
 
-#include "roq/core/download.hpp"
-
 #include "roq/core/json/buffer_stack.hpp"
 
 #include "roq/server.hpp"
@@ -90,25 +88,25 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
 
   // account-balance
 
-  void get_account_balance();
+  void get_account_balance(TraceInfo const &);
   void get_account_balance_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::AccountBalanceAck> const &);
 
   // account-status
 
-  void get_account_status();
+  void get_account_status(TraceInfo const &);
   void get_account_status_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::AccountStatusAck> const &);
 
   // open-orders
 
-  void get_open_orders();
+  void get_open_orders(TraceInfo const &);
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
   // trades
 
-  void get_trades();
+  void get_trades(TraceInfo const &);
   void get_trades_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::TradesAck> const &);
 

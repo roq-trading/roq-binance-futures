@@ -104,12 +104,12 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   // helpers
 
-  void refresh_balance(std::chrono::nanoseconds now);
+  void refresh_balance(TraceInfo const &);
 
-  void request_balance();
-  void request_account();
-  void request_orders();
-  void request_trades();
+  void request_balance(TraceInfo const &);
+  void request_account(TraceInfo const &);
+  void request_orders(TraceInfo const &);
+  void request_trades(TraceInfo const &);
 
   void check_response_balance(TraceInfo const &);
   void check_response_account(TraceInfo const &);

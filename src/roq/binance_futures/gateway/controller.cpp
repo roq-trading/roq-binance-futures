@@ -156,6 +156,7 @@ void Controller::operator()(Trace<Stop> const &event) {
 }
 
 void Controller::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
   // note! remove drop_copy *BEFORE* dispatching timer (because of possible auto-retry connection)
   if (!std::empty(drop_copy_zombies_)) [[unlikely]] {
     for (auto &account : drop_copy_zombies_) {
@@ -170,7 +171,7 @@ void Controller::operator()(Trace<Timer> const &event) {
       if (iter_2 == std::end(order_entry_)) {
         log::fatal("Unexpected"sv);
       }
-      (*(*iter_2).second).force_listen_key_refresh();
+      (*(*iter_2).second).force_listen_key_refresh(trace_info);
     }
     drop_copy_zombies_.clear();
   }

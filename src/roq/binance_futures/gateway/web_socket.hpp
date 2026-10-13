@@ -46,7 +46,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
 
-  void force_listen_key_refresh() override;
+  void force_listen_key_refresh(TraceInfo const &) override;
 
   // protected:
   friend base_type;
@@ -124,12 +124,8 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   // order-status
 
-  bool order_status();
-  void order_status(std::string_view const &symbol);
-
-  // open-orders-cancel-all
-
-  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+  bool order_status(TraceInfo const &);
+  void order_status(TraceInfo const &, std::string_view const &symbol);
 
   // order-place
 
@@ -153,6 +149,10 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
 
+  // open-orders-cancel-all
+
+  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+
   void parse(TraceInfo const &, std::string_view const &message);
 
   void update_rate_limits(auto &event);
@@ -168,9 +168,9 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   void user_data_stream_start();
   void user_data_stream_ping(std::chrono::nanoseconds now);
 
-  void account_balance();
-  void account_status();
-  void account_position();
+  void account_balance(TraceInfo const &);
+  void account_status(TraceInfo const &);
+  void account_position(TraceInfo const &);
 
  private:
   Handler &handler_;

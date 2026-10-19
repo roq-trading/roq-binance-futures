@@ -64,6 +64,11 @@
       "validator": "roq/flags/validators/TimePeriod",
       "default": "10ms",
       "description": "Test cancel-timeout"
+    },
+    {
+      "name": "test_interface",
+      "type": "std/string",
+      "description": "Interface to bind sockets to"
     }
   ]
 }

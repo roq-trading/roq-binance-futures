@@ -46,7 +46,7 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &share
   auto ping_path = fmt::format("/{}{}"sv, settings.app.api, settings.rest.ping_path);
   auto config = web::rest::Client::Config{
       // connection
-      .interface = {},
+      .interface = settings.misc.test_interface,
       .proxy = settings.rest.proxy,
       .uris = {&uri, 1},
       .host = settings.rest.host,

@@ -44,7 +44,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
     virtual void operator()(Trace<ListenKeyUpdate> const &) = 0;
   };
 
-  WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true, std::string_view const &interface = {});
+  WebSocket(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, bool master = true);
 
   void force_listen_key_refresh(TraceInfo const &) override;
 

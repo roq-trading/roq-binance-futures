@@ -60,7 +60,7 @@ auto create_connection(auto &handler, auto &settings, auto &context, auto &share
   auto uri = create_uri(settings);
   auto config = web::socket::Client::Config{
       // connection
-      .interface = {},
+      .interface = settings.misc.test_interface,
       .uris = {&uri, 1},
       .host = settings.ws.host,
       .validate_certificate = settings.net.tls_validate_certificate,

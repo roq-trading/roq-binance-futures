@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Fixed
+
+* `TradeSummary` was duplicated when multiple market data connections was opened (#652)
+
 ## 1.1.9 &ndash; 2026-10-18
 
 ### Added

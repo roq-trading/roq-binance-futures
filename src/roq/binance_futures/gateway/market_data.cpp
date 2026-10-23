@@ -405,8 +405,8 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols) {
   if (std::empty(symbols)) {
     return;
   }
+  subscribe(symbols, "bookTicker"sv);
   if (priority_ == Priority::PRIMARY) {
-    subscribe(symbols, "bookTicker"sv);
     if (shared_.settings.ws.subscribe_trade_details) {
       subscribe(symbols, "trade"sv);
     }

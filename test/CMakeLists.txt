@@ -28,6 +28,7 @@ set(SOURCES
     json_mark_price_update.cpp
     json_mini_ticker.cpp
     json_open_orders_ack.cpp
+    json_order_ack.cpp
     json_order_cancel_ack.cpp
     json_order_place_ack.cpp
     json_order_trade_update.cpp

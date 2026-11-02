@@ -51,7 +51,7 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   uint16_t stream_id() const override { return stream_id_; }
 
-  bool ready() const override;
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
@@ -78,10 +78,11 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   enum class State {
     UNDEFINED = 0,
-    BALANCE,
-    ACCOUNT,
-    ORDERS,
-    TRADES,
+    GET_BALANCES,
+    GET_POSITIONS,
+    GET_OPEN_ORDERS,
+    GET_STALE_ORDERS,
+    GET_TRADES,
     DONE,
   };
 
@@ -106,15 +107,10 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   void refresh_balance(TraceInfo const &);
 
-  void request_balance(TraceInfo const &);
-  void request_account(TraceInfo const &);
-  void request_orders(TraceInfo const &);
-  void request_trades(TraceInfo const &);
+  void check_request_queue(TraceInfo const &);
 
-  void check_response_balance(TraceInfo const &);
-  void check_response_account(TraceInfo const &);
-  void check_response_orders(TraceInfo const &);
-  void check_response_trades(TraceInfo const &);
+  bool check_stale_orders();
+  void check_stale_orders(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
 
@@ -145,7 +141,6 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
   Shared &shared_;
   Request &request_;
   // state
-  bool ready_ = false;
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
   // ...
@@ -154,6 +149,8 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
   std::string external_order_id_;
   //
   bool stop_ = {};
+  //
+  std::chrono::nanoseconds next_check_stale_orders_ = {};
 };
 
 }  // namespace gateway

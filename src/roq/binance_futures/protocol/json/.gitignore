@@ -59,6 +59,7 @@ mini_ticker.hpp
 open_orders_ack.hpp
 open_orders_cancel_all_ack.hpp
 order.hpp
+order_ack.hpp
 order_cancel_ack.hpp
 order_modify_ack.hpp
 order_place_ack.hpp
@@ -162,6 +163,7 @@ mini_ticker.cpp
 open_orders_ack.cpp
 open_orders_cancel_all_ack.cpp
 order.cpp
+order_ack.cpp
 order_cancel_ack.cpp
 order_modify_ack.cpp
 order_place_ack.cpp

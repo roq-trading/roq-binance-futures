@@ -72,6 +72,15 @@ struct Encoder final {
 
   static std::string_view all_open_orders_url(std::string &buffer, std::string_view const &symbol, std::chrono::milliseconds recv_window);
 
+  // order
+
+  static std::string_view get_order_url(
+      std::string &buffer,
+      std::string_view const &symbol,
+      std::string_view const &client_order_id,
+      std::string_view const &external_order_id,
+      std::chrono::milliseconds recv_window);
+
   // countdown
 
   static std::string_view countdown_cancel_open_orders_url(

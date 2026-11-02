@@ -71,6 +71,7 @@ set(AUTOGEN_SCHEMAS
     open_orders_ack.json
     open_orders_cancel_all_ack.json
     order.json
+    order_ack.json
     order_cancel_ack.json
     order_modify_ack.json
     order_place_ack.json

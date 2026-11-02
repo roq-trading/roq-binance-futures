@@ -13,7 +13,8 @@ CONFIG="${CONFIG:-$NAME}-testnet"
 CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
 API="dapi"
-WS_API=false
+
+WS_API=true
 
 FLAGFILE="../../../share/flags/test/flags-$API.cfg"
 

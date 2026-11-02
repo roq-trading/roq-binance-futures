@@ -51,7 +51,7 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
 
   uint16_t stream_id() const override { return stream_id_; }
 
-  bool ready() const override;
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
@@ -78,11 +78,12 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
 
   enum class State {
     UNDEFINED = 0,
-    BALANCE,
-    ACCOUNT,
-    POSITION,
-    ORDERS,
-    TRADES,
+    GET_BALANCES,
+    GET_POSITIONS,
+    GET_POSITIONS_PM,
+    GET_OPEN_ORDERS,
+    GET_STALE_ORDERS,
+    GET_TRADES,
     DONE,
   };
 
@@ -105,19 +106,12 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
 
   // helpers
 
-  void request_balance(TraceInfo const &);
-  void request_account(TraceInfo const &);
-  void request_position(TraceInfo const &);
-  void request_orders(TraceInfo const &);
-  void request_trades(TraceInfo const &);
+  void check_request_queue(TraceInfo const &);
+
+  bool check_stale_orders();
+  void check_stale_orders(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
-
-  void check_response_balance(TraceInfo const &);
-  void check_response_account(TraceInfo const &);
-  void check_response_position(TraceInfo const &);
-  void check_response_orders(TraceInfo const &);
-  void check_response_trades(TraceInfo const &);
 
  private:
   [[maybe_unused]] Handler &handler_;
@@ -146,13 +140,14 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   Shared &shared_;
   Request &request_;
   // state
-  bool ready_ = false;
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
   //
   std::string external_order_id_;
   //
   bool stop_ = {};
+  //
+  std::chrono::nanoseconds next_check_stale_orders_ = {};
 };
 
 }  // namespace gateway

@@ -29,11 +29,12 @@ namespace {
 auto const NAME = "ex"sv;
 
 auto const SUPPORTS = Mask{
+    SupportType::FUNDS,
+    SupportType::POSITION,
     SupportType::CREATE_ORDER,
     SupportType::MODIFY_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
-    SupportType::FUNDS,
 };
 
 uint32_t const REQUEST_ID = 1'000'000;
@@ -150,28 +151,11 @@ void WebSocket::operator()(Trace<Stop> const &) {
 
 void WebSocket::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  (*connection_).refresh(timer.now);
-  user_data_stream_ping(timer.now);
-  if (master_ && ready() && !downloading()) {
-    if (!downloading() && request_.respond_balance < request_.request_balance) {
-      log::info("Download balance..."sv);
-      account_balance(trace_info);
-      download_balance_ = true;
+  if ((*connection_).refresh(timer.now)) {
+    user_data_stream_ping(timer.now);
+    if (ready()) {
+      check_request_queue(trace_info);
     }
-    if (!downloading() && request_.respond_account < request_.request_account) {
-      log::info("Download account..."sv);
-      account_status(trace_info);
-      download_account_ = true;
-    }
-    /* XXX FIXME this is wrong -- we can only download a single order
-    if (!downloading() && request_.respond_orders < request_.request_orders) {
-      log::info("Download orders..."sv);
-      if (order_status()) {
-        download_orders_ = true;
-      } else {
-      }
-    }
-    */
   }
 }
 
@@ -440,8 +424,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &eve
     }
     update_rate_limits(event);
     log::info<1>("Balance download has completed!"sv);
-    request_.respond_balance = trace_info.origin_create_time;
-    download_balance_ = false;
+    request_.balances.commit(trace_info);
   });
 }
 
@@ -485,8 +468,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
     update_rate_limits(event);
     // completion
     log::info<1>("Account download has completed!"sv);
-    request_.respond_account = trace_info.origin_create_time;
-    download_account_ = false;
+    request_.positions.commit(trace_info);
   });
 }
 
@@ -1255,6 +1237,13 @@ void WebSocket::open_orders_cancel_all(Event<CancelAllOrders> const &event, std:
   });
 }
 
+// helpers
+
+void WebSocket::check_request_queue(TraceInfo const &trace_info) {
+  request_.balances.check_pending(trace_info, [this](auto &trace_info) { account_balance(trace_info); });
+  request_.positions.check_pending(trace_info, [this](auto &trace_info) { account_status(trace_info); });
+}
+
 void WebSocket::parse(TraceInfo const &trace_info, std::string_view const &message) {
   profile_.parse([&]() {
     log::info<3>("message={}"sv, message);
@@ -1269,8 +1258,6 @@ void WebSocket::parse(TraceInfo const &trace_info, std::string_view const &messa
     }
   });
 }
-
-// helpers
 
 void WebSocket::update_rate_limits(auto &event) {
   auto &[trace_info, message] = event;

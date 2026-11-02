@@ -30,28 +30,37 @@ R create_accounts(auto &config) {
   result_type result;
   for (auto &[_, account] : config.accounts) {
     auto obj = std::make_unique<Account>(config, account.name, account.margin_mode);
-    result.try_emplace(static_cast<std::string_view>(account.name), std::move(obj));
+    result.try_emplace(account.name, std::move(obj));
   }
   return result;
 }
 
 template <typename R>
-R create_requests(auto &config) {
+R create_requests(auto &config, auto &shared) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
   for (auto &[_, account] : config.accounts) {
-    result.try_emplace(static_cast<std::string_view>(account.name), Request{});
+    auto obj = std::make_unique<Request>(shared);
+    result.try_emplace(account.name, std::move(obj));
   }
   return result;
 }
 
+Request &get_request(auto &requests, auto &account) {
+  auto iter = requests.find(account);
+  if (iter == std::end(requests)) {
+    log::fatal("Unexpected"sv);
+  }
+  return *(*iter).second;
+}
+
 template <typename R>
-R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
+R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &requests) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
   for (auto &[_, item] : accounts) {
     auto &account = *item;
-    auto &request = request_by_account[account.name];
+    auto &request = get_request(requests, account.name);
     switch (account.margin_mode) {
       using enum MarginMode;
       case UNDEFINED:
@@ -86,12 +95,12 @@ R create_drop_copy(auto &accounts) {
 }
 
 template <typename R>
-R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &request_by_account) {
+R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &requests) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
   for (auto &[_, item] : accounts) {
     auto &account = *item;
-    auto &request = request_by_account[account.name];
+    auto &request = get_request(requests, account.name);
     switch (account.margin_mode) {
       using enum MarginMode;
       case UNDEFINED:
@@ -131,7 +140,7 @@ uint8_t Controller::parse_api(Settings const &settings) {
 
 Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
     : dispatcher_{dispatcher}, accounts_{create_accounts<decltype(accounts_)>(config)}, context_{context}, shared_{dispatcher, settings},
-      requests_{create_requests<decltype(requests_)>(config)}, rest_{*this, context_, ++stream_id_, shared_},
+      requests_{create_requests<decltype(requests_)>(config, shared_)}, rest_{*this, context_, ++stream_id_, shared_},
       order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)},
       download_{create_download<decltype(download_)>(*this, context_, stream_id_, accounts_, shared_, requests_)} {
@@ -340,10 +349,10 @@ void Controller::create_drop_copy_helper(auto &event) {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create DropCopy (user-stream) for account="{}" using listen_key="{}")"sv, account, listen_key_update.listen_key);
-    auto drop_copy = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
+    auto obj = std::make_unique<T>(*this, context_, ++stream_id_, get_account(account), shared_, get_request(account), listen_key_update.listen_key);
     Start start;
-    create_trace_and_dispatch(*drop_copy, trace_info, start);
-    (*iter).second = std::move(drop_copy);
+    create_trace_and_dispatch(*obj, trace_info, start);
+    (*iter).second = std::move(obj);
   }
 }
 
@@ -369,10 +378,10 @@ void Controller::ensure_symbol_slices(TraceInfo const &trace_info, size_t size) 
     auto stream_id = ++stream_id_;
     auto index = std::size(container);
     log::info("Create MarketData2 (stream_id={}, index={})"sv, stream_id, index);
-    auto market_data = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
+    auto obj = std::make_unique<MarketData2>(*this, context_, stream_id_, shared_, index);
     Start start;
-    create_trace_and_dispatch(*market_data, trace_info, start);
-    container.emplace_back(std::move(market_data));
+    create_trace_and_dispatch(*obj, trace_info, start);
+    container.emplace_back(std::move(obj));
   };
   while (std::size(market_data_2_) < size) {
     helper_2(market_data_2_);
@@ -421,7 +430,7 @@ Account &Controller::get_account(std::string_view const &account) const {
 Request &Controller::get_request(std::string_view const &account) {
   auto iter = requests_.find(account);
   if (iter != std::end(requests_)) {
-    return (*iter).second;
+    return *(*iter).second;
   }
   log::fatal(R"(Unknown account="{}")"sv, account);
 }

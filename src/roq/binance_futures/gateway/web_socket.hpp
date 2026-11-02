@@ -153,12 +153,6 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
-  void parse(TraceInfo const &, std::string_view const &message);
-
-  void update_rate_limits(auto &event);
-
-  bool downloading() const { return download_balance_ || download_account_ | download_orders_; }
-
   // session-logon
 
   void session_logon(TraceInfo const &);
@@ -171,6 +165,14 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   void account_balance(TraceInfo const &);
   void account_status(TraceInfo const &);
   void account_position(TraceInfo const &);
+
+  // helpers
+
+  void check_request_queue(TraceInfo const &);
+
+  void parse(TraceInfo const &, std::string_view const &message);
+
+  void update_rate_limits(auto &event);
 
  private:
   Handler &handler_;
@@ -216,9 +218,6 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   uint32_t request_id_;
   std::string listen_key_;
   std::chrono::nanoseconds listen_key_refresh_ = {};
-  bool download_balance_ = false;
-  bool download_account_ = false;
-  bool download_orders_ = false;
   utils::unordered_set<std::string> open_orders_symbols_;
   std::string request_encode_buffer_;
   std::string encode_buffer_;

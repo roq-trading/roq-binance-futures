@@ -5,6 +5,7 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/common.hpp"
+#include "roq/utils/safe_cast.hpp"
 #include "roq/utils/update.hpp"
 
 #include "roq/utils/metrics/factory.hpp"
@@ -30,12 +31,12 @@ namespace {
 auto const NAME = "om"sv;
 
 auto const SUPPORTS = Mask{
+    SupportType::FUNDS,
+    SupportType::POSITION,
     SupportType::CREATE_ORDER,
     SupportType::MODIFY_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
-    SupportType::FUNDS,
-    SupportType::POSITION,
 };
 
 auto const X_MBX_USED_WEIGHT_1M = "x-mbx-used-weight-1m"sv;
@@ -132,6 +133,8 @@ OrderEntryClassic::OrderEntryClassic(Handler &handler, io::Context &context, uin
           .account_status_ack = create_metrics(shared.settings, name_, "account_status_ack"sv),
           .open_orders = create_metrics(shared.settings, name_, "open_orders"sv),
           .open_orders_ack = create_metrics(shared.settings, name_, "open_orders_ack"sv),
+          .order = create_metrics(shared.settings, name_, "order"sv),
+          .order_ack = create_metrics(shared.settings, name_, "order_ack"sv),
           .trades = create_metrics(shared.settings, name_, "trades"sv),
           .trades_ack = create_metrics(shared.settings, name_, "trades_ack"sv),
           .order_place = create_metrics(shared.settings, name_, "order_place"sv),
@@ -176,32 +179,14 @@ void OrderEntryClassic::operator()(Trace<Stop> const &) {
 
 void OrderEntryClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  (*connection_).refresh(timer.now);
-  refresh_listen_key(trace_info);
-  if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
-    next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
-    countdown_cancel_all(trace_info);
-  }
-  if (ready() && !downloading()) {
-    if (!downloading() && request_.respond_balance < request_.request_balance) {
-      log::info<1>("Download balance..."sv);
-      get_account_balance(trace_info);
-      download_balance_ = true;
-    }
-    if (!downloading() && request_.respond_account < request_.request_account) {
-      log::info<1>("Download account..."sv);
-      get_account_status(trace_info);
-      download_account_ = true;
-    }
-    if (!downloading() && request_.respond_orders < request_.request_orders) {
-      log::info<1>("Download orders..."sv);
-      get_open_orders(trace_info);
-      download_orders_ = true;
-    }
-    if (!downloading() && request_.respond_trades < request_.request_trades) {
-      log::info<1>("Download trades..."sv);
-      get_trades(trace_info);
-      download_trades_ = true;
+  if ((*connection_).refresh(timer.now)) {
+    if (ready()) {
+      refresh_listen_key(trace_info);
+      if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
+        next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
+        countdown_cancel_all(trace_info);
+      }
+      check_request_queue(trace_info);
     }
   }
 }
@@ -219,6 +204,8 @@ void OrderEntryClassic::operator()(metrics::Writer &writer) const {
       .write(profile_.account_status_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders, metrics::Type::PROFILE)
       .write(profile_.open_orders_ack, metrics::Type::PROFILE)
+      .write(profile_.order, metrics::Type::PROFILE)
+      .write(profile_.order_ack, metrics::Type::PROFILE)
       .write(profile_.trades, metrics::Type::PROFILE)
       .write(profile_.trades_ack, metrics::Type::PROFILE)
       .write(profile_.order_place, metrics::Type::PROFILE)
@@ -297,24 +284,14 @@ uint16_t OrderEntryClassic::operator()(Event<CancelAllOrders> const &event, std:
 
 void OrderEntryClassic::operator()(Trace<web::rest::Connected> const &event) {
   auto &[trace_info, connected] = event;
-  if (download_.downloading()) {
-    download_.bump(trace_info);
-  } else {
-    download_.begin(trace_info);
-  }
+  download_.begin(trace_info);
 }
 
 void OrderEntryClassic::operator()(Trace<web::rest::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
   create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
-  if (!download_.downloading()) {
-    download_.reset();
-  }
-  download_balance_ = false;
-  download_account_ = false;
-  download_orders_ = false;
-  download_trades_ = false;
+  download_.reset();
 }
 
 void OrderEntryClassic::operator()(Trace<web::rest::Latency> const &event) {
@@ -387,13 +364,14 @@ void OrderEntryClassic::operator()(Trace<web::rest::MessageEnd> const &event) {
 
 int32_t OrderEntryClassic::download(Trace<State> const &event) {
   auto &[trace_info, state] = event;
+  auto publish_downloading = [&]() { create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, magic_enum::enum_name(state)); };
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case LISTEN_KEY:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "listen-key"sv);
+      publish_downloading();
       get_listen_key(trace_info);
       return 1;
     case DONE:
@@ -490,16 +468,13 @@ void OrderEntryClassic::get_account_balance_ack(Trace<web::rest::Response> const
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
-      download_balance_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, account_balance_ack);
-      // completion
-      request_.respond_balance = trace_info.origin_create_time;
-      download_balance_ = false;
     };
     process_response(event, handle_error, handle_success);
+    request_.balances.commit(trace_info);
   });
 }
 
@@ -570,16 +545,13 @@ void OrderEntryClassic::get_account_status_ack(Trace<web::rest::Response> const 
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
-      download_account_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, account_status_ack);
-      // completion
-      request_.respond_account = trace_info.origin_create_time;
-      download_account_ = false;
     };
     process_response(event, handle_error, handle_success);
+    request_.positions.commit(trace_info);
   });
 }
 
@@ -637,16 +609,13 @@ void OrderEntryClassic::get_open_orders_ack(Trace<web::rest::Response> const &ev
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
-      download_orders_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, open_orders_ack);
-      // completion
-      request_.respond_orders = trace_info.origin_create_time;
-      download_orders_ = false;
     };
     process_response(event, handle_error, handle_success);
+    request_.open_orders.commit(trace_info);
   });
 }
 
@@ -701,6 +670,139 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersAck> const &e
   }
 }
 
+// order
+
+void OrderEntryClassic::get_order(
+    TraceInfo const &trace_info, std::string_view const &client_order_id, std::string_view const &external_order_id, std::string_view const &symbol) {
+  profile_.order([&]() {
+    auto query = protocol::json::Encoder::get_order_url(
+        encode_buffer_, symbol, client_order_id, external_order_id, utils::safe_cast(shared_.settings.rest.order_recv_window));
+    auto query_2 = account_.create_rest_signature_query(trace_info, query);
+    auto headers = account_.get_rest_headers();
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.simple.order,
+        .query = query_2,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+    };
+    log::warn("DEBUG request={}"sv, request);
+    auto callback = [this, client_order_id = std::string{client_order_id}](auto &event, [[maybe_unused]] auto &request_id) {
+      get_order_ack(event, client_order_id);
+    };
+    (*connection_)(request, callback, "order"sv);
+  });
+}
+
+void OrderEntryClassic::get_order_ack(Trace<web::rest::Response> const &event, std::string_view const &client_order_id) {
+  profile_.order_ack([&]() {
+    auto &[trace_info, response] = event;
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      auto order_update = server::oms::OrderUpdate{
+          .account = account_.name,
+          .exchange = {},
+          .symbol = {},
+          .side = {},
+          .position_effect = {},
+          .margin_mode = {},
+          .max_show_quantity = NaN,
+          .order_type = {},
+          .time_in_force = {},
+          .execution_instructions = {},
+          .execution_destination = {},
+          .create_time_utc = {},
+          .update_time_utc = {},
+          .external_account = {},
+          .external_order_id = {},
+          .client_order_id = client_order_id,
+          .order_status = OrderStatus::REJECTED,
+          .error = error,
+          .text = text,
+          .quantity = NaN,
+          .price = NaN,
+          .stop_price = NaN,
+          .leverage = NaN,
+          .remaining_quantity = NaN,
+          .traded_quantity = NaN,
+          .average_traded_price = NaN,
+          .last_traded_quantity = {},
+          .last_traded_price = {},
+          .last_liquidity = {},
+          .routing_id = {},
+          .max_request_version = {},
+          .max_response_version = {},
+          .max_accepted_version = {},
+          .update_type = UpdateType::SNAPSHOT,
+          .sending_time_utc = {},
+      };
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+    };
+    auto handle_success = [&](auto &body) {
+      protocol::json::OrderAck order_ack{body, decode_buffer_};
+      create_trace_and_dispatch_2(trace_info, order_ack);
+    };
+    process_response(event, handle_error, handle_success);
+    //
+    if (download_stale_orders_counter_) {
+      --download_stale_orders_counter_;
+    } else {
+      log::warn("Unexpected"sv);
+    }
+    log::warn("DEBUG remaining orders: {}"sv, download_stale_orders_counter_);
+    if (download_stale_orders_counter_ == 0) {
+      request_.stale_orders.commit(trace_info);
+    }
+  });
+}
+
+void OrderEntryClassic::operator()(Trace<protocol::json::OrderAck> const &event) {
+  auto &[trace_info, order_ack] = event;
+  log::info<2>("order_ack={}"sv, order_ack);
+  auto external_order_id = Utils::create_external_order_id(external_order_id_, order_ack.symbol, order_ack.order_id);
+  auto order_update = server::oms::OrderUpdate{
+      .account = account_.name,
+      .exchange = shared_.settings.exchange,
+      .symbol = order_ack.symbol,
+      .side = map(order_ack.side),
+      .position_effect = {},
+      .margin_mode = {},
+      .max_show_quantity = NaN,
+      .order_type = map(order_ack.type),
+      .time_in_force = map(order_ack.time_in_force),
+      .execution_instructions = {},
+      .execution_destination = {},
+      .create_time_utc = order_ack.time,
+      .update_time_utc = order_ack.update_time,
+      .external_account = {},
+      .external_order_id = external_order_id,
+      .client_order_id = order_ack.client_order_id,
+      .order_status = map(order_ack.status),
+      .error = {},
+      .text = {},
+      .quantity = order_ack.orig_qty,
+      .price = order_ack.price,
+      .stop_price = order_ack.stop_price,
+      .leverage = NaN,
+      .remaining_quantity = NaN,
+      .traded_quantity = order_ack.executed_qty,
+      .average_traded_price = order_ack.avg_price,
+      .last_traded_quantity = {},
+      .last_traded_price = {},
+      .last_liquidity = {},
+      .routing_id = {},
+      .max_request_version = {},
+      .max_response_version = {},
+      .max_accepted_version = {},
+      .update_type = UpdateType::SNAPSHOT,
+      .sending_time_utc = {},
+  };
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+}
+
 // trades
 
 // XXX FIXME download_trades_count
@@ -738,16 +840,14 @@ void OrderEntryClassic::get_trades_ack(Trace<web::rest::Response> const &event) 
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
-      download_trades_ = false;
     };
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, trades_ack);
-      request_.respond_trades = trace_info.origin_create_time;
-      download_trades_ = false;
       download_trades_is_first_ = false;
     };
     process_response(event, handle_error, handle_success);
+    request_.trades.commit(trace_info);
   });
 }
 
@@ -1342,6 +1442,25 @@ void OrderEntryClassic::operator()(Trace<protocol::json::CountdownCancelAllAck> 
 }
 
 // helpers
+
+void OrderEntryClassic::check_request_queue(TraceInfo const &trace_info) {
+  request_.balances.check_pending(trace_info, [this](auto &trace_info) { get_account_balance(trace_info); });
+  request_.positions.check_pending(trace_info, [this](auto &trace_info) { get_account_status(trace_info); });
+  request_.open_orders.check_pending(trace_info, [this](auto &trace_info) { get_open_orders(trace_info); });
+  request_.stale_orders.check_pending(trace_info, [this](auto &trace_info) {
+    // XXX FIXME TODO throttle requests
+    auto helper = [&](auto &order) { get_order(trace_info, order.client_order_id, order.external_order_id, order.symbol); };
+    for (auto &[user_id, order_id] : request_.details_stale_orders) {
+      if (shared_.dispatcher.find_order(user_id, order_id, helper)) {
+        ++download_stale_orders_counter_;
+      } else {
+        log::warn("Unexpected: user_id={}, order_id={}"sv, user_id, order_id);
+      }
+    }
+    request_.details_stale_orders.clear();
+  });
+  request_.trades.check_pending(trace_info, [this](auto &trace_info) { get_trades(trace_info); });
+}
 
 void OrderEntryClassic::process_response(Trace<web::rest::Response> const &event, auto error_handler, auto success_handler) {
   auto &[trace_info, response] = event;

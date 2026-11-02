@@ -224,6 +224,27 @@ std::string_view Encoder::all_open_orders_url(std::string &buffer, std::string_v
   return buffer;
 }
 
+// note! we can't use external_order_id because we added a prefix
+std::string_view Encoder::get_order_url(
+    std::string &buffer,
+    std::string_view const &symbol,
+    std::string_view const &client_order_id,
+    [[maybe_unused]] std::string_view const &external_order_id,
+    std::chrono::milliseconds recv_window) {
+  buffer.clear();
+  fmt::format_to(std::back_inserter(buffer), R"(symbol={})"sv, symbol);
+  fmt::format_to(std::back_inserter(buffer), R"(&origClientOrderId={})"sv, client_order_id);
+  /*
+  if (std::empty(external_order_id)) {
+    fmt::format_to(std::back_inserter(buffer), R"(&origClientOrderId={})"sv, client_order_id);
+  } else {
+    fmt::format_to(std::back_inserter(buffer), R"(&orderId={})"sv, external_order_id);
+  }
+  */
+  fmt::format_to(std::back_inserter(buffer), R"(&recvWindow={})"sv, recv_window.count());
+  return buffer;
+}
+
 // countdown
 
 std::string_view Encoder::countdown_cancel_open_orders_url(

@@ -2,28 +2,37 @@
 
 #pragma once
 
-#include <chrono>
+#include "roq/utils/container.hpp"
+
+#include "roq/core/limit/request.hpp"
+
+#include "roq/binance_futures/gateway/shared.hpp"
 
 namespace roq {
 namespace binance_futures {
 namespace gateway {
 
-struct Request final {
-  // balance
-  std::chrono::nanoseconds request_balance = {};
-  std::chrono::nanoseconds respond_balance = {};
-  // account
-  std::chrono::nanoseconds request_account = {};
-  std::chrono::nanoseconds respond_account = {};
-  // position
-  std::chrono::nanoseconds request_position = {};
-  std::chrono::nanoseconds respond_position = {};
-  // orders
-  std::chrono::nanoseconds request_orders = {};
-  std::chrono::nanoseconds respond_orders = {};
-  // trades
-  std::chrono::nanoseconds request_trades = {};
-  std::chrono::nanoseconds respond_trades = {};
+struct Request final : public core::limit::Request::Handler {
+  explicit Request(Shared &);
+
+  // core::Request::Handler
+
+  bool ready() const override;
+  bool can_request(TraceInfo const &) override;
+
+  // ...
+
+  core::limit::Request balances;
+  core::limit::Request positions;
+  core::limit::Request positions_pm;
+  core::limit::Request open_orders;
+  core::limit::Request stale_orders;
+  core::limit::Request trades;
+
+  utils::unordered_set<std::pair<uint8_t, uint64_t>> details_stale_orders;
+
+ private:
+  Shared &shared_;
 };
 
 }  // namespace gateway

@@ -11,6 +11,7 @@ set(SOURCES
     market_data.cpp
     order_entry_classic.cpp
     order_entry_portfolio.cpp
+    request.cpp
     rest.cpp
     rest_trade.cpp
     shared.cpp

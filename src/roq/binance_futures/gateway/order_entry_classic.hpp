@@ -33,6 +33,7 @@
 #include "roq/binance_futures/protocol/json/account_balance_ack.hpp"
 #include "roq/binance_futures/protocol/json/account_status_ack.hpp"
 #include "roq/binance_futures/protocol/json/open_orders_ack.hpp"
+#include "roq/binance_futures/protocol/json/order_ack.hpp"
 #include "roq/binance_futures/protocol/json/trades_ack.hpp"
 
 #include "roq/binance_futures/protocol/json/open_orders_cancel_all_ack.hpp"
@@ -138,6 +139,12 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
+  // order
+
+  void get_order(TraceInfo const &, std::string_view const &client_order_id, std::string_view const &external_order_id, std::string_view const &symbol);
+  void get_order_ack(Trace<web::rest::Response> const &, std::string_view const &client_order_id);
+  void operator()(Trace<protocol::json::OrderAck> const &);
+
   // trades
 
   void get_trades(TraceInfo const &);
@@ -190,11 +197,11 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // helpers
 
+  void check_request_queue(TraceInfo const &);
+
   void process_response(Trace<web::rest::Response> const &, auto error_handler, auto success_handler);
 
   void waf_limit_violation();
-
-  bool downloading() const { return download_balance_ || download_account_ || download_orders_ || download_trades_; }
 
  private:
   Handler &handler_;
@@ -216,6 +223,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
         account_balance, account_balance_ack,                //
         account_status, account_status_ack,                  //
         open_orders, open_orders_ack,                        //
+        order, order_ack,                                    //
         trades, trades_ack,                                  //
         order_place, order_place_ack,                        //
         order_modify, order_modify_ack,                      //
@@ -242,14 +250,12 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
   // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};
-  bool download_balance_ = false;
-  bool download_account_ = false;
-  bool download_orders_ = false;
-  bool download_trades_ = false;
   std::string encode_buffer_;
   bool download_trades_is_first_ = true;
   //
   std::string external_order_id_;
+  //
+  size_t download_stale_orders_counter_ = {};
 };
 
 }  // namespace gateway

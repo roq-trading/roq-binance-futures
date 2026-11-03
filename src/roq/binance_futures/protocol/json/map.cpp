@@ -111,6 +111,10 @@ constexpr Helper<binance_futures::protocol::json::ContractType>::operator std::o
       return roq::SecurityType::FUTURES;
     case TRADIFI_PERPETUAL:
       return roq::SecurityType::SWAP;
+    case CURRENT_WEEK:
+      return roq::SecurityType::FUTURES;
+    case NEXT_WEEK:
+      return roq::SecurityType::FUTURES;
   }
   return {};
 }

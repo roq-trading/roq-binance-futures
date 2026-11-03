@@ -21,6 +21,12 @@
     },
     {
       "name": "TRADIFI_PERPETUAL"
+    },
+    {
+      "name": "CURRENT_WEEK"
+    },
+    {
+      "name": "NEXT_WEEK"
     }
   ]
 }

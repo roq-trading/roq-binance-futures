@@ -179,7 +179,7 @@ void OrderEntryClassic::operator()(Trace<Stop> const &) {
 
 void OrderEntryClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(timer.now)) {
+  if ((*connection_).refresh(trace_info)) {
     if (ready()) {
       refresh_listen_key(trace_info);
       if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {

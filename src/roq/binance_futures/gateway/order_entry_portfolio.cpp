@@ -179,7 +179,7 @@ void OrderEntryPortfolio::operator()(Trace<Stop> const &) {
 
 void OrderEntryPortfolio::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(timer.now)) {
+  if ((*connection_).refresh(trace_info)) {
     if (ready()) {
       refresh_listen_key(trace_info);
       refresh_balance(trace_info);

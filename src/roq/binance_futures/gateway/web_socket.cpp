@@ -151,7 +151,7 @@ void WebSocket::operator()(Trace<Stop> const &) {
 
 void WebSocket::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(timer.now)) {
+  if ((*connection_).refresh(trace_info)) {
     user_data_stream_ping(timer.now);
     if (ready()) {
       check_request_queue(trace_info);

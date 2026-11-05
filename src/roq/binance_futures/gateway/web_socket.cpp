@@ -574,6 +574,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
   profile_.order_place_ack([&]() {
     auto &[trace_info, wsapi_order_place] = event;
     log::info<2>("wsapi_order_place={}, request={}"sv, wsapi_order_place, request);
+    return;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
       auto response = server::oms::Response{

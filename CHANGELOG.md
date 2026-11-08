@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Drop `--ws_api` (#658)
+
 ### Fixed
 
 * `TradeSummary` was duplicated when multiple market data connections was opened (#652)

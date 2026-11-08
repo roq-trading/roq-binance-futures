@@ -66,11 +66,11 @@ R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accoun
       case UNDEFINED:
       case ISOLATED:
       case CROSS:
-        if (shared.settings.ws_api) {
-          auto obj = std::make_unique<WebSocket>(gateway, context, ++stream_id, account, shared, request);
+        if (shared.settings.misc.disable_ws_api) {
+          auto obj = std::make_unique<OrderEntryClassic>(gateway, context, ++stream_id, account, shared, request);
           result.try_emplace(account.name, std::move(obj));
         } else {
-          auto obj = std::make_unique<OrderEntryClassic>(gateway, context, ++stream_id, account, shared, request);
+          auto obj = std::make_unique<WebSocket>(gateway, context, ++stream_id, account, shared, request);
           result.try_emplace(account.name, std::move(obj));
         }
         break;
@@ -106,11 +106,11 @@ R create_download(auto &gateway, auto &context, auto &stream_id, auto &accounts,
       case UNDEFINED:
       case ISOLATED:
       case CROSS:
-        if (shared.settings.ws_api) {
+        if (shared.settings.misc.disable_ws_api) {
+          // do nothing
+        } else {
           auto obj = std::make_unique<RestTrade>(gateway, context, ++stream_id, account, shared, request);
           result.try_emplace(account.name, std::move(obj));
-        } else {
-          // do nothing
         }
         break;
       case PORTFOLIO:
@@ -260,10 +260,10 @@ uint16_t Controller::operator()(
 uint16_t Controller::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   auto &[message_info, cancel_all_orders] = event;
   assert(!std::empty(cancel_all_orders.account));
-  if (shared_.settings.ws_api) {
-    return get_rest_trade(cancel_all_orders.account)(event, request_id);
-  } else {
+  if (shared_.settings.misc.disable_ws_api) {
     return get_order_entry(cancel_all_orders.account)(event, request_id);
+  } else {
+    return get_rest_trade(cancel_all_orders.account)(event, request_id);
   }
 }
 

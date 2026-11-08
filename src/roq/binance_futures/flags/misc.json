@@ -36,11 +36,6 @@
       "description": "Test alternative FundsUpdate?"
     },
     {
-      "name": "self_trade_prevention_mode",
-      "type": "std/string",
-      "description": "Self-trade prevention (STP) mode, one of NONE, EXPIRE_MAKER, EXPIRE_TAKER, EXPIRE_BOTH"
-    },
-    {
       "name": "subscribe_asset_index",
       "type": "std/bool",
       "default": false,
@@ -69,6 +64,12 @@
       "name": "test_interface",
       "type": "std/string",
       "description": "Interface to bind sockets to"
+    },
+    {
+      "name": "disable_ws_api",
+      "type": "std/bool",
+      "default": false,
+      "description": "Use WebSocket API?"
     }
   ]
 }

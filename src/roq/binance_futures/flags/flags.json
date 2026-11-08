@@ -17,10 +17,9 @@
       "description": "API (:code:`fapi` or :code:`dapi`)"
     },
     {
-      "name": "ws_api",
-      "type": "std/bool",
-      "default": true,
-      "description": "Use WebSocket API?"
+      "name": "self_trade_prevention_mode",
+      "type": "std/string",
+      "description": "Self-trade prevention (STP) mode, one of NONE, EXPIRE_MAKER, EXPIRE_TAKER, EXPIRE_BOTH"
     }
   ]
 }

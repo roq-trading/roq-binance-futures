@@ -14,8 +14,6 @@ CONFIG_FILE="$ROQ_CONFIG_PATH/roq-binance-futures/$CONFIG.toml"
 
 API="fapi"
 
-WS_API=true
-
 FLAGFILE="../../../share/flags/test/flags-$API.cfg"
 
 $PREFIX ./roq-binance-futures \
@@ -27,5 +25,4 @@ $PREFIX ./roq-binance-futures \
   --client_listen_address="$HOME/run/$NAME.sock" \
   --service_listen_address="$HOME/run/metrics/${NAME}.sock" \
   --api="$API" \
-  --ws_api="$WS_API" \
   $@

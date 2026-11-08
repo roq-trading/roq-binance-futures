@@ -31,7 +31,7 @@ auto parse_self_trade_prevention(auto &value) -> protocol::json::SelfTradePreven
 
 API API::create(Settings const &settings) {
   auto api = settings.app.api;
-  auto self_trade_prevention = parse_self_trade_prevention(settings.misc.self_trade_prevention_mode);
+  auto self_trade_prevention = parse_self_trade_prevention(settings.self_trade_prevention_mode);
   // USD-M futures
   if (api == "fapi"sv) {
     return {

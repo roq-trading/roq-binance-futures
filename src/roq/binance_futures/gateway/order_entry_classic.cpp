@@ -1107,7 +1107,8 @@ void OrderEntryClassic::order_modify_ack(Trace<web::rest::Response> const &event
           handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
           return;  // note!
       }
-      if (shared_.settings.experimental.disable_fast_order_ack) {
+      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      if (!allow_unsafe) {
         return;  // note!
       }
       create_trace_and_dispatch_2(trace_info, order_modify_ack, user_id, order_id, version);
@@ -1234,7 +1235,9 @@ void OrderEntryClassic::order_cancel_ack(Trace<web::rest::Response> const &event
       if (order_cancel_ack.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
-      } else if (shared_.settings.experimental.disable_fast_order_ack) {
+      }
+      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      if (!allow_unsafe) {
         return;  // note!
       }
       create_trace_and_dispatch_2(trace_info, order_cancel_ack, user_id, order_id, version);
@@ -1374,7 +1377,6 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersCancelAllAck>
     }
     return RequestStatus::REJECTED;
   }();
-  auto error = protocol::json::guess_error(open_orders_cancel_all_ack.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -1384,7 +1386,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersCancelAllAck>
       .side = {},
       .origin = Origin::EXCHANGE,
       .request_status = status,
-      .error = error,
+      .error = map(open_orders_cancel_all_ack.code),
       .text = open_orders_cancel_all_ack.msg,
       .request_id = request_id,
       .external_account = {},
@@ -1498,7 +1500,8 @@ void OrderEntryClassic::process_response(Trace<web::rest::Response> const &event
             [[fallthrough]];
           default: {
             protocol::json::Error error{body};
-            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
+            auto error_2 = map(error.code).template get<Error>();
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, error_2, error.msg);
           }
         }
         break;

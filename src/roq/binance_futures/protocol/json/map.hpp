@@ -23,6 +23,10 @@ namespace roq {
 
 template <>
 template <>
+std::optional<Error> Map<int32_t>::helper() const;
+
+template <>
+template <>
 std::optional<TradingStatus> Map<binance_futures::protocol::json::ContractStatus>::helper() const;
 
 template <>

@@ -13,23 +13,6 @@ namespace binance_futures {
 namespace protocol {
 namespace json {
 
-// NOLINTBEGIN(readability-magic-numbers)
-
-Error guess_error([[maybe_unused]] int32_t code) {
-  switch (code) {
-    case -2011:  // CANCEL_REJECTED
-      return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
-    case -2013:  // NO_SUCH_ORDER
-      return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
-    case -4197:  // SAME_ORDER
-      return Error::MODIFY_HAS_NO_EFFECT;
-  }
-  log::warn("DEBUG unable to map error_code={}"sv, code);
-  return Error::UNKNOWN;
-}
-
-// NOLINTEND(readability-magic-numbers)
-
 // map
 
 TradingStatus trading_status_helper(SymbolStatus symbol_status, ContractStatus contract_status) {

@@ -709,7 +709,6 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &
     }
     return RequestStatus::REJECTED;
   }();
-  auto error = protocol::json::guess_error(open_orders_cancel_all_ack.code);
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,
       .account = account_.name,
@@ -719,7 +718,7 @@ void RestTrade::operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &
       .side = {},
       .origin = Origin::EXCHANGE,
       .request_status = status,
-      .error = error,
+      .error = map(open_orders_cancel_all_ack.code),
       .text = open_orders_cancel_all_ack.msg,
       .request_id = request_id,
       .external_account = {},
@@ -786,7 +785,8 @@ void RestTrade::process_response(Trace<web::rest::Response> const &event, auto e
             [[fallthrough]];
           default: {
             protocol::json::Error error{body};
-            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
+            auto error_2 = map(error.code).template get<Error>();
+            error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, error_2, error.msg);
           }
         }
         break;

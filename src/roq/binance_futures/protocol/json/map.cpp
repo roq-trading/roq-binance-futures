@@ -2,6 +2,8 @@
 
 #include "roq/binance_futures/protocol/json/map.hpp"
 
+#include "roq/logging.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -12,6 +14,37 @@ using Helper = detail::MapHelper<Args...>;
 }
 
 // binance_futures => roq
+
+// int32_t ==> roq::Error
+
+template <>
+template <>
+constexpr Helper<int32_t>::operator std::optional<roq::Error>() const {
+  auto value = std::get<0>(args_);
+  switch (value) {
+    case 0:
+      return roq::Error::UNDEFINED;
+    case -2011:  // CANCEL_REJECTED
+      return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
+    case -2013:  // NO_SUCH_ORDER
+      return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
+    case -4197:  // SAME_ORDER
+      return Error::MODIFY_HAS_NO_EFFECT;
+  }
+  log::warn("DEBUG unable to map error_code={}"sv, value);
+  return Error::UNKNOWN;
+}
+
+static_assert(Helper{int32_t{0}} == roq::Error::UNDEFINED);
+static_assert(Helper{int32_t{-2011}} == roq::Error::TOO_LATE_TO_MODIFY_OR_CANCEL);
+static_assert(Helper{int32_t{-2013}} == roq::Error::TOO_LATE_TO_MODIFY_OR_CANCEL);
+static_assert(Helper{int32_t{-4197}} == roq::Error::MODIFY_HAS_NO_EFFECT);
+
+template <>
+template <>
+std::optional<roq::Error> Map<int32_t>::helper() const {
+  return Helper{args_};
+}
 
 // binance_futures::protocol::json::ContractStatus ==> roq::TradingStatus
 

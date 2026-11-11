@@ -37,8 +37,6 @@ inline void update(std::chrono::milliseconds &result, core::json::Value const &v
       value);
 }
 
-extern roq::Error guess_error(int32_t code);
-
 extern TradingStatus trading_status_helper(SymbolStatus, ContractStatus);
 
 extern std::string_view get_order_id(std::string_view const &external_order_id);

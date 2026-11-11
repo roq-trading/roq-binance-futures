@@ -349,7 +349,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPISessionLogon> const &event
     if (wsapi_session_logon.status == 200) {
       handle_success(wsapi_session_logon.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_session_logon.error.code), wsapi_session_logon.error.msg);
+      auto error = map(wsapi_session_logon.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_session_logon.error.msg);
     }
     update_rate_limits(event);
   });
@@ -385,7 +386,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
     if (wsapi_listen_key.status == 200) {
       handle_success(wsapi_listen_key.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_listen_key.error.code), wsapi_listen_key.error.msg);
+      auto error = map(wsapi_listen_key.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_listen_key.error.msg);
     }
     update_rate_limits(event);
   });
@@ -420,7 +422,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &eve
     if (wsapi_account_balance.status == 200) {
       handle_success(wsapi_account_balance.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_balance.error.code), wsapi_account_balance.error.msg);
+      auto error = map(wsapi_account_balance.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_balance.error.msg);
     }
     update_rate_limits(event);
     log::info<1>("Balance download has completed!"sv);
@@ -463,7 +466,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
     if (wsapi_account_status.status == 200) {
       handle_success(wsapi_account_status.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_status.error.code), wsapi_account_status.error.msg);
+      auto error = map(wsapi_account_status.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_status.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -485,7 +489,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountPosition> const &ev
     if (wsapi_account_position.status == 200) {
       handle_success(wsapi_account_position.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_account_position.error.code), wsapi_account_position.error.msg);
+      auto error = map(wsapi_account_position.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_position.error.msg);
     }
     update_rate_limits(event);
     // completion
@@ -560,11 +565,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
     if (wsapi_open_orders_cancel_all.status == 200) {
       handle_success(wsapi_open_orders_cancel_all.result);
     } else {
-      handle_error(
-          Origin::EXCHANGE,
-          RequestStatus::REJECTED,
-          protocol::json::guess_error(wsapi_open_orders_cancel_all.error.code),
-          wsapi_open_orders_cancel_all.error.msg);
+      auto error = map(wsapi_open_orders_cancel_all.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_open_orders_cancel_all.error.msg);
     }
     update_rate_limits(event);
   });
@@ -671,7 +673,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
     if (wsapi_order_place.status == 200) {
       handle_success(wsapi_order_place.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_place.error.code), wsapi_order_place.error.msg);
+      auto error = map(wsapi_order_place.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_place.error.msg);
     }
     update_rate_limits(event);
   });
@@ -704,7 +707,9 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
       if (request_status != RequestStatus::ACCEPTED) {
         handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
-      } else if (shared_.settings.experimental.disable_fast_order_ack) {
+      }
+      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      if (!allow_unsafe) {
         return;  // note!
       }
       auto response = server::oms::Response{
@@ -798,7 +803,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
     } else if (wsapi_order_modify.status == 200) {
       handle_success(wsapi_order_modify.result);
     } else {
-      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(wsapi_order_modify.error.code), wsapi_order_modify.error.msg);
+      auto error = map(wsapi_order_modify.error.code).template get<Error>();
+      handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_modify.error.msg);
     }
     update_rate_limits(event);
   });
@@ -829,7 +835,9 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
       if (result.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
-      } else if (shared_.settings.experimental.disable_fast_order_ack) {
+      }
+      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      if (!allow_unsafe) {
         return;  // note!
       }
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
@@ -912,7 +920,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
             return error;
           }
         }
-        return protocol::json::guess_error(wsapi_order_cancel.error.code);
+        return map(wsapi_order_cancel.error.code);
       }();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_cancel.error.msg);
     }

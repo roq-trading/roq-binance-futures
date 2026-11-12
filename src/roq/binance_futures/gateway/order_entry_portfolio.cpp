@@ -1173,7 +1173,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
           handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
           return;  // note!
       }
-      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
       if (!allow_unsafe) {
         return;  // note!
       }
@@ -1302,7 +1302,7 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
       }
-      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
       if (!allow_unsafe) {
         return;  // note!
       }

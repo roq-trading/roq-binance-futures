@@ -708,7 +708,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
         handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
       }
-      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
       if (!allow_unsafe) {
         return;  // note!
       }
@@ -836,7 +836,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
       }
-      auto allow_unsafe = shared_.settings.oms.unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
+      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
       if (!allow_unsafe) {
         return;  // note!
       }

@@ -412,6 +412,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
     };
     auto handle_success = [&](auto &body) {
       protocol::json::ListenKeyAck listen_key_ack{body};
+      log::info<2>("listen_key_ack={}"sv, listen_key_ack);
       create_trace_and_dispatch_2(trace_info, listen_key_ack);
       log::info<1>("Download listen-key has COMPLETED!"sv);
       download_.check_relaxed(trace_info, STATE);
@@ -422,7 +423,6 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
   auto &[trace_info, listen_key_ack] = event;
-  log::info<2>("listen_key_ack={}"sv, listen_key_ack);
   bool initial = std::empty(listen_key_);
   if (utils::update(listen_key_, listen_key_ack.listen_key)) {
     if (initial) {
@@ -471,6 +471,7 @@ void OrderEntryPortfolio::get_account_balance_ack(Trace<web::rest::Response> con
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountBalanceAck account_balance_ack{body, decode_buffer_};
+      log::info<2>("account_balance_ack={}"sv, account_balance_ack);
       create_trace_and_dispatch_2(trace_info, account_balance_ack);
       log::info<1>("Download balance has COMPLETED!"sv);
     };
@@ -483,7 +484,6 @@ void OrderEntryPortfolio::get_account_balance_ack(Trace<web::rest::Response> con
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::AccountBalanceAck> const &event) {
   auto &[trace_info, account_balance_ack] = event;
-  log::info<2>("account_balance_ack={}"sv, account_balance_ack);
   for (auto &item : account_balance_ack.data) {
     log::info<2>("item={}"sv, item);
     auto hold = item.balance - item.available_balance;
@@ -554,6 +554,7 @@ void OrderEntryPortfolio::get_account_status_ack(Trace<web::rest::Response> cons
     };
     auto handle_success = [&](auto &body) {
       protocol::json::AccountStatusAck account_status_ack{body, decode_buffer_};
+      log::info<2>("account_status_ack={}"sv, account_status_ack);
       create_trace_and_dispatch_2(trace_info, account_status_ack);
       log::info<1>("Download account has COMPLETED!"sv);
     };
@@ -564,7 +565,6 @@ void OrderEntryPortfolio::get_account_status_ack(Trace<web::rest::Response> cons
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::AccountStatusAck> const &event) {
   auto &[trace_info, account_status_ack] = event;
-  log::info<2>("account_status_ack={}"sv, account_status_ack);
   for (auto &item : account_status_ack.positions) {
     if (shared_.dispatcher.discard_symbol(item.symbol)) {
       continue;
@@ -619,8 +619,9 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
       log::warn(R"(Download position has FAILED: account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
-      protocol::json::PositionList position{body, decode_buffer_};
-      create_trace_and_dispatch_2(trace_info, position);
+      protocol::json::PositionList position_list{body, decode_buffer_};
+      log::info<2>("position_list={}"sv, position_list);
+      create_trace_and_dispatch_2(trace_info, position_list);
       log::info<1>("Download position has COMPLETED!"sv);
     };
     process_response(event, handle_error, handle_success);
@@ -630,7 +631,6 @@ void OrderEntryPortfolio::get_position_ack(Trace<web::rest::Response> const &eve
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::PositionList> const &event) {
   auto &[trace_info, position] = event;
-  log::info<2>("position={}"sv, position);
   for (auto &item : position.data) {
     if (shared_.dispatcher.discard_symbol(item.symbol)) {
       continue;
@@ -685,6 +685,7 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersAck open_orders_ack{body, decode_buffer_};
+      log::info<2>("open_orders_ack={}"sv, open_orders_ack);
       create_trace_and_dispatch_2(trace_info, open_orders_ack);
       log::info<1>("Download open-orders has COMPLETED!"sv);
     };
@@ -695,7 +696,6 @@ void OrderEntryPortfolio::get_open_orders_ack(Trace<web::rest::Response> const &
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
   auto &[trace_info, open_orders_ack] = event;
-  log::info<2>("open_orders_ack={}"sv, open_orders_ack);
   for (auto &item : open_orders_ack.data) {
     log::info<2>("item={}"sv, item);
     if (std::empty(item.client_order_id)) {
@@ -818,6 +818,7 @@ void OrderEntryPortfolio::get_order_ack(Trace<web::rest::Response> const &event,
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderAck order_ack{body, decode_buffer_};
+      log::info<2>("order_ack={}"sv, order_ack);
       create_trace_and_dispatch_2(trace_info, order_ack);
     };
     process_response(event, handle_error, handle_success);
@@ -836,7 +837,6 @@ void OrderEntryPortfolio::get_order_ack(Trace<web::rest::Response> const &event,
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderAck> const &event) {
   auto &[trace_info, order_ack] = event;
-  log::info<2>("order_ack={}"sv, order_ack);
   auto external_order_id = Utils::create_external_order_id(external_order_id_, order_ack.symbol, order_ack.order_id);
   auto remaining_quantity = order_ack.orig_qty - order_ack.executed_qty;
   auto average_traded_price = utils::compare(order_ack.executed_qty, 0.0) == 0 ? NaN : order_ack.avg_price;
@@ -921,6 +921,7 @@ void OrderEntryPortfolio::get_trades_ack(Trace<web::rest::Response> const &event
     };
     auto handle_success = [&](auto &body) {
       protocol::json::TradesAck trades_ack{body, decode_buffer_};
+      log::info<2>("trades_ack={}"sv, trades_ack);
       create_trace_and_dispatch_2(trace_info, trades_ack);
       download_trades_is_first_ = false;
       log::info<1>("Download trades has COMPLETED!"sv);
@@ -1033,6 +1034,7 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderPlaceAck order_place_ack{body};
+      log::info<2>("order_place_ack={}"sv, order_place_ack);
       create_trace_and_dispatch_2(trace_info, order_place_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
@@ -1041,7 +1043,6 @@ void OrderEntryPortfolio::order_place_ack(Trace<web::rest::Response> const &even
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderPlaceAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_place_ack] = event;
-  log::info<2>("order_place_ack={}, user_id={}, order_id={}, version={}"sv, order_place_ack, user_id, order_id, version);
   auto external_order_id = Utils::create_external_order_id(external_order_id_, order_place_ack.symbol, order_place_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::CREATE_ORDER,
@@ -1157,6 +1158,7 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderModifyAck order_modify_ack{body};
+      log::info<2>("order_modify_ack={}"sv, order_modify_ack);
       switch (order_modify_ack.status) {
         using enum protocol::json::OrderStatus::type_t;
         case UNDEFINED_INTERNAL:
@@ -1173,11 +1175,9 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
           handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
           return;  // note!
       }
-      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
-      if (!allow_unsafe) {
-        return;  // note!
+      if (shared_.settings.oms.allow_unsafe_order_ack) {
+        create_trace_and_dispatch_2(trace_info, order_modify_ack, user_id, order_id, version);
       }
-      create_trace_and_dispatch_2(trace_info, order_modify_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1185,7 +1185,6 @@ void OrderEntryPortfolio::order_modify_ack(Trace<web::rest::Response> const &eve
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderModifyAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_modify_ack] = event;
-  log::info<2>("order_modify_ack={}, user_id={}, order_id={}, version={}"sv, order_modify_ack, user_id, order_id, version);
   auto external_order_id = Utils::create_external_order_id(external_order_id_, order_modify_ack.symbol, order_modify_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::MODIFY_ORDER,
@@ -1298,15 +1297,14 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderCancelAck order_cancel_ack{body};
+      log::info<2>("order_cancel_ack={}"sv, order_cancel_ack);
       if (order_cancel_ack.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
         return;
       }
-      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
-      if (!allow_unsafe) {
-        return;  // note!
+      if (shared_.settings.oms.allow_unsafe_order_ack) {
+        create_trace_and_dispatch_2(trace_info, order_cancel_ack, user_id, order_id, version);
       }
-      create_trace_and_dispatch_2(trace_info, order_cancel_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1314,7 +1312,6 @@ void OrderEntryPortfolio::order_cancel_ack(Trace<web::rest::Response> const &eve
 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OrderCancelAck> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   auto &[trace_info, order_cancel_ack] = event;
-  log::info<2>("order_cancel_ack={}, user_id={}, order_id={}, version={}"sv, order_cancel_ack, user_id, order_id, version);
   auto external_order_id = Utils::create_external_order_id(external_order_id_, order_cancel_ack.symbol, order_cancel_ack.order_id);
   auto response = server::oms::Response{
       .request_type = RequestType::CANCEL_ORDER,
@@ -1429,6 +1426,7 @@ void OrderEntryPortfolio::open_orders_cancel_all_ack(Trace<web::rest::Response> 
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OpenOrdersCancelAllAck open_orders_cancel_all_ack{body};
+      log::info<2>("open_orders_cancel_all_ack={}"sv, open_orders_cancel_all_ack);
       create_trace_and_dispatch_2(trace_info, open_orders_cancel_all_ack, request_id);
     };
     process_response(event, handle_error, handle_success);
@@ -1438,10 +1436,10 @@ void OrderEntryPortfolio::open_orders_cancel_all_ack(Trace<web::rest::Response> 
 void OrderEntryPortfolio::operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &event, std::string_view const &request_id) {
   auto &[trace_info, open_orders_cancel_all_ack] = event;
   auto status = [&]() {
-    if (open_orders_cancel_all_ack.code == 200) {
-      return RequestStatus::ACCEPTED;
+    if (open_orders_cancel_all_ack.code != 200) {
+      return RequestStatus::REJECTED;
     }
-    return RequestStatus::REJECTED;
+    return RequestStatus::ACCEPTED;
   }();
   auto cancel_all_orders_ack = CancelAllOrdersAck{
       .stream_id = stream_id_,

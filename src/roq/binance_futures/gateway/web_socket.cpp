@@ -247,9 +247,8 @@ uint16_t WebSocket::operator()(
   return stream_id_;
 }
 
-// XXX FIXME not supported
 uint16_t WebSocket::operator()(Event<CancelAllOrders> const &, [[maybe_unused]] std::string_view const &request_id) {
-  log::fatal("Unexpected"sv);
+  log::fatal("Unexpected"sv);  // XXX FIXME not supported
   // open_orders_cancel_all(event, request_id);
   // return stream_id_;
 }
@@ -265,7 +264,6 @@ void WebSocket::operator()(Trace<web::socket::Disconnected> const &event) {
   ready_ = false;
   create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   download_.reset();
-  // XXX FIXME also reset the download_* latches?
 }
 
 void WebSocket::operator()(Trace<web::socket::Ready> const &event) {
@@ -302,21 +300,22 @@ void WebSocket::operator()(Trace<web::socket::Binary> const &) {
 
 int32_t WebSocket::download(Trace<State> const &event) {
   auto &[trace_info, state] = event;
+  auto publish_downloading = [&]() { create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, magic_enum::enum_name(state)); };
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case SESSION_LOGON:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "session-logon"sv);
+      publish_downloading();
       session_logon(trace_info);
       return 1;
     case USER_DATA_STREAM_START:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "user-data-stream-start"sv);
+      publish_downloading();
       user_data_stream_start();
       return 1;
     case ACCOUNT_POSITION:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account-position"sv);
+      publish_downloading();
       account_position(trace_info);  // just testing -- not used
       return 0;
     case DONE:
@@ -346,11 +345,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPISessionLogon> const &event
       }
     };
     auto handle_success = [&]([[maybe_unused]] auto &result) { download_.check_relaxed(trace_info, STATE); };
-    if (wsapi_session_logon.status == 200) {
-      handle_success(wsapi_session_logon.result);
-    } else {
+    if (wsapi_session_logon.status != 200) {
       auto error = map(wsapi_session_logon.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_session_logon.error.msg);
+    } else {
+      handle_success(wsapi_session_logon.result);
     }
     update_rate_limits(event);
   });
@@ -383,11 +382,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
       download_.check_relaxed(trace_info, STATE);
       listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
     };
-    if (wsapi_listen_key.status == 200) {
-      handle_success(wsapi_listen_key.result);
-    } else {
+    if (wsapi_listen_key.status != 200) {
       auto error = map(wsapi_listen_key.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_listen_key.error.msg);
+    } else {
+      handle_success(wsapi_listen_key.result);
     }
     update_rate_limits(event);
   });
@@ -419,11 +418,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &eve
         create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
       }
     };
-    if (wsapi_account_balance.status == 200) {
-      handle_success(wsapi_account_balance.result);
-    } else {
+    if (wsapi_account_balance.status != 200) {
       auto error = map(wsapi_account_balance.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_balance.error.msg);
+    } else {
+      handle_success(wsapi_account_balance.result);
     }
     update_rate_limits(event);
     log::info<1>("Balance download has completed!"sv);
@@ -463,14 +462,13 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
         create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
       }
     };
-    if (wsapi_account_status.status == 200) {
-      handle_success(wsapi_account_status.result);
-    } else {
+    if (wsapi_account_status.status != 200) {
       auto error = map(wsapi_account_status.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_status.error.msg);
+    } else {
+      handle_success(wsapi_account_status.result);
     }
     update_rate_limits(event);
-    // completion
     log::info<1>("Account download has completed!"sv);
     request_.positions.commit(trace_info);
   });
@@ -486,16 +484,13 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountPosition> const &ev
     auto handle_success = [&]([[maybe_unused]] auto &result) {
       // XXX FIXME TODO
     };
-    if (wsapi_account_position.status == 200) {
-      handle_success(wsapi_account_position.result);
-    } else {
+    if (wsapi_account_position.status != 200) {
       auto error = map(wsapi_account_position.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_account_position.error.msg);
+    } else {
+      handle_success(wsapi_account_position.result);
     }
     update_rate_limits(event);
-    // completion
-    // request_.respond_position = trace_info.origin_create_time;
-    // download_position_ = false;
   });
 }
 
@@ -513,7 +508,6 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
     log::info<2>("wsapi_open_orders_cancel_all={}, request={}"sv, wsapi_open_orders_cancel_all, request);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
-      // XXX FIXME TODO ack
     };
     auto handle_success = [&](auto &result) {
       for (auto &item : result) {
@@ -562,11 +556,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
         create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
       }
     };
-    if (wsapi_open_orders_cancel_all.status == 200) {
-      handle_success(wsapi_open_orders_cancel_all.result);
-    } else {
+    if (wsapi_open_orders_cancel_all.status != 200) {
       auto error = map(wsapi_open_orders_cancel_all.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_open_orders_cancel_all.error.msg);
+    } else {
+      handle_success(wsapi_open_orders_cancel_all.result);
     }
     update_rate_limits(event);
   });
@@ -593,7 +587,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
       };
       create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
     };
-    auto handle_success = [&]([[maybe_unused]] auto &result) {
+    auto handle_success = [&](auto &result) {
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
       auto order_status = map(result.status).template get<OrderStatus>();
       // LIMIT_MAKER orders do not return any order state + we only end up here if we receive HTTP status OK
@@ -670,11 +664,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
       };
       create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
     };
-    if (wsapi_order_place.status == 200) {
-      handle_success(wsapi_order_place.result);
-    } else {
+    if (wsapi_order_place.status != 200) {
       auto error = map(wsapi_order_place.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_place.error.msg);
+    } else if (shared_.settings.oms.allow_unsafe_order_ack) {
+      handle_success(wsapi_order_place.result);
     }
     update_rate_limits(event);
   });
@@ -706,66 +700,62 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
       auto request_status = map(result.status).template get<RequestStatus>();
       if (request_status != RequestStatus::ACCEPTED) {
         handle_error(Origin::EXCHANGE, request_status, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
-        return;
-      }
-      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
-      if (!allow_unsafe) {
-        return;  // note!
-      }
-      auto response = server::oms::Response{
-          .request_type = RequestType::MODIFY_ORDER,
-          .origin = Origin::EXCHANGE,
-          .request_status = request_status,
-          .error = {},
-          .text = {},
-          .version = request.version,
-          .request_id = {},
-          .external_order_id = external_order_id,
-          .client_order_id = {},
-          .quantity = NaN,
-          .price = NaN,
-      };
-      if (!shared_.settings.ws_api_2.allow_order_update) {
-        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
-      } else {
-        auto order_update = server::oms::OrderUpdate{
-            .account = account_.name,
-            .exchange = shared_.settings.exchange,
-            .symbol = result.symbol,
-            .side = map(result.side),
-            .position_effect = {},
-            .margin_mode = {},
-            .max_show_quantity = NaN,
-            .order_type = map(result.type),
-            .time_in_force = map(result.time_in_force),
-            .execution_instructions = {},
-            .execution_destination = {},
-            .create_time_utc = {},
-            .update_time_utc = {},  // result.transact_time,
-            .external_account = {},
-            .external_order_id = external_order_id,
-            .client_order_id = {},
-            .order_status = map(result.status),
+      } else if (shared_.settings.oms.allow_unsafe_order_ack) {
+        auto response = server::oms::Response{
+            .request_type = RequestType::MODIFY_ORDER,
+            .origin = Origin::EXCHANGE,
+            .request_status = request_status,
             .error = {},
             .text = {},
-            .quantity = result.orig_qty,
-            .price = result.price,
-            .stop_price = NaN,
-            .leverage = NaN,
-            .remaining_quantity = NaN,
-            .traded_quantity = result.executed_qty,
-            .average_traded_price = NaN,
-            .last_traded_quantity = NaN,
-            .last_traded_price = NaN,
-            .last_liquidity = {},
-            .routing_id = {},
-            .max_request_version = {},
-            .max_response_version = {},
-            .max_accepted_version = {},
-            .update_type = UpdateType::INCREMENTAL,
-            .sending_time_utc = {},
+            .version = request.version,
+            .request_id = {},
+            .external_order_id = external_order_id,
+            .client_order_id = {},
+            .quantity = NaN,
+            .price = NaN,
         };
-        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
+        if (!shared_.settings.ws_api_2.allow_order_update) {
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
+        } else {
+          auto order_update = server::oms::OrderUpdate{
+              .account = account_.name,
+              .exchange = shared_.settings.exchange,
+              .symbol = result.symbol,
+              .side = map(result.side),
+              .position_effect = {},
+              .margin_mode = {},
+              .max_show_quantity = NaN,
+              .order_type = map(result.type),
+              .time_in_force = map(result.time_in_force),
+              .execution_instructions = {},
+              .execution_destination = {},
+              .create_time_utc = {},
+              .update_time_utc = {},  // result.transact_time,
+              .external_account = {},
+              .external_order_id = external_order_id,
+              .client_order_id = {},
+              .order_status = map(result.status),
+              .error = {},
+              .text = {},
+              .quantity = result.orig_qty,
+              .price = result.price,
+              .stop_price = NaN,
+              .leverage = NaN,
+              .remaining_quantity = NaN,
+              .traded_quantity = result.executed_qty,
+              .average_traded_price = NaN,
+              .last_traded_quantity = NaN,
+              .last_traded_price = NaN,
+              .last_liquidity = {},
+              .routing_id = {},
+              .max_request_version = {},
+              .max_response_version = {},
+              .max_accepted_version = {},
+              .update_type = UpdateType::INCREMENTAL,
+              .sending_time_utc = {},
+          };
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
+        }
       }
     };
 #if (0)  // wait confirmation from other changes
@@ -800,11 +790,11 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
     if (!working) {  // special case probably triggered by stp=expire-maker (#586)
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, wsapi_order_modify.error.msg);
 #endif
-    } else if (wsapi_order_modify.status == 200) {
-      handle_success(wsapi_order_modify.result);
-    } else {
+    } else if (wsapi_order_modify.status != 200) {
       auto error = map(wsapi_order_modify.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_modify.error.msg);
+    } else {
+      handle_success(wsapi_order_modify.result);
     }
     update_rate_limits(event);
   });
@@ -834,72 +824,66 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
     auto handle_success = [&](auto &result) {
       if (result.status == protocol::json::OrderStatus::FILLED) {
         handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, Error::TOO_LATE_TO_MODIFY_OR_CANCEL, "TOO_LATE_TO_MODIFY_OR_CANCEL"sv);
-        return;
-      }
-      auto allow_unsafe = shared_.settings.oms.allow_unsafe_order_ack || !shared_.settings.experimental.disable_fast_order_ack;
-      if (!allow_unsafe) {
-        return;  // note!
-      }
-      auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
-      auto response = server::oms::Response{
-          .request_type = RequestType::CANCEL_ORDER,
-          .origin = Origin::EXCHANGE,
-          .request_status = RequestStatus::ACCEPTED,
-          .error = {},
-          .text = {},
-          .version = request.version,
-          .request_id = {},
-          .external_order_id = external_order_id,
-          .client_order_id = {},
-          .quantity = NaN,
-          .price = NaN,
-      };
-      if (!shared_.settings.ws_api_2.allow_order_update) {
-        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
-      } else {
-        auto order_update = server::oms::OrderUpdate{
-            .account = account_.name,
-            .exchange = shared_.settings.exchange,
-            .symbol = result.symbol,
-            .side = map(result.side),
-            .position_effect = {},
-            .margin_mode = {},
-            .max_show_quantity = NaN,
-            .order_type = map(result.type),
-            .time_in_force = map(result.time_in_force),
-            .execution_instructions = {},
-            .execution_destination = {},
-            .create_time_utc = {},
-            .update_time_utc = {},  // result.transact_time,
-            .external_account = {},
-            .external_order_id = external_order_id,
-            .client_order_id = {},
-            .order_status = map(result.status),
+      } else if (shared_.settings.oms.allow_unsafe_order_ack) {
+        auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
+        auto response = server::oms::Response{
+            .request_type = RequestType::CANCEL_ORDER,
+            .origin = Origin::EXCHANGE,
+            .request_status = RequestStatus::ACCEPTED,
             .error = {},
             .text = {},
-            .quantity = result.orig_qty,
-            .price = result.price,
-            .stop_price = NaN,
-            .leverage = NaN,
-            .remaining_quantity = NaN,
-            .traded_quantity = result.executed_qty,
-            .average_traded_price = NaN,
-            .last_traded_quantity = NaN,
-            .last_traded_price = NaN,
-            .last_liquidity = {},
-            .routing_id = {},
-            .max_request_version = {},
-            .max_response_version = {},
-            .max_accepted_version = {},
-            .update_type = UpdateType::INCREMENTAL,
-            .sending_time_utc = {},
+            .version = request.version,
+            .request_id = {},
+            .external_order_id = external_order_id,
+            .client_order_id = {},
+            .quantity = NaN,
+            .price = NaN,
         };
-        create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
+        if (!shared_.settings.ws_api_2.allow_order_update) {
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, request.user_id, request.order_id);
+        } else {
+          auto order_update = server::oms::OrderUpdate{
+              .account = account_.name,
+              .exchange = shared_.settings.exchange,
+              .symbol = result.symbol,
+              .side = map(result.side),
+              .position_effect = {},
+              .margin_mode = {},
+              .max_show_quantity = NaN,
+              .order_type = map(result.type),
+              .time_in_force = map(result.time_in_force),
+              .execution_instructions = {},
+              .execution_destination = {},
+              .create_time_utc = {},
+              .update_time_utc = {},  // result.transact_time,
+              .external_account = {},
+              .external_order_id = external_order_id,
+              .client_order_id = {},
+              .order_status = map(result.status),
+              .error = {},
+              .text = {},
+              .quantity = result.orig_qty,
+              .price = result.price,
+              .stop_price = NaN,
+              .leverage = NaN,
+              .remaining_quantity = NaN,
+              .traded_quantity = result.executed_qty,
+              .average_traded_price = NaN,
+              .last_traded_quantity = NaN,
+              .last_traded_price = NaN,
+              .last_liquidity = {},
+              .routing_id = {},
+              .max_request_version = {},
+              .max_response_version = {},
+              .max_accepted_version = {},
+              .update_type = UpdateType::INCREMENTAL,
+              .sending_time_utc = {},
+          };
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id_, request.user_id, request.order_id);
+        }
       }
     };
-    if (wsapi_order_cancel.status == 200) {
-      handle_success(wsapi_order_cancel.result);
-    } else {
+    if (wsapi_order_cancel.status != 200) {
       // note! there is an exchange bug where the exchange claims to not know the order if the cancel request was sent a few msec after the order was confirmed
       auto error = [&]() -> Error {
         if (wsapi_order_cancel.error.code == -2011) {
@@ -923,6 +907,8 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
         return map(wsapi_order_cancel.error.code);
       }();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_order_cancel.error.msg);
+    } else {
+      handle_success(wsapi_order_cancel.result);
     }
     update_rate_limits(event);
   });

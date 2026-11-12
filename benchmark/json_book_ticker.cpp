@@ -70,7 +70,8 @@ void BM_json_book_ticker(benchmark::State &state) {
                  R"("T":1634288226709,)"
                  R"("E":1634288226716)"
                  R"(})";
-  auto helper = [](value_type const &obj) { int a = 1; };
+  uint64_t tmp = {};
+  auto helper = [&](value_type const &obj) { tmp += obj.order_book_update_id; };
   for (auto _ : state) {
     MarketStreamParserTester<value_type>::dispatch(helper, message, 8192, 1);
   }

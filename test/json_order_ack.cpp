@@ -59,7 +59,8 @@ TEST_CASE("json_order_canceled", "[json_order_ack]") {
                  R"("updateTime":1793620050023)"
                  R"(})"sv;
   auto helper = [&](value_type &obj) {
-    // REQUIRE(std::size(obj.data) == 0);
+    CHECK(obj.order_id == 4587027696);
+    CHECK(obj.symbol == "BTCUSD_PERP"sv);
   };
   core::json::BufferStack buffers{8192, 1};
   value_type obj{message, buffers};

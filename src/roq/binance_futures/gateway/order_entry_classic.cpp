@@ -162,6 +162,7 @@ void OrderEntryClassic::force_listen_key_refresh(TraceInfo const &trace_info) {
   if (listen_key_refresh_.count()) {
     log::info("Requesting listen-key refresh..."sv);
     listen_key_refresh_ = trace_info.origin_create_time + DEFAULT_LISTEN_KEY_REFRESH_DELAY;  // note! delay to avoid spamming
+    listen_key_.clear();
   } else {
     log::error("Unexpected: no listen_key_refresh"sv);  // XXX FIXME TODO fatal ???
   }

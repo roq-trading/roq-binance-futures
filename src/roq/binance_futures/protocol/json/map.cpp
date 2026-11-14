@@ -28,6 +28,8 @@ constexpr Helper<int32_t>::operator std::optional<roq::Error>() const {
   switch (value) {
     case 0:
       return roq::Error::UNDEFINED;
+    case -1125:  // INVALID_LISTEN_KEY
+      return Error::UNKNOWN;
     case -2011:  // CANCEL_REJECTED
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
     case -2013:  // NO_SUCH_ORDER

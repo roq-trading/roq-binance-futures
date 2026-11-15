@@ -36,15 +36,19 @@ constexpr Helper<int32_t>::operator std::optional<roq::Error>() const {
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
     case -4197:  // SAME_ORDER
       return Error::MODIFY_HAS_NO_EFFECT;
+    case -5022:  // GTX_ORDER_REJECT
+      return Error::POST_ONLY_WOULD_MATCH;
   }
   LOG_ONCE("error_code"sv, value);
   return Error::UNKNOWN;
 }
 
 static_assert(Helper{int32_t{0}} == roq::Error::UNDEFINED);
+static_assert(Helper{int32_t{-1125}} == roq::Error::UNKNOWN);
 static_assert(Helper{int32_t{-2011}} == roq::Error::TOO_LATE_TO_MODIFY_OR_CANCEL);
 static_assert(Helper{int32_t{-2013}} == roq::Error::TOO_LATE_TO_MODIFY_OR_CANCEL);
 static_assert(Helper{int32_t{-4197}} == roq::Error::MODIFY_HAS_NO_EFFECT);
+static_assert(Helper{int32_t{-5022}} == roq::Error::POST_ONLY_WOULD_MATCH);
 
 template <>
 template <>

@@ -34,7 +34,7 @@ bool MarketStreamParser::dispatch(
     std::string_view const &message,
     core::json::BufferStack &buffer_stack,
     TraceInfo const &trace_info,
-    bool allow_unknown_event_types) {
+    bool disable_strict_parsing) {
   int64_t id = -1;
   for (int i = 0; i < 2; ++i) {
     core::json::Parser parser{message};
@@ -71,7 +71,7 @@ bool MarketStreamParser::dispatch(
         case DATA:
           // XXX FIXME TODO why the need for recursive here ???
           // 2025-12-06 -- maybe it was an old format where the event was wrapper
-          dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, allow_unknown_event_types);
+          dispatch(handler, core::json::get<std::string_view>(value), buffer_stack, trace_info, disable_strict_parsing);
           return true;
         case EVENT_TYPE: {
           EventType event_type{value};
@@ -80,7 +80,7 @@ bool MarketStreamParser::dispatch(
             case UNDEFINED_INTERNAL:
               break;
             case UNKNOWN_INTERNAL:
-              if (!allow_unknown_event_types) {
+              if (!disable_strict_parsing) {
                 log::fatal("Unexpected"sv);
               }
               return false;

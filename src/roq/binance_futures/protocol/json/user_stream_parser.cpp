@@ -30,11 +30,11 @@ void dispatch_helper(auto &handler, auto &message, auto &buffer_stack, auto &tra
   create_trace_and_dispatch(handler, trace_info, obj);
 }
 
-auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_type, auto &trace_info, auto allow_unknown_event_types) {
+auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_type, auto &trace_info, auto disable_strict_parsing) {
   switch (event_type) {
     using enum EventType::type_t;
     case UNKNOWN_INTERNAL:
-      if (allow_unknown_event_types) {
+      if (disable_strict_parsing) {
         return false;
       }
       break;
@@ -107,7 +107,7 @@ bool UserStreamParser::dispatch(
     std::string_view const &message,
     core::json::BufferStack &buffer_stack,
     TraceInfo const &trace_info,
-    bool allow_unknown_event_types) {
+    bool disable_strict_parsing) {
   core::json::Parser parser{message};
   auto root = parser.root();
   for (auto [key, value] : std::get<core::json::Object>(root)) {
@@ -115,7 +115,7 @@ bool UserStreamParser::dispatch(
       continue;
     }
     EventType event_type{value};
-    if (try_dispatch(handler, message, buffer_stack, event_type, trace_info, allow_unknown_event_types)) {
+    if (try_dispatch(handler, message, buffer_stack, event_type, trace_info, disable_strict_parsing)) {
       return true;
     }
     break;

@@ -1266,7 +1266,7 @@ void WebSocket::parse(TraceInfo const &trace_info, std::string_view const &messa
     log::info<3>("message={}"sv, message);
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
-      if (!protocol::json::WSAPIParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.allow_unknown_event_types)) {
+      if (!protocol::json::WSAPIParser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.app.disable_strict_parsing)) {
         log_message();
       }
     } catch (...) {

@@ -11,7 +11,7 @@ namespace gateway {
 namespace {
 auto create_sequencer(auto &settings) {
   auto options = market::mbp::Sequencer::Options{
-      .timeout = settings.mbp.sequencer_timeout,
+      .timeout = settings.misc.mbp_sequencer_timeout,
       .max_updates = {},
   };
   return market::mbp::Sequencer{options};
@@ -23,8 +23,7 @@ auto create_sequencer(auto &settings) {
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
     : dispatcher{dispatcher}, settings{settings}, api{API::create(settings)}, throttle{settings},
       rate_limiter{settings.request.limit, settings.request.limit_interval}, depth_request_queue{rate_limiter, settings.ws.mbp_request_delay},
-      time_series_request_queue{rate_limiter}, symbols{settings.ws.max_subscriptions_per_stream},
-      allow_unknown_event_types{settings.experimental.allow_unknown_event_types || settings.misc.continue_with_unknown_event_type} {
+      time_series_request_queue{rate_limiter}, symbols{settings.ws.max_subscriptions_per_stream} {
 }
 
 Shared::Instrument &Shared::get_instrument(std::string_view const &symbol) {

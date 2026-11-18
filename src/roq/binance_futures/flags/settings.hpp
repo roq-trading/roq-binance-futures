@@ -9,7 +9,6 @@
 #include "roq/server/flags/settings.hpp"
 
 #include "roq/binance_futures/flags/flags.hpp"
-#include "roq/binance_futures/flags/mbp.hpp"
 #include "roq/binance_futures/flags/misc.hpp"
 #include "roq/binance_futures/flags/request.hpp"
 #include "roq/binance_futures/flags/rest.hpp"
@@ -26,7 +25,6 @@ struct ROQ_PUBLIC Settings : public server::flags::Settings, public flags::Flags
   flags::Misc misc;
   flags::REST rest;
   flags::WS ws;
-  flags::MBP mbp;
   flags::Request request;
   flags::WS_API ws_api_2;  // note! overlapping with flags::Flags
 
@@ -50,7 +48,6 @@ struct fmt::formatter<roq::binance_futures::flags::Settings> {
         R"(misc={}, )"
         R"(rest={}, )"
         R"(ws={}, )"
-        R"(mbp={}, )"
         R"(request={}, )"
         R"(ws_api={}, )"
         R"(server={})"
@@ -59,7 +56,6 @@ struct fmt::formatter<roq::binance_futures::flags::Settings> {
         value.misc,
         value.rest,
         value.ws,
-        value.mbp,
         value.request,
         value.ws_api_2,
         static_cast<roq::server::Settings const &>(value));

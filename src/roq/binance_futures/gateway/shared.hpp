@@ -101,8 +101,6 @@ struct Shared final {
 
   std::vector<Bar> bars;
 
-  bool const allow_unknown_event_types;
-
   std::vector<MBPUpdate> final_bids, final_asks;
 };
 

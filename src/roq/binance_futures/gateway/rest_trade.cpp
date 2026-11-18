@@ -208,13 +208,25 @@ void RestTrade::operator()(Trace<ConnectionStatus> const &event, std::string_vie
 
 // server::OrderActionStream
 
-uint16_t RestTrade::operator()(
-    Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, [[maybe_unused]] std::string_view const &request_id) {
+void RestTrade::operator()(Trace<server::oms::OrderActionBatchBegin> const &) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
+void RestTrade::operator()(Trace<server::oms::OrderActionBatchCommit> const &) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
+void RestTrade::operator()(Trace<server::oms::OrderActionBatchRollback> const &) {
   throw server::oms::NotSupported{"not supported"sv};
 }
 
 uint16_t RestTrade::operator()(
-    Event<ModifyOrder> const &,
+    Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, [[maybe_unused]] std::string_view const &request_id) {
+  throw server::oms::NotSupported{"not supported"sv};
+}
+
+uint16_t RestTrade::operator()(
+    Trace<ModifyOrder> const &,
     server::oms::Order const &,
     server::oms::RefData const &,
     [[maybe_unused]] std::string_view const &request_id,
@@ -223,7 +235,7 @@ uint16_t RestTrade::operator()(
 }
 
 uint16_t RestTrade::operator()(
-    Event<CancelOrder> const &,
+    Trace<CancelOrder> const &,
     server::oms::Order const &,
     server::oms::RefData const &,
     [[maybe_unused]] std::string_view const &request_id,
@@ -231,7 +243,7 @@ uint16_t RestTrade::operator()(
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t RestTrade::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+uint16_t RestTrade::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
   return stream_id_;
 }
@@ -644,7 +656,7 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
 
 // open-orders-cancel-all
 
-void RestTrade::open_orders_cancel_all(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
+void RestTrade::open_orders_cancel_all(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
     auto &[message_info, cancel_all_orders] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);

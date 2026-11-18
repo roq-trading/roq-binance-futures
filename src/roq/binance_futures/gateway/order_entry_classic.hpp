@@ -80,21 +80,25 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // server::OrderActionStream
 
-  uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
+  void operator()(Trace<server::oms::OrderActionBatchBegin> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchCommit> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchRollback> const &) override;
+
+  uint16_t operator()(Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
   uint16_t operator()(
-      Event<ModifyOrder> const &,
+      Trace<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(
-      Event<CancelOrder> const &,
+      Trace<CancelOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
 
-  uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
+  uint16_t operator()(Trace<CancelAllOrders> const &, std::string_view const &request_id) override;
 
   // web::rest::Client::Handler
 
@@ -157,14 +161,14 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // order-place
 
-  void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
+  void order_place(Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
   void order_place_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<protocol::json::OrderPlaceAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // order-modify
 
   void order_modify(
-      Event<ModifyOrder> const &,
+      Trace<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
@@ -175,7 +179,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
   // order-cancel
 
   void order_cancel(
-      Event<CancelOrder> const &,
+      Trace<CancelOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
@@ -185,7 +189,7 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // open-orders-cancel-all
 
-  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+  void open_orders_cancel_all(Trace<CancelAllOrders> const &, std::string_view const &request_id);
   void open_orders_cancel_all_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
   void operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
 

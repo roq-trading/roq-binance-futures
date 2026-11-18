@@ -67,20 +67,24 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   // server::OrderActionStream
 
-  uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
+  void operator()(Trace<server::oms::OrderActionBatchBegin> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchCommit> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchRollback> const &) override;
+
+  uint16_t operator()(Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
   uint16_t operator()(
-      Event<ModifyOrder> const &,
+      Trace<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(
-      Event<CancelOrder> const &,
+      Trace<CancelOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
-  uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
+  uint16_t operator()(Trace<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
   // web::socket::Client::Handler
@@ -129,12 +133,12 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   // order-place
 
-  void order_place(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
+  void order_place(Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
 
   // order-modify
 
   void order_modify(
-      Event<ModifyOrder> const &,
+      Trace<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
@@ -143,7 +147,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   // order-cancel
 
   void order_cancel(
-      Event<CancelOrder> const &,
+      Trace<CancelOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
@@ -151,7 +155,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   // open-orders-cancel-all
 
-  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+  void open_orders_cancel_all(Trace<CancelAllOrders> const &, std::string_view const &request_id);
 
   // session-logon
 

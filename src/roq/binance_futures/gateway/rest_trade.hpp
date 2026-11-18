@@ -60,20 +60,24 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
 
   // server::OrderActionStream
 
-  uint16_t operator()(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
+  void operator()(Trace<server::oms::OrderActionBatchBegin> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchCommit> const &) override;
+  void operator()(Trace<server::oms::OrderActionBatchRollback> const &) override;
+
+  uint16_t operator()(Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id) override;
   uint16_t operator()(
-      Event<ModifyOrder> const &,
+      Trace<ModifyOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
   uint16_t operator()(
-      Event<CancelOrder> const &,
+      Trace<CancelOrder> const &,
       server::oms::Order const &,
       server::oms::RefData const &,
       std::string_view const &request_id,
       std::string_view const &previous_request_id) override;
-  uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id) override;
+  uint16_t operator()(Trace<CancelAllOrders> const &, std::string_view const &request_id) override;
 
  protected:
   // web::rest::Client::Handler
@@ -105,7 +109,7 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
 
   // open-orders-cancel-all
 
-  void open_orders_cancel_all(Event<CancelAllOrders> const &, std::string_view const &request_id);
+  void open_orders_cancel_all(Trace<CancelAllOrders> const &, std::string_view const &request_id);
   void open_orders_cancel_all_ack(Trace<web::rest::Response> const &, std::string_view const &request_id);
   void operator()(Trace<protocol::json::OpenOrdersCancelAllAck> const &, std::string_view const &request_id);
 

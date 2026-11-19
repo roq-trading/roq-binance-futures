@@ -658,14 +658,14 @@ void RestTrade::operator()(Trace<protocol::json::TradesAck> const &event) {
 
 void RestTrade::open_orders_cancel_all(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.open_orders_cancel_all([&]() {
-    auto &[message_info, cancel_all_orders] = event;
+    auto &[trace_info, cancel_all_orders] = event;
     auto recv_window = std::chrono::duration_cast<std::chrono::milliseconds>(shared_.settings.rest.order_recv_window);
     for (auto &symbol : open_orders_symbols_) {
       if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
         continue;
       }
       auto body = protocol::json::Encoder::all_open_orders_url(encode_buffer_, symbol, recv_window);
-      auto query = account_.create_rest_signature_body(message_info, body);
+      auto query = account_.create_rest_signature_body(trace_info, body);
       auto headers = account_.get_rest_headers();
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
@@ -697,7 +697,7 @@ void RestTrade::open_orders_cancel_all(Trace<CancelAllOrders> const &event, std:
           .user = {},
           .strategy_id = {},
       };
-      create_trace_and_dispatch(shared_.dispatcher, message_info, cancel_all_orders_ack);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, cancel_all_orders_ack);
     }
   });
 }

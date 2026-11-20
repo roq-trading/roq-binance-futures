@@ -957,7 +957,7 @@ void WebSocket::session_logon(TraceInfo const &trace_info) {
     auto signature = account_.create_session_logon_signature(now_utc, recv_window);
     auto message = protocol::json::Encoder::session_logon_json(encode_buffer_, account_.get_key(), now_utc, recv_window, signature, request_id);
     (*connection_).send_text(message);
-    create_trace_and_dispatch_2(trace_info, ConnectionStatus::LOGIN_SENT);
+    create_trace_and_dispatch_2(trace_info, ConnectionStatus::AUTHENTICATING);
   });
 }
 

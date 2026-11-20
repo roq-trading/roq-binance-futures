@@ -28,15 +28,15 @@ constexpr Helper<int32_t>::operator std::optional<roq::Error>() const {
   switch (value) {
     case 0:
       return roq::Error::UNDEFINED;
-    case -1125:  // INVALID_LISTEN_KEY
+    case -1'125:  // INVALID_LISTEN_KEY
       return Error::UNKNOWN;
-    case -2011:  // CANCEL_REJECTED
+    case -2'011:  // CANCEL_REJECTED
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
-    case -2013:  // NO_SUCH_ORDER
+    case -2'013:  // NO_SUCH_ORDER
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
-    case -4197:  // SAME_ORDER
+    case -4'197:  // SAME_ORDER
       return Error::MODIFY_HAS_NO_EFFECT;
-    case -5022:  // GTX_ORDER_REJECT
+    case -5'022:  // GTX_ORDER_REJECT
       return Error::POST_ONLY_WOULD_MATCH;
   }
   LOG_ONCE("error_code"sv, value);

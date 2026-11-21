@@ -104,33 +104,28 @@ struct MarketData2 final : public Base<MarketData2>,
 
  private:
   [[maybe_unused]] Handler &handler_;
-  // config
+  //
   uint16_t const stream_id_;
   std::string const name_;
   size_t const index_;
-  // web socket
   std::unique_ptr<web::socket::Client> const connection_;
-  // buffers
+  //
   core::json::BufferStack decode_buffer_;
-  // session
   uint64_t request_id_ = {};
-  // metrics
   struct {
     utils::metrics::Counter disconnect, total_bytes_received;
   } counter_;
   struct {
-    utils::metrics::Profile parse, error, result, agg_trade, mark_price_update, mini_ticker, kline, asset_index_update, force_order;
+    utils::metrics::Profile parse,  //
+        error, result,              //
+        agg_trade, mark_price_update, mini_ticker, kline, asset_index_update, force_order;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;
   } latency_;
-  // cache
   Shared &shared_;
-  // state
   ConnectionStatus connection_status_ = {};
-  // queue
   core::limit::Queue<std::string> subscribe_queue_;
-  // EXPERIMENTAL
   std::vector<std::string> assets_;
 };
 

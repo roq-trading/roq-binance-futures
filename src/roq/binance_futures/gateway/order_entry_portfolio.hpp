@@ -209,14 +209,12 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
 
  private:
   Handler &handler_;
-  // config
+  //
   uint16_t const stream_id_;
   std::string const name_;
-  // connection
   std::unique_ptr<web::rest::Client> const connection_;
-  // buffers
+  //
   core::json::BufferStack decode_buffer_;
-  // metrics
   struct {
     utils::metrics::Counter disconnect;
   } counter_;
@@ -241,24 +239,18 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
   struct {
     utils::metrics::Gauge request_weight_1m, create_order_1m;
   } rate_limiter_;
-  // account
   Account &account_;
-  // shared
   Shared &shared_;
   Request &request_;
   std::string listen_key_;
-  // state
   std::chrono::nanoseconds listen_key_refresh_ = {};
   std::chrono::nanoseconds balance_refresh_ = {};
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
-  // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   std::string encode_buffer_;
   bool download_trades_is_first_ = true;
-  //
   std::string external_order_id_;
-  //
   size_t download_stale_orders_counter_ = {};
 };
 

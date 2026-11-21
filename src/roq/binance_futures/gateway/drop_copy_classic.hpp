@@ -115,41 +115,33 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
   void parse(TraceInfo const &, std::string_view const &message);
 
  private:
-  [[maybe_unused]] Handler &handler_;
-  // config
+  Handler &handler_;
+  //
   uint16_t const stream_id_;
   std::string const name_;
-  // web socket
-  std::string query_;
+  std::string const query_;
   std::unique_ptr<web::socket::Client> const connection_;
-  // buffers
+  //
   core::json::BufferStack decode_buffer_;
-  // metrics
   struct {
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile parse, order_trade_update, account_update, margin_call, strategy_update, grid_update, account_config_update, trade_lite,
-        execution_report, balance_update, liability_change, outbound_account_position;
+    utils::metrics::Profile parse,  //
+        order_trade_update, account_update, margin_call, strategy_update, grid_update, account_config_update, trade_lite, execution_report, balance_update,
+        liability_change, outbound_account_position;
   } profile_;
   struct {
     utils::metrics::Latency ping, heartbeat;
   } latency_;
-  // authentication
   Account &account_;
-  // shared
   Shared &shared_;
   Request &request_;
-  // state
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
-  // ...
   std::chrono::nanoseconds balance_refresh_ = {};
-  //
   std::string external_order_id_;
-  //
   bool stop_ = {};
-  //
   std::chrono::nanoseconds next_check_stale_orders_ = {};
 };
 

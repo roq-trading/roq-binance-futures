@@ -124,24 +124,20 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
   void waf_limit_violation();
 
  private:
-  Handler &handler_;
-  // config
+  [[maybe_unused]] Handler &handler_;
+  //
   uint16_t const stream_id_;
   std::string const name_;
-  // connection
   std::unique_ptr<web::rest::Client> const connection_;
-  // buffers
+  //
   core::json::BufferStack decode_buffer_;
-  // metrics
   struct {
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile  //
-        open_orders,
-        open_orders_ack,     //
-        order, order_ack,    //
-        trades, trades_ack,  //
+    utils::metrics::Profile open_orders, open_orders_ack,  //
+        order, order_ack,                                  //
+        trades, trades_ack,                                //
         open_orders_cancel_all, open_orders_cancel_all_ack;
   } profile_;
   struct {
@@ -150,20 +146,14 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
   struct {
     utils::metrics::Gauge request_weight_1m, create_order_1m;
   } rate_limiter_;
-  // account
   Account &account_;
-  // shared
   Shared &shared_;
   Request &request_;
-  // state
   ConnectionStatus connection_status_ = {};
-  // experimental
   utils::unordered_set<std::string> open_orders_symbols_;
   std::string encode_buffer_;
   bool download_trades_is_first_ = true;
-  //
   std::string external_order_id_;
-  //
   size_t download_stale_orders_counter_ = {};
 };
 

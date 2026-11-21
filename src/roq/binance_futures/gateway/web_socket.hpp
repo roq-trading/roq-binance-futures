@@ -180,15 +180,13 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
  private:
   Handler &handler_;
-  // config
+  //
   uint16_t const stream_id_;
   std::string const name_;
-  bool master_;
-  // web socket
-  std::unique_ptr<web::socket::Client> connection_;
-  // buffers
+  bool const master_;
+  std::unique_ptr<web::socket::Client> const connection_;
+  //
   core::json::BufferStack decode_buffer_;
-  // metrics
   struct {
     utils::metrics::Counter disconnect;
   } counter_;
@@ -213,24 +211,18 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   struct {
     utils::metrics::Gauge request_weight_1m, create_order_10s, create_order_1d;
   } rate_limiter_;
-  // authentication
+  //
   Account &account_;
-  // shared
   Shared &shared_;
   Request &request_;
-  // experimental
   uint32_t request_id_;
   std::string listen_key_;
   std::chrono::nanoseconds listen_key_refresh_ = {};
   utils::unordered_set<std::string> open_orders_symbols_;
   std::string request_encode_buffer_;
   std::string encode_buffer_;
-  // state
-  bool ready_ = false;
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
-  [[maybe_unused]] bool download_trades_is_first_ = true;
-  //
   std::string external_order_id_;
 };
 

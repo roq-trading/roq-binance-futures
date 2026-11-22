@@ -60,7 +60,7 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
 
   void force_listen_key_refresh(TraceInfo const &) override;
 
-  // protected:
+ protected:
   friend base_type;
 
   // server::Stream

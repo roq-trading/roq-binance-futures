@@ -41,7 +41,7 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
 
   RestTrade(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
 
-  // protected:
+ protected:
   friend base_type;
 
   // server::Stream
@@ -79,7 +79,6 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
       std::string_view const &previous_request_id) override;
   uint16_t operator()(Trace<CancelAllOrders> const &, std::string_view const &request_id) override;
 
- protected:
   // web::rest::Client::Handler
 
   void operator()(Trace<web::rest::Connected> const &) override;

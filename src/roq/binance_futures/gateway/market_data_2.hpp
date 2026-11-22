@@ -41,7 +41,7 @@ struct MarketData2 final : public Base<MarketData2>,
 
   void operator()(std::span<std::string_view const> const &assets);
 
-  // protected:
+ protected:
   friend base_type;
 
   // server::Stream
@@ -62,7 +62,6 @@ struct MarketData2 final : public Base<MarketData2>,
 
   void subscribe(size_t start_from = 0) override;
 
- protected:
   // web::socket::Client::Handler
 
   void operator()(Trace<web::socket::Connected> const &) override;

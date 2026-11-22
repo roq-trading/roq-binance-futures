@@ -48,7 +48,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   void force_listen_key_refresh(TraceInfo const &) override;
 
-  // protected:
+ protected:
   friend base_type;
 
   // server::Stream
@@ -86,7 +86,6 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
       std::string_view const &previous_request_id) override;
   uint16_t operator()(Trace<CancelAllOrders> const &, std::string_view const &request_id) override;
 
- protected:
   // web::socket::Client::Handler
 
   void operator()(Trace<web::socket::Connected> const &) override;

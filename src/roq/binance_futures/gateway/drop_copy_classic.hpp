@@ -44,7 +44,7 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   DropCopyClassic(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
-  // protected:
+ protected:
   friend base_type;
 
   // server::Stream
@@ -61,7 +61,6 @@ struct DropCopyClassic final : public Base<DropCopyClassic>,
 
   void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
 
- protected:
   // web::socket::Client::Handler
 
   void operator()(Trace<web::socket::Connected> const &) override;

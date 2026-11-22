@@ -136,26 +136,25 @@ struct Controller final : public Base<Controller>,
   template <typename Res, typename T, typename... Args>
   Res dispatch_order_action(Trace<T> const &, Args &&...);
 
-  RestTrade &get_rest_trade(std::string_view const &account);
+  template <typename Res, typename T, typename... Args>
+  Res dispatch_rest_trade(Trace<T> const &, Args &&...);
 
  private:
   server::Dispatcher &dispatcher_;
-  // authentication
-  utils::unordered_map<std::string, std::unique_ptr<Account>> const accounts_;
-  // io
+  //
   io::Context &context_;
-  // shared
   Shared shared_;
-  utils::unordered_map<std::string, std::unique_ptr<Request>> const requests_;
-  // seed
   uint16_t stream_id_ = {};
-  // streams
-  Rest rest_;
+  //
+  utils::unordered_map<std::string, std::unique_ptr<Account>> const accounts_;
+  utils::unordered_map<std::string, std::unique_ptr<Request>> const requests_;
+  //
+  std::unique_ptr<Rest> rest_;
   std::vector<std::unique_ptr<MarketData>> market_data_a_, market_data_b_;
   std::vector<std::unique_ptr<MarketData2>> market_data_2_;
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
   utils::unordered_map<std::string, std::unique_ptr<server::Stream>> drop_copy_;
-  utils::unordered_map<std::string, std::unique_ptr<RestTrade>> download_;
+  utils::unordered_map<std::string, std::unique_ptr<RestTrade>> rest_trade_;
   //
   utils::unordered_set<std::string> drop_copy_zombies_;
 };

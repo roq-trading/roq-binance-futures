@@ -126,17 +126,17 @@ void DropCopyClassic::operator()(Trace<protocol::json::ListenKeyExpired> const &
 
 // server::Stream
 
-void DropCopyClassic::operator()(Trace<Start> const &) {
-  (*connection_).start();
+void DropCopyClassic::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
 }
 
-void DropCopyClassic::operator()(Trace<Stop> const &) {
-  (*connection_).stop();
+void DropCopyClassic::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
 }
 
 void DropCopyClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(trace_info)) {
+  if ((*connection_)(event)) {
     check_request_queue(trace_info);
     if (ready()) {
       refresh_balance(trace_info);

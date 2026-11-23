@@ -170,17 +170,17 @@ void OrderEntryClassic::force_listen_key_refresh(TraceInfo const &trace_info) {
 
 // server::Stream
 
-void OrderEntryClassic::operator()(Trace<Start> const &) {
-  (*connection_).start();
+void OrderEntryClassic::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
 }
 
-void OrderEntryClassic::operator()(Trace<Stop> const &) {
-  (*connection_).stop();
+void OrderEntryClassic::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
 }
 
 void OrderEntryClassic::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(trace_info)) {
+  if ((*connection_)(event)) {
     if (ready()) {
       refresh_listen_key(trace_info);
       if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
@@ -264,35 +264,31 @@ void OrderEntryClassic::operator()(Trace<server::oms::OrderActionBatchRollback> 
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t OrderEntryClassic::operator()(
+void OrderEntryClassic::operator()(
     Trace<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   order_place(event, order, ref_data, request_id);
-  return stream_id();
 }
 
-uint16_t OrderEntryClassic::operator()(
+void OrderEntryClassic::operator()(
     Trace<ModifyOrder> const &event,
     server::oms::Order const &order,
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   order_modify(event, order, ref_data, request_id, previous_request_id);
-  return stream_id();
 }
 
-uint16_t OrderEntryClassic::operator()(
+void OrderEntryClassic::operator()(
     Trace<CancelOrder> const &event,
     server::oms::Order const &order,
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   order_cancel(event, order, ref_data, request_id, previous_request_id);
-  return stream_id();
 }
 
-uint16_t OrderEntryClassic::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
+void OrderEntryClassic::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
-  return stream_id();
 }
 
 // web::rest::Client::Handler

@@ -146,17 +146,17 @@ RestTrade::RestTrade(Handler &handler, io::Context &context, uint16_t stream_id,
 
 // server::Stream
 
-void RestTrade::operator()(Trace<Start> const &) {
-  (*connection_).start();
+void RestTrade::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
 }
 
-void RestTrade::operator()(Trace<Stop> const &) {
-  (*connection_).stop();
+void RestTrade::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
 }
 
 void RestTrade::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
-  if ((*connection_).refresh(trace_info)) {
+  if ((*connection_)(event)) {
     if (ready()) {
       check_request_queue(trace_info);
     }
@@ -221,12 +221,12 @@ void RestTrade::operator()(Trace<server::oms::OrderActionBatchRollback> const &)
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t RestTrade::operator()(
+void RestTrade::operator()(
     Trace<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, [[maybe_unused]] std::string_view const &request_id) {
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t RestTrade::operator()(
+void RestTrade::operator()(
     Trace<ModifyOrder> const &,
     server::oms::Order const &,
     server::oms::RefData const &,
@@ -235,7 +235,7 @@ uint16_t RestTrade::operator()(
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t RestTrade::operator()(
+void RestTrade::operator()(
     Trace<CancelOrder> const &,
     server::oms::Order const &,
     server::oms::RefData const &,
@@ -244,9 +244,8 @@ uint16_t RestTrade::operator()(
   throw server::oms::NotSupported{"not supported"sv};
 }
 
-uint16_t RestTrade::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
+void RestTrade::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   open_orders_cancel_all(event, request_id);
-  return stream_id();
 }
 
 // web::rest::Client::Handler

@@ -9,6 +9,8 @@ namespace binance_futures {
 namespace gateway {
 
 struct OrderEntry : public server::OrderActionStream {
+  using server::OrderActionStream::OrderActionStream;
+
   // note! a bit dirty -- only valid for WSAPI
   virtual void force_listen_key_refresh(TraceInfo const &) {}
 };

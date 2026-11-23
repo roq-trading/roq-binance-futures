@@ -90,7 +90,7 @@ struct create_metrics final : public utils::metrics::Factory {
 
 DropCopyClassic::DropCopyClassic(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, query_{create_query(listen_key)},
+    : server::Stream{stream_id}, handler_{handler}, name_{create_name(stream_id)}, query_{create_query(listen_key)},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -169,25 +169,26 @@ void DropCopyClassic::operator()(metrics::Writer &writer) const {
 
 void DropCopyClassic::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
   auto &[trace_info, connection_status] = event;
-  connection_status_ = connection_status;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::WS,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .proxy = (*connection_).get_proxy(),
-      .peer = (*connection_).get_current_peer(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  if (update(connection_status, reason)) {
+    auto stream_status = StreamStatus{
+        .stream_id = stream_id(),
+        .account = account_.name,
+        .supports = SUPPORTS,
+        .transport = Transport::TCP,
+        .protocol = Protocol::WS,
+        .encoding = {Encoding::JSON},
+        .priority = Priority::PRIMARY,
+        .connection_status = connection_status,
+        .reason = reason,
+        .interface = (*connection_).get_interface(),
+        .proxy = (*connection_).get_proxy(),
+        .peer = (*connection_).get_current_peer(),
+        .authority = (*connection_).get_current_authority(),
+        .path = (*connection_).get_current_path(),
+    };
+    log::info("stream_status={}"sv, stream_status);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  }
 }
 
 // web::socket::Client::Handler
@@ -198,7 +199,7 @@ void DropCopyClassic::operator()(Trace<web::socket::Connected> const &) {
 void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
+  publish(trace_info, ConnectionStatus::DISCONNECTED);
   download_.reset();
   if (stop_) {
     auto remove = Remove{
@@ -221,7 +222,7 @@ void DropCopyClassic::operator()(Trace<web::socket::Close> const &event) {
 void DropCopyClassic::operator()(Trace<web::socket::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id_,
+      .stream_id = stream_id(),
       .account = account_.name,
       .latency = latency.sample,
   };
@@ -242,42 +243,41 @@ void DropCopyClassic::operator()(Trace<web::socket::Binary> const &) {
 
 int32_t DropCopyClassic::download(Trace<State> const &event) {
   auto &[trace_info, state] = event;
-  auto publish_downloading = [&]() { create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, magic_enum::enum_name(state)); };
   switch (state) {
     using enum State;
     case UNDEFINED:
       assert(false);
       break;
     case GET_BALANCES:
-      publish_downloading();
+      publish(trace_info, ConnectionStatus::DOWNLOADING, state);
       request_.balances.request(trace_info);
       return 1;
     case GET_POSITIONS:
-      publish_downloading();
+      publish(trace_info, ConnectionStatus::DOWNLOADING, state);
       request_.positions.request(trace_info);
       return 1;
     case GET_OPEN_ORDERS:
-      publish_downloading();
+      publish(trace_info, ConnectionStatus::DOWNLOADING, state);
       request_.open_orders.request(trace_info);
       return 1;
     case GET_STALE_ORDERS:
       if (std::empty(request_.details_stale_orders)) {
         return 0;
       } else {
-        publish_downloading();
+        publish(trace_info, ConnectionStatus::DOWNLOADING, state);
         request_.stale_orders.request(trace_info);
         return 1;
       }
     case GET_TRADES:
       if (shared_.settings.download.trades_lookback.count() != 0 && !std::empty(shared_.settings.download.symbols)) {
-        publish_downloading();
+        publish(trace_info, ConnectionStatus::DOWNLOADING, state);
         request_.trades.request(trace_info);
         return 1;
       } else {
         return 0;
       }
     case DONE:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
+      publish(trace_info, ConnectionStatus::READY);
       return 0;
   }
   assert(false);
@@ -340,7 +340,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
       order_id = order.order_id;
       strategy_id = order.strategy_id;
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_, callback);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id(), callback);
     if (execution_report.execution_type != protocol::json::ExecutionType::TRADE) {
       return;
     }
@@ -365,7 +365,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .account = account_.name,
         .order_id = order_id,
         .exchange = shared_.settings.exchange,
@@ -397,7 +397,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
     for (auto &item : account_update.data.balances) {
       log::info<2>("item={}"sv, item);
       auto funds_update = FundsUpdate{
-          .stream_id = stream_id_,
+          .stream_id = stream_id(),
           .account = account_.name,
           .currency = item.asset,
           .margin_mode = {},  // XXX TODO maybe this should be MarginMode::ISOLATED?
@@ -413,7 +413,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
       create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
       if (!std::isnan(item.cross_wallet_balance)) {
         auto funds_update = FundsUpdate{
-            .stream_id = stream_id_,
+            .stream_id = stream_id(),
             .account = account_.name,
             .currency = item.asset,
             .margin_mode = MarginMode::CROSS,
@@ -450,7 +450,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
       auto position_update = PositionUpdate{
-          .stream_id = stream_id_,
+          .stream_id = stream_id(),
           .account = account_.name,
           .exchange = shared_.settings.exchange,
           .symbol = item.symbol,
@@ -527,7 +527,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) 
       fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade_lite.trade_id);
       auto external_order_id = Utils::create_external_order_id(external_order_id_, trade_lite.symbol, trade_lite.order_id);
       auto trade_update = TradeUpdate{
-          .stream_id = stream_id_,
+          .stream_id = stream_id(),
           .account = account_.name,
           .order_id = order.order_id,
           .exchange = shared_.settings.exchange,

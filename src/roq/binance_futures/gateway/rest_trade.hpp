@@ -46,10 +46,6 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
 
   // server::Stream
 
-  uint16_t stream_id() const override { return stream_id_; }
-
-  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
-
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
   void operator()(Trace<Timer> const &) override;
@@ -125,7 +121,6 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
  private:
   [[maybe_unused]] Handler &handler_;
   //
-  uint16_t const stream_id_;
   std::string const name_;
   std::unique_ptr<web::rest::Client> const connection_;
   //
@@ -148,7 +143,6 @@ struct RestTrade final : public Base<RestTrade>, public server::OrderActionStrea
   Account &account_;
   Shared &shared_;
   Request &request_;
-  ConnectionStatus connection_status_ = {};
   utils::unordered_set<std::string> open_orders_symbols_;
   std::string encode_buffer_;
   bool download_trades_is_first_ = true;

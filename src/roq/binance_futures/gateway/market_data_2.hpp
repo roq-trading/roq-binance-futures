@@ -46,10 +46,6 @@ struct MarketData2 final : public Base<MarketData2>,
 
   // server::Stream
 
-  uint16_t stream_id() const override { return stream_id_; }
-
-  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
-
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
   void operator()(Trace<Timer> const &) override;
@@ -104,7 +100,6 @@ struct MarketData2 final : public Base<MarketData2>,
  private:
   [[maybe_unused]] Handler &handler_;
   //
-  uint16_t const stream_id_;
   std::string const name_;
   size_t const index_;
   std::unique_ptr<web::socket::Client> const connection_;
@@ -123,7 +118,6 @@ struct MarketData2 final : public Base<MarketData2>,
     utils::metrics::Latency ping, heartbeat;
   } latency_;
   Shared &shared_;
-  ConnectionStatus connection_status_ = {};
   core::limit::Queue<std::string> subscribe_queue_;
   std::vector<std::string> assets_;
 };

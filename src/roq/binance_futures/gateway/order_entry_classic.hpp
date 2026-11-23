@@ -66,10 +66,6 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
 
   // server::Stream
 
-  uint16_t stream_id() const override { return stream_id_; }
-
-  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
-
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
   void operator()(Trace<Timer> const &) override;
@@ -210,7 +206,6 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
  private:
   Handler &handler_;
   //
-  uint16_t const stream_id_;
   std::string const name_;
   std::unique_ptr<web::rest::Client> const connection_;
   //
@@ -244,7 +239,6 @@ struct OrderEntryClassic final : public Base<OrderEntryClassic>, public OrderEnt
   Request &request_;
   std::string listen_key_;
   std::chrono::nanoseconds listen_key_refresh_ = {};
-  ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
   utils::unordered_set<std::string> open_orders_symbols_;
   std::chrono::nanoseconds next_auto_cancel_ = {};

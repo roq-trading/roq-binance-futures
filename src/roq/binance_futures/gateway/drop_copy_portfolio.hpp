@@ -49,10 +49,6 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
 
   // server::Stream
 
-  uint16_t stream_id() const override { return stream_id_; }
-
-  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
-
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
   void operator()(Trace<Timer> const &) override;
@@ -115,7 +111,6 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
  private:
   Handler &handler_;
   //
-  uint16_t const stream_id_;
   std::string const name_;
   std::string const query_;
   std::unique_ptr<web::socket::Client> const connection_;
@@ -135,7 +130,6 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   Account &account_;
   Shared &shared_;
   Request &request_;
-  ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
   std::string external_order_id_;
   bool stop_ = {};

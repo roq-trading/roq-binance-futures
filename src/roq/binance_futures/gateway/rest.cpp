@@ -95,7 +95,7 @@ auto get_retry_after(auto &response) {
 // === IMPLEMENTATION ===
 
 Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_)}, connection_{create_connection(*this, shared.settings, context, shared)},
+    : server::Stream{stream_id}, handler_{handler}, name_{create_name(stream_id)}, connection_{create_connection(*this, shared.settings, context, shared)},
       decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -159,25 +159,26 @@ void Rest::operator()(metrics::Writer &writer) const {
 
 void Rest::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
   auto &[trace_info, connection_status] = event;
-  connection_status_ = connection_status;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = {},
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .proxy = (*connection_).get_proxy(),
-      .peer = (*connection_).get_current_peer(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  if (update(connection_status, reason)) {
+    auto stream_status = StreamStatus{
+        .stream_id = stream_id(),
+        .account = {},
+        .supports = SUPPORTS,
+        .transport = Transport::TCP,
+        .protocol = Protocol::HTTP,
+        .encoding = {Encoding::JSON},
+        .priority = Priority::PRIMARY,
+        .connection_status = connection_status,
+        .reason = reason,
+        .interface = (*connection_).get_interface(),
+        .proxy = (*connection_).get_proxy(),
+        .peer = (*connection_).get_current_peer(),
+        .authority = (*connection_).get_current_authority(),
+        .path = (*connection_).get_current_path(),
+    };
+    log::info("stream_status={}"sv, stream_status);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  }
 }
 
 // web::rest::Client::Handler
@@ -194,7 +195,7 @@ void Rest::operator()(Trace<web::rest::Connected> const &event) {
 void Rest::operator()(Trace<web::rest::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
+  publish(trace_info, ConnectionStatus::DISCONNECTED);
   if (!download_.downloading()) {
     download_.reset();
   }
@@ -203,7 +204,7 @@ void Rest::operator()(Trace<web::rest::Disconnected> const &event) {
 void Rest::operator()(Trace<web::rest::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id_,
+      .stream_id = stream_id(),
       .account = {},
       .latency = latency.sample,
   };
@@ -241,7 +242,7 @@ void Rest::operator()(Trace<web::rest::MessageEnd> const &event) {
     return;
   }
   auto rate_limits_update = RateLimitsUpdate{
-      .stream_id = stream_id_,
+      .stream_id = stream_id(),
       .account = {},
       .origin = Origin::EXCHANGE,
       .rate_limits = shared_.rate_limits,
@@ -260,11 +261,11 @@ int32_t Rest::download(Trace<State> const &event) {
       assert(false);
       break;
     case EXCHANGE_INFO:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "exchange-info"sv);
+      publish(trace_info, ConnectionStatus::DOWNLOADING, state);
       get_exchange_info();
       return 1;
     case ASSET_INDEX:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "asset-index"sv);
+      publish(trace_info, ConnectionStatus::DOWNLOADING, state);
       if (std::empty(shared_.api.market_data.asset_index) || !shared_.settings.misc.subscribe_asset_index) {
         return 0;
       } else {
@@ -272,7 +273,7 @@ int32_t Rest::download(Trace<State> const &event) {
         return 1;
       }
     case DONE:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
+      publish(trace_info, ConnectionStatus::READY);
       return 0;
   }
   assert(false);
@@ -399,7 +400,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
       return item.base_asset;
     }();
     auto reference_data = ReferenceData{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .description = {},
@@ -449,7 +450,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
     }
     ++counter;
     auto market_status = MarketStatus{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
         .trading_status = protocol::json::trading_status_helper(item.status, item.contract_status),
@@ -599,7 +600,7 @@ void Rest::operator()(Trace<protocol::json::DepthAck> const &event, std::string_
           retries,
           std::chrono::duration_cast<std::chrono::milliseconds>(delay));
       auto market_by_price_update = MarketByPriceUpdate{
-          .stream_id = stream_id_,
+          .stream_id = stream_id(),
           .exchange = shared_.settings.exchange,
           .symbol = symbol,
           .bids = bids,
@@ -690,7 +691,7 @@ void Rest::operator()(Trace<protocol::json::KlineAck> const &event, std::string_
   }
   if (!std::empty(bars)) {
     auto time_series_update = TimeSeriesUpdate{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .exchange = shared_.settings.exchange,
         .symbol = symbol,
         .data_source = DataSource::TRADE_SUMMARY,

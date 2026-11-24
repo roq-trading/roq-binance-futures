@@ -6,6 +6,9 @@
       "name": "SESSION_LOGON"
     },
     {
+      "name": "USER_DATA_STREAM_STOP"
+    },
+    {
       "name": "USER_DATA_STREAM_START"
     },
     {

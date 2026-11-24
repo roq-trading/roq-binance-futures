@@ -77,7 +77,7 @@ struct create_metrics final : public utils::metrics::Factory {
 // === IMPLEMENTATION ===
 
 MarketData2::MarketData2(Handler &handler, io::Context &context, uint16_t stream_id, Shared &shared, size_t index)
-    : server::MarketDataStream{stream_id}, handler_{handler}, name_{create_name(stream_id)}, index_{index},
+    : server::MarketDataStream{stream_id, {}, SUPPORTS}, handler_{handler}, name_{create_name(stream_id)}, index_{index},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       request_id_{static_cast<uint64_t>(stream_id) * 1000000},  // scale (debugging)
       counter_{
@@ -156,9 +156,9 @@ void MarketData2::operator()(Trace<ConnectionStatus> const &event, std::string_v
   auto &[trace_info, connection_status] = event;
   if (update(connection_status, reason)) {
     auto stream_status = StreamStatus{
-        .stream_id = stream_id(),
-        .account = {},
-        .supports = SUPPORTS,
+        .stream_id = stream_id,
+        .account = account,
+        .supports = supports,
         .transport = Transport::TCP,
         .protocol = Protocol::WS,
         .encoding = {Encoding::JSON},
@@ -213,7 +213,7 @@ void MarketData2::operator()(Trace<web::socket::Close> const &event) {
 void MarketData2::operator()(Trace<web::socket::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = {},
       .latency = latency.sample,
   };
@@ -270,7 +270,7 @@ void MarketData2::operator()(Trace<protocol::json::AggTrade> const &event) {
     };
     utils::charconv::to_string(std::back_inserter(trade.trade_id), agg_trade.agg_trade_id);
     auto trade_summary = TradeSummary{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = agg_trade.symbol,
         .trades = {&trade, 1},
@@ -320,7 +320,7 @@ void MarketData2::operator()(Trace<protocol::json::MiniTicker> const &event) {
         },
     }};
     auto statistics_update = StatisticsUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = mini_ticker.symbol,
         .statistics = statistics,
@@ -373,7 +373,7 @@ void MarketData2::operator()(Trace<protocol::json::MarkPriceUpdate> const &event
         },
     }};
     auto statistics_update = StatisticsUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = mark_price_update.symbol,
         .statistics = statistics,
@@ -408,7 +408,7 @@ void MarketData2::operator()(Trace<protocol::json::Kline> const &event) {
         .vwap = NaN,
     };
     auto time_series_update = TimeSeriesUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = kline.data.symbol,
         .data_source = DataSource::TRADE_SUMMARY,
@@ -442,7 +442,7 @@ void MarketData2::operator()(Trace<protocol::json::AssetIndexUpdate> const &even
         },
     }};
     auto statistics_update = StatisticsUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = asset_index_update.symbol,
         .statistics = statistics,
@@ -472,7 +472,7 @@ void MarketData2::operator()(Trace<protocol::json::ForceOrder> const &event) {
         .maker_order_id = {},
     };
     auto trade_summary = TradeSummary{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .exchange = shared_.settings.exchange,
         .symbol = force_order.order.symbol,
         .trades = {&trade, 1},

@@ -91,8 +91,8 @@ struct create_metrics final : public utils::metrics::Factory {
 
 DropCopyClassic::DropCopyClassic(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
-    : DropCopy{stream_id}, handler_{handler}, name_{create_name(stream_id)}, connection_{create_connection(*this, shared.settings, context, shared)},
-      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
+    : DropCopy{stream_id, account.name, SUPPORTS}, handler_{handler}, name_{create_name(stream_id)},
+      connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -174,9 +174,9 @@ void DropCopyClassic::operator()(Trace<ConnectionStatus> const &event, std::stri
   auto &[trace_info, connection_status] = event;
   if (update(connection_status, reason)) {
     auto stream_status = StreamStatus{
-        .stream_id = stream_id(),
-        .account = account_.name,
-        .supports = SUPPORTS,
+        .stream_id = stream_id,
+        .account = account,
+        .supports = supports,
         .transport = Transport::TCP,
         .protocol = Protocol::WS,
         .encoding = {Encoding::JSON},
@@ -220,7 +220,7 @@ void DropCopyClassic::operator()(Trace<web::socket::Close> const &event) {
 void DropCopyClassic::operator()(Trace<web::socket::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = account_.name,
       .latency = latency.sample,
   };
@@ -345,7 +345,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
       order_id = order.order_id;
       strategy_id = order.strategy_id;
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id(), callback);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id, callback);
     if (execution_report.execution_type != protocol::json::ExecutionType::TRADE) {
       return;
     }
@@ -370,7 +370,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &
     };
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, execution_report.trade_id);
     auto trade_update = TradeUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .account = account_.name,
         .order_id = order_id,
         .exchange = shared_.settings.exchange,
@@ -402,7 +402,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
     for (auto &item : account_update.data.balances) {
       log::info<2>("item={}"sv, item);
       auto funds_update = FundsUpdate{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .currency = item.asset,
           .margin_mode = {},  // XXX TODO maybe this should be MarginMode::ISOLATED?
@@ -418,7 +418,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
       create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
       if (!std::isnan(item.cross_wallet_balance)) {
         auto funds_update = FundsUpdate{
-            .stream_id = stream_id(),
+            .stream_id = stream_id,
             .account = account_.name,
             .currency = item.asset,
             .margin_mode = MarginMode::CROSS,
@@ -455,7 +455,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::AccountUpdate> const &eve
       auto long_quantity = std::max(0.0, item.position_amount);
       auto short_quantity = std::max(0.0, -item.position_amount);
       auto position_update = PositionUpdate{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .exchange = shared_.settings.exchange,
           .symbol = item.symbol,
@@ -532,7 +532,7 @@ void DropCopyClassic::operator()(Trace<protocol::json::TradeLite> const &event) 
       fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, trade_lite.trade_id);
       auto external_order_id = Utils::create_external_order_id(external_order_id_, trade_lite.symbol, trade_lite.order_id);
       auto trade_update = TradeUpdate{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .order_id = order.order_id,
           .exchange = shared_.settings.exchange,

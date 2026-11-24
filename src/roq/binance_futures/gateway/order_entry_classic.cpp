@@ -119,7 +119,7 @@ auto get_retry_after(auto &response) {
 // === IMPLEMENTATION ===
 
 OrderEntryClassic::OrderEntryClassic(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : OrderEntry{stream_id}, handler_{handler}, name_{create_name(stream_id, account.name)},
+    : OrderEntry{stream_id, account.name, SUPPORTS}, handler_{handler}, name_{create_name(stream_id, account.name)},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -240,9 +240,9 @@ void OrderEntryClassic::operator()(Trace<ConnectionStatus> const &event, std::st
   auto &[trace_info, connection_status] = event;
   if (update(connection_status, reason)) {
     auto stream_status = StreamStatus{
-        .stream_id = stream_id(),
-        .account = account_.name,
-        .supports = SUPPORTS,
+        .stream_id = stream_id,
+        .account = account,
+        .supports = supports,
         .transport = Transport::TCP,
         .protocol = Protocol::HTTP,
         .encoding = {Encoding::JSON},
@@ -318,7 +318,7 @@ void OrderEntryClassic::operator()(Trace<web::rest::Disconnected> const &event) 
 void OrderEntryClassic::operator()(Trace<web::rest::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = account_.name,
       .latency = latency.sample,
   };
@@ -372,7 +372,7 @@ void OrderEntryClassic::operator()(Trace<web::rest::MessageEnd> const &event) {
     return;
   }
   auto rate_limits_update = RateLimitsUpdate{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = account_.name,
       .origin = Origin::EXCHANGE,
       .rate_limits = shared_.rate_limits,
@@ -524,7 +524,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::AccountBalanceAck> cons
     log::info<2>("item={}"sv, item);
     auto hold = item.balance - item.available_balance;
     auto funds_update = FundsUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .account = account_.name,
         .currency = item.asset,
         .margin_mode = {},
@@ -540,7 +540,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::AccountBalanceAck> cons
     create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
     if (!std::isnan(item.cross_wallet_balance)) {
       auto funds_update = FundsUpdate{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .currency = item.asset,
           .margin_mode = MarginMode::CROSS,
@@ -606,7 +606,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::AccountStatusAck> const
     auto long_quantity = std::max(0.0, item.position_amt);
     auto short_quantity = std::max(0.0, -item.position_amt);
     auto position_update = PositionUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
@@ -706,7 +706,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersAck> const &e
         .update_type = UpdateType::SNAPSHOT,
         .sending_time_utc = {},
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id);
   }
 }
 
@@ -780,7 +780,7 @@ void OrderEntryClassic::get_order_ack(Trace<web::rest::Response> const &event, s
           .update_type = UpdateType::SNAPSHOT,
           .sending_time_utc = {},
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderAck order_ack{body, decode_buffer_};
@@ -842,7 +842,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderAck> const &event)
       .update_type = UpdateType::SNAPSHOT,
       .sending_time_utc = {},
   };
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id);
 }
 
 // trades
@@ -918,7 +918,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::TradesAck> const &event
     fmt::format_to(std::back_inserter(fill.external_trade_id), "{}"sv, item.id);
     auto external_order_id = Utils::create_external_order_id(external_order_id_, item.symbol, item.order_id);
     auto trade_update = TradeUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .account = account_.name,
         .order_id = {},
         .exchange = shared_.settings.exchange,
@@ -1008,7 +1008,7 @@ void OrderEntryClassic::order_place_ack(Trace<web::rest::Response> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderPlaceAck order_place_ack{body};
@@ -1037,7 +1037,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderPlaceAck> const &e
       .price = order_place_ack.price,
   };
   if (shared_.settings.rest.drop_order_update) {
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1077,7 +1077,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderPlaceAck> const &e
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, user_id, order_id);
   }
 }
 
@@ -1134,7 +1134,7 @@ void OrderEntryClassic::order_modify_ack(Trace<web::rest::Response> const &event
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderModifyAck order_modify_ack{body};
@@ -1181,7 +1181,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderModifyAck> const &
       .price = order_modify_ack.price,
   };
   if (response.request_status != RequestStatus::ACCEPTED || shared_.settings.rest.drop_order_update) {
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1221,7 +1221,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderModifyAck> const &
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, user_id, order_id);
   }
 }
 
@@ -1277,7 +1277,7 @@ void OrderEntryClassic::order_cancel_ack(Trace<web::rest::Response> const &event
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderCancelAck order_cancel_ack{body};
@@ -1310,7 +1310,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderCancelAck> const &
       .price = order_cancel_ack.price,
   };
   if (shared_.settings.rest.drop_order_update) {
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, user_id, order_id);
   } else {
     auto order_update = server::oms::OrderUpdate{
         .account = account_.name,
@@ -1350,7 +1350,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OrderCancelAck> const &
         .update_type = UpdateType::INCREMENTAL,
         .sending_time_utc = {},
     };
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), user_id, order_id);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, user_id, order_id);
   }
 }
 
@@ -1380,7 +1380,7 @@ void OrderEntryClassic::open_orders_cancel_all(Trace<CancelAllOrders> const &eve
       auto callback = [this](auto &event, auto &request_id) { open_orders_cancel_all_ack(event, request_id); };
       (*connection_)(request, callback, request_id);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .order_id = {},
           .exchange = cancel_all_orders.exchange,
@@ -1426,7 +1426,7 @@ void OrderEntryClassic::operator()(Trace<protocol::json::OpenOrdersCancelAllAck>
     return RequestStatus::REJECTED;
   }();
   auto cancel_all_orders_ack = CancelAllOrdersAck{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = account_.name,
       .order_id = {},
       .exchange = {},

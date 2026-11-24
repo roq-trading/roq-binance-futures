@@ -85,7 +85,7 @@ struct create_metrics final : public utils::metrics::Factory {
 // === IMPLEMENTATION ===
 
 WebSocket::WebSocket(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, bool master)
-    : OrderEntry{stream_id}, handler_{handler}, name_{create_name(stream_id, account.name)}, master_{master},
+    : OrderEntry{stream_id, account.name, SUPPORTS}, handler_{handler}, name_{create_name(stream_id, account.name)}, master_{master},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -215,9 +215,9 @@ void WebSocket::operator()(Trace<ConnectionStatus> const &event, std::string_vie
   auto &[trace_info, connection_status] = event;
   if (update(connection_status, reason)) {
     auto stream_status = StreamStatus{
-        .stream_id = stream_id(),
-        .account = account_.name,
-        .supports = SUPPORTS,
+        .stream_id = stream_id,
+        .account = account,
+        .supports = supports,
         .transport = Transport::TCP,
         .protocol = Protocol::WS,
         .encoding = {Encoding::JSON},
@@ -302,7 +302,7 @@ void WebSocket::operator()(Trace<web::socket::Close> const &event) {
 void WebSocket::operator()(Trace<web::socket::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id(),
+      .stream_id = stream_id,
       .account = account_.name,
       .latency = latency.sample,
   };
@@ -431,7 +431,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountBalance> const &eve
     auto handle_success = [&](auto &result) {
       for (auto &item : result) {
         auto funds_update = FundsUpdate{
-            .stream_id = stream_id(),
+            .stream_id = stream_id,
             .account = account_.name,
             .currency = item.asset,
             .margin_mode = {},
@@ -476,7 +476,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIAccountStatus> const &even
         auto long_quantity = std::max(0.0, item.position_amt);
         auto short_quantity = std::max(0.0, -item.position_amt);
         auto position_update = PositionUpdate{
-            .stream_id = stream_id(),
+            .stream_id = stream_id,
             .account = account_.name,
             .exchange = shared_.settings.exchange,
             .symbol = item.symbol,
@@ -583,7 +583,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOpenOrdersCancelAll> const
             .update_type = UpdateType::INCREMENTAL,
             .sending_time_utc = {},
         };
-        create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id);
       }
     };
     if (wsapi_open_orders_cancel_all.status != 200) {
@@ -616,7 +616,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
@@ -695,7 +695,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderPlace> const &event, 
           .update_type = UpdateType::INCREMENTAL,
           .sending_time_utc = {},
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, request.user_id, request.order_id);
     };
     if (wsapi_order_place.status != 200) {
       auto error = map(wsapi_order_place.error.code).template get<Error>();
@@ -727,7 +727,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
       auto external_order_id = Utils::create_external_order_id(external_order_id_, result.symbol, result.order_id);
@@ -750,7 +750,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
             .price = NaN,
         };
         if (!shared_.settings.ws_api_2.allow_order_update) {
-          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), request.user_id, request.order_id);
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, request.user_id, request.order_id);
         } else {
           auto order_update = server::oms::OrderUpdate{
               .account = account_.name,
@@ -790,7 +790,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderModify> const &event,
               .update_type = UpdateType::INCREMENTAL,
               .sending_time_utc = {},
           };
-          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), request.user_id, request.order_id);
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, request.user_id, request.order_id);
         }
       }
     };
@@ -856,7 +856,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), request.user_id, request.order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, request.user_id, request.order_id);
     };
     auto handle_success = [&](auto &result) {
       if (result.status == protocol::json::OrderStatus::FILLED) {
@@ -878,7 +878,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
             .price = NaN,
         };
         if (!shared_.settings.ws_api_2.allow_order_update) {
-          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), request.user_id, request.order_id);
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id, request.user_id, request.order_id);
         } else {
           auto order_update = server::oms::OrderUpdate{
               .account = account_.name,
@@ -918,7 +918,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
               .update_type = UpdateType::INCREMENTAL,
               .sending_time_utc = {},
           };
-          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id(), request.user_id, request.order_id);
+          create_trace_and_dispatch(shared_.dispatcher, trace_info, response, order_update, stream_id, request.user_id, request.order_id);
         }
       }
     };
@@ -1233,7 +1233,7 @@ void WebSocket::open_orders_cancel_all(Trace<CancelAllOrders> const &event, std:
     auto &[trace_info, cancel_all_orders] = event;
     auto send_ack = [&](auto &symbol) {
       auto cancel_all_orders_ack = CancelAllOrdersAck{
-          .stream_id = stream_id(),
+          .stream_id = stream_id,
           .account = account_.name,
           .order_id = cancel_all_orders.order_id,
           .exchange = cancel_all_orders.exchange,
@@ -1380,7 +1380,7 @@ void WebSocket::update_rate_limits(auto &event) {
   }
   if (!std::empty(shared_.rate_limits)) {
     auto rate_limits_update = RateLimitsUpdate{
-        .stream_id = stream_id(),
+        .stream_id = stream_id,
         .account = account_.name,
         .origin = Origin::EXCHANGE,
         .rate_limits = shared_.rate_limits,

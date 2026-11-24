@@ -62,6 +62,10 @@ bool WSAPIParser::dispatch(
             case SESSION_LOGON:
               result = dispatch_helper<WSAPISessionLogon>(handler, message, buffer_stack, trace_info);
               return true;
+            case USER_DATA_STREAM_STOP:
+              // note! only for testing
+              result = true;
+              return true;
             case USER_DATA_STREAM_START:
               result = dispatch_helper<WSAPIListenKey>(handler, message, buffer_stack, trace_info);
               return true;

@@ -21,6 +21,7 @@
 #include "roq/server/stream.hpp"
 
 #include "roq/binance_futures/gateway/account.hpp"
+#include "roq/binance_futures/gateway/drop_copy.hpp"
 #include "roq/binance_futures/gateway/request.hpp"
 #include "roq/binance_futures/gateway/shared.hpp"
 
@@ -31,21 +32,19 @@ namespace binance_futures {
 namespace gateway {
 
 struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
-                                 public server::Stream,
+                                 public DropCopy,
                                  public web::socket::Client::Handler,
                                  public protocol::json::UserStreamParser::Handler {
-  struct Remove final {
-    std::string_view account;
-  };
-
-  struct Handler {
-    virtual void operator()(Trace<Remove> const &) = 0;
-  };
+  struct Handler {};
 
   DropCopyPortfolio(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
 
  protected:
   friend base_type;
+
+  // DropCopy
+
+  void update_listen_key(TraceInfo const &, std::string_view const &listen_key) override;
 
   // server::Stream
 
@@ -112,7 +111,6 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   Handler &handler_;
   //
   std::string const name_;
-  std::string const query_;
   std::unique_ptr<web::socket::Client> const connection_;
   //
   core::json::BufferStack decode_buffer_;
@@ -131,8 +129,8 @@ struct DropCopyPortfolio final : public Base<DropCopyPortfolio>,
   Shared &shared_;
   Request &request_;
   core::Download2<State> download_;
+  std::string query_;
   std::string external_order_id_;
-  bool stop_ = {};
   std::chrono::nanoseconds next_check_stale_orders_ = {};
 };
 

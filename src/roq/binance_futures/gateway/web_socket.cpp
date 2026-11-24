@@ -95,6 +95,8 @@ WebSocket::WebSocket(Handler &handler, io::Context &context, uint16_t stream_id,
           .error = create_metrics(shared.settings, name_, "error"sv),
           .session_logon = create_metrics(shared.settings, name_, "session_logon"sv),
           .session_logon_ack = create_metrics(shared.settings, name_, "session_logon_ack"sv),
+          .user_data_stream_stop = create_metrics(shared.settings, name_, "user_data_stream_stop"sv),
+          .user_data_stream_stop_ack = create_metrics(shared.settings, name_, "user_data_stream_stop_ack"sv),
           .user_data_stream_start = create_metrics(shared.settings, name_, "user_data_stream_start"sv),
           .user_data_stream_start_ack = create_metrics(shared.settings, name_, "user_data_stream_start_ack"sv),
           .user_data_stream_ping = create_metrics(shared.settings, name_, "user_data_stream_ping"sv),
@@ -152,9 +154,19 @@ void WebSocket::operator()(Trace<Stop> const &event) {
 void WebSocket::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_)(event)) {
-    user_data_stream_ping(timer.now);
+    user_data_stream_ping(trace_info);
     if (ready()) {
       check_request_queue(trace_info);
+      // TEST
+      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
+        if (next_listen_key_stop_ < trace_info.origin_create_time) {
+          if (next_listen_key_stop_.count()) {
+            log::warn("TEST force the listen-key to be removed"sv);
+            user_data_stream_stop(trace_info);
+          }
+          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
+        }
+      }
     }
   }
 }
@@ -168,6 +180,8 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       .write(profile_.error, metrics::Type::PROFILE)
       .write(profile_.session_logon, metrics::Type::PROFILE)
       .write(profile_.session_logon_ack, metrics::Type::PROFILE)
+      .write(profile_.user_data_stream_stop, metrics::Type::PROFILE)
+      .write(profile_.user_data_stream_stop_ack, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_start, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_start_ack, metrics::Type::PROFILE)
       .write(profile_.user_data_stream_ping, metrics::Type::PROFILE)
@@ -320,7 +334,7 @@ int32_t WebSocket::download(Trace<State> const &event) {
       return 1;
     case USER_DATA_STREAM_START:
       publish(trace_info, ConnectionStatus::DOWNLOADING, state);
-      user_data_stream_start();
+      user_data_stream_start(trace_info);
       return 1;
     case ACCOUNT_POSITION:
       publish(trace_info, ConnectionStatus::DOWNLOADING, state);
@@ -369,7 +383,13 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
     auto &[trace_info, wsapi_listen_key] = event;
     log::info<2>("wsapi_listen_key={}"sv, wsapi_listen_key);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      if (wsapi_listen_key.error.code == -1125) {  // This listenKey does not exist.
+        log::info("Requesting new listen-key..."sv);
+        listen_key_.clear();
+        user_data_stream_start(trace_info);
+      } else {
+        log::warn(R"(account="{}", origin={}, error={}, status={}, text="{}")"sv, account_.name, origin, error, status, text);
+      }
       if (download_.downloading()) {
         download_.retry(STATE);
       }
@@ -390,6 +410,7 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIListenKey> const &event) {
       download_.check_relaxed(trace_info, STATE);
       listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
     };
+    request_.listen_key.commit(trace_info);
     if (wsapi_listen_key.status != 200) {
       auto error = map(wsapi_listen_key.error.code).template get<Error>();
       handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, wsapi_listen_key.error.msg);
@@ -932,8 +953,6 @@ void WebSocket::operator()(Trace<protocol::json::WSAPIOrderCancel> const &event,
   });
 }
 
-// helpers
-
 // session-logon
 
 void WebSocket::session_logon(TraceInfo const &trace_info) {
@@ -958,7 +977,23 @@ void WebSocket::session_logon(TraceInfo const &trace_info) {
 
 // listen-key
 
-void WebSocket::user_data_stream_start() {
+void WebSocket::user_data_stream_stop(TraceInfo const &) {
+  profile_.user_data_stream_stop([&]() {
+    auto request = protocol::json::WSAPIRequest{
+        .sequence = ++request_id_,
+        .type = protocol::json::WSAPIType::USER_DATA_STREAM_STOP,
+        .user_id = {},
+        .order_id = {},
+        .version = {},
+        .order_id_2 = {},
+    };
+    auto request_id = protocol::json::WSAPIRequest::encode(request_encode_buffer_, request);
+    auto message = protocol::json::Encoder::user_data_stream_stop_json(encode_buffer_, account_.get_key(), request_id);
+    (*connection_).send_text(message);
+  });
+}
+
+void WebSocket::user_data_stream_start(TraceInfo const &) {
   profile_.user_data_stream_start([&]() {
     auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
@@ -974,7 +1009,7 @@ void WebSocket::user_data_stream_start() {
   });
 }
 
-void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
+void WebSocket::user_data_stream_ping(TraceInfo const &trace_info) {
   profile_.user_data_stream_ping([&]() {
     if (!ready()) {
       return;
@@ -982,11 +1017,11 @@ void WebSocket::user_data_stream_ping(std::chrono::nanoseconds now) {
     if (std::empty(listen_key_)) {
       return;
     }
-    if (listen_key_refresh_.count() == 0 || now < listen_key_refresh_) {
+    if (listen_key_refresh_.count() == 0 || trace_info.origin_create_time < listen_key_refresh_) {
       return;
     }
     log::info<1>("Refreshing listen key..."sv);
-    listen_key_refresh_ = now + shared_.settings.rest.listen_key_refresh;
+    listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
     auto request = protocol::json::WSAPIRequest{
         .sequence = ++request_id_,
         .type = protocol::json::WSAPIType::USER_DATA_STREAM_PING,
@@ -1254,6 +1289,7 @@ void WebSocket::open_orders_cancel_all(Trace<CancelAllOrders> const &event, std:
 void WebSocket::check_request_queue(TraceInfo const &trace_info) {
   request_.balances.check_pending(trace_info, [this](auto &trace_info) { account_balance(trace_info); });
   request_.positions.check_pending(trace_info, [this](auto &trace_info) { account_status(trace_info); });
+  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) { user_data_stream_start(trace_info); });
 }
 
 void WebSocket::parse(TraceInfo const &trace_info, std::string_view const &message) {

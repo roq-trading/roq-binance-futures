@@ -76,6 +76,12 @@
       "type": "std/bool",
       "default": false,
       "description": "Use WebSocket API?"
+    },
+    {
+      "name": "test_listen_key_stop_freq",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "description": "Test listen-key stop"
     }
   ]
 }

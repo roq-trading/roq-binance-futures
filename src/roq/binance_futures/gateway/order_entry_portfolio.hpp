@@ -120,6 +120,8 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
   void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::ListenKeyAck> const &);
 
+  void delete_listen_key(TraceInfo const &);
+
   // account-balance
 
   void get_account_balance(TraceInfo const &, bool polling);
@@ -246,6 +248,8 @@ struct OrderEntryPortfolio final : public Base<OrderEntryPortfolio>, public Orde
   bool download_trades_is_first_ = true;
   std::string external_order_id_;
   size_t download_stale_orders_counter_ = {};
+  // TEST
+  std::chrono::nanoseconds next_listen_key_stop_ = {};
 };
 
 }  // namespace gateway

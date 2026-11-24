@@ -119,8 +119,6 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   void operator()(Trace<protocol::json::WSAPIOrderModify> const &, protocol::json::WSAPIRequest const &) override;
   void operator()(Trace<protocol::json::WSAPIOrderCancel> const &, protocol::json::WSAPIRequest const &) override;
 
-  // helpers
-
   // order-status
 
   bool order_status(TraceInfo const &);
@@ -158,8 +156,9 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
 
   // user-data-streams
 
-  void user_data_stream_start();
-  void user_data_stream_ping(std::chrono::nanoseconds now);
+  void user_data_stream_stop(TraceInfo const &);
+  void user_data_stream_start(TraceInfo const &);
+  void user_data_stream_ping(TraceInfo const &);
 
   void account_balance(TraceInfo const &);
   void account_status(TraceInfo const &);
@@ -187,6 +186,7 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   struct {
     utils::metrics::Profile parse, error,                    //
         session_logon, session_logon_ack,                    //
+        user_data_stream_stop, user_data_stream_stop_ack,    //
         user_data_stream_start, user_data_stream_start_ack,  //
         user_data_stream_ping, user_data_stream_ping_ack,    //
         account_balance, account_balance_ack,                //
@@ -217,6 +217,8 @@ struct WebSocket final : public Base<WebSocket>, public OrderEntry, public web::
   std::string encode_buffer_;
   core::Download2<State> download_;
   std::string external_order_id_;
+  // TEST
+  std::chrono::nanoseconds next_listen_key_stop_ = {};
 };
 
 }  // namespace gateway

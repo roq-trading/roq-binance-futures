@@ -109,18 +109,10 @@ struct Controller final : public Base<Controller>,
 
   void operator()(Trace<OrderEntryPortfolio::ListenKeyUpdate> const &) override;
 
-  // DropCopyClassic::Handler
-
-  void operator()(Trace<DropCopyClassic::Remove> const &) override;
-
-  // DropCopyPortfolio::Handler
-
-  void operator()(Trace<DropCopyPortfolio::Remove> const &) override;
-
   // helpers
 
   template <typename T>
-  void create_drop_copy_helper(auto &event);
+  void create_or_update_drop_copy(auto &event);
 
   void ensure_symbol_slices(TraceInfo const &, size_t size);
 
@@ -153,10 +145,8 @@ struct Controller final : public Base<Controller>,
   std::vector<std::unique_ptr<MarketData>> market_data_a_, market_data_b_;
   std::vector<std::unique_ptr<MarketData2>> market_data_2_;
   utils::unordered_map<std::string, std::unique_ptr<OrderEntry>> order_entry_;
-  utils::unordered_map<std::string, std::unique_ptr<server::Stream>> drop_copy_;
+  utils::unordered_map<std::string, std::unique_ptr<DropCopy>> drop_copy_;
   utils::unordered_map<std::string, std::unique_ptr<RestTrade>> rest_trade_;
-  //
-  utils::unordered_set<std::string> drop_copy_zombies_;
 };
 
 }  // namespace gateway

@@ -68,7 +68,6 @@ auto try_dispatch(auto &handler, auto &message, auto &buffer_stack, auto event_t
       dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
       return true;
     case LISTEN_KEY_EXPIRED:
-      log::warn("DEBUG message={}"sv, message);
       dispatch_helper<ListenKeyExpired>(handler, message, buffer_stack, trace_info);
       return true;
     case TRADE_LITE:

@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* Refactored the handling of listen-key expired
+
 ### Fixed
 
 * Forced listen-key refresh didn't clear the listen-key variable (#663)

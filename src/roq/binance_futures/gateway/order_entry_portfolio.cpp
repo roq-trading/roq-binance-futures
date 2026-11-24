@@ -184,6 +184,16 @@ void OrderEntryPortfolio::operator()(Trace<Timer> const &event) {
       refresh_listen_key(trace_info);
       refresh_balance(trace_info);
       check_request_queue(trace_info);
+      // TEST
+      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
+        if (next_listen_key_stop_ < trace_info.origin_create_time) {
+          if (next_listen_key_stop_.count()) {
+            log::warn("TEST force the listen-key to be removed"sv);
+            delete_listen_key(trace_info);
+          }
+          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
+        }
+      }
     }
   }
 }
@@ -427,6 +437,7 @@ void OrderEntryPortfolio::get_listen_key_ack(Trace<web::rest::Response> const &e
       download_.check_relaxed(trace_info, STATE);
     };
     process_response(event, handle_error, handle_success);
+    request_.listen_key.commit(trace_info);
   });
 }
 
@@ -448,6 +459,24 @@ void OrderEntryPortfolio::operator()(Trace<protocol::json::ListenKeyAck> const &
     }
   }
   listen_key_refresh_ = trace_info.origin_create_time + shared_.settings.rest.listen_key_refresh;
+}
+
+void OrderEntryPortfolio::delete_listen_key(TraceInfo const &) {
+  profile_.listen_key([&]() {
+    auto headers = account_.get_rest_headers();
+    auto request = web::rest::Request{
+        .method = web::http::Method::DELETE,
+        .path = shared_.api.papi.listen_key,
+        .query = {},
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = {},
+        .headers = headers,
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = []([[maybe_unused]] auto &event, [[maybe_unused]] auto &request_id) {};
+    (*connection_)(request, callback, "listen-key"sv);
+  });
 }
 
 // account-balance
@@ -1505,6 +1534,10 @@ void OrderEntryPortfolio::check_request_queue(TraceInfo const &trace_info) {
     request_.details_stale_orders.clear();
   });
   request_.trades.check_pending(trace_info, [this](auto &trace_info) { get_trades(trace_info); });
+  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) {
+    listen_key_.clear();
+    get_listen_key(trace_info);
+  });
 }
 
 void OrderEntryPortfolio::process_response(Trace<web::rest::Response> const &event, auto error_handler, auto success_handler) {

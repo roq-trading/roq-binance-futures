@@ -98,6 +98,10 @@ struct Encoder final {
       std::string_view const &signature,
       std::string_view const &id);
 
+  // user-data-stream-stop
+
+  static std::string_view user_data_stream_stop_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id);
+
   // user-data-stream-start
 
   static std::string_view user_data_stream_start_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id);

@@ -169,26 +169,6 @@ void Controller::operator()(Trace<Stop> const &event) {
 }
 
 void Controller::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  // note! remove drop_copy *BEFORE* dispatching timer (because of possible auto-retry connection)
-  if (!std::empty(drop_copy_zombies_)) [[unlikely]] {
-    for (auto &account : drop_copy_zombies_) {
-      log::info(R"(Removing DropCopy (user-stream) for account="{}"...)"sv, account);
-      auto iter = drop_copy_.find(account);
-      if (iter == std::end(drop_copy_)) [[unlikely]] {
-        log::fatal("Unexpected"sv);
-      }
-      (*iter).second.reset();
-      log::info(R"(DropCopy (user-stream) was removed for account="{}")"sv, account);
-      auto iter_2 = order_entry_.find(account);
-      if (iter_2 == std::end(order_entry_)) {
-        log::fatal("Unexpected"sv);
-      }
-      (*(*iter_2).second).force_listen_key_refresh(trace_info);
-    }
-    drop_copy_zombies_.clear();
-  }
-  //
   dispatch(event);
 }
 
@@ -312,46 +292,30 @@ void Controller::operator()(Trace<AssetsUpdate> const &event) {
 // WebSocket::Handler
 
 void Controller::operator()(Trace<WebSocket::ListenKeyUpdate> const &event) {
-  create_drop_copy_helper<DropCopyClassic>(event);
+  create_or_update_drop_copy<DropCopyClassic>(event);
 }
 
 // OrderEntryClassic::Handler
 
 void Controller::operator()(Trace<OrderEntryClassic::ListenKeyUpdate> const &event) {
-  create_drop_copy_helper<DropCopyClassic>(event);
+  create_or_update_drop_copy<DropCopyClassic>(event);
 }
 
 // OrderEntryPortfolio::Handler
 
 void Controller::operator()(Trace<OrderEntryPortfolio::ListenKeyUpdate> const &event) {
-  create_drop_copy_helper<DropCopyPortfolio>(event);
-}
-
-// DropCopyClassic::Handler
-
-void Controller::operator()(Trace<DropCopyClassic::Remove> const &event) {
-  auto &[trace_info, remove] = event;
-  log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
-  drop_copy_zombies_.insert(remove.account);
-}
-
-// DropCopyPortfolio::Handler
-
-void Controller::operator()(Trace<DropCopyPortfolio::Remove> const &event) {
-  auto &[trace_info, remove] = event;
-  log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
-  drop_copy_zombies_.insert(remove.account);
+  create_or_update_drop_copy<DropCopyPortfolio>(event);
 }
 
 // utilities
 
 template <typename T>
-void Controller::create_drop_copy_helper(auto &event) {
+void Controller::create_or_update_drop_copy(auto &event) {
   auto &[trace_info, listen_key_update] = event;
   auto &account = listen_key_update.account;
   assert(!std::empty(account));
   auto iter = drop_copy_.find(account);
-  if (iter == std::end(drop_copy_)) {
+  if (iter == std::end(drop_copy_)) [[unlikely]] {
     log::fatal(R"(Unexpected: account="{}")"sv, account);
   } else if (!static_cast<bool>((*iter).second)) {
     log::info(R"(Create DropCopy (user-stream) for account="{}" using listen_key="{}")"sv, account, listen_key_update.listen_key);
@@ -359,6 +323,8 @@ void Controller::create_drop_copy_helper(auto &event) {
     Start start;
     create_trace_and_dispatch(dynamic_cast<server::Stream &>(*obj), trace_info, start);
     (*iter).second = std::move(obj);
+  } else {
+    (*(*iter).second).update_listen_key(trace_info, listen_key_update.listen_key);
   }
 }
 

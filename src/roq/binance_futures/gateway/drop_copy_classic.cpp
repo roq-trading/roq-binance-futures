@@ -5,6 +5,7 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/common.hpp"
+#include "roq/utils/update.hpp"
 
 #include "roq/utils/exceptions/unhandled.hpp"
 
@@ -90,8 +91,8 @@ struct create_metrics final : public utils::metrics::Factory {
 
 DropCopyClassic::DropCopyClassic(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
-    : server::Stream{stream_id}, handler_{handler}, name_{create_name(stream_id)}, query_{create_query(listen_key)},
-      connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
+    : DropCopy{stream_id}, handler_{handler}, name_{create_name(stream_id)}, connection_{create_connection(*this, shared.settings, context, shared)},
+      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -113,15 +114,17 @@ DropCopyClassic::DropCopyClassic(
           .ping = create_metrics(shared.settings, name_, "ping"sv),
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, download_{{}, [this](auto &event) { return download(event); }} {
+      account_{account}, shared_{shared}, request_{request}, download_{{}, [this](auto &event) { return download(event); }}, query_{create_query(listen_key)} {
 }
 
-void DropCopyClassic::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
-  auto &[trace_info, listen_key_expired] = event;
-  log::info("listen_key_expired={}"sv, listen_key_expired);
-  stop_ = true;  // note!
-  log::warn("Closing connection..."sv);
-  (*connection_).close();
+// DropCopy
+
+void DropCopyClassic::update_listen_key(TraceInfo const &, std::string_view const &listen_key) {
+  auto query = create_query(listen_key);
+  if (utils::update(query_, query)) {
+    log::warn("Listen key was updated, closing..."sv);
+    (*connection_).close();
+  }
 }
 
 // server::Stream
@@ -194,6 +197,7 @@ void DropCopyClassic::operator()(Trace<ConnectionStatus> const &event, std::stri
 // web::socket::Client::Handler
 
 void DropCopyClassic::operator()(Trace<web::socket::Connected> const &) {
+  log::warn(R"(DEBUG account="{}", query="{}")"sv, account_.name, query_);
 }
 
 void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &event) {
@@ -201,12 +205,6 @@ void DropCopyClassic::operator()(Trace<web::socket::Disconnected> const &event) 
   ++counter_.disconnect;
   publish(trace_info, ConnectionStatus::DISCONNECTED);
   download_.reset();
-  if (stop_) {
-    auto remove = Remove{
-        .account = account_.name,
-    };
-    create_trace_and_dispatch(handler_, trace_info, remove);
-  }
 }
 
 void DropCopyClassic::operator()(Trace<web::socket::Ready> const &event) {
@@ -285,6 +283,13 @@ int32_t DropCopyClassic::download(Trace<State> const &event) {
 }
 
 // protocol::json::UserStreamParser::Handler
+
+void DropCopyClassic::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
+  auto &[trace_info, listen_key_expired] = event;
+  log::warn("listen_key_expired={}"sv, listen_key_expired);
+  log::info("Requesting new listen-key..."sv);
+  request_.listen_key.request(trace_info);
+}
 
 void DropCopyClassic::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
   profile_.order_trade_update([&]() {

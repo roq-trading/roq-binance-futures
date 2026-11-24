@@ -293,6 +293,24 @@ std::string_view Encoder::session_logon_json(
   return buffer;
 }
 
+// user-data-stream-stop
+
+std::string_view Encoder::user_data_stream_stop_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id) {
+  buffer.clear();
+  fmt::format_to(
+      std::back_inserter(buffer),
+      R"({{)"
+      R"("id":"{}",)"
+      R"("method":"userDataStream.stop",)"
+      R"("params":{{)"
+      R"("apiKey":"{}")"
+      R"(}})"
+      R"(}})"sv,
+      id,
+      api_key);
+  return buffer;
+}
+
 // user-data-stream-start
 
 std::string_view Encoder::user_data_stream_start_json(std::string &buffer, std::string_view const &api_key, std::string_view const &id) {

@@ -170,38 +170,6 @@ void OrderEntryClassic::force_listen_key_refresh(TraceInfo const &trace_info) {
 
 // server::Stream
 
-void OrderEntryClassic::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void OrderEntryClassic::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void OrderEntryClassic::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      refresh_listen_key(trace_info);
-      if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
-        next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
-        countdown_cancel_all(trace_info);
-      }
-      check_request_queue(trace_info);
-      // TEST
-      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
-        if (next_listen_key_stop_ < trace_info.origin_create_time) {
-          if (next_listen_key_stop_.count()) {
-            log::warn("TEST force the listen-key to be removed"sv);
-            delete_listen_key(trace_info);
-          }
-          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
-        }
-      }
-    }
-  }
-}
-
 void OrderEntryClassic::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -234,6 +202,38 @@ void OrderEntryClassic::operator()(metrics::Writer &writer) const {
       // rate limiter
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
+}
+
+void OrderEntryClassic::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void OrderEntryClassic::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void OrderEntryClassic::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      refresh_listen_key(trace_info);
+      if (shared_.settings.rest.cancel_on_disconnect && shared_.settings.rest.order_countdown.count() != 0 && next_auto_cancel_ < timer.now) {
+        next_auto_cancel_ = timer.now + shared_.settings.rest.order_countdown / 4;
+        countdown_cancel_all(trace_info);
+      }
+      check_request_queue(trace_info);
+      // TEST
+      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
+        if (next_listen_key_stop_ < trace_info.origin_create_time) {
+          if (next_listen_key_stop_.count()) {
+            log::warn("TEST force the listen-key to be removed"sv);
+            delete_listen_key(trace_info);
+          }
+          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
+        }
+      }
+    }
+  }
 }
 
 void OrderEntryClassic::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

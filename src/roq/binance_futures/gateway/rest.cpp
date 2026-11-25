@@ -121,23 +121,6 @@ Rest::Rest(Handler &handler, io::Context &context, uint16_t stream_id, Shared &s
 
 // server::Stream
 
-void Rest::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void Rest::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void Rest::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      check_request_queue(trace_info);
-    }
-  }
-}
-
 void Rest::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -155,6 +138,23 @@ void Rest::operator()(metrics::Writer &writer) const {
       .write(latency_.ping, metrics::Type::LATENCY)
       // rate limiter
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER);
+}
+
+void Rest::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void Rest::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void Rest::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      check_request_queue(trace_info);
+    }
+  }
 }
 
 void Rest::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

@@ -146,23 +146,6 @@ RestTrade::RestTrade(Handler &handler, io::Context &context, uint16_t stream_id,
 
 // server::Stream
 
-void RestTrade::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void RestTrade::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void RestTrade::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      check_request_queue(trace_info);
-    }
-  }
-}
-
 void RestTrade::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -181,6 +164,23 @@ void RestTrade::operator()(metrics::Writer &writer) const {
       // rate limiter
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1m, metrics::Type::RATE_LIMITER);
+}
+
+void RestTrade::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void RestTrade::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void RestTrade::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      check_request_queue(trace_info);
+    }
+  }
 }
 
 void RestTrade::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

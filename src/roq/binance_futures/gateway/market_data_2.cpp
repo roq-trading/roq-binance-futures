@@ -115,23 +115,6 @@ void MarketData2::operator()(std::span<std::string_view const> const &assets) {
 
 // server::Stream
 
-void MarketData2::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void MarketData2::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void MarketData2::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      check_subscribe_queue(trace_info);
-    }
-  }
-}
-
 void MarketData2::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -150,6 +133,23 @@ void MarketData2::operator()(metrics::Writer &writer) const {
       // latency
       .write(latency_.ping, metrics::Type::LATENCY)
       .write(latency_.heartbeat, metrics::Type::LATENCY);
+}
+
+void MarketData2::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void MarketData2::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void MarketData2::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      check_subscribe_queue(trace_info);
+    }
+  }
 }
 
 void MarketData2::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

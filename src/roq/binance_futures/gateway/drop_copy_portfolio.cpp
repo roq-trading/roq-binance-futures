@@ -120,6 +120,28 @@ DropCopyPortfolio::DropCopyPortfolio(
 
 // DropCopy
 
+void DropCopyPortfolio::operator()(metrics::Writer &writer) const {
+  writer
+      // counter
+      .write(counter_.disconnect, metrics::Type::COUNTER)
+      // profile
+      .write(profile_.parse, metrics::Type::PROFILE)
+      .write(profile_.order_trade_update, metrics::Type::PROFILE)
+      .write(profile_.account_update, metrics::Type::PROFILE)
+      .write(profile_.margin_call, metrics::Type::PROFILE)
+      .write(profile_.strategy_update, metrics::Type::PROFILE)
+      .write(profile_.grid_update, metrics::Type::PROFILE)
+      .write(profile_.account_config_update, metrics::Type::PROFILE)
+      .write(profile_.trade_lite, metrics::Type::PROFILE)
+      .write(profile_.execution_report, metrics::Type::PROFILE)
+      .write(profile_.balance_update, metrics::Type::PROFILE)
+      .write(profile_.liability_change, metrics::Type::PROFILE)
+      .write(profile_.outbound_account_position, metrics::Type::PROFILE)
+      // latency
+      .write(latency_.ping, metrics::Type::LATENCY)
+      .write(latency_.heartbeat, metrics::Type::LATENCY);
+}
+
 void DropCopyPortfolio::update_listen_key(TraceInfo const &, std::string_view const &listen_key) {
   auto query = create_query(listen_key);
   if (utils::update(query_, query)) {
@@ -146,28 +168,6 @@ void DropCopyPortfolio::operator()(Trace<Timer> const &event) {
       check_stale_orders(trace_info);
     }
   }
-}
-
-void DropCopyPortfolio::operator()(metrics::Writer &writer) const {
-  writer
-      // counter
-      .write(counter_.disconnect, metrics::Type::COUNTER)
-      // profile
-      .write(profile_.parse, metrics::Type::PROFILE)
-      .write(profile_.order_trade_update, metrics::Type::PROFILE)
-      .write(profile_.account_update, metrics::Type::PROFILE)
-      .write(profile_.margin_call, metrics::Type::PROFILE)
-      .write(profile_.strategy_update, metrics::Type::PROFILE)
-      .write(profile_.grid_update, metrics::Type::PROFILE)
-      .write(profile_.account_config_update, metrics::Type::PROFILE)
-      .write(profile_.trade_lite, metrics::Type::PROFILE)
-      .write(profile_.execution_report, metrics::Type::PROFILE)
-      .write(profile_.balance_update, metrics::Type::PROFILE)
-      .write(profile_.liability_change, metrics::Type::PROFILE)
-      .write(profile_.outbound_account_position, metrics::Type::PROFILE)
-      // latency
-      .write(latency_.ping, metrics::Type::LATENCY)
-      .write(latency_.heartbeat, metrics::Type::LATENCY);
 }
 
 void DropCopyPortfolio::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

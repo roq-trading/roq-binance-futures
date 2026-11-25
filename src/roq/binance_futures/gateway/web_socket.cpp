@@ -143,34 +143,6 @@ void WebSocket::force_listen_key_refresh(TraceInfo const &trace_info) {
 
 // server::Stream
 
-void WebSocket::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void WebSocket::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void WebSocket::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    user_data_stream_ping(trace_info);
-    if (ready()) {
-      check_request_queue(trace_info);
-      // TEST
-      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
-        if (next_listen_key_stop_ < trace_info.origin_create_time) {
-          if (next_listen_key_stop_.count()) {
-            log::warn("TEST force the listen-key to be removed"sv);
-            user_data_stream_stop(trace_info);
-          }
-          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
-        }
-      }
-    }
-  }
-}
-
 void WebSocket::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -209,6 +181,34 @@ void WebSocket::operator()(metrics::Writer &writer) const {
       .write(rate_limiter_.request_weight_1m, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_10s, metrics::Type::RATE_LIMITER)
       .write(rate_limiter_.create_order_1d, metrics::Type::RATE_LIMITER);
+}
+
+void WebSocket::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void WebSocket::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void WebSocket::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    user_data_stream_ping(trace_info);
+    if (ready()) {
+      check_request_queue(trace_info);
+      // TEST
+      if (shared_.settings.misc.test_listen_key_stop_freq.count()) {
+        if (next_listen_key_stop_ < trace_info.origin_create_time) {
+          if (next_listen_key_stop_.count()) {
+            log::warn("TEST force the listen-key to be removed"sv);
+            user_data_stream_stop(trace_info);
+          }
+          next_listen_key_stop_ = trace_info.origin_create_time + shared_.settings.misc.test_listen_key_stop_freq;
+        }
+      }
+    }
+  }
 }
 
 void WebSocket::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {

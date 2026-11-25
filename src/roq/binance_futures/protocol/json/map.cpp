@@ -34,6 +34,8 @@ constexpr Helper<int32_t>::operator std::optional<roq::Error>() const {
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
     case -2'013:  // NO_SUCH_ORDER
       return Error::TOO_LATE_TO_MODIFY_OR_CANCEL;
+    case -4'164:  // MIN_NOTIONAL
+      return Error::INVALID_QUANTITY;
     case -4'197:  // SAME_ORDER
       return Error::MODIFY_HAS_NO_EFFECT;
     case -5'022:  // GTX_ORDER_REJECT

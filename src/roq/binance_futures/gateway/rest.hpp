@@ -120,7 +120,10 @@ struct Rest final : public Base<Rest>, public server::Stream, public web::rest::
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile exchange_info, exchange_info_ack, asset_index, asset_index_ack, depth, depth_ack, kline, kline_ack;
+    utils::metrics::Profile exchange_info, exchange_info_ack,  //
+        asset_index, asset_index_ack,                          //
+        depth, depth_ack,                                      //
+        kline, kline_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
